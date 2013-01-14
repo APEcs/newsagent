@@ -1,0 +1,26 @@
+EMAIL_SIG  = The {V_[sitename]} Team
+
+SITE_CONTINUE = Continue
+
+API_BAD_OP   = Unknown API operation requested.
+API_BAD_CALL = Incorrect invocation of an API-only module.
+API_ERROR    = An internal API error has occurred: ***error***
+
+# Times for Template::fancy_time
+TIMES_JUSTNOW = just now
+TIMES_SECONDS = %t seconds ago
+TIMES_MINUTE  = a minute ago
+TIMES_MINUTES = %t minutes ago
+TIMES_HOUR    = an hour ago
+TIMES_HOURS   = %t hours ago
+TIMES_DAY     = a day ago
+TIMES_DAYS    = %t days ago
+TIMES_WEEK    = a week ago
+TIMES_WEEKS   = %t weeks ago
+TIMES_MONTH   = a month ago
+TIMES_MONTHS  = %t months ago
+TIMES_YEAR    = a year ago
+TIMES_YEARS   = %t years ago
+
+BLOCK_BLOCK_DISPLAY   = Direct call to unimplemented block_display()
+BLOCK_SECTION_DISPLAY = Direct call to unimplemented section_display()

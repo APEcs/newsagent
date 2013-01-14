@@ -1,0 +1,8 @@
+            <li id="gallery-admin" class="menu">
+                <div class="item"><img class="controlicon" src="controls/settings_off.png" title="Gallery settings" alt="prefs" /></div>
+                <div class="menu-wrapper">
+                    <ul class="menu-submenu">
+***actions***
+                    </ul>
+                </div>
+            </li>

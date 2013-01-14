@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>{L_LOGIN_TITLE}</title>
+
+    <!-- mootools for effects and javascript sanity -->
+    <script type='text/javascript' src="{V_[templatepath]}js/mootools-core.js"></script>
+    <script type='text/javascript' src="{V_[templatepath]}js/mootools-more.js"></script>
+
+    <!-- lightface for popup window -->
+    <script type='text/javascript' src="{V_[templatepath]}lightface/LightFaceMod.js"></script>
+    <link href="{V_[templatepath]}lightface/LightFace.css" rel="stylesheet" type="text/css" />
+
+    <!-- any site-specific javascriptery and styles -->
+    <link href="{V_[templatepath]}css/login.css" rel="stylesheet" type="text/css" />
+
+    <!-- favicon -->
+    <link rel="icon" type="image/png" href="{V_[templatepath]}images/favicon.png" />
+
+    ***extrahead***
+</head>
+<body class="login">
+    <div id="logincore">
+        <h1 id="logo"><a href="{V_[scriptpath]}" title="{V_[sitename]}"></a></h1>
+        ***content***
+    </div>
+</body>
+</html>

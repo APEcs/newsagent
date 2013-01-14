@@ -1,0 +1,70 @@
+@charset "utf-8";
+@import url('notebox.css');    /* pull in warning/important box styles */
+@import url('shadowbox.css');  /* and support for shadowed divs        */
+@import url('messagebox.css'); /* support for message boxes            */
+@import url('button.css');     /* button rules (okay?)                 */
+@import url('userbar.css');    /* Userbar styling.                     */
+
+body  {
+    font: 100% Verdana, Arial, Helvetica, sans-serif;
+    color: #000;
+    font-size: 13px;
+    min-width: 900px;
+    background-color: #eee;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body, h1, h2, h3, h4, h5 {
+    margin: 0;
+    padding: 0;
+}
+
+a {
+    text-decoration: none;
+    color: #0645ad;
+    background: none;
+}
+a:visited {
+    color: #0b0080;
+}
+a:active {
+    color: #faa700;
+}
+a:hover, a:focus {
+    text-decoration: underline;
+}
+
+#errorcore {
+    margin: 0px auto;
+    padding: 100px 0px 0px;
+    width: 440px;
+}
+
+#errorcore h1#logo a {
+    display: block;
+    width: 141px;
+    height: 78px;
+    background: url('../images/page_layout/logo.png') 50% top no-repeat;
+    padding-bottom: 10px;
+    margin: 0px auto;
+}
+
+input[type=text], input[type=password] {
+    font-size: 20px;
+    margin-bottom: 10px;
+    margin-top: 2px;
+}
+
+input[type=text]:focus, input[type=password]:focus, input[type=checkbox]:focus {
+    box-shadow: 0 0 5px rgba(0, 0, 255, 1);
+    -webkit-box-shadow: 0 0 5px rgba(0, 0, 255, 1);
+    -moz-box-shadow: 0 0 5px rgba(0, 0, 255, 1);
+}
+
+textarea:focus {
+    box-shadow: 0 0 5px rgba(0, 0, 255, 1);
+    -webkit-box-shadow: 0 0 5px rgba(0, 0, 255, 1);
+    -moz-box-shadow: 0 0 5px rgba(0, 0, 255, 1);
+}
