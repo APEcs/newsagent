@@ -1,0 +1,33 @@
+@charset "utf-8";
+
+#composeform {
+    margin: 0px auto;
+    padding-top: 32px;
+    width: 900px;
+}
+
+div.clear {
+    clear: both;
+}
+
+dl.input {
+    margin: 5px 0px 0px 0px;
+}
+
+dl.float {
+    float: left;
+    margin-right: 1em;
+}
+
+dl.input > dt {
+    margin: 0px 0px 6px;
+}
+
+dl.input > dd {
+    margin: 0px;
+    oadding: 0px;
+}
+
+dl.input > dd > select {
+    min-width: 10em;
+}

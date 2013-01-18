@@ -1,0 +1,17 @@
+COMPOSE_FORM_TITLE = Compose article
+
+FORM_OPTIONAL  = (optional)
+
+COMPOSE_TITLE  = Article title
+COMPOSE_URL    = Link to more information
+COMPOSE_DESC   = Article text
+COMPOSE_SITE   = Post from
+COMPOSE_LEVEL  = Visibility level
+
+COMPOSE_RELEASE = Release
+COMPOSE_RELNOW  = Immediately
+COMPOSE_RELTIME = Release after =>
+COMPOSE_RELNONE = Never (save as draft)
+COMPOSE_RELDATE = Release time
+
+COMPOSE_SUBMIT  = Create article

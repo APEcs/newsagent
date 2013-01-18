@@ -8,8 +8,13 @@
 # Pass pathinfo and query string to the index script
 AcceptPathInfo on
 RewriteEngine On
-RewriteCond %{REQUEST_URI} !^\/(templates|media|docs|ckeditor|index.cgi)
-RewriteRule (.*) /index.cgi/%{REQUEST_URI} [L]
+
+# If the installation is in a subdirectory, add a rewritebase rule for the subdir
+# RewriteBase /subdir/
+RewriteBase /newsagent/
+
+RewriteCond %{REQUEST_URI} !^/newsagent/(templates|media|docs|ckeditor|index.cgi)
+RewriteRule (.*) index.cgi/$1 [PT,L]
 
 # Compress text, html, javascript, css, xml:
 AddOutputFilterByType DEFLATE text/plain

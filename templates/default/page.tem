@@ -5,6 +5,7 @@
     <title>***title***</title>
 
     <link rel="stylesheet" type="text/css" href="{V_[templatepath]}css/core.css" />
+    <link rel="stylesheet" type="text/css" href="{V_[templatepath]}css/userbar.css" />
 
     <!-- mootools for effects and javascript sanity -->
     <script type='text/javascript' src="{V_[templatepath]}js/mootools-core.js"></script>
@@ -25,8 +26,9 @@
     <![endif]-->
 </head>
 <body id="newsagent" class="newsagent">
-***userbar***
-***botbar***
+<div id="content" class="content clear">
 ***content***
+</div>
+***userbar***
 </body>
 </html>

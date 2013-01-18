@@ -20,9 +20,6 @@
 # A 'stand alone' login implementation. This presents the user with a
 # login form, checks the credentials they enter, and then redirects
 # them back to the task they were performing that required a login.
-#
-# @todo Account recovery (complicated by auth backend!)
-# @todo Activation resend
 package Newsagent::Login;
 
 use strict;
@@ -151,6 +148,7 @@ sub reset_email {
                                                     "***login_url***" => $loginform,
                                                    });
 }
+
 
 # ============================================================================
 #  Validation functions
@@ -814,6 +812,7 @@ sub generate_reset {
                                                         "action"  => "location.href='$url'"} ]));
     }
 }
+
 
 # ============================================================================
 #  Interface functions

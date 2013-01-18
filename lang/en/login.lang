@@ -42,12 +42,12 @@ LOGIN_ERR_INACTIVE   = Your account is currently inactive. Please check your ema
 # Registration done
 LOGIN_REG_DONETITLE  = Registration successful
 LOGIN_REG_SUMMARY    = Activation required!
-LOGIN_REG_LONGDESC   = A new user account has been created for you, and an email has been sent to you with your new account password and an activation link.<br /><br />Please check your email for a message with the subject 'Gallery account created - Activation required!' and follow the instructions it contains to activate your account.
+LOGIN_REG_LONGDESC   = A new user account has been created for you, and an email has been sent to you with your new account password and an activation link.<br /><br />Please check your email for a message with the subject 'Newsagent account created - Activation required!' and follow the instructions it contains to activate your account.
 
 # Registration email
-LOGIN_REG_SUBJECT    = Gallery account created - Activation required!
+LOGIN_REG_SUBJECT    = Newsagent account created - Activation required!
 LOGIN_REG_GREETING   = Hi ***username***
-LOGIN_REG_CREATED    = A new account in the gallery system has just been created for you. Your username and password for the system are given below.
+LOGIN_REG_CREATED    = A new account in the Newsagent system has just been created for you. Your username and password for the system are given below.
 LOGIN_REG_ACTNEEDED  = Before you can log in, you must activate your account. To activate your account, please click on the following link, or copy and paste it into your web browser:
 LOGIN_REG_ALTACT     = Alternatively, enter the following code in the account activation form:
 LOGIN_REG_ENJOY      = Thank you for registering!
@@ -71,28 +71,28 @@ LOGIN_RECFORM         = Recover account details
 LOGIN_RECINTRO        = If you have forgotten your username or password, enter the email address associated with your account in the field below. An email will be sent to you containing your username, and a link to click on to reset your password. If you do not have access to the email address associated with your account, please contact the site owner.
 LOGIN_RECEMAIL        = Email address
 LOGIN_DORECOVER       = Recover account
-LOGIN_RECOVER_SUBJECT = Your gallery account
+LOGIN_RECOVER_SUBJECT = Your Newsagent account
 LOGIN_RECOVER_GREET   = Hi ***username***
 LOGIN_RECOVER_INTRO   = You, or someone pretending to be you, has requested that your password be reset. In order to reset your account, please click on the following link, or copy and paste it into your web browser.
-LOGIN_RECOVER_IGNORE  = If you did not request this reset, please either ignore this email or report it to the gallery administrator.
+LOGIN_RECOVER_IGNORE  = If you did not request this reset, please either ignore this email or report it to the Newsagent administrator.
 LOGIN_RECOVER_FAILED  = Account recovery failed
 LOGIN_RECOVER_DONETITLE = Account recovery code sent
 LOGIN_RECOVER_SUMMARY   = Recovery code sent!
-LOGIN_RECOVER_LONGDESC  = An account recovery code has been send to your email address.<br /><br />Please check your email for a message with the subject 'Your gallery account' and follow the instructions it contains.
+LOGIN_RECOVER_LONGDESC  = An account recovery code has been send to your email address.<br /><br />Please check your email for a message with the subject 'Your Newsagent account' and follow the instructions it contains.
 LOGIN_ERR_NOUID       = No user id specified.
 LOGIN_ERR_BADUID      = The specfied user id is not valid.
 LOGIN_ERR_BADRECCHAR  = Account reset codes may only contain alphanumeric characters.
 LOGIN_ERR_BADRECCODE  = The provided account reset code is invalid. Note that the code is case sensitive - upper and lower case characters are treated differently. Please check you entered the code correctly.
 LOGIN_ERR_NORECINACT  = Your account is inactive, and therefore can not be recovered. In order to access your account, please request a new activation code and password.
 
-LOGIN_RESET_SUBJECT   = Your gallery account
+LOGIN_RESET_SUBJECT   = Your Newsagent account
 LOGIN_RESET_GREET     = Hi ***username***
 LOGIN_RESET_INTRO     = Your password has been reset, and your username and new password are given below:
-LOGIN_RESET_LOGIN     = To log into the gallery, please go to the following form and enter the username and password above. Once you have logged in, please change your password.
+LOGIN_RESET_LOGIN     = To log into the Newsagent, please go to the following form and enter the username and password above. Once you have logged in, please change your password.
 
 LOGIN_RESET_DONETITLE  = Account reset complete
 LOGIN_RESET_SUMMARY    = Password reset successfully
-LOGIN_RESET_LONGDESC   = Your username and a new password have been sent to your email address. Please look for an email with the subject 'Your gallery account', you can use the account information it contains to log into the system by clicking the 'Log in' button below.
+LOGIN_RESET_LONGDESC   = Your username and a new password have been sent to your email address. Please look for an email with the subject 'Your Newsagent account', you can use the account information it contains to log into the system by clicking the 'Log in' button below.
 LOGIN_RESET_ERRTITLE   = Account reset failed
 LOGIN_RESET_ERRSUMMARY = Password reset failed
 LOGIN_RESET_ERRDESC    = The system has been unable to reset your account. The error encountered was:<br /><br/>***reason***
@@ -105,7 +105,7 @@ LOGIN_DORESEND       = Resend code
 LOGIN_ERR_BADUSER    = The email address provided does not appear to belong to any account in the system.
 LOGIN_ERR_BADAUTH    = The user account with the provided email address does not have a valid authentication method associated with it. This should not happen!
 LOGIN_ERR_ALREADYACT = The user account with the provided email address is already active, and does not need a code to be activated.
-LOGIN_RESEND_SUBJECT = Your gallery activation code
+LOGIN_RESEND_SUBJECT = Your Newsagent activation code
 LOGIN_RESEND_GREET   = Hi ***username***
 LOGIN_RESEND_INTRO   = You, or someone pretending to be you, has requested that another copy of your activation code be sent to your email address.
 LOGIN_RESEND_ALTACT  = Alternatively, enter the following code in the account activation form:
@@ -114,4 +114,4 @@ LOGIN_RESEND_FAILED  = Activation code resend failed
 
 LOGIN_RESEND_DONETITLE  = Activation code resent
 LOGIN_RESEND_SUMMARY    = Resend successful!
-LOGIN_RESEND_LONGDESC   = A new password and an activation link have been send to your email address.<br /><br />Please check your email for a message with the subject 'Your gallery activation code' and follow the instructions it contains to activate your account.
+LOGIN_RESEND_LONGDESC   = A new password and an activation link have been send to your email address.<br /><br />Please check your email for a message with the subject 'Your Newsagent activation code' and follow the instructions it contains to activate your account.

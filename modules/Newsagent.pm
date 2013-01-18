@@ -42,10 +42,36 @@ sub new {
     my $self     = $class -> SUPER::new(@_)
         or return undef;
 
-    # Cache the itemid for later
-    $self -> {"itemid"} = $self -> determine_itemid();
-
     return $self;
+}
+
+
+# ============================================================================
+#  Page generation support
+
+
+## @method $ generate_newsagent_page($title, $content, $extrahead)
+# A convenience function to wrap page content in the standard page template. This
+# function allows blocks to embed their content in a page without having to build
+# the whole page including "common" items themselves. It should be called to wrap
+# the content when the block's page_display is returning.
+#
+# @param title     The page title.
+# @param content   The content to show in the page.
+# @param extrahead Any extra directives to place in the header.
+# @return A string containing the page.
+sub generate_newsagent_page {
+    my $self      = shift;
+    my $title     = shift;
+    my $content   = shift;
+    my $extrahead = shift || "";
+
+    my $userbar = $self -> {"module"} -> load_module("Newsagent::Userbar");
+
+    return $self -> {"template"} -> load_template("page.tem", {"***extrahead***" => $extrahead,
+                                                               "***title***"     => $title,
+                                                               "***userbar***"   => ($userbar ? $userbar -> block_display($title) : "<!-- Userbar load failed: ".$self -> {"module"} -> errstr()." -->"),
+                                                               "***content***"   => $content});
 }
 
 
@@ -66,21 +92,67 @@ sub used_capabilities {
 }
 
 
-# ============================================================================
-#  Item convenience functions
-
-## @method $ determine_itemid()
-# Attempt to work out which item the user is actually looking at. This uses the
-# request pathinfo to work out which item is being viewed.
+## @method $ check_permission($userid, $action)
+# Determine whether the user has permission to peform the requested action. This
+# should be overridden in subclasses to provide actual checks.
 #
-# @return The ID of the item the user is looking at, 0 if the user is not
-#         looking at an item (looking at a system area), or undef on failure.
-sub determine_itemid {
+# @param userid The ID of the user to check the permissions for.
+# @param action The action the user is attempting to perform.
+# @return true if the user has permission, false if they do not, undef on error.
+sub check_permission {
     my $self = shift;
 
-    $self -> clear_error();
+    return 1;
+}
 
 
+## @method $ check_login()
+# Determine whether the current user is logged in, and if not force them to
+# the login form.
+#
+# @return undef if the user is logged in and has access, otherwise a page to
+#         send back with a permission error. If the user is not logged in, this
+#         will 'silently' redirect the user to the login form.
+sub check_login {
+    my $self = shift;
+
+    # Anonymous users need to get punted over to the login form
+    if($self -> {"session"} -> anonymous_session()) {
+        print $self -> {"cgi"} -> redirect($self -> build_login_url());
+        exit;
+
+    # Otherwise, permissions need to be checked
+    } else {
+        my ($title, $message);
+
+        if($self -> check_permission($self -> {"session"} -> get_session_userid(), "view")) {
+            return undef;
+        } else {
+            $self -> log("error:permission", "User does not have perission 'view'");
+
+            # Logged in, but permission failed
+            $title   = $self -> {"template"} -> replace_langvar("FEATURE_ERR_ACCESS_TITLE");
+            $message = $self -> {"template"} -> message_box("{L_FEATURE_ERR_ACCESS_TITLE}",
+                                                            "permission_error",
+                                                            "{L_FEATURE_ERR_ACCESS_SUMMARY}",
+                                                            "{L_FEATURE_ERR_ACCESS_DESC}",
+                                                            undef,
+                                                            "errorcore",
+                                                            [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
+                                                               "colour"  => "blue",
+                                                               "action"  => "location.href='{V_[scriptpath]}'"} ]);
+        }
+
+        my $userbar = $self -> {"module"} -> load_module("Newsagent::Userbar");
+
+        # Build the error page...
+        return $self -> {"template"} -> load_template("error/general.tem",
+                                                      {"***title***"     => $title,
+                                                       "***message***"   => $message,
+                                                       "***extrahead***" => "",
+                                                       "***userbar***"   => ($userbar ? $userbar -> block_display($title) : "<!-- Userbar load failed: ".$self -> {"module"} -> errstr()." -->"),
+                                                      });
+    }
 }
 
 
@@ -285,7 +357,7 @@ sub build_login_url {
     my $self = shift;
 
     # Note: CGI::query_string() produces a properly escaped, joined query string based on the
-    #       **current parameters**, even ones added by the program (hence the course and block
+    #       **current parameters**, even ones added by the program (hence the itempath, api and block
     #       parameters added by the BlockSelector will be included!)
     $self -> {"session"} -> set_variable("savestate", $self -> {"cgi"} -> query_string());
 

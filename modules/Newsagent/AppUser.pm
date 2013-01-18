@@ -188,6 +188,10 @@ sub _make_user_extradata {
     my $self = shift;
     my $user = shift;
 
+    # Generate the user's full name
+    $user -> {"fullname"} = (($user -> {"forenames"} || "")." ".($user -> {"surname"} || ""));
+    $user -> {"fullname"} = $user -> {"username"} if($user -> {"fullname"} eq " ");
+
     # Make the user gravatar hash
     $user -> {"gravatar_hash"} = md5_hex(lc(trimspace($user -> {"email"} || "")));
 

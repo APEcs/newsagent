@@ -3,3 +3,4 @@ docs/
 config/site.cfg
 ckeditor
 testharness.pl
+templates/default/datepicker
