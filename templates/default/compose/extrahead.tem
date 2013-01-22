@@ -3,8 +3,8 @@
     <script type="text/javascript" src="{V_[commonpath]}cke_configs/basic_open.js"></script>
 
     <!-- date picker related -->
-    <script src="{V_[templatepath]}datepicker/Locale.en-US.DatePicker.js" type="text/javascript"></script>
-    <!-- script src="{V_[templatepath]}js/Locale.en-GB.DatePicker.js" type="text/javascript"></script -->
+    <!--script src="{V_[templatepath]}datepicker/Locale.en-US.DatePicker.js" type="text/javascript"></script -->
+    <script src="{V_[templatepath]}js/Locale.en-GB.DatePicker.js" type="text/javascript"></script>
     <script src="{V_[templatepath]}datepicker/Picker.js" type="text/javascript"></script>
     <script src="{V_[templatepath]}datepicker/Picker.Attach.js" type="text/javascript"></script>
     <script src="{V_[templatepath]}datepicker/Picker.Date.js" type="text/javascript"></script>

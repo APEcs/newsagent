@@ -10,8 +10,11 @@ COMPOSE_LEVEL  = Visibility level
 
 COMPOSE_RELEASE = Release
 COMPOSE_RELNOW  = Immediately
-COMPOSE_RELTIME = Release after =>
+COMPOSE_RELTIME = Release after set time
 COMPOSE_RELNONE = Never (save as draft)
 COMPOSE_RELDATE = Release time
 
 COMPOSE_SUBMIT  = Create article
+
+COMPOSE_ARTICLE  = Article
+COMPOSE_SETTINGS = Settings

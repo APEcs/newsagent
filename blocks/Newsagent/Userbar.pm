@@ -51,6 +51,9 @@ sub block_display {
         my $user = $self -> {"session"} -> get_user_byid()
             or return $self -> self_error("Unable to obtain user data for logged in user. This should not happen!");
 
+        $msglist   = $self -> {"template"} -> load_template("userbar/msglist_enabled.tem");
+        $siteadmin = $self -> {"template"} -> load_template("userbar/siteadmin_enabled.tem");
+
         # User is logged in, so actually reflect their current options and state
         $userprofile = $self -> {"template"} -> load_template("userbar/profile_loggedin.tem", {"***realname***"    => $user -> {"fullname"},
                                                                                                "***username***"    => $user -> {"username"},

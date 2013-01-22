@@ -179,8 +179,17 @@ hr {
     overflow: hidden;
 }
 
-input.fillwide {
+input.fillwide, select.fillwide {
     width: 100%;
+}
+
+input[type=text].datepick {
+    padding: 4px 4px 4px 23px;
+    background: url(../images/datepicker.png) no-repeat 2px center;
+}
+
+input:disabled.datepick {
+    background-color: #eee;
 }
 
 .submitbox {

@@ -1,53 +1,59 @@
 <div id="composeform">
     <form action="***form_url***" method="post">
-    <div>
-        <dl class="input">
-            <dt><label for="comp-title" class="required">{L_COMPOSE_TITLE}</label></dt>
-            <dd><input class="fillwide" type="text" name="title" id="comp-title" size="100" maxlength="100" title="{L_COMPOSE_TITLE}" value="***title***" /></dd>
-        </dl>
+    <div id="article" class="shadowbox">
+        <h2>{L_COMPOSE_ARTICLE}</h2>
+        <div class="sbcontent">
+            <dl class="input">
+                <dt><label for="comp-title" class="required">{L_COMPOSE_TITLE}</label></dt>
+                <dd><input class="fillwide" type="text" name="title" id="comp-title" size="100" maxlength="100" title="{L_COMPOSE_TITLE}" value="***title***" /></dd>
+            </dl>
+            <dl class="input">
+                <dt><label for="comp-url">{L_COMPOSE_URL}</label> <span class="optional">{L_FORM_OPTIONAL}</span></dt>
+                <dd><input class="fillwide" type="text" name="url" id="comp-url" size="100" maxlength="100" title="{L_COMPOSE_URL}" value="***url***" /></dd>
+            </dl>
+            <hr />
+            <div class="textwrapper">
+                <dl class="input">
+                    <dt><label for="comp-desc">{L_COMPOSE_DESC}</label></dt>
+                    <dd><textarea name="description" id="comp-desc" rows="10" cols="80">***description***</textarea></dd>
+                </dl>
+            </div>
+            <hr />
+            <div class="submitbox">
+                <input type="submit" class="button blue" value="{L_COMPOSE_SUBMIT}" name="compose" />
+            </div>
+        </div>
     </div>
-    <div>
-        <dl class="input">
-            <dt><label for="comp-url">{L_COMPOSE_URL}</label> <span class="optional">{L_FORM_OPTIONAL}</span></dt>
-            <dd><input class="fillwide" type="text" name="url" id="comp-url" size="100" maxlength="100" title="{L_COMPOSE_URL}" value="***url***" /></dd>
-        </dl>
-    </div>
-    <hr />
-    <div class="textwrapper">
-        <dl class="input">
-            <dt><label for="comp-desc">{L_COMPOSE_DESC}</label></dt>
-            <dd><textarea name="description" id="comp-desc" rows="10" cols="80">***description***</textarea></dd>
-        </dl>
-    </div>
-    <hr />
-    <div class="clear">
-        <dl class="input float">
-            <dt><label for="comp-site">{L_COMPOSE_SITE}</label></dt>
-            <dd><select id="comp-site" name="site">
-***allowed_sites***
-                </select></dd>
-        </dl>
-        <dl class="input float">
-            <dt><label for="comp-level">{L_COMPOSE_LEVEL}</label></dt>
-            <dd><select id="comp-level" name="level">
-***allowed_levels***
-                </select></dd>
-        </dl>
-        <dl class="input float">
-            <dt><label for="comp-release">{L_COMPOSE_RELEASE}</label></dt>
-            <dd><select id="comp-release" name="mode">
-***release_mode***
-                </select></dd>
-        </dl>
-        <dl class="input float">
-            <dt><label for="release_date">{L_COMPOSE_RELDATE}</label></dt>
-            <dd><input class="datepick" type="text" name="release_date" id="release_date" size="32" maxlength="40" value="***release_date_fmt***" /></dd>
-        </dl>
-        <input type="hidden" name="rtimestamp" id="rtimestamp" value="***rtimestamp***" />
-    </div>
-    <div class="submitbox clear">
-        <hr />
-        <input type="submit" class="button blue" value="{L_COMPOSE_SUBMIT}" name="compose" />
+    <div id="settings" class="shadowbox">
+        <h2>{L_COMPOSE_SETTINGS}</h2>
+        <div class="sbcontent">
+            <dl class="input">
+                <dt><label for="comp-site">{L_COMPOSE_SITE}</label></dt>
+                <dd><select class="fillwide" id="comp-site" name="site">
+                        ***allowed_sites***
+                    </select>
+                </dd>
+            </dl>
+            <dl class="input">
+                <dt><label for="comp-level">{L_COMPOSE_LEVEL}</label></dt>
+                <dd><select class="fillwide" id="comp-level" name="level">
+                        ***allowed_levels***
+                    </select>
+                </dd>
+            </dl>
+            <dl class="input">
+                <dt><label for="comp-release">{L_COMPOSE_RELEASE}</label></dt>
+                <dd><select class="fillwide" id="comp-release" name="mode">
+                        ***release_mode***
+                    </select>
+                </dd>
+            </dl>
+            <dl class="input">
+                <dt><label for="release_date">{L_COMPOSE_RELDATE}</label></dt>
+                <dd><input class="fillwide datepick" type="text" name="release_date" id="release_date" size="16" maxlength="16" value="***release_date_fmt***" /></dd>
+            </dl>
+            <input type="hidden" name="rtimestamp" id="rtimestamp" value="***rtimestamp***" />
+        </div>
     </div>
 </div>
 <script type="text/javascript">

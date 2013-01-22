@@ -24,6 +24,7 @@ function date_control(datefield, tsfield, control) {
 
 
 window.addEvent('domready', function() {
+    Locale.use('en-GB');
     rdate_picker = new Picker.Date($('release_date'), { timePicker: true,
                                                         yearPicker: true,
                                                         positionOffset: {x: 5, y: 0},

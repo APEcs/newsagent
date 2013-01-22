@@ -2,3 +2,6 @@ USERBAR_PROFILE_EDIT    = Edit Profile
 USERBAR_PROFILE_PREFS   = Change Settings
 USERBAR_PROFILE_LOGOUT  = Log out
 USERBAR_PROFILE_LOGIN   = Log in
+
+USERBAR_ARTICLE_LIST    = Article list
+USERBAR_SITE_SETTINGS   = Administer site

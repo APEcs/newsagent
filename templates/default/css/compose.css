@@ -1,9 +1,22 @@
 @charset "utf-8";
 
 #composeform {
-    margin: 0px auto;
     padding-top: 32px;
-    width: 900px;
+    margin: 0px auto;
+    width: 1074px;
+}
+
+#article {
+    float: left;
+    width: 774px;
+}
+
+#settings {
+    float: right;
+    width: 240px;
+}
+
+.textwrapper {
 }
 
 div.clear {
@@ -30,4 +43,12 @@ dl.input > dd {
 
 dl.input > dd > select {
     min-width: 10em;
+}
+
+select.fillwide {
+    width: 230px;
+}
+
+input.fillwide.datepick {
+    width: 207px;
 }
