@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<rss version="2.0">
+  <channel>
+    <title>***title***</title>
+    <link>***link***</link>
+    <description>***description***</description>
+    <language>***lang***</language>
+    <pubDate>***now***</pubDate>
+    <lastBuildDate>***changed***</lastBuildDate>
+    <generator>***generator***</generator>
+    <managingEditor>***editor***</managingEditor>
+    <webMaster>***webmaster***</webMaster>
+    ***extra***
+    ***items***
+  </channel>
+</rss>

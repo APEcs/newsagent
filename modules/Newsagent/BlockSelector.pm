@@ -42,7 +42,7 @@ use base qw(Webperl::BlockSelector);
 #
 # - `block` contains the currently selected block name, or the gallery block name
 #   if one has not been specified.
-# - `itempath` contains the path to the currently selected item, as an array
+# - `pathinfo` contains the path to the currently selected item, as an array
 #   of path segments. If not set, no item has been selected. Note that
 #   this is simply a split version of any path info between the block and any
 #   api specification, so it may be used by blocks to mean something other than
@@ -85,9 +85,9 @@ sub get_block {
         # Split along slashes
         my @args = split(/\//, $pathinfo);
 
-        # Defaults the block to the gallery, and clear the itempath and pathinfo for safety
+        # Defaults the block to the gallery, and clear the pathinfo and pathinfo for safety
         my $block = $settings -> {"config"} -> {"gallery_block"};
-        $cgi -> delete('itempath', 'api');
+        $cgi -> delete('pathinfo', 'api');
 
         # If a single item remains in the argument, it is a block name
         if(scalar(@args) == 1) {
@@ -96,7 +96,7 @@ sub get_block {
         # Two or more items in the argument are a block and item path
         } elsif(scalar(@args) >= 2) {
             $block = shift @args;
-            $cgi -> param(-name => 'itempath', -values => \@args);
+            $cgi -> param(-name => 'pathinfo', -values => \@args);
         }
 
         $cgi -> param(-name => 'block', -value => $block);

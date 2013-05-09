@@ -1,20 +1,34 @@
 COMPOSE_FORM_TITLE = Compose article
 
-FORM_OPTIONAL  = (optional)
+FORM_OPTIONAL      = (optional)
 
-COMPOSE_TITLE  = Article title
-COMPOSE_URL    = Link to more information
-COMPOSE_DESC   = Article text
+COMPOSE_TITLE      = Title
+COMPOSE_URL        = Link to more information
+COMPOSE_SUMMARY    = Summary
+COMPOSE_SUMM_INFO  = Enter a short summary of your article here (<span id="sumchars"></span> characters left)
+COMPOSE_DESC       = Full text
+
+COMPOSE_BATCH      = Batch Release
+COMPOSE_NORMAL     = Standard Release
+
+COMPOSE_IMAGEA     = Lead Image
+COMPOSE_IMAGEB     = Foot Image
+
 COMPOSE_SITE   = Post from
 COMPOSE_LEVEL  = Visibility level
 
-COMPOSE_RELEASE = Release
+COMPOSE_RELEASE = Publish
 COMPOSE_RELNOW  = Immediately
-COMPOSE_RELTIME = Release after set time
+COMPOSE_RELTIME = At the specified time
 COMPOSE_RELNONE = Never (save as draft)
-COMPOSE_RELDATE = Release time
+COMPOSE_RELDATE = Publish time
 
 COMPOSE_SUBMIT  = Create article
 
 COMPOSE_ARTICLE  = Article
 COMPOSE_SETTINGS = Settings
+COMPOSE_IMAGES   = Images
+COMPOSE_IMGNONE  = No image
+COMPOSE_IMGURL   = Image URL
+COMPOSE_IMGFILE  = Upload image file
+COMPOSE_IMG      = Existing image

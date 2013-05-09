@@ -23,6 +23,7 @@ use strict;
 use base qw(Webperl::SystemModule); # This class extends the Newsagent block class
 use v5.12;
 
+use Webperl::Utils qw(path_join);
 
 sub get_user_levels {
     my $self = shift;
@@ -58,12 +59,32 @@ sub get_user_sites {
     while(my $site = $sitesh -> fetchrow_hashref()) {
         # FIXME: Check user permission for site here?
 
-        push(@sitelist, {"name"  => $site -> {"description"},
+        push(@sitelist, {"name"  => $site -> {"description"}." (".$site -> {"full_url"}.")",
                          "value" => $site -> {"name"}});
     }
 
     return \@sitelist;
 }
 
+
+sub get_file_images {
+    my $self = shift;
+
+    my $imgh = $self -> {"dbh"} -> prepare("SELECT id, name, location
+                                            FROM `".$self -> {"settings"} -> {"database"} -> {"images"}."`
+                                            WHERE `type` = 'file'
+                                            ORDER BY `name`");
+    $imgh -> execute()
+        or return $self -> self_error("Unable to execute image list query: ".$self -> {"dbh"} -> errstr);
+
+    my @imagelist;
+    while(my $image = $imgh -> fetchrow_hashref()) {
+        push(@imagelist, {"name"  => $image -> {"name"},
+                          "title" => path_join($self -> {"settings"} -> {"config"} -> {"upload_image_url"}, $image -> {"location"}),
+                          "value" => $image -> {"id"}});
+    }
+
+    return \@imagelist;
+}
 
 1;

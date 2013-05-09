@@ -1,1 +1,1 @@
-            <li id="user-msglist" title="{L_USERBAR_ARTICLE_LIST}"><a href="***msglisturl***" class="item"><img class="controlicon" src="{V_[templatepath]}userbar/images/msglist.png" alt="msglist" /></a></li>
+            <li id="user-msglist" title="{L_USERBAR_ARTICLE_LIST}"><a href="***url-msglist***" class="item"><img class="controlicon" src="{V_[templatepath]}userbar/images/msglist.png" alt="msglist" /></a></li>

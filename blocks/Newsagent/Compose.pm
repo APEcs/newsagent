@@ -55,12 +55,38 @@ sub new {
                              "name"  => "{L_COMPOSE_RELNONE}" },
                           ];
 
+    $self -> {"imgops"} = [ {"value" => "none",
+                             "name"  => "{L_COMPOSE_IMGNONE}" },
+                            {"value" => "url",
+                             "name"  => "{L_COMPOSE_IMGURL}" },
+                            {"value" => "file",
+                             "name"  => "{L_COMPOSE_IMGFILE}" },
+                            {"value" => "img",
+                             "name"  => "{L_COMPOSE_IMG}" },
+                          ];
     return $self;
 }
 
 
 # ============================================================================
 #  Form generators
+
+
+## @method $ build_image_options($selected)
+# Generate a string containing the options to provide for image selection.
+#
+# @param selected The selected image option, defaults to 'none', must be one of
+#                 'none', 'url', 'file', or 'img'
+# @return A string containing the image mode options
+sub build_image_options {
+    my $self     = shift;
+    my $selected = shift;
+
+    $selected = "none"
+        unless($selected eq "url" || $selected eq "file" || $selected eq "img");
+
+    return $self -> {"template"} -> build_optionlist($self -> {"imgops"}, $selected);
+}
 
 
 ## @method @ generate_compose($args, $error)
@@ -84,6 +110,14 @@ sub generate_compose {
     # Release timing options
     my $relops = $self -> {"template"} -> build_optionlist($self -> {"relops"}, $args -> {"mode"});
 
+    # Image options
+    my $imagea_opts = $self -> build_image_options($args -> {"imagea_mode"});
+    my $imageb_opts = $self -> build_image_options($args -> {"imageb_mode"});
+
+    my $fileimages = $self -> {"article"} -> get_file_images();
+    my $imagea_img = $self -> {"template"} -> build_optionlist($fileimages, $args -> {"imagea_img"});
+    my $imageb_img = $self -> {"template"} -> build_optionlist($fileimages, $args -> {"imageb_img"});
+
     my $format_release = $self -> {"template"} -> format_time($args -> {"rtimestamp"}, "%d/%m/%Y %H:%M")
         if($args -> {"rtimestamp"});
 
@@ -93,14 +127,21 @@ sub generate_compose {
 
     # And generate the page title and content.
     return ($self -> {"template"} -> replace_langvar("COMPOSE_FORM_TITLE"),
-            $self -> {"template"} -> load_template("compose/compose.tem", {"***title***"            => $args -> {"title"},
-                                                                           "***url***"              => $args -> {"url"},
+            $self -> {"template"} -> load_template("compose/compose.tem", {"***errorbox***"         => $error,
+                                                                           "***title***"            => $args -> {"title"},
+                                                                           "***summary***"          => $args -> {"summary"},
                                                                            "***description***"      => $args -> {"description"},
                                                                            "***allowed_sites***"    => $sites,
                                                                            "***allowed_levels***"   => $levels,
                                                                            "***release_mode***"     => $relops,
                                                                            "***release_date_fmt***" => $format_release,
                                                                            "***rtimestamp***"       => $args -> {"rtimestamp"},
+                                                                           "***imageaopts***"       => $imagea_opts,
+                                                                           "***imagebopts***"       => $imageb_opts,
+                                                                           "***imagea_url***"       => $args -> {"imagea_url"} || "https://",
+                                                                           "***imageb_url***"       => $args -> {"imageb_url"} || "https://",
+                                                                           "***imageaimgs***"       => $imagea_img,
+                                                                           "***imagebimgs***"       => $imageb_img,
                                                                           }));
 }
 

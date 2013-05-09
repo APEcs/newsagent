@@ -22,8 +22,6 @@ package Newsagent::AppUser;
 use strict;
 use base qw(Webperl::AppUser);
 use Digest::MD5 qw(md5_hex);
-
-use Webperl::AuthMethod::Database; # pull in the database auth module to avoid code duplication
 use Webperl::Utils qw(trimspace);
 
 

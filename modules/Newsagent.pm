@@ -291,7 +291,7 @@ sub log {
 
 
 ## @method $ set_saved_state()
-# Store the current status of the script, including block, api, itempath, and querystring
+# Store the current status of the script, including block, api, pathinfo, and querystring
 # to session variables for later restoration.
 #
 # @return true on success, undef on error.
@@ -303,19 +303,19 @@ sub set_saved_state {
     my $res = $self -> {"session"} -> set_variable("saved_block", $self -> {"cgi"} -> param("block"));
     return undef unless(defined($res));
 
-    my @itempath = $self -> {"cgi"} -> param("itempath");
-    $res = $self -> {"session"} -> set_variable("saved_itempath", join("/", @itempath));
+    my @pathinfo = $self -> {"cgi"} -> param("pathinfo");
+    $res = $self -> {"session"} -> set_variable("saved_pathinfo", join("/", @pathinfo));
     return undef unless(defined($res));
 
     my @api = $self -> {"cgi"} -> param("api");
     $res = $self -> {"session"} -> set_variable("saved_api", join("/", @api));
     return undef unless(defined($res));
 
-    # Convert the query parameters to a string, skipping the block, itempath, and api
+    # Convert the query parameters to a string, skipping the block, pathinfo, and api
     my @names = $self -> {"cgi"} -> param;
     my @qstring = ();
     foreach my $name (@names) {
-        next if($name eq "block" || $name eq "itempath" || $name eq "api");
+        next if($name eq "block" || $name eq "pathinfo" || $name eq "api");
 
         my @vals = $self -> {"cgi"} -> param($name);
         foreach my $val (@vals) {
@@ -333,12 +333,12 @@ sub set_saved_state {
 # A convenience wrapper around Session::get_variable() for fetching the state saved in
 # build_login_url().
 #
-# @return An array of strings, containing the block, itempath, api, and query string.
+# @return An array of strings, containing the block, pathinfo, api, and query string.
 sub get_saved_state {
     my $self = shift;
 
     return ($self -> {"session"} -> get_variable("saved_block"),
-            $self -> {"session"} -> get_variable("saved_itempath"),
+            $self -> {"session"} -> get_variable("saved_pathinfo"),
             $self -> {"session"} -> get_variable("saved_api"),
             $self -> {"session"} -> get_variable("saved_qstring"));
 }
@@ -357,7 +357,7 @@ sub build_login_url {
     my $self = shift;
 
     # Note: CGI::query_string() produces a properly escaped, joined query string based on the
-    #       **current parameters**, even ones added by the program (hence the itempath, api and block
+    #       **current parameters**, even ones added by the program (hence the pathinfo, api and block
     #       parameters added by the BlockSelector will be included!)
     $self -> {"session"} -> set_variable("savestate", $self -> {"cgi"} -> query_string());
 
@@ -376,14 +376,14 @@ sub build_login_url {
 sub build_return_url {
     my $self    = shift;
     my $fullurl = shift;
-    my ($itempath, $api, $block, $qstring) = $self -> get_saved_state();
+    my ($block, $pathinfo, $api, $qstring) = $self -> get_saved_state();
 
     # Return url block should never be "login"
     $block = $self -> {"settings"} -> {"config"} -> {"default_block"} if($block eq "login");
 
     # Build the URL from them
     return $self -> build_url("block"    => $block,
-                              "itempath" => $itempath,
+                              "pathinfo" => $pathinfo,
                               "api"      => $api,
                               "params"   => $qstring,
                               "fullurl"  => $fullurl);
@@ -398,8 +398,8 @@ sub build_return_url {
 #              false (URL is absolute from the host root).
 # * block    - the name of the block to include in the url. If not set, the current block
 #              is used if possible, otherwise the system-wide default block is used.
-# * itempath - Either a string containing the item path, or a reference to an array
-#              containing item path fragments. If not set, the current item path is used.
+# * pathinfo - Either a string containing the pathinfo, or a reference to an array
+#              containing pathinfo fragments. If not set, the current pathinfo is used.
 # * api      - api fragments. If the first element is not "api", it is added.
 # * params   - Either a string containing additional query string parameters to add to
 #              the URL, or a reference to a hash of additional query string arguments.
@@ -418,9 +418,9 @@ sub build_url {
     $args{"block"} = ($self -> {"cgi"} -> param("block") || $self -> {"settings"} -> {"config"} -> {"default_block"})
         if(!defined($args{"block"}));
 
-    if(!defined($args{"itempath"})) {
-        my @cgipath = $self -> {"cgi"} -> param("itempath");
-        $args{"itempath"} = \@cgipath if(scalar(@cgipath));
+    if(!defined($args{"pathinfo"})) {
+        my @cgipath = $self -> {"cgi"} -> param("pathinfo");
+        $args{"pathinfo"} = \@cgipath if(scalar(@cgipath));
     }
 
     if(!defined($args{"api"})) {
@@ -428,8 +428,8 @@ sub build_url {
         $args{"api"} = \@cgiapi if(scalar(@cgiapi));
     }
 
-    # Convert the itempath and api to slash-delimited strings
-    my $itempath = join_complex($args{"itempath"}, joinstr => "/");
+    # Convert the pathinfo and api to slash-delimited strings
+    my $pathinfo = join_complex($args{"pathinfo"}, joinstr => "/");
     my $api      = join_complex($args{"api"}, joinstr => "/");
 
     # Force the API call to start 'api' if it doesn't
@@ -440,14 +440,14 @@ sub build_url {
 
     # building the URL involves shoving the bits together. path_join is intelligent enough to ignore
     # anything that is undef or "" here, so explicit checks beforehand should not be needed.
-    my $url = path_join($self -> {"settings"} -> {"config"} -> {"scriptpath"}, $args{"block"}, $itempath, $api);
+    my $url = path_join($self -> {"settings"} -> {"config"} -> {"scriptpath"}, $args{"block"}, $pathinfo, $api);
     $url = path_join($self -> {"cgi"} -> url(-base => 1), $url)
         if($args{"fullurl"});
 
-    # Strip block, itempath, and api from the query string if they've somehow made it in there.
+    # Strip block, pathinfo, and api from the query string if they've somehow made it in there.
     # Note this can't simply be made 'eg' as the progressive match can leave a trailing &
     if($querystring) {
-        while($querystring =~ s{((?:&(?:amp;))?)(?:api|block|itempath)=[^&]+(&?)}{$1 && $2 ? "&" : ""}e) {}
+        while($querystring =~ s{((?:&(?:amp;))?)(?:api|block|pathinfo)=[^&]+(&?)}{$1 && $2 ? "&" : ""}e) {}
         $url .= "?$querystring";
     }
 

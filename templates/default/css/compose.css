@@ -3,7 +3,7 @@
 #composeform {
     padding-top: 32px;
     margin: 0px auto;
-    width: 1074px;
+    width: 1130px;
 }
 
 #article {
@@ -13,10 +13,16 @@
 
 #settings {
     float: right;
-    width: 240px;
+    width: 300px;
+}
+
+#images {
+    float: right;
+    width: 300px;
 }
 
 .textwrapper {
+    padding-top: 5px;
 }
 
 div.clear {
@@ -38,17 +44,26 @@ dl.input > dt {
 
 dl.input > dd {
     margin: 0px;
-    oadding: 0px;
+    padding: 0px;
+    white-space: nowrap;
 }
 
 dl.input > dd > select {
     min-width: 10em;
 }
 
+dl.input > dd > input[type="radio"] {
+    width: 16px;
+}
+
+dl.input > dd > input[type="text"], dl.input > dd > input[type="file"] {
+    width: 274px;
+}
+
 select.fillwide {
-    width: 230px;
+    width: 300px;
 }
 
 input.fillwide.datepick {
-    width: 207px;
+    width: 267px;
 }

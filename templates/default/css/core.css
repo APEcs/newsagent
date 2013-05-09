@@ -179,8 +179,12 @@ hr {
     overflow: hidden;
 }
 
-input.fillwide, select.fillwide {
+input.fillwide, select.fillwide, textarea.fillwide {
     width: 100%;
+}
+
+.fillwide.lockwide {
+    max-width: 100%;
 }
 
 input[type=text].datepick {
@@ -194,4 +198,27 @@ input:disabled.datepick {
 
 .submitbox {
     text-align: right;
+}
+
+ul.tabs {
+    border-bottom: 1px solid #aaa;
+    margin-bottom: 0px;
+    padding: 0px 0px 2px;
+}
+
+li.tab {
+    cursor: pointer;
+    display: inline;
+    padding: 4px .4em 2px .4em;
+    list-style: none;
+    border: 1px #ddd solid;
+    border-bottom: 1px #aaa solid;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    background-color: #eee;
+}
+
+li.tab.active {
+    background-color: #fff;
+    border: 1px #aaa solid;
 }

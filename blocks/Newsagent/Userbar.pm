@@ -51,16 +51,14 @@ sub block_display {
         my $user = $self -> {"session"} -> get_user_byid()
             or return $self -> self_error("Unable to obtain user data for logged in user. This should not happen!");
 
-        $msglist   = $self -> {"template"} -> load_template("userbar/msglist_enabled.tem");
-        $siteadmin = $self -> {"template"} -> load_template("userbar/siteadmin_enabled.tem");
+        $msglist   = $self -> {"template"} -> load_template("userbar/msglist_enabled.tem"  , {"***url-msglist***" => $self -> build_url(block => "msglist", pathinfo => [])});
+        $siteadmin = $self -> {"template"} -> load_template("userbar/siteadmin_enabled.tem", {"***url-admin***"   => $self -> build_url(block => "admin"  , pathinfo => [])});
 
         # User is logged in, so actually reflect their current options and state
         $userprofile = $self -> {"template"} -> load_template("userbar/profile_loggedin.tem", {"***realname***"    => $user -> {"fullname"},
                                                                                                "***username***"    => $user -> {"username"},
                                                                                                "***gravhash***"    => $user -> {"gravatar_hash"},
-                                                                                               "***url-profile***" => $self -> build_url(block => "profile", itempath => [$user -> {"username"}]),
-                                                                                               "***url-edit***"    => $self -> build_url(block => "profile", itempath => ["edit"]),
-                                                                                               "***url-logout***"  => $self -> build_url(block => "login"  , itempath => ["logout"])});
+                                                                                               "***url-logout***"  => $self -> build_url(block => "login"  , pathinfo => ["logout"])});
     } # if(!$self -> {"session"} -> anonymous_session())
 
     return $self -> {"template"} -> load_template("userbar/userbar.tem", {"***pagename***"   => $title,
