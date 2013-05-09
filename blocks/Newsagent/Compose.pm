@@ -109,17 +109,17 @@ sub generate_compose {
 
     # Release timing options
     my $relops = $self -> {"template"} -> build_optionlist($self -> {"relops"}, $args -> {"mode"});
+    my $format_release = $self -> {"template"} -> format_time($args -> {"rtimestamp"}, "%d/%m/%Y %H:%M")
+        if($args -> {"rtimestamp"});
 
     # Image options
     my $imagea_opts = $self -> build_image_options($args -> {"imagea_mode"});
     my $imageb_opts = $self -> build_image_options($args -> {"imageb_mode"});
 
+    # Pre-existing image options
     my $fileimages = $self -> {"article"} -> get_file_images();
     my $imagea_img = $self -> {"template"} -> build_optionlist($fileimages, $args -> {"imagea_img"});
     my $imageb_img = $self -> {"template"} -> build_optionlist($fileimages, $args -> {"imageb_img"});
-
-    my $format_release = $self -> {"template"} -> format_time($args -> {"rtimestamp"}, "%d/%m/%Y %H:%M")
-        if($args -> {"rtimestamp"});
 
     # Wrap the error in an error box, if needed.
     $error = $self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $error})
