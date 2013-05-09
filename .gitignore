@@ -4,3 +4,5 @@ config/site.cfg
 ckeditor
 testharness.pl
 templates/default/datepicker
+.emacs.desktop
+
