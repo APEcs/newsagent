@@ -1,6 +1,6 @@
 <div id="composeform">
     ***errorbox***
-    <form action="***form_url***" method="post">
+    <form action="***form_url***" method="post" enctype="multipart/form-data">
     <div id="article" class="shadowbox">
         <h2>{L_COMPOSE_ARTICLE}</h2>
         <div class="sbcontent">
