@@ -25,8 +25,41 @@ use v5.12;
 
 use File::Path qw(make_path);
 use File::Copy;
+use File::Type;
 use Digest;
 use Webperl::Utils qw(path_join);
+
+
+## @cmethod $ new(%args)
+# Create a new Article object to manage tag allocation and lookup.
+# The minimum values you need to provide are:
+#
+# * dbh       - The database handle to use for queries.
+# * settings  - The system settings object
+# * metadata  - The system Metadata object.
+# * logger    - The system logger object.
+#
+# @param args A hash of key value pairs to initialise the object with.
+# @return A new Article object, or undef if a problem occured.
+sub new {
+    my $invocant = shift;
+    my $class    = ref($invocant) || $invocant;
+    my $self     = $class -> SUPER::new(@_)
+        or return undef;
+
+    # Check that the required objects are present
+    return Webperl::SystemModule::set_error("No metadata object available.") if(!$self -> {"metadata"});
+    return Webperl::SystemModule::set_error("No roles object available.")    if(!$self -> {"roles"});
+
+    # Allowed file types
+    $self -> {"allowed_types"} = { "image/x-png" => "png",
+                                   "image/jpeg"  => "jpg",
+                                   "image/gif"   => "gif",
+    };
+
+    return $self;
+}
+
 
 sub get_user_levels {
     my $self = shift;
@@ -110,7 +143,7 @@ sub get_image_info {
 
     my $imgh = $self -> {"dbh"} -> prepare("SELECT *
                                             FROM `".$self -> {"settings"} -> {"database"} -> {"images"}."`
-                                            WHERE `id` = ?")
+                                            WHERE `id` = ?");
     $imgh -> execute($id)
         or return $self -> self_error("Unable to execute image lookup: ".$self -> {"dbh"} -> errstr);
 
@@ -118,36 +151,43 @@ sub get_image_info {
 }
 
 
-## @method $ store_image($srcfile, $userid)
+## @method $ store_image($srcfile, $filename, $userid)
 # Given a source filename and a userid, move the file into the image filestore
 # (if needed) and then return the information needed to attach to an article.
 #
-# @param srcfile The absolute path to the source file to obtain a path for.
-# @param userid  The ID of the user saving the file
+# @param srcfile  The absolute path to the source file to obtain a path for.
+# @param filename The name of the file to write the source file to, without any path.
+# @param userid   The ID of the user saving the file
 # @return A reference to the image storage data hash on success, undef on error.
 sub store_image {
-    my $self    = shift;
-    my $srcfile = shift;
-    my $userid  = shift;
+    my $self     = shift;
+    my $srcfile  = shift;
+    my $filename = shift;
+    my $userid   = shift;
     my $digest;
 
     $self -> clear_error();
 
-    # Simple grab of the source name
-    my ($srcname) = $srcfile =~ m|([^/]+)$|;
+    # Determine whether the file is allowed
+    my $filetype = File::Type -> new();
+    my $type = $filetype -> mime_type($ARGV[0]);
+
+    my @types = sort(values(%{$self -> {"allowed_types"}}));
+    return $self -> self_error("$filename is not a supported image format. Permitted formats are: ".join(", ", @types))
+        unless($type && $self -> {"allowed_types"} -> {$type});
 
     # Now, calculate the md5 of the file so that duplicate checks can be performed
     open(IMG, $srcfile)
-        or return $self -> self_error("Unable to open uploaded file '$srcname': $!")
+        or return $self -> self_error("Unable to open uploaded file '$srcfile': $!");
     binmode(IMG); # probably redundant, but hey
 
     eval {
         $digest = Digest -> new("MD5");
-        $digest -> addfile(IMG);
+        $digest -> addfile(*IMG);
 
         close(IMG);
     };
-    return $self -> self_error("An error occurred while processing '$srcname': $@")
+    return $self -> self_error("An error occurred while processing '$filename': $@")
         if($@);
 
     my $md5 = $digest -> hexdigest;
@@ -157,7 +197,7 @@ sub store_image {
     my $exists = $self -> file_md5_lookup($md5);
     if($exists || $self -> errstr()) {
         # Log the duplicate hit if appropriate.
-        $self -> {"logger"} -> log($type, $userid, undef, "Request to store image $srcname, already exists as image ".$exists -> {"id"})
+        $self -> {"logger"} -> log('notice', $userid, undef, "Request to store image $filename, already exists as image ".$exists -> {"id"})
             if($exists);
 
         return $exists;
@@ -166,29 +206,29 @@ sub store_image {
     # File does not appear to be a duplicate, so moving it into the tree should be okay.
     # The first stage of this is to obtain a new file record ID to use as a unique
     # directory name.
-    my $newid = $self -> add_file($srcname, $md5)
+    my $newid = $self -> add_file($filename, $md5)
         or return undef;
 
     # Convert the id to a destination directory
     if(my $outdir = $self -> build_destdir($newid)) {
         # Now build the paths needed for moving things
-        my $outname = path_join($outdir, $srcname);
+        my $outname = path_join($outdir, $filename);
         my $outpath = path_join($self -> {"settings"} -> {"config"} -> {"upload_image_path"}, $outname);
 
         if(copy($srcfile, $outpath)) {
             if($self -> update_location($newid, $outname)) {
-                $self -> {"logger"} -> log($type, $userid, undef, "Stored image $srcname in $outname, image id $newid");
+                $self -> {"logger"} -> log('notice', $userid, undef, "Stored image $filename in $outname, image id $newid");
 
                 return $self -> get_image_info($newid);
             }
         } else {
-            $self -> self_error("Unable to copy image file $srcname: $!");
+            $self -> self_error("Unable to copy image file $filename: $!");
         }
     }
 
     # Get here and something broke, save the error and clean up before returning it
     my $errstr = $self -> errstr();
-    $self -> {"logger"} -> log($type, $userid, undef, "Unable to store image $srcname: $errstr");
+    $self -> {"logger"} -> log('error', $userid, undef, "Unable to store image $filename: $errstr");
 
     $self -> delete_image($newid);
     return $self -> self_error($errstr);
@@ -336,7 +376,7 @@ sub update_location {
     my $updateh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"images"}."`
                                                SET `location` = ?
                                                WHERE `id` = ?");
-    my $result = $atth -> execute($location, $id);
+    my $result = $updateh -> execute($location, $id);
     return $self -> self_error("Unable to update file location: ".$self -> {"dbh"} -> errstr) if(!$result);
     return $self -> self_error("File location update failed: no rows updated.") if($result eq "0E0");
 

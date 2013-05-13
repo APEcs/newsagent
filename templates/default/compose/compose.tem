@@ -17,7 +17,7 @@
             <div class="textwrapper">
                 <dl class="input">
                     <dt><label for="comp-desc">{L_COMPOSE_DESC}</label></dt>
-                    <dd><textarea name="description" id="comp-desc" rows="15" cols="80">***description***</textarea></dd>
+                    <dd><textarea name="article" id="comp-desc" rows="15" cols="80">***article***</textarea></dd>
                 </dl>
             </div>
             <hr />
@@ -65,7 +65,7 @@
                 <div class="content">
                     <p>Batch release stuff goes here. This is pending.</p>
                 </div>
-                <input type="hidden" name="relmode" id="relmode" value="" />
+                <input type="hidden" name="relmode" id="relmode" value="***relmode***" />
             </div>
         </div>
     </div>
@@ -103,7 +103,7 @@
 window.addEvent('domready', function() {
     CKEDITOR.replace('comp-desc', { customConfig: '{V_[commonpath]}cke_configs/basic_open.js' });
 
-    var settingPane = new TabPane('relmode-tabs', {onChange: function(select) { $('relmode').set('value', select); } });
+    var settingPane = new TabPane('relmode-tabs', {onChange: function(select) { $('relmode').set('value', select); } }, ***relmode***);
 
     $$('select.fancyselect').fancySelect({showText: false, autoHide: true});
 });

@@ -8,6 +8,9 @@ BLOCK_VALIDATE_SCRUBFAIL = No content was left after cleaning the contents of ht
 BLOCK_VALIDATE_TIDYFAIL  = htmltidy failed for field '***field***'.
 BLOCK_VALIDATE_CHKERRS   = ***error*** html errors where encountered while validating '***field***'. Clean up the html and try again.
 BLOCK_VALIDATE_CHKFAIL   = Validation of '***field***' failed. Error from the W3C validator was: ***error***.
+BLOCK_VALIDATE_NOTNUMBER = The value provided for '***field***' is not a valid number.
+BLOCK_VALIDATE_RANGEMIN  = The value provided for '***field***' is out of range (minimum is ***min***)
+BLOCK_VALIDATE_RANGEMAX  = The value provided for '***field***' is out of range (maximum is ***max***)
 
 BLOCK_ERROR_TITLE        = Fatal System Error
 BLOCK_ERROR_SUMMARY      = The system has encountered an unrecoverable error.

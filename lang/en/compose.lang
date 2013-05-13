@@ -8,6 +8,7 @@ COMPOSE_SUMMARY    = Summary
 COMPOSE_SUMM_INFO  = Enter a short summary of your article here (<span id="sumchars"></span> characters left)
 COMPOSE_DESC       = Full text
 
+COMPOSE_RELMODE    = Release mode
 COMPOSE_BATCH      = Batch Release
 COMPOSE_NORMAL     = Standard Release
 
@@ -32,3 +33,8 @@ COMPOSE_IMGNONE  = No image
 COMPOSE_IMGURL   = Image URL
 COMPOSE_IMGFILE  = Upload image file
 COMPOSE_IMG      = Existing image
+
+COMPOSE_IMGURL_DESC = The image URL must be an absolute URL stating http:// or https://
+
+COMPOSE_IMGFILE_ERRNOFILE = No file has been selected for ***field***
+COMPOSE_IMGFILE_ERRNOTMP  = An internal error (no upload temp file) occurred when processing ***field***
