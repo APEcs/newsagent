@@ -166,6 +166,12 @@ label {
     font-size: 13px;
 }
 
+label.check {
+    font-weight: normal;
+    font-size: 13px;
+    padding-left: 0.75em;
+}
+
 .overTxtLabel {
     color: #aaa;
 }

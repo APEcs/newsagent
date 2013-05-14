@@ -121,40 +121,40 @@ sub _validate_article_image {
 
     my $base = "image$imgid";
 
-    ($args -> {$base."_mode"}, $error) = $self -> validate_options($base."_mode", {"required" => 1,
-                                                                                   "source"   => $self -> {"imgops"},
-                                                                                   "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_".uc($base))});
-    $errors .= $self -> {"template"} -> load_template("error_item.tem", {"***error***" => $error}) if($error);
+    ($args -> {"images"} -> {$imgid} -> {"mode"}, $error) = $self -> validate_options($base."_mode", {"required" => 1,
+                                                                                                      "source"   => $self -> {"imgops"},
+                                                                                                      "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_".uc($base))});
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
-    given($args -> {$base."_mode"}) {
+    given($args -> {"images"} -> {$imgid} -> {"mode"}) {
         # No additional validation needed for the 'none' case, but enumate it for clarity.
         when("none") {
         }
 
         # URL validation involves checking that the string the user has provided actually looks like a URL
-        when("url") { ($args -> {$base."_url"}, $error) = $self -> validate_string($base."_url", {"required"   => 1,
-                                                                                                  "nicename"   => $self -> {"template"} -> replace_langvar("COMPOSE_IMGURL"),
-                                                                                                  "formattest" => $self -> {"formats"} -> {"url"},
-                                                                                                  "formatdesc" => $self -> {"template"} -> replace_langvar("COMPOSE_IMGURL_DESC"),
+        when("url") { ($args -> {"images"} -> {$imgid} -> {"url"}, $error) = $self -> validate_string($base."_url", {"required"   => 1,
+                                                                                                                     "nicename"   => $self -> {"template"} -> replace_langvar("COMPOSE_IMGURL"),
+                                                                                                                     "formattest" => $self -> {"formats"} -> {"url"},
+                                                                                                                     "formatdesc" => $self -> {"template"} -> replace_langvar("COMPOSE_IMGURL_DESC"),
                                                                                    });
-                      $errors .= $self -> {"template"} -> load_template("error_item.tem", {"***error***" => $error}) if($error);
+                      $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
         }
 
         # Image validation ("us an existing image") is basically checking that an entry with the corresponding ID is in the database.
-        when("img") { ($args -> {$base."_img"}, $error) = $self -> validate_options($base."_img", {"required"   => 1,
-                                                                                                   "nicename"   => $self -> {"template"} -> replace_langvar("COMPOSE_IMGURL"),
-                                                                                                   "source"     => $self -> {"settings"} -> {"database"} -> {"images"},
-                                                                                                   "where"      => "WHERE `id` = ?"});
-                      $errors .= $self -> {"template"} -> load_template("error_item.tem", {"***error***" => $error}) if($error);
+        when("img") { ($args -> {"images"} -> {$imgid} -> {"img"}, $error) = $self -> validate_options($base."_img", {"required"   => 1,
+                                                                                                                      "nicename"   => $self -> {"template"} -> replace_langvar("COMPOSE_IMGURL"),
+                                                                                                                      "source"     => $self -> {"settings"} -> {"database"} -> {"images"},
+                                                                                                                      "where"      => "WHERE `id` = ?"});
+                      $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
         }
 
         # File upload is more complicated: if the file upload is successful, the image mode is switched to 'img', as
         # at that point the user is using an existing image; it just happens to be the one they uploaded!
-        when("file") { ($args -> {$base."_img"}, $error) = $self -> _validate_article_file($base);
+        when("file") { ($args -> {"images"} -> {$imgid} -> {"img"}, $error) = $self -> _validate_article_file($base);
                        if($error) {
-                           $errors .= $self -> {"template"} -> load_template("error_item.tem", {"***error***" => $error}) if($error);
+                           $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
                        } else {
-                           $args -> {$base."_mode"} = "img";
+                           $args -> {"images"} -> {$imgid} -> {"mode"} = "img";
                        }
         }
     }
@@ -163,40 +163,79 @@ sub _validate_article_image {
 }
 
 
-## @method private $ _validate_article_fields($args)
+## @method private $ _validate_levels($args, $userid)
+# Validate the posting levels submitted by the user.
+#
+# @param args   A reference to a hash to store validated data in.
+# @param userid The ID of the user submitting the form.
+# @return empty string on success, otherwise an error string.
+sub _validate_levels {
+    my $self    = shift;
+    my $args    = shift;
+    my $userid  = shift;
+    my $userset = {};
+
+    my @selected = $self -> {"cgi"} -> param("level");
+
+    # Convert the selected array to a hash for faster/easier lookup
+    my $hashsel;
+    $hashsel -> {$_}++ for(@selected);
+
+    # Get the list of available levels
+    my $levels = $self -> {"article"} -> get_user_levels($userid);
+    if($levels) {
+        # for each available level, check whether the user has selected it, and if so record that
+        # this ensures that, provided $levels only contains levels the user has access to, they
+        # can never select a level they can't use.
+        foreach my $level (@{$levels}) {
+            $userset -> {$level -> {"value"}}++
+                if($hashsel -> {$level -> {"value"}});
+        }
+    }
+    $args -> {"levels"} = $userset;
+
+    return scalar(keys(%{$userset})) ? undef : $self -> {"template"} -> replace_langvar("COMPOSE_LEVEL_ERRNONE");
+}
+
+
+## @method private $ _validate_article_fields($args, $userid)
 # Validate the contents of the fields in the article form. This will validate the
 # fields, and perform any background file-wrangling operations necessary to deal
 # with the submitted images (if any).
 #
-# @param args  A reference to a hash to store validated data in.
+# @param args   A reference to a hash to store validated data in.
+# @param userid The ID of the user submitting the form.
 # @return empty string on success, otherwise an error string.
 sub _validate_article_fields {
-    my $self        = shift;
-    my $args        = shift;
+    my $self   = shift;
+    my $args   = shift;
+    my $userid = shift;
     my ($errors, $error) = ("", "");
 
     ($args -> {"title"}, $error) = $self -> validate_string("title", {"required" => 0,
                                                                       "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_TITLE"),
                                                                       "maxlen"   => 100});
-    $errors .= $self -> {"template"} -> load_template("error_item.tem", {"***error***" => $error}) if($error);
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
     ($args -> {"summary"}, $error) = $self -> validate_string("summary", {"required" => 1,
                                                                           "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_SUMMARY"),
                                                                           "minlen"   => 8,
                                                                           "maxlen"   => 100});
-    $errors .= $self -> {"template"} -> load_template("error_item.tem", {"***error***" => $error}) if($error);
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
     ($args -> {"article"}, $error) = $self -> validate_htmlarea("article", {"required" => 1,
                                                                             "minlen"   => 8,
                                                                             "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_DESC"),
                                                                             "validate" => $self -> {"config"} -> {"Core:validate_htmlarea"}});
-    $errors .= $self -> {"template"} -> load_template("error_item.tem", {"***error***" => $error}) if($error);
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
     ($args -> {"site"}, $error) = $self -> validate_options("site", {"required" => 1,
                                                                      "source"   => $self -> {"settings"} -> {"database"} -> {"sites"},
                                                                      "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_SITE"),
                                                                      "where"    => "WHERE `name` LIKE ?" });
-    $errors .= $self -> {"template"} -> load_template("error_item.tem", {"***error***" => $error}) if($error);
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+
+    # TODO: check user has permission to post from this site.
 
     # Which release mode is the user using? 0 is default, 1 is batch
     ($args -> {"relmode"}, $error) = $self -> validate_numeric("relmode", {"required" => 1,
@@ -204,25 +243,25 @@ sub _validate_article_fields {
                                                                            "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_RELMODE"),
                                                                            "min"      => 0,
                                                                            "max"      => 1});
-    $errors .= $self -> {"template"} -> load_template("error_item.tem", {"***error***" => $error}) if($error);
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
     # Release mode 0 is "standard" release - potentially with timed delay.
     if($args -> {"relmode"} == 0) {
-        ($args -> {"level"}, $error) = $self -> validate_options("level", {"required" => 1,
-                                                                           "source"   => $self -> {"settings"} -> {"database"} -> {"levels"},
-                                                                           "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_LEVEL"),
-                                                                           "where"    => "WHERE `level` LIKE ?" });
-        $errors .= $self -> {"template"} -> load_template("error_item.tem", {"***error***" => $error}) if($error);
+        $error = $self -> _validate_levels($args, $userid);
+        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
         ($args -> {"mode"}, $error) = $self -> validate_options("mode", {"required" => 1,
+                                                                         "default"  => "now",
                                                                          "source"   => $self -> {"relops"},
                                                                          "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_RELEASE")});
-        $errors .= $self -> {"template"} -> load_template("error_item.tem", {"***error***" => $error}) if($error);
+        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
-        ($args -> {"rtimestamp"}, $error) = $self -> validate_numeric("rtimestamp", {"required" => $args -> {"mode"} eq "timed",
-                                                                                     "default"  => 0,
-                                                                                     "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_RELDATE")});
-        $errors .= $self -> {"template"} -> load_template("error_item.tem", {"***error***" => $error}) if($error);
+        if($args -> {"mode"} eq "timed") {
+            ($args -> {"rtimestamp"}, $error) = $self -> validate_numeric("rtimestamp", {"required" => $args -> {"mode"} eq "timed",
+                                                                                         "default"  => 0,
+                                                                                         "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_RELDATE")});
+            $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+        }
 
     # Release mode 1 is "batch" release.
     } elsif($args -> {"relmode"} == 1) {
@@ -234,6 +273,54 @@ sub _validate_article_fields {
     $errors .= $self -> _validate_article_image($args, "b");
 
     return $errors;
+}
+
+
+## @method private $ _validate_article()
+# Validate the article data submitted by the user, and potentially add
+# a new article to the system. Note that this will not return if the article
+# fields validate; it will redirect the user to the new article and exit.
+#
+# @return An error message, and a reference to a hash containing
+#         the fields that passed validation.
+sub _validate_article {
+    my $self = shift;
+    my ($args, $errors, $error) = ({}, "", "");
+    my $userid = $self -> {"session"} -> get_session_userid();
+
+# TODO: Check permissions here
+#    # Exit with a permission error unless the user has permission to post
+#    my $canpost = $self -> {"qaforums"} -> check_permission($self -> {"system"} -> {"courses"} -> get_course_metadataid($self -> {"courseid"}),
+#                                                            $self -> {"session"} -> get_session_userid(),
+#                                                            "qaforums.ask");
+#    return ($self -> {"template"} -> load_template("error_list.tem",
+#                                                   {"***message***" => "{L_FEATURE_QAFORUM_ASK_FAILED}",
+#                                                    "***errors***"  => $self -> {"template"} -> process_template($errtem,
+#                                                                                                                 {"***error***" => "{L_FEATURE_QAFORUM_ASK_ERRPERM}"})}),
+#            $args) unless($canpost);
+
+    $error = $self -> _validate_article_fields($args, $userid);
+    $errors .= $error if($error);
+
+    # Give up here if there are any errors
+    return ($self -> {"template"} -> load_template("error/error_list.tem",
+                                                   {"***message***" => "{L_COMPOSE_FAILED}",
+                                                    "***errors***"  => $errors}), $args)
+        if($errors);
+
+    my $aid = $self -> {"article"} -> add_article($args, $self -> {"session"} -> get_session_userid())
+        or return ($self -> {"template"} -> load_template("error/error_list.tem",
+                                                          {"***message***" => "{L_COMPOSE_FAILED}",
+                                                           "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
+                                                                                                                     {"***error***" => $self -> {"article"} -> errstr()
+                                                                                                                     })
+                                                          }), $args);
+
+    $self -> log("compose", "Added article $aid");
+
+    # FIXME: redirect to article view/article list here
+    print $self -> {"cgi"} -> redirect($self -> build_url(block => "compose", pathinfo => []));
+    exit;
 }
 
 
@@ -257,6 +344,31 @@ sub _build_image_options {
 }
 
 
+## @method private $ _build_image_options($levels, $userid)
+# Generate the level options available to the user.
+#
+# @param levels A reference to a hash of selected levels.
+# @param userid The ID of the user requesting the form.
+# @return A string containing the level options
+sub _build_level_options {
+    my $self    = shift;
+    my $levels  = shift || {};
+    my $userid  = shift;
+    my $options = "";
+
+    my $available = $self -> {"article"} -> get_user_levels($userid);
+    if($available) {
+        foreach my $level (@{$available}) {
+            $options .= $self -> {"template"} -> load_template("compose/levelop.tem", {"***desc***"    => $level -> {"name"},
+                                                                                       "***value***"   => $level -> {"value"},
+                                                                                       "***checked***" => $levels -> {$level -> {"value"}} ? 'checked="checked" ' : ''});
+        }
+    }
+
+    return $options;
+}
+
+
 ## @method private @ _generate_compose($args, $error)
 # Generate the page content for a compose page.
 #
@@ -272,8 +384,8 @@ sub _generate_compose {
     my $userid = $self -> {"session"} -> get_session_userid();
 
     # Work out where the user can post from and the levels they can use
-    my $levels = $self -> {"template"} -> build_optionlist($self -> {"article"} -> get_user_levels($userid), $args -> {"level"});
     my $sites  = $self -> {"template"} -> build_optionlist($self -> {"article"} -> get_user_sites($userid) , $args -> {"site"});
+    my $levels = $self -> _build_level_options($args -> {"levels"}, $userid);
 
     # Release timing options
     my $relops = $self -> {"template"} -> build_optionlist($self -> {"relops"}, $args -> {"mode"});
@@ -281,13 +393,13 @@ sub _generate_compose {
         if($args -> {"rtimestamp"});
 
     # Image options
-    my $imagea_opts = $self -> _build_image_options($args -> {"imagea_mode"});
-    my $imageb_opts = $self -> _build_image_options($args -> {"imageb_mode"});
+    my $imagea_opts = $self -> _build_image_options($args -> {"images"} -> {"a"} -> {"mode"});
+    my $imageb_opts = $self -> _build_image_options($args -> {"images"} -> {"b"} -> {"mode"});
 
     # Pre-existing image options
     my $fileimages = $self -> {"article"} -> get_file_images();
-    my $imagea_img = $self -> {"template"} -> build_optionlist($fileimages, $args -> {"imagea_img"});
-    my $imageb_img = $self -> {"template"} -> build_optionlist($fileimages, $args -> {"imageb_img"});
+    my $imagea_img = $self -> {"template"} -> build_optionlist($fileimages, $args -> {"images"} -> {"a"} -> {"img"});
+    my $imageb_img = $self -> {"template"} -> build_optionlist($fileimages, $args -> {"images"} -> {"b"} -> {"img"});
 
     # Wrap the error in an error box, if needed.
     $error = $self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $error})
@@ -296,23 +408,45 @@ sub _generate_compose {
     # And generate the page title and content.
     return ($self -> {"template"} -> replace_langvar("COMPOSE_FORM_TITLE"),
             $self -> {"template"} -> load_template("compose/compose.tem", {"***errorbox***"         => $error,
-                                                                           "***form_url***"         => $self -> build_url(block => "article", pathinfo => ["add"]),
+                                                                           "***form_url***"         => $self -> build_url(block => "compose", pathinfo => ["add"]),
                                                                            "***title***"            => $args -> {"title"},
                                                                            "***summary***"          => $args -> {"summary"},
                                                                            "***article***"          => $args -> {"article"},
                                                                            "***allowed_sites***"    => $sites,
-                                                                           "***allowed_levels***"   => $levels,
+                                                                           "***levels***"           => $levels,
                                                                            "***release_mode***"     => $relops,
                                                                            "***release_date_fmt***" => $format_release,
                                                                            "***rtimestamp***"       => $args -> {"rtimestamp"},
                                                                            "***imageaopts***"       => $imagea_opts,
                                                                            "***imagebopts***"       => $imageb_opts,
-                                                                           "***imagea_url***"       => $args -> {"imagea_url"} || "https://",
-                                                                           "***imageb_url***"       => $args -> {"imageb_url"} || "https://",
+                                                                           "***imagea_url***"       => $args -> {"images"} -> {"a"} -> {"url"} || "https://",
+                                                                           "***imageb_url***"       => $args -> {"images"} -> {"b"} -> {"url"} || "https://",
                                                                            "***imageaimgs***"       => $imagea_img,
                                                                            "***imagebimgs***"       => $imageb_img,
                                                                            "***relmode***"          => $args -> {"relmode"} || 0,
                                                                           }));
+}
+
+
+# ============================================================================
+#  Addition functions
+
+## @method private @ _add_article()
+# Add an article to the system. This validates and processes the values submitted by
+# the user in the compose form, and stores the result in the database.
+#
+# @return Three values: the page title, the content to show in the page, and the extra
+#         css and javascript directives to place in the header.
+sub _add_article {
+    my $self  = shift;
+    my $error = "";
+    my $args  = {};
+
+    if($self -> {"cgi"} -> param("newarticle")) {
+        ($error, $args) = $self -> _validate_article();
+    }
+
+    return $self -> _generate_compose($args, $error);
 }
 
 

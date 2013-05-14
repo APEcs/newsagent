@@ -16,7 +16,7 @@ COMPOSE_IMAGEA     = Lead Image
 COMPOSE_IMAGEB     = Foot Image
 
 COMPOSE_SITE   = Post from
-COMPOSE_LEVEL  = Visibility level
+COMPOSE_LEVEL  = Visibility levels
 
 COMPOSE_RELEASE = Publish
 COMPOSE_RELNOW  = Immediately
@@ -25,6 +25,7 @@ COMPOSE_RELNONE = Never (save as draft)
 COMPOSE_RELDATE = Publish time
 
 COMPOSE_SUBMIT  = Create article
+COMPOSE_FAILED   = Unable to create new article, the following errors were encountered:
 
 COMPOSE_ARTICLE  = Article
 COMPOSE_SETTINGS = Settings
@@ -38,3 +39,5 @@ COMPOSE_IMGURL_DESC = The image URL must be an absolute URL stating http:// or h
 
 COMPOSE_IMGFILE_ERRNOFILE = No file has been selected for ***field***
 COMPOSE_IMGFILE_ERRNOTMP  = An internal error (no upload temp file) occurred when processing ***field***
+
+COMPOSE_LEVEL_ERRNONE     = No visibility levels have been selected. You must select at least one visibility level.

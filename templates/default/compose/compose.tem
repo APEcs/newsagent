@@ -22,7 +22,7 @@
             </div>
             <hr />
             <div class="submitbox">
-                <input type="submit" class="button blue" value="{L_COMPOSE_SUBMIT}" name="compose" />
+                <input type="submit" class="button blue" value="{L_COMPOSE_SUBMIT}" name="newarticle" />
             </div>
         </div>
     </div>
@@ -44,9 +44,7 @@
                 <div class="content">
                     <dl class="input">
                         <dt><label for="comp-level">{L_COMPOSE_LEVEL}</label></dt>
-                        <dd><select class="fillwide" id="comp-level" name="level">
-                                ***allowed_levels***
-                            </select>
+                        <dd>***levels***
                         </dd>
                     </dl>
                     <dl class="input">
