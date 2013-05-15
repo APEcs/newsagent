@@ -1,8 +1,8 @@
-<item>
-  <title>***title***</title>
-  <link>***link***</link>
-  <description>***description***</description>
-  <pubDate>***date***</pubDate>
-  <guid>***guid***</guid>
-  ***extra***
-</item>
+    <item>
+      <title>***title***</title>
+      <link>***link***</link>
+      <description>***description***</description>
+      <pubDate>***date***</pubDate>
+      <guid>***guid***</guid>
+      <newsagent:site>***site***</newsagent:site>
+***images******extra***    </item>

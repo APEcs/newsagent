@@ -27,7 +27,7 @@ use File::Path qw(make_path);
 use File::Copy;
 use File::Type;
 use Digest;
-use Webperl::Utils qw(path_join);
+use Webperl::Utils qw(path_join hash_or_hashref);
 
 
 ## @cmethod $ new(%args)
@@ -122,7 +122,7 @@ sub get_file_images {
     my @imagelist;
     while(my $image = $imgh -> fetchrow_hashref()) {
         push(@imagelist, {"name"  => $image -> {"name"},
-                          "title" => path_join($self -> {"settings"} -> {"config"} -> {"upload_image_url"}, $image -> {"location"}),
+                          "title" => path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"}, $image -> {"location"}),
                           "value" => $image -> {"id"}});
     }
 
@@ -213,7 +213,7 @@ sub store_image {
     if(my $outdir = $self -> _build_destdir($newid)) {
         # Now build the paths needed for moving things
         my $outname = path_join($outdir, $filename);
-        my $outpath = path_join($self -> {"settings"} -> {"config"} -> {"upload_image_path"}, $outname);
+        my $outpath = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_path"}, $outname);
 
         my ($cleanout) = $outpath =~ m|^((?:/[-\w.]+)+?(?:\.\w+)?)$|;
 
@@ -254,6 +254,10 @@ sub add_article {
 
     $self -> clear_error();
 
+    # resolve the site
+    my $siteid = $self -> _get_site_byname($article -> {"site"})
+        or return undef;
+
     # Add urls to the database
     foreach my $id (keys(%{$article -> {"images"}})) {
         if($article -> {"images"} -> {$id} -> {"mode"} eq "url") {
@@ -262,11 +266,15 @@ sub add_article {
         }
     }
 
+    # Fix up release time
+    my $now = time();
+    $article -> {"rtimestamp"} = $now if(!$article -> {"rtimestamp"});
+
     # Add the article itself
     my $addh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"articles"}."`
                                             (previous_id, creator_id, created, site_id, title, summary, article, release_mode, release_time)
-                                            VALUES(?, ?, UNIX_TIMESTAMP(), ?, ?, ?, ?, ?, ?)");
-    my $rows = $addh -> execute($previd, $userid, $article -> {"site"}, $article -> {"title"}, $article -> {"summary"}, $article -> {"article"}, $article -> {"mode"}, $article -> {"rtimestamp"});
+                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    my $rows = $addh -> execute($previd, $userid, $now, $siteid, $article -> {"title"}, $article -> {"summary"}, $article -> {"article"}, $article -> {"mode"}, $article -> {"rtimestamp"});
     return $self -> self_error("Unable to perform article insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Article insert failed, no rows inserted") if($rows eq "0E0");
 
@@ -297,6 +305,145 @@ sub add_article {
 }
 
 
+## @method $ get_feed_articles($settings)
+# Obtain the details of artibles from the database. This will search the database
+# using the specified parameters, and return a reference to an array of records
+# containing matching data. The following settings may be specified in the settings
+# argument:
+#
+# - `id`: obtain the article with the specified ID. Note that, even though this will
+#   only ever match at most one record, the returned value is still a reference to an
+#   array of hashrefs.
+# - `level`: obtain articles that are visible at the named level. Note that this is
+#   the *name* of the level, not the level id, for readability. Valid levels are
+#   defined in the `levels` table. Unknown/invalid levels will produce no matches.
+#   If no level is specified, all levels are matched.
+# - `site`: obtain articles published by the specified site or group. This is the
+#   site name, not the site ID, and valid sites are defined in the `sites` table.
+#   If no site is specified, all sites with messages at the current level are matched.
+# - `count`: how many articles to return. If not specified, this defaults to the
+#   system-wide setting defined in `Article:rss_count` in the settings table.
+# - `offset`: article offset, first returned article is at offset 0.
+# - `fulltext`: if specified, the full article text will be included in the result,
+#   otherwise only the title and summary will be included.
+#
+# @note This function will never return articles stored as `draft`, articles set
+#       for timed release before the release time, or old revisions of articles.
+#       It is purely intended to support feed generation - where none of the
+#       aforementioned articles should ever be visible.
+#
+# @param settings A reference to a hash containing settings for the query.
+# @return A reference to an array of record hashes on success, undef on error.
+sub get_feed_articles {
+    my $self     = shift;
+    my $settings = hash_or_hashref(@_);
+
+    # Fix up defaults
+    $settings -> {"count"} = $self -> {"settings"} -> {"config"} -> {"Article:rss_count"}
+        if(!$settings -> {"count"});
+
+    $settings -> {"offset"} = 0
+        if(!$settings -> {"offset"});
+
+    # Now start constructing the query. These are the tables and where clauses that are
+    # needed regardless of the settings provided by the caller.
+    my $from  = "`".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `article`,
+                 `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `user`,
+                 `".$self -> {"settings"} -> {"database"} -> {"sites"}."` AS `site`";
+    my $where = "`user`.`user_id` = `article`.`creator_id`
+                 AND `site`.`id` = `article`.`site_id`
+                 AND (`article`.`release_mode` = 'now'
+                      OR (`article`.`release_mode` = 'timed'
+                          AND `article`.`release_time` <= UNIX_TIMESTAMP()
+                         )
+                     )";
+
+    # The next lot are extensions to the above to support filters requested by the caller.
+    my @params;
+    if($settings -> {"id"}) {
+        $where .= " AND `article.id` = ?";
+        push(@params, $settings -> {"id"});
+    }
+
+    # There can be multiple, comma separated sites specified in the settings, so split them
+    # and create an OR clause for the lot
+    if($settings -> {"site"}) {
+        my @sites = split(/,/, $settings -> {"site"});
+        my $sitefrag = "";
+
+        foreach my $site (@sites) {
+            $sitefrag .= " OR " if($sitefrag);
+            $sitefrag .= "`site`.`name` LIKE ?";
+            push(@params, $site);
+        }
+        $where .= " AND ($sitefrag)";
+    }
+
+    # Level filtering is a bit trickier, as it needs to do more joining, and has to deal with
+    # comma separated values, to
+    if($settings -> {"level"}) {
+        my @levels = split(/,/, $settings -> {"level"});
+        my $levelfrag = "";
+
+        foreach my $level (@levels) {
+            $levelfrag .= " OR " if($levelfrag);
+            $levelfrag .= "`level`.`level` = ?";
+            push(@params, $level);
+        }
+
+        $from  .= ", `".$self -> {"settings"} -> {"database"} -> {"levels"}."` AS `level`,
+                     `".$self -> {"settings"} -> {"database"} -> {"articlelevels"}."` AS `artlevels`";
+        $where .= " AND ($levelfrag)
+                    AND `artlevels`.`article_id` = `article`.`id`
+                    AND `artlevels`.`level_id` = `level`.`id`";
+    }
+
+    # All the fields the query is interested in, normally fulltext is omitted unless explicitly requested
+    my $fields = "`article`.`id`, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `article`.`created`, `site`.`name` AS `sitename`, `site`.`full_url` AS `siteurl`, `article`.`title`, `article`.`summary`, `article`.`release_time`";
+    $fields   .= ", `article`.`article` AS `fulltext`" if($settings -> {"fulltext"});
+
+    # Now put it all together and fire it at the database
+    my $query = $self -> {"dbh"} -> prepare("SELECT $fields
+                                             FROM $from
+                                             WHERE $where
+                                             ORDER BY `article`.`release_time` DESC
+                                             LIMIT ".$settings -> {"offset"}.", ".$settings -> {"count"});
+    $query -> execute(@params)
+        or return $self -> self_error("Unable to execute article query: ".$self -> {"dbh"} -> errstr);
+
+    # Fetch all the matching articles, and if there are any go and shove in the level list and images
+    my $articles = $query -> fetchall_arrayref({});
+    if(scalar(@{$articles})) {
+        my $levelh = $self -> {"dbh"} -> prepare("SELECT `level`.`level`
+                                                  FROM `".$self -> {"settings"} -> {"database"} -> {"levels"}."` AS `level`,
+                                                       `".$self -> {"settings"} -> {"database"} -> {"articlelevels"}."` AS `artlevels`
+                                                  WHERE `level`.`id` = `artlevels`.`level_id`
+                                                  AND `artlevels`.`article_id` = ?");
+
+        my $imageh = $self -> {"dbh"} -> prepare("SELECT `image`.*
+                                                  FROM `".$self -> {"settings"} -> {"database"} -> {"images"}."` AS `image`,
+                                                       `".$self -> {"settings"} -> {"database"} -> {"articleimages"}."` AS `artimgs`
+                                                  WHERE `image`.`id` = `artimgs`.`image_id`
+                                                  AND `artimgs`.`article_id` = ?
+                                                  ORDER BY `artimgs`.`order`");
+
+        foreach my $article (@{$articles}) {
+            $levelh -> execute($article -> {"id"})
+                or return $self -> self_error("Unable to execute article level query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
+
+            $article -> {"levels"} = $levelh -> fetchall_arrayref({});
+
+            $imageh -> execute($article -> {"id"})
+                or return $self -> self_error("Unable to execute article image query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
+
+            $article -> {"images"} = $imageh -> fetchall_arrayref({});
+        }
+    } # if(scalar(@{$articles})) {
+
+    return $articles;
+}
+
+
 # ==============================================================================
 # Private methods
 
@@ -310,7 +457,7 @@ sub add_article {
 # any single directory to help out filesystems that struggle with lots of either.
 #
 # @param id The ID of the file to store.
-# @return A path to store the file in, relative to upload_image_path, on success.
+# @return A path to store the file in, relative to Article:upload_image_path, on success.
 #         undef on error.
 sub _build_destdir {
     my $self = shift;
@@ -327,7 +474,7 @@ sub _build_destdir {
     my $destdir = path_join($base, $sub, $id);
 
     # Make sure the path exists
-    my $fullpath = path_join($self -> {"settings"} -> {"config"} -> {"upload_image_path"}, $destdir);
+    my $fullpath = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_path"}, $destdir);
     eval { make_path($fullpath); };
     return $self -> self_error("Unable to create image store directory: $@")
         if($@);
@@ -613,6 +760,28 @@ sub _add_level_relation {
 
     return $newid;
 }
+
+
+## @method private $ _get_site_byname($name)
+# Obtain the ID of the site with the specified name, if possible.
+#
+# @param name The name of the site to get the ID for
+# @return the site ID on success, undef on failure
+sub _get_site_byname {
+    my $self  = shift;
+    my $site = shift;
+
+    my $siteh = $self -> {"dbh"} -> prepare("SELECT id FROM `".$self -> {"settings"} -> {"database"} -> {"sites"}."`
+                                              WHERE `name` LIKE ?");
+    $siteh -> execute($site)
+        or return $self -> self_error("Unable to execute site lookup query: ".$self -> {"dbh"} -> errstr);
+
+    my $levrow = $siteh -> fetchrow_arrayref()
+        or return $self -> self_error("Request for non-existent site '$site', giving up");
+
+    return $levrow -> [0];
+}
+
 
 
 1;

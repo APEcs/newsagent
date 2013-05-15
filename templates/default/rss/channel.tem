@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
-<rss version="2.0">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:newsagent="https://github.com/APEcs/newsagent">
   <channel>
+    <atom:link href="***link***" rel="self" type="application/rss+xml" />
     <title>***title***</title>
     <link>***link***</link>
     <description>***description***</description>
@@ -10,7 +11,5 @@
     <generator>***generator***</generator>
     <managingEditor>***editor***</managingEditor>
     <webMaster>***webmaster***</webMaster>
-    ***extra***
-    ***items***
-  </channel>
+***extra******items***  </channel>
 </rss>
