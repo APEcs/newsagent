@@ -130,8 +130,9 @@ sub generate_feed {
             $url = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"}, $url)
                 if($image -> {"type"} eq "file");
 
-            $images .= $self -> {"template"} -> load_template("rss/image.tem", {"***url***" => $url,
-                                                                                "***name***" => $image -> {"name"}});
+            $images .= $self -> {"template"} -> load_template("rss/image.tem", {"***url***"   => $url,
+                                                                                "***name***"  => $image -> {"name"},
+                                                                                "***order***" => $image -> {"order"}});
         }
         $images = $self -> {"template"} -> load_template("rss/images.tem", {"***images***" => $images})
             if($images);

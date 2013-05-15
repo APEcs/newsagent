@@ -420,7 +420,7 @@ sub get_feed_articles {
                                                   WHERE `level`.`id` = `artlevels`.`level_id`
                                                   AND `artlevels`.`article_id` = ?");
 
-        my $imageh = $self -> {"dbh"} -> prepare("SELECT `image`.*
+        my $imageh = $self -> {"dbh"} -> prepare("SELECT `image`.*, `artimgs`.`order`
                                                   FROM `".$self -> {"settings"} -> {"database"} -> {"images"}."` AS `image`,
                                                        `".$self -> {"settings"} -> {"database"} -> {"articleimages"}."` AS `artimgs`
                                                   WHERE `image`.`id` = `artimgs`.`image_id`
