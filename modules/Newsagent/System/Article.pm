@@ -361,7 +361,7 @@ sub get_feed_articles {
     # The next lot are extensions to the above to support filters requested by the caller.
     my @params;
     if($settings -> {"id"}) {
-        $where .= " AND `article.id` = ?";
+        $where .= " AND `article`.`id` = ?";
         push(@params, $settings -> {"id"});
     }
 
