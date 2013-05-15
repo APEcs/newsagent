@@ -25,7 +25,6 @@ use Newsagent::System::Article;
 use v5.12;
 
 use Webperl::Utils qw(path_join);
-use Data::Dumper;
 
 # ============================================================================
 #  Constructor

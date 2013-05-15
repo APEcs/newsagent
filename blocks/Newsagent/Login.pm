@@ -25,7 +25,6 @@ package Newsagent::Login;
 use strict;
 use base qw(Newsagent); # This class extends the Newsagent block class
 use Webperl::Utils qw(path_join is_defined_numeric);
-use Data::Dumper;
 
 # ============================================================================
 #  Emailer functions
@@ -369,7 +368,6 @@ sub validate_passchange {
 
     # Now apply policy if needed
     my $policy_fails = $self -> {"session"} -> {"auth"} -> apply_policy($user -> {"username"}, $args -> {"newpass"});
-    print STDERR "Policy: ".Dumper($policy_fails)."\n";
 
     if($policy_fails) {
         foreach my $name (@{$policy_fails -> {"policy_order"}}) {
