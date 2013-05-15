@@ -115,3 +115,61 @@ LOGIN_RESEND_FAILED  = Activation code resend failed
 LOGIN_RESEND_DONETITLE  = Activation code resent
 LOGIN_RESEND_SUMMARY    = Resend successful!
 LOGIN_RESEND_LONGDESC   = A new password and an activation link have been send to your email address.<br /><br />Please check your email for a message with the subject 'Your {V_[sitename]} activation code' and follow the instructions it contains to activate your account.
+# Force password change
+LOGIN_PASSCHANGE        = Change password
+LOGIN_FORCECHANGE_INTRO = Before you continue, please choose a new password to set for your account.
+LOGIN_FORCECHANGE_TEMP  = Your account is currently set up with a temporary password.
+LOGIN_FORCECHANGE_OLD   = The password on your account has expired as a result of age limits enforced by the site's password policy.
+LOGIN_NEWPASSWORD       = New password
+LOGIN_CONFPASS          = Confirm password
+LOGIN_OLDPASS           = Your current password
+LOGIN_SETPASS           = Change password
+LOGIN_PASSCHANGE_FAILED = Password change failed
+
+LOGIN_PASSCHANGE_ERRNOUSER = No logged in user detected, password change unsupported.
+LOGIN_PASSCHANGE_ERRMATCH  = The new password specified does not match the confirm password.
+LOGIN_PASSCHANGE_ERRSAME   = The new password can not be the same as the old password.
+LOGIN_PASSCHANGE_ERRVALID  = The specified old password is not correct. You must enter the password you used to log in.
+
+
+LOGIN_POLICY                 = Password policy
+LOGIN_POLICY_INTRO           = When choosing a new password, keep in mind that:
+LOGIN_POLICY_NONE            = No password policy is currently in place, you may use any password you want.
+LOGIN_POLICY_MIN_LENGTH      = Minimum length is ***value*** characters.
+LOGIN_POLICY_MIN_LOWERCASE   = At least ***value*** lowercase letters are needed.
+LOGIN_POLICY_MIN_UPPERCASE   = At least ***value*** uppercase letters are needed.
+LOGIN_POLICY_MIN_DIGITS      = At least ***value*** numbers must be included.
+LOGIN_POLICY_MIN_OTHER       = ***value*** non-alphanumeric chars are needed.
+LOGIN_POLICY_MIN_ENTROPY     = Passwords must pass a strength check.
+LOGIN_POLICY_USE_CRACKLIB    = Cracklib is used to test passwords.
+
+LOGIN_POLICY_MIN_LENGTHERR    = Password is only ***set*** characters, minimum is ***require***.
+LOGIN_POLICY_MIN_LOWERCASEERR = Only ***set*** of ***require*** lowercase letters provided.
+LOGIN_POLICY_MIN_UPPERCASEERR = Only ***set*** of ***require*** uppercase letters provided.
+LOGIN_POLICY_MIN_DIGITSERRR   = Only ***set*** of ***require*** digits included.
+LOGIN_POLICY_MIN_OTHERERR     = Only ***set*** of ***require*** non-alphanumeric chars included.
+LOGIN_POLICY_MIN_ENTROPYERR   = The supplied password is not strong enough.
+LOGIN_POLICY_USE_CRACKLIBERR  = ***set***
+
+LOGIN_POLICY_MAX_PASSWORDAGE = Passwords must be changed after ***value*** days.
+LOGIN_POLICY_MAX_LOGINFAIL   = You can log in incorrectly ***value*** times before your account needs reactivation.
+
+LOGIN_CRACKLIB_WAYSHORT   = The password is far too short.
+LOGIN_CRACKLIB_TOOSHORT   = The password is too short.
+LOGIN_CRACKLIB_MORECHARS  = A greater range of characters are needed in the password.
+LOGIN_CRACKLIB_WHITESPACE = Passwords can not be entirely whitespace!
+LOGIN_CRACKLIB_SIMPLISTIC = The password is too simplistic or systematic.
+LOGIN_CRACKLIB_NINUMBER   = You can not use a NI number as a password.
+LOGIN_CRACKLIB_DICTWORD   = The password is based on a dictionary word.
+LOGIN_CRACKLIB_DICTBACK   = The password is based on a reversed dictionary word.
+
+# Login limiting
+LOGIN_FAILLIMIT         = You have used ***failcount*** of ***faillimit*** login attempts. If you exceed the limit, your account will be deactivated. If you can not remember your account details, please use the <a href="***url-recover***">account recovery form</a>
+LOGIN_LOCKEDOUT         = You have exceeded the number of login failures permitted by the system, and your account has been deactivated. An email has been sent to the address associated with your account explaining how to reactivate your account.
+LOGIN_LOCKOUT_SUBJECT   = {V_[sitename]} account locked
+LOGIN_LOCKOUT_GREETING  = Hi
+LOGIN_LOCKOUT_MESSAGE   = Your '{V_[sitename]}' account has deactivated and your password has been changed because more than ***faillimit*** login failures have been recorded for your account. This may be the result of attempted unauthorised access to your account - if you are not responsible for these login attempts you should probably contact the site administator to report that your account may be under attack. Your username and new password for the site are:
+LOGIN_LOCKOUT_ACTNEEDED = As your account has been deactivated, before you can successfully log in you will need to reactivate your account. To do this, please click on the following link, or copy and paste it into your web browser:
+LOGIN_LOCKOUT_ALTACT    = Alternatively, enter the following code in the account activation form:
+
+#
