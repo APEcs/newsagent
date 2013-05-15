@@ -80,6 +80,9 @@ div.regform {
     display: inline-block;
     /*float: left;*/
 }
+div.regform.policy {
+    float: right;
+}
 
 input[type=text], input[type=password] {
     font-size: 20px;
