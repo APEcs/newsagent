@@ -1,0 +1,30 @@
+Required modules, usually provided within distro repositories:
+
+Class::Accessor
+Class::Mix
+Compress::Bzip2
+DBI
+Email::MIME
+Email::Sender::Simple (in Email-Sender)
+Email::Sender::Transport::SMTP (in Email-Sender)
+Email::Sender::Transport::SMTP::Persistent (in Email-Sender)
+Expect
+File::Type
+HTML::Entities (in HTML::Parser)
+HTML::Scrubber
+JSON
+Net::LDAPS (perl-ldap)
+Params::Classify
+Try::Tiny  (installed with Email-Sender)
+WWW::Mechanize
+XML::Simple
+
+
+Required modules, usuallny not in repost, install from CPAN:
+
+MediaWiki::API
+HTML::Tidy (Requires tidyp from http://tidyp.com/ )
+WebService::Validator::HTML::W3C
+Crypt::Eksblowfish::Bcrypt
+Net::SSH::Expect
+CGI::Compress::Gzip
