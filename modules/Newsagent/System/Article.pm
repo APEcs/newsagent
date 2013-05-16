@@ -30,6 +30,9 @@ use Digest;
 use Webperl::Utils qw(path_join hash_or_hashref);
 
 
+# ============================================================================
+#  Constructor
+
 ## @cmethod $ new(%args)
 # Create a new Article object to manage tag allocation and lookup.
 # The minimum values you need to provide are:
@@ -61,9 +64,21 @@ sub new {
 }
 
 
+# ============================================================================
+#  Data access
+
+## @method $ get_user_levels($userid)
+# Obtain the list of article levels the user has permission to post at. This
+# checks through the list of available article levels, and determines whether
+# the user is able to post messages at that level before adding it to the list
+# of levels available to the user.
+#
+# @param userid The ID of the user requesting the level list.
+# @return A reference to an array of hashrefs. Each hashref contains a level
+#         available to the user as a pair of key/value pairs.
 sub get_user_levels {
-    my $self = shift;
-    my $user = shift;
+    my $self   = shift;
+    my $userid = shift;
 
     $self -> clear_error();
 
@@ -84,6 +99,15 @@ sub get_user_levels {
 }
 
 
+## @method $ get_user_sites($userid)
+# Obtain the list of sites the user has permission to post from. This
+# checks through the list of available sites, and determines whether
+# the user is able to post messages from that site before adding it to
+# the list of sites available to the user.
+#
+# @param userid The ID of the user requesting the site list.
+# @return A reference to an array of hashrefs. Each hashref contains a site
+#         available to the user as a pair of key/value pairs.
 sub get_user_sites {
     my $self = shift;
     my $user = shift;
@@ -107,6 +131,12 @@ sub get_user_sites {
 }
 
 
+## @method $ get_file_images()
+# Obtain a list of all images currently stored in the system. This generates
+# a list of images suitable for presenting the user with a dropdown from
+# which they can select an already uploaded image file.
+#
+# @return A reference to an array of hashrefs to image data.
 sub get_file_images {
     my $self = shift;
 
@@ -121,6 +151,8 @@ sub get_file_images {
 
     my @imagelist;
     while(my $image = $imgh -> fetchrow_hashref()) {
+        # NOTE: no need to do permission checks here - all users have access to
+        # all images (as there's bugger all the system can do to prevent it)
         push(@imagelist, {"name"  => $image -> {"name"},
                           "title" => path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"}, $image -> {"location"}),
                           "value" => $image -> {"id"}});
@@ -150,6 +182,148 @@ sub get_image_info {
     return $imgh -> fetchrow_hashref();
 }
 
+
+## @method $ get_feed_articles($settings)
+# Obtain the details of artibles from the database. This will search the database
+# using the specified parameters, and return a reference to an array of records
+# containing matching data. The following settings may be specified in the settings
+# argument:
+#
+# - `id`: obtain the article with the specified ID. Note that, even though this will
+#   only ever match at most one record, the returned value is still a reference to an
+#   array of hashrefs.
+# - `level`: obtain articles that are visible at the named level. Note that this is
+#   the *name* of the level, not the level id, for readability. Valid levels are
+#   defined in the `levels` table. Unknown/invalid levels will produce no matches.
+#   If no level is specified, all levels are matched.
+# - `site`: obtain articles published by the specified site or group. This is the
+#   site name, not the site ID, and valid sites are defined in the `sites` table.
+#   If no site is specified, all sites with messages at the current level are matched.
+# - `count`: how many articles to return. If not specified, this defaults to the
+#   system-wide setting defined in `Article:rss_count` in the settings table.
+# - `offset`: article offset, first returned article is at offset 0.
+# - `fulltext`: if specified, the full article text will be included in the result,
+#   otherwise only the title and summary will be included.
+#
+# @note This function will never return articles stored as `draft`, articles set
+#       for timed release before the release time, or old revisions of articles.
+#       It is purely intended to support feed generation - where none of the
+#       aforementioned articles should ever be visible.
+#
+# @param settings A reference to a hash containing settings for the query.
+# @return A reference to an array of record hashes on success, undef on error.
+sub get_feed_articles {
+    my $self     = shift;
+    my $settings = hash_or_hashref(@_);
+
+    # Fix up defaults
+    $settings -> {"count"} = $self -> {"settings"} -> {"config"} -> {"Article:rss_count"}
+        if(!$settings -> {"count"});
+
+    $settings -> {"offset"} = 0
+        if(!$settings -> {"offset"});
+
+    # Now start constructing the query. These are the tables and where clauses that are
+    # needed regardless of the settings provided by the caller.
+    my $from  = "`".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `article`,
+                 `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `user`,
+                 `".$self -> {"settings"} -> {"database"} -> {"sites"}."` AS `site`";
+    my $where = "`user`.`user_id` = `article`.`creator_id`
+                 AND `site`.`id` = `article`.`site_id`
+                 AND (`article`.`release_mode` = 'now'
+                      OR (`article`.`release_mode` = 'timed'
+                          AND `article`.`release_time` <= UNIX_TIMESTAMP()
+                         )
+                     )";
+
+    # The next lot are extensions to the above to support filters requested by the caller.
+    my @params;
+    if($settings -> {"id"}) {
+        $where .= " AND `article`.`id` = ?";
+        push(@params, $settings -> {"id"});
+    }
+
+    # There can be multiple, comma separated sites specified in the settings, so split them
+    # and create an OR clause for the lot
+    if($settings -> {"site"}) {
+        my @sites = split(/,/, $settings -> {"site"});
+        my $sitefrag = "";
+
+        foreach my $site (@sites) {
+            $sitefrag .= " OR " if($sitefrag);
+            $sitefrag .= "`site`.`name` LIKE ?";
+            push(@params, $site);
+        }
+        $where .= " AND ($sitefrag)";
+    }
+
+    # Level filtering is a bit trickier, as it needs to do more joining, and has to deal with
+    # comma separated values, to
+    if($settings -> {"level"}) {
+        my @levels = split(/,/, $settings -> {"level"});
+        my $levelfrag = "";
+
+        foreach my $level (@levels) {
+            $levelfrag .= " OR " if($levelfrag);
+            $levelfrag .= "`level`.`level` = ?";
+            push(@params, $level);
+        }
+
+        $from  .= ", `".$self -> {"settings"} -> {"database"} -> {"levels"}."` AS `level`,
+                     `".$self -> {"settings"} -> {"database"} -> {"articlelevels"}."` AS `artlevels`";
+        $where .= " AND ($levelfrag)
+                    AND `artlevels`.`article_id` = `article`.`id`
+                    AND `artlevels`.`level_id` = `level`.`id`";
+    }
+
+    # All the fields the query is interested in, normally fulltext is omitted unless explicitly requested
+    my $fields = "`article`.`id`, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `article`.`created`, `site`.`name` AS `sitename`, `site`.`full_url` AS `siteurl`, `article`.`title`, `article`.`summary`, `article`.`release_time`";
+    $fields   .= ", `article`.`article` AS `fulltext`" if($settings -> {"fulltext"});
+
+    # Now put it all together and fire it at the database
+    my $query = $self -> {"dbh"} -> prepare("SELECT $fields
+                                             FROM $from
+                                             WHERE $where
+                                             ORDER BY `article`.`release_time` DESC
+                                             LIMIT ".$settings -> {"offset"}.", ".$settings -> {"count"});
+    $query -> execute(@params)
+        or return $self -> self_error("Unable to execute article query: ".$self -> {"dbh"} -> errstr);
+
+    # Fetch all the matching articles, and if there are any go and shove in the level list and images
+    my $articles = $query -> fetchall_arrayref({});
+    if(scalar(@{$articles})) {
+        my $levelh = $self -> {"dbh"} -> prepare("SELECT `level`.`level`
+                                                  FROM `".$self -> {"settings"} -> {"database"} -> {"levels"}."` AS `level`,
+                                                       `".$self -> {"settings"} -> {"database"} -> {"articlelevels"}."` AS `artlevels`
+                                                  WHERE `level`.`id` = `artlevels`.`level_id`
+                                                  AND `artlevels`.`article_id` = ?");
+
+        my $imageh = $self -> {"dbh"} -> prepare("SELECT `image`.*, `artimgs`.`order`
+                                                  FROM `".$self -> {"settings"} -> {"database"} -> {"images"}."` AS `image`,
+                                                       `".$self -> {"settings"} -> {"database"} -> {"articleimages"}."` AS `artimgs`
+                                                  WHERE `image`.`id` = `artimgs`.`image_id`
+                                                  AND `artimgs`.`article_id` = ?
+                                                  ORDER BY `artimgs`.`order`");
+
+        foreach my $article (@{$articles}) {
+            $levelh -> execute($article -> {"id"})
+                or return $self -> self_error("Unable to execute article level query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
+
+            $article -> {"levels"} = $levelh -> fetchall_arrayref({});
+
+            $imageh -> execute($article -> {"id"})
+                or return $self -> self_error("Unable to execute article image query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
+
+            $article -> {"images"} = $imageh -> fetchall_arrayref({});
+        }
+    } # if(scalar(@{$articles})) {
+
+    return $articles;
+}
+
+
+# ==============================================================================
+#  Storage and addition functions
 
 ## @method $ store_image($srcfile, $filename, $userid)
 # Given a source filename and a userid, move the file into the image filestore
@@ -305,148 +479,8 @@ sub add_article {
 }
 
 
-## @method $ get_feed_articles($settings)
-# Obtain the details of artibles from the database. This will search the database
-# using the specified parameters, and return a reference to an array of records
-# containing matching data. The following settings may be specified in the settings
-# argument:
-#
-# - `id`: obtain the article with the specified ID. Note that, even though this will
-#   only ever match at most one record, the returned value is still a reference to an
-#   array of hashrefs.
-# - `level`: obtain articles that are visible at the named level. Note that this is
-#   the *name* of the level, not the level id, for readability. Valid levels are
-#   defined in the `levels` table. Unknown/invalid levels will produce no matches.
-#   If no level is specified, all levels are matched.
-# - `site`: obtain articles published by the specified site or group. This is the
-#   site name, not the site ID, and valid sites are defined in the `sites` table.
-#   If no site is specified, all sites with messages at the current level are matched.
-# - `count`: how many articles to return. If not specified, this defaults to the
-#   system-wide setting defined in `Article:rss_count` in the settings table.
-# - `offset`: article offset, first returned article is at offset 0.
-# - `fulltext`: if specified, the full article text will be included in the result,
-#   otherwise only the title and summary will be included.
-#
-# @note This function will never return articles stored as `draft`, articles set
-#       for timed release before the release time, or old revisions of articles.
-#       It is purely intended to support feed generation - where none of the
-#       aforementioned articles should ever be visible.
-#
-# @param settings A reference to a hash containing settings for the query.
-# @return A reference to an array of record hashes on success, undef on error.
-sub get_feed_articles {
-    my $self     = shift;
-    my $settings = hash_or_hashref(@_);
-
-    # Fix up defaults
-    $settings -> {"count"} = $self -> {"settings"} -> {"config"} -> {"Article:rss_count"}
-        if(!$settings -> {"count"});
-
-    $settings -> {"offset"} = 0
-        if(!$settings -> {"offset"});
-
-    # Now start constructing the query. These are the tables and where clauses that are
-    # needed regardless of the settings provided by the caller.
-    my $from  = "`".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `article`,
-                 `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `user`,
-                 `".$self -> {"settings"} -> {"database"} -> {"sites"}."` AS `site`";
-    my $where = "`user`.`user_id` = `article`.`creator_id`
-                 AND `site`.`id` = `article`.`site_id`
-                 AND (`article`.`release_mode` = 'now'
-                      OR (`article`.`release_mode` = 'timed'
-                          AND `article`.`release_time` <= UNIX_TIMESTAMP()
-                         )
-                     )";
-
-    # The next lot are extensions to the above to support filters requested by the caller.
-    my @params;
-    if($settings -> {"id"}) {
-        $where .= " AND `article`.`id` = ?";
-        push(@params, $settings -> {"id"});
-    }
-
-    # There can be multiple, comma separated sites specified in the settings, so split them
-    # and create an OR clause for the lot
-    if($settings -> {"site"}) {
-        my @sites = split(/,/, $settings -> {"site"});
-        my $sitefrag = "";
-
-        foreach my $site (@sites) {
-            $sitefrag .= " OR " if($sitefrag);
-            $sitefrag .= "`site`.`name` LIKE ?";
-            push(@params, $site);
-        }
-        $where .= " AND ($sitefrag)";
-    }
-
-    # Level filtering is a bit trickier, as it needs to do more joining, and has to deal with
-    # comma separated values, to
-    if($settings -> {"level"}) {
-        my @levels = split(/,/, $settings -> {"level"});
-        my $levelfrag = "";
-
-        foreach my $level (@levels) {
-            $levelfrag .= " OR " if($levelfrag);
-            $levelfrag .= "`level`.`level` = ?";
-            push(@params, $level);
-        }
-
-        $from  .= ", `".$self -> {"settings"} -> {"database"} -> {"levels"}."` AS `level`,
-                     `".$self -> {"settings"} -> {"database"} -> {"articlelevels"}."` AS `artlevels`";
-        $where .= " AND ($levelfrag)
-                    AND `artlevels`.`article_id` = `article`.`id`
-                    AND `artlevels`.`level_id` = `level`.`id`";
-    }
-
-    # All the fields the query is interested in, normally fulltext is omitted unless explicitly requested
-    my $fields = "`article`.`id`, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `article`.`created`, `site`.`name` AS `sitename`, `site`.`full_url` AS `siteurl`, `article`.`title`, `article`.`summary`, `article`.`release_time`";
-    $fields   .= ", `article`.`article` AS `fulltext`" if($settings -> {"fulltext"});
-
-    # Now put it all together and fire it at the database
-    my $query = $self -> {"dbh"} -> prepare("SELECT $fields
-                                             FROM $from
-                                             WHERE $where
-                                             ORDER BY `article`.`release_time` DESC
-                                             LIMIT ".$settings -> {"offset"}.", ".$settings -> {"count"});
-    $query -> execute(@params)
-        or return $self -> self_error("Unable to execute article query: ".$self -> {"dbh"} -> errstr);
-
-    # Fetch all the matching articles, and if there are any go and shove in the level list and images
-    my $articles = $query -> fetchall_arrayref({});
-    if(scalar(@{$articles})) {
-        my $levelh = $self -> {"dbh"} -> prepare("SELECT `level`.`level`
-                                                  FROM `".$self -> {"settings"} -> {"database"} -> {"levels"}."` AS `level`,
-                                                       `".$self -> {"settings"} -> {"database"} -> {"articlelevels"}."` AS `artlevels`
-                                                  WHERE `level`.`id` = `artlevels`.`level_id`
-                                                  AND `artlevels`.`article_id` = ?");
-
-        my $imageh = $self -> {"dbh"} -> prepare("SELECT `image`.*, `artimgs`.`order`
-                                                  FROM `".$self -> {"settings"} -> {"database"} -> {"images"}."` AS `image`,
-                                                       `".$self -> {"settings"} -> {"database"} -> {"articleimages"}."` AS `artimgs`
-                                                  WHERE `image`.`id` = `artimgs`.`image_id`
-                                                  AND `artimgs`.`article_id` = ?
-                                                  ORDER BY `artimgs`.`order`");
-
-        foreach my $article (@{$articles}) {
-            $levelh -> execute($article -> {"id"})
-                or return $self -> self_error("Unable to execute article level query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
-
-            $article -> {"levels"} = $levelh -> fetchall_arrayref({});
-
-            $imageh -> execute($article -> {"id"})
-                or return $self -> self_error("Unable to execute article image query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
-
-            $article -> {"images"} = $imageh -> fetchall_arrayref({});
-        }
-    } # if(scalar(@{$articles})) {
-
-    return $articles;
-}
-
-
 # ==============================================================================
-# Private methods
-
+#  Private methods
 
 ## @method private $ _build_destdir($id)
 # Given a file id, determine which directory the corresponding file should be stored

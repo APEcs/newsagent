@@ -25,7 +25,6 @@ use Newsagent::System::Article;
 use File::Basename;
 use v5.12;
 
-
 # ============================================================================
 #  Constructor
 

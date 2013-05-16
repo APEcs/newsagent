@@ -22,9 +22,9 @@ package Newsagent::RSS;
 use strict;
 use base qw(Newsagent); # This class extends the Newsagent block class
 use Newsagent::System::Article;
+use Webperl::Utils qw(path_join);
 use v5.12;
 
-use Webperl::Utils qw(path_join);
 
 # ============================================================================
 #  Constructor
@@ -108,6 +108,12 @@ sub _validate_settings {
 # ============================================================================
 #  Content generators
 
+## @method void generate_feed()
+# Generate an RSS feed of articles based on the filters specified by the user on
+# the query string. Note that this does not return, and errors that occur inside
+# are consumed silently - this is a design decision based on the fact that the
+# feeds are going to be automatically aggregated, and errors getting through
+# to the aggregators is likely to be an undesirable state of affairs.
 sub generate_feed {
     my $self     = shift;
     my $settings = {};
@@ -137,13 +143,16 @@ sub generate_feed {
         $images = $self -> {"template"} -> load_template("rss/images.tem", {"***images***" => $images})
             if($images);
 
+        # If fulltext is activated, include the text in the item
         $extra .= $self -> {"template"} -> load_template("rss/newsagent.tem", {"***elem***"    => "fulltext",
                                                                                "***attrs***"   => "",
                                                                                "***content***" => "<![CDATA[\n".$result -> {"fulltext"}."\n]]>" })
             if($result -> {"fulltext"});
 
+        # The date can be needed in both the title and date fields.
         my $pubdate = $self -> {"template"} -> format_time($result -> {"release_time"}, $self -> {"timefmt"});
 
+        # Put the item together!
         $items .= $self -> {"template"} -> load_template("rss/item.tem", {"***title***"       => $result -> {"title"} || $pubdate,
                                                                           "***description***" => $result -> {"summary"},
                                                                           "***images***"      => $images,
@@ -155,6 +164,7 @@ sub generate_feed {
                                                          });
     }
 
+    # Put everything together in a channel to send back to the user.
     my $feed = $self -> {"template"} -> load_template("rss/channel.tem", {"***generator***"   => "Newsagent",
                                                                           "***editor***"      => $self -> {"settings"} -> {"config"} -> {"RSS:editor"},
                                                                           "***webmaster***"   => $self -> {"settings"} -> {"config"} -> {"RSS:webmaster"},
@@ -168,6 +178,9 @@ sub generate_feed {
                                                                           "***items***"       => $items,
                                                                           "***extra***"       => ""});
 
+    # Do not use the normal page generation process to send back the feed - that sends back
+    # html, not xml. This sends the feed to the user, and then cleans up and shuts down the
+    # script.
     print $self -> {"cgi"} -> header(-type => 'application/xml',
                                      -charset => 'utf-8');
     print Encode::encode_utf8($feed);
@@ -182,6 +195,7 @@ sub generate_feed {
 
     exit;
 }
+
 
 # ============================================================================
 #  Interface functions

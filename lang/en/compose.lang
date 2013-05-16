@@ -13,7 +13,7 @@ COMPOSE_BATCH      = Batch Release
 COMPOSE_NORMAL     = Standard Release
 
 COMPOSE_IMAGEA     = Lead Image
-COMPOSE_IMAGEB     = Foot Image
+COMPOSE_IMAGEB     = Article Image
 
 COMPOSE_SITE   = Post from
 COMPOSE_LEVEL  = Visibility levels
