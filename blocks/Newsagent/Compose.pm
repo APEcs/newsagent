@@ -287,17 +287,6 @@ sub _validate_article {
     my ($args, $errors, $error) = ({}, "", "");
     my $userid = $self -> {"session"} -> get_session_userid();
 
-# TODO: Check permissions here
-#    # Exit with a permission error unless the user has permission to post
-#    my $canpost = $self -> {"qaforums"} -> check_permission($self -> {"system"} -> {"courses"} -> get_course_metadataid($self -> {"courseid"}),
-#                                                            $self -> {"session"} -> get_session_userid(),
-#                                                            "qaforums.ask");
-#    return ($self -> {"template"} -> load_template("error_list.tem",
-#                                                   {"***message***" => "{L_FEATURE_QAFORUM_ASK_FAILED}",
-#                                                    "***errors***"  => $self -> {"template"} -> process_template($errtem,
-#                                                                                                                 {"***error***" => "{L_FEATURE_QAFORUM_ASK_ERRPERM}"})}),
-#            $args) unless($canpost);
-
     $error = $self -> _validate_article_fields($args, $userid);
     $errors .= $error if($error);
 
@@ -463,6 +452,31 @@ sub page_display {
 
     my $error = $self -> check_login();
     return $error if($error);
+
+    # Exit with a permission error unless the user has permission to compose
+    # Note that this should never actually happen - all users should have compose
+    # permission of some kind - but this is here to make really sure of that.
+    if($self -> check_permission("compose")) {
+        $self -> log("error:compose:permission", "User does not have permission to compose articles");
+
+        my $userbar = $self -> {"module"} -> load_module("Newsagent::Userbar");
+        my $message = $self -> {"template"} -> message_box("{L_PERMISSION_FAILED_TITLE}",
+                                                           "error",
+                                                           "{L_PERMISSION_FAILED_SUMMARY}",
+                                                           "{L_PERMISSION_COMPOSE_DESC}",
+                                                           undef,
+                                                           "errorcore",
+                                                           [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
+                                                              "colour"  => "blue",
+                                                              "action"  => "location.href='".$self -> build_url(block => "news")."'"} ]);
+
+        return $self -> {"template"} -> load_template("error/general.tem",
+                                                      {"***title***"     => "{L_PERMISSION_FAILED_TITLE}",
+                                                       "***message***"   => $message,
+                                                       "***extrahead***" => "",
+                                                       "***userbar***"   => $userbar -> block_display(),
+                                                      })
+    }
 
     # Is this an API call, or a normal page operation?
     my $apiop = $self -> is_api_operation();

@@ -78,31 +78,23 @@ sub generate_newsagent_page {
 # ============================================================================
 #  Permissions/Roles related.
 
-## @method $ used_capabilities()
-# Generate a hash containing the capabilities this Feature tests user's roles
-# against, and the description of the capabilities.
-#
-# @return A reference to a hash containing the capabilities this Feature uses
-#         on success, undef on error.
-sub used_capabilities {
-    my $self = shift;
-
-    return { # No capabilities used by this block
-           };
-}
-
-
-## @method $ check_permission($userid, $action)
+## @method $ check_permission($action, $contextid, $userid)
 # Determine whether the user has permission to peform the requested action. This
 # should be overridden in subclasses to provide actual checks.
 #
-# @param userid The ID of the user to check the permissions for.
-# @param action The action the user is attempting to perform.
+# @param action    The action the user is attempting to perform.
+# @param contextid The ID of the metadata context the user is trying to perform
+#                  an action in. If this is not given, the root context is used.
+# @param userid    The ID of the user to check the permissions for. If not
+#                  specified, the current session user is used.
 # @return true if the user has permission, false if they do not, undef on error.
 sub check_permission {
-    my $self = shift;
+    my $self      = shift;
+    my $action    = shift;
+    my $contextid = shift || $self -> {"system"} -> {"roles"} -> {"root_context"};
+    my $userid    = shift || $self -> {"session"} -> get_session_userid();
 
-    return 1;
+    return $self -> {"roles"} -> user_has_capability($contextid, $userid, $action);
 }
 
 
@@ -123,19 +115,18 @@ sub check_login {
 
     # Otherwise, permissions need to be checked
     } else {
-        my ($title, $message);
+        my $message;
 
-        if($self -> check_permission($self -> {"session"} -> get_session_userid(), "view")) {
+        if($self -> check_permission("view")) {
             return undef;
         } else {
             $self -> log("error:permission", "User does not have perission 'view'");
 
             # Logged in, but permission failed
-            $title   = $self -> {"template"} -> replace_langvar("FEATURE_ERR_ACCESS_TITLE");
-            $message = $self -> {"template"} -> message_box("{L_FEATURE_ERR_ACCESS_TITLE}",
-                                                            "permission_error",
-                                                            "{L_FEATURE_ERR_ACCESS_SUMMARY}",
-                                                            "{L_FEATURE_ERR_ACCESS_DESC}",
+            $message = $self -> {"template"} -> message_box("{L_PERMISSION_FAILED_TITLE}",
+                                                            "error",
+                                                            "{L_PERMISSION_FAILED_SUMMARY}",
+                                                            "{L_PERMISSION_VIEW_DESC}",
                                                             undef,
                                                             "errorcore",
                                                             [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
@@ -147,7 +138,7 @@ sub check_login {
 
         # Build the error page...
         return $self -> {"template"} -> load_template("error/general.tem",
-                                                      {"***title***"     => $title,
+                                                      {"***title***"     => "{L_PERMISSION_FAILED_TITLE}",
                                                        "***message***"   => $message,
                                                        "***extrahead***" => "",
                                                        "***userbar***"   => ($userbar ? $userbar -> block_display($title) : "<!-- Userbar load failed: ".$self -> {"module"} -> errstr()." -->"),

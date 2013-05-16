@@ -51,8 +51,8 @@ sub block_display {
         my $user = $self -> {"session"} -> get_user_byid()
             or return $self -> self_error("Unable to obtain user data for logged in user. This should not happen!");
 
-        $msglist   = $self -> {"template"} -> load_template("userbar/msglist_enabled.tem"  , {"***url-msglist***" => $self -> build_url(block => "msglist", pathinfo => [])});
-        $siteadmin = $self -> {"template"} -> load_template("userbar/siteadmin_enabled.tem", {"***url-admin***"   => $self -> build_url(block => "admin"  , pathinfo => [])});
+        $msglist   = $self -> {"template"} -> load_template("userbar/msglist_enabled.tem"  , {"***url-msglist***" => $self -> build_url(block => "articles", pathinfo => [])});
+        $siteadmin = $self -> {"template"} -> load_template("userbar/siteadmin_enabled.tem", {"***url-admin***"   => $self -> build_url(block => "admin"   , pathinfo => [])});
 
         # User is logged in, so actually reflect their current options and state
         $userprofile = $self -> {"template"} -> load_template("userbar/profile_loggedin.tem", {"***realname***"    => $user -> {"fullname"},
