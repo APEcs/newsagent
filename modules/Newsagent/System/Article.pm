@@ -307,7 +307,7 @@ sub get_feed_articles {
     }
 
     # All the fields the query is interested in, normally fulltext is omitted unless explicitly requested
-    my $fields = "`article`.`id`, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `article`.`created`, `site`.`name` AS `sitename`, `site`.`full_url` AS `siteurl`, `article`.`title`, `article`.`summary`, `article`.`release_time`";
+    my $fields = "`article`.`id`, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `user`.`email`, `article`.`created`, `site`.`name` AS `sitename`, `site`.`full_url` AS `siteurl`, `article`.`title`, `article`.`summary`, `article`.`release_time`";
     $fields   .= ", `article`.`article` AS `fulltext`" if($settings -> {"fulltext"});
 
     # Now put it all together and fire it at the database

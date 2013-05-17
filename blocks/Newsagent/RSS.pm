@@ -22,7 +22,8 @@ package Newsagent::RSS;
 use strict;
 use base qw(Newsagent); # This class extends the Newsagent block class
 use Newsagent::System::Article;
-use Webperl::Utils qw(path_join);
+use Digest::MD5 qw(md5_hex);
+use Webperl::Utils qw(trimspace path_join);
 use v5.12;
 
 
@@ -161,6 +162,9 @@ sub generate_feed {
                                                                           "***date***"        => $pubdate,
                                                                           "***guid***"        => $result -> {"siteurl"}."?id=".$result -> {"id"},
                                                                           "***link***"        => $result -> {"siteurl"}."?id=".$result -> {"id"},
+                                                                          "***email***"       => $result -> {"email"},
+                                                                          "***name***"        => $result -> {"realname"} || $result -> {"username"},
+                                                                          "***gravhash***"    => md5_hex(lc(trimspace($result -> {"email"} || ""))),
                                                          });
     }
 
