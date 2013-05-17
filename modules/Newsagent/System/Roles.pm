@@ -58,6 +58,78 @@ sub new {
 # ==============================================================================
 # Public interface - user-centric role functions.
 
+## @method $ user_capabilities($metadataid, $userid, $rolelimit)
+# Obtain a hash of user capabilities for the specified metadata context. This will
+# check the specified metadata context and all its parents to create a full
+# set of capabilities the user has in the context.Normal role combination rules apply
+# (higher priority roles will take precedent over lower priority roles), except
+# that all metadata levels from the specified level to the root are considered.
+# If `rolelimit` is specified, only roleids present in the hash will be included
+# when determining whether the user has the requested capability.
+#
+# @param metadataid The ID of the metadata context to start searching from. This
+#                   will generally be the context associated with the resource
+#                   checking the user's capabilities.
+# @param userid     The ID of the user to establish the capabilities of.
+# @param rolelimit  An optional hash containing role ids as keys, and true or
+#                   false as values. If a role id's value is true, the role
+#                   will be allowed through to capability testing, otherwise
+#                   the role is excluded from capability testing. IMPORTANT:
+#                   specifying this hash *does not* grant the user any roles they
+#                   do not already have - this is used to conditionally exclude
+#                   roles the user *does* have from capability testing, not grant
+#                   roles!
+# @return A reference to a capability hash on success, undef on error.
+sub user_capabilities {
+    my $self       = shift;
+    my $metadataid = shift;
+    my $userid     = shift;
+    my $rolelimit  = shift;
+
+    $self -> clear_error();
+
+    # User roles will accumulate in here...
+    my $user_roles = {};
+
+    # Now get all the roles the user has from this metadata context to the root
+    while($metadataid) {
+        # Fetch the roles for the user set at this metadata level, give up if there was
+        # an error doing it.
+        my $roles = $self -> metadata_assigned_roles($metadataid, $userid);
+        return undef if(!defined($roles));
+
+        # copy over any roles set...
+        foreach my $role (keys(%{$roles})) {
+            # skip any roles not present in $rolelimit, if needed
+            next if($rolelimit && !$rolelimit -> {$role});
+
+            $user_roles -> {$role} = $roles -> {$role};
+        }
+
+        # go up a level if possible
+        $metadataid = $self -> {"metadata"} -> parentid($metadataid);
+    }
+
+    # $user_roles now contains an unsorted hash of roleids and priorities,
+    # we need a sorted list of roleids, highest priority last so that higher
+    # priorities overwrite lower
+    my @roleids = sort { $user_roles -> {$a} <=> $user_roles -> {$b} } keys(%{$user_roles});
+
+    my $capabilities = {};
+    # Now fo through each role, merging the role capabilities into the
+    # capabilities hash
+    foreach my $roleid (@roleids) {
+        my $rolecaps = $self -> role_get_capabilities($roleid);
+
+        # Merge the new capabilities into the ones collected so far, this will
+        # overwrite any capabilities already defined - hence the need to sort above!
+        @{$capabilities}{keys %{$rolecaps}} = values %{$rolecaps};
+    }
+
+    return $capabilities;
+}
+
+
 ## @method $ user_has_capability($metadataid, $userid, $capability, $rolelimit)
 # Determine whether the user has the specified capability within the metadata
 # context. This will search the current metadata context, and its parents, to

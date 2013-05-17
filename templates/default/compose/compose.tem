@@ -104,5 +104,9 @@ window.addEvent('domready', function() {
     var settingPane = new TabPane('relmode-tabs', {onChange: function(select) { $('relmode').set('value', select); } }, ***relmode***);
 
     $$('select.fancyselect').fancySelect({showText: false, autoHide: true});
+
+    ***userlevels***
+    set_visible_levels();
+
 });
 </script>

@@ -1,5 +1,6 @@
 
 var rdate_picker;
+var site_levels;
 
 function date_control(datefield, tsfield, control) {
     var selVal = $(control).getSelected().get("value");
@@ -53,6 +54,27 @@ function show_image_subopt(selid)
     }
 }
 
+
+function set_visible_levels()
+{
+    var site = $('comp-site').options[$('comp-site').selectedIndex].value;
+
+    Object.each(site_levels[site], function (value, key) {
+                     var box = $('level-'+key);
+                     if(box) {
+                         if(value) {
+                             $('level-'+key).disabled = 0;
+                             $('forlevel-'+key).removeClass("disabled");
+                         } else {
+                             $('level-'+key).disabled = 1;
+                             $('level-'+key).checked = 0; /* force no check when disabled */
+                             $('forlevel-'+key).addClass("disabled");
+                         }
+                     }
+                 });
+}
+
+
 window.addEvent('domready', function() {
     Locale.use('en-GB');
     rdate_picker = new Picker.Date($('release_date'), { timePicker: true,
@@ -74,4 +96,6 @@ window.addEvent('domready', function() {
     show_image_subopt('imagea_mode');
     $('imageb_mode').addEvent('change', function() { show_image_subopt('imageb_mode'); });
     show_image_subopt('imageb_mode');
+
+    $('comp-site').addEvent('change', function() { set_visible_levels(); });
 });

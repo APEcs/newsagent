@@ -1,1 +1,1 @@
-<label class="check" for="level-***value***"><input type="checkbox" id="level-***value***" name="level" value="***value***" ***checked***/>***desc***</label><br />
+<label class="check" id="forlevel-***value***" for="level-***value***"><input type="checkbox" id="level-***value***" name="level" value="***value***" ***checked***/>***desc***</label><br />

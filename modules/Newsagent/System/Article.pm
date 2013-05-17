@@ -40,6 +40,7 @@ use Webperl::Utils qw(path_join hash_or_hashref);
 # * dbh       - The database handle to use for queries.
 # * settings  - The system settings object
 # * metadata  - The system Metadata object.
+# * roles     - The system Roles object.
 # * logger    - The system logger object.
 #
 # @param args A hash of key value pairs to initialise the object with.
@@ -67,18 +68,16 @@ sub new {
 # ============================================================================
 #  Data access
 
-## @method $ get_user_levels($userid)
-# Obtain the list of article levels the user has permission to post at. This
-# checks through the list of available article levels, and determines whether
-# the user is able to post messages at that level before adding it to the list
-# of levels available to the user.
+## @method $ get_all_levels()
+# Obtain the list of article levels supported by the system. This returns a list
+# of supported article levels, even if the user does not have permission to post
+# at that level in any of their permitted sites. Use get_users_levels to obtain
+# a list of levels the user hash access to.
 #
-# @param userid The ID of the user requesting the level list.
 # @return A reference to an array of hashrefs. Each hashref contains a level
-#         available to the user as a pair of key/value pairs.
-sub get_user_levels {
+#         available in the system as a pair of key/value pairs.
+sub get_all_levels {
     my $self   = shift;
-    my $userid = shift;
 
     $self -> clear_error();
 
@@ -87,15 +86,44 @@ sub get_user_levels {
     $levelsh -> execute()
         or return $self -> self_error("Unable to execute user levels query: ".$self -> {"dbh"} -> errstr);
 
-    my @levellist;
+    my @levellist = ();
     while(my $level = $levelsh -> fetchrow_hashref()) {
-        # FIXME: Check user permission for level here?
-
-        push(@levellist, {"name"  => $level -> {"description"},
-                          "value" => $level -> {"level"}});
+        push(@levellist, {"name"       => $level -> {"description"},
+                          "value"      => $level -> {"level"},
+                          "capability" => $level -> {"capability"}});
     }
 
     return \@levellist;
+}
+
+
+## @method $ get_user_levels($sites, $levels, $userid)
+# Generate a hash representing the posting levels available to a user
+# for each site in the system.
+#
+# @param sites         A reference to an array of site hashes, as returned by get_user_sites()
+# @param levels        A reference to an array of levels, as returned by get_all_levels()
+# @param userid        The ID of the user.
+# @return A reference to a hash of user site/level permissions on succes,
+#         undef on error.
+sub get_user_levels {
+    my $self   = shift;
+    my $sites  = shift;
+    my $levels = shift;
+    my $userid = shift;
+    my $userlevels = {};
+
+    # Fetch the user's capabilities for each site
+    foreach my $site (@{$sites}) {
+        my $capabilities = $self -> {"roles"} -> user_capabilities($site -> {"metadataid"}, $userid);
+
+        # And for each level, record whether they have the capability required to use the level
+        foreach my $level (@{$levels}) {
+            $userlevels -> {$site -> {"value"}} -> {$level -> {"value"}} = $capabilities -> {$level -> {"capability"}} || 0;
+        }
+    }
+
+    return $userlevels;
 }
 
 
@@ -109,8 +137,8 @@ sub get_user_levels {
 # @return A reference to an array of hashrefs. Each hashref contains a site
 #         available to the user as a pair of key/value pairs.
 sub get_user_sites {
-    my $self = shift;
-    my $user = shift;
+    my $self   = shift;
+    my $userid = shift;
 
     $self -> clear_error();
 
@@ -119,12 +147,14 @@ sub get_user_sites {
     $sitesh -> execute()
         or return $self -> self_error("Unable to execute user sites query: ".$self -> {"dbh"} -> errstr);
 
-    my @sitelist;
+    my @sitelist = ();
     while(my $site = $sitesh -> fetchrow_hashref()) {
-        # FIXME: Check user permission for site here?
-
-        push(@sitelist, {"name"  => $site -> {"description"}." (".$site -> {"full_url"}.")",
-                         "value" => $site -> {"name"}});
+        if($self -> {"roles"} -> user_has_capability($site -> {"metadata_id"}, $userid, "author")) {
+            push(@sitelist, {"name"       => $site -> {"description"}." (".$site -> {"full_url"}.")",
+                             "value"      => $site -> {"name"},
+                             "id"         => $site -> {"id"},
+                             "metadataid" => $site -> {"metadata_id"}});
+        }
     }
 
     return \@sitelist;
@@ -429,7 +459,7 @@ sub add_article {
     $self -> clear_error();
 
     # resolve the site
-    my $siteid = $self -> _get_site_byname($article -> {"site"})
+    my $site = $self -> _get_site_byname($article -> {"site"})
         or return undef;
 
     # Add urls to the database
@@ -440,15 +470,19 @@ sub add_article {
         }
     }
 
+    # Make a new metadata context to attach to the article
+    my $metadataid = $self -> {"metadata"} -> create($site -> {"metadata_id"})
+        or return $self -> self_error("Unable to create new metadata context: ".$self -> {"metadata"} -> errstr());
+
     # Fix up release time
     my $now = time();
     $article -> {"rtimestamp"} = $now if(!$article -> {"rtimestamp"});
 
     # Add the article itself
     my $addh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"articles"}."`
-                                            (previous_id, creator_id, created, site_id, title, summary, article, release_mode, release_time)
-                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    my $rows = $addh -> execute($previd, $userid, $now, $siteid, $article -> {"title"}, $article -> {"summary"}, $article -> {"article"}, $article -> {"mode"}, $article -> {"rtimestamp"});
+                                            (previous_id, metadata_id, creator_id, created, site_id, title, summary, article, release_mode, release_time)
+                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    my $rows = $addh -> execute($previd, $metadataid, $userid, $now, $site -> {"id"}, $article -> {"title"}, $article -> {"summary"}, $article -> {"article"}, $article -> {"mode"}, $article -> {"rtimestamp"});
     return $self -> self_error("Unable to perform article insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Article insert failed, no rows inserted") if($rows eq "0E0");
 
@@ -474,6 +508,15 @@ sub add_article {
         $self -> _add_level_relation($newid, $level)
             or return undef;
     }
+
+    # Attach to the metadata context
+    $self -> {"metadata"} -> attach($metadataid)
+        or return $self -> self_error("Error in metadata system: ".$self -> {"metadata"} -> errstr());
+
+    # Give the user editor access to the article
+    my $roleid = $self -> {"roles"} -> role_get_roleid("editor");
+    $self -> {"roles"} -> user_assign_role($metadataid, $userid, $roleid)
+        or return $self -> self_error($self -> {"roles"} -> errstr());
 
     return $newid;
 }
@@ -797,23 +840,23 @@ sub _add_level_relation {
 
 
 ## @method private $ _get_site_byname($name)
-# Obtain the ID of the site with the specified name, if possible.
+# Obtain the data for the site with the specified name, if possible.
 #
 # @param name The name of the site to get the ID for
-# @return the site ID on success, undef on failure
+# @return A reference to the site data hash on success, undef on failure
 sub _get_site_byname {
     my $self  = shift;
     my $site = shift;
 
-    my $siteh = $self -> {"dbh"} -> prepare("SELECT id FROM `".$self -> {"settings"} -> {"database"} -> {"sites"}."`
+    my $siteh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"sites"}."`
                                               WHERE `name` LIKE ?");
     $siteh -> execute($site)
         or return $self -> self_error("Unable to execute site lookup query: ".$self -> {"dbh"} -> errstr);
 
-    my $levrow = $siteh -> fetchrow_arrayref()
+    my $levrow = $siteh -> fetchrow_hashref()
         or return $self -> self_error("Request for non-existent site '$site', giving up");
 
-    return $levrow -> [0];
+    return $levrow;
 }
 
 

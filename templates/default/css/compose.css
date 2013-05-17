@@ -67,3 +67,7 @@ select.fillwide {
 input.fillwide.datepick {
     width: 267px;
 }
+
+label.disabled {
+    color: #777;
+}

@@ -94,7 +94,7 @@ sub check_permission {
     my $contextid = shift || $self -> {"system"} -> {"roles"} -> {"root_context"};
     my $userid    = shift || $self -> {"session"} -> get_session_userid();
 
-    return $self -> {"roles"} -> user_has_capability($contextid, $userid, $action);
+    return $self -> {"system"} -> {"roles"} -> user_has_capability($contextid, $userid, $action);
 }
 
 
@@ -114,26 +114,19 @@ sub check_login {
         exit;
 
     # Otherwise, permissions need to be checked
-    } else {
-        my $message;
+    } elsif(!$self -> check_permission("view")) {
+        $self -> log("error:permission", "User does not have perission 'view'");
 
-        if($self -> check_permission("view")) {
-            return undef;
-        } else {
-            $self -> log("error:permission", "User does not have perission 'view'");
-
-            # Logged in, but permission failed
-            $message = $self -> {"template"} -> message_box("{L_PERMISSION_FAILED_TITLE}",
-                                                            "error",
-                                                            "{L_PERMISSION_FAILED_SUMMARY}",
-                                                            "{L_PERMISSION_VIEW_DESC}",
-                                                            undef,
-                                                            "errorcore",
-                                                            [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
-                                                               "colour"  => "blue",
-                                                               "action"  => "location.href='{V_[scriptpath]}'"} ]);
-        }
-
+        # Logged in, but permission failed
+        my $message = $self -> {"template"} -> message_box("{L_PERMISSION_FAILED_TITLE}",
+                                                           "error",
+                                                           "{L_PERMISSION_FAILED_SUMMARY}",
+                                                           "{L_PERMISSION_VIEW_DESC}",
+                                                           undef,
+                                                           "errorcore",
+                                                           [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
+                                                              "colour"  => "blue",
+                                                              "action"  => "location.href='{V_[scriptpath]}'"} ]);
         my $userbar = $self -> {"module"} -> load_module("Newsagent::Userbar");
 
         # Build the error page...
@@ -141,9 +134,11 @@ sub check_login {
                                                       {"***title***"     => "{L_PERMISSION_FAILED_TITLE}",
                                                        "***message***"   => $message,
                                                        "***extrahead***" => "",
-                                                       "***userbar***"   => ($userbar ? $userbar -> block_display($title) : "<!-- Userbar load failed: ".$self -> {"module"} -> errstr()." -->"),
+                                                       "***userbar***"   => ($userbar ? $userbar -> block_display("{L_PERMISSION_FAILED_TITLE}") : "<!-- Userbar load failed: ".$self -> {"module"} -> errstr()." -->"),
                                                       });
     }
+
+    return undef;
 }
 
 

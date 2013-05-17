@@ -119,7 +119,7 @@ sub post_authenticate {
     return undef unless($user);
 
     # User now exists, determine whether the user is active
-    return $user# $self -> post_login_checks($user, $auth)
+    return $self -> post_login_checks($user, $auth)
         if($user -> {"activated"});
 
     # User is inactive, does the account need activating?

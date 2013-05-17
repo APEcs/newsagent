@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>{L_PAGE_TITLE}: ***title***</title>
+    <title>***title***</title>
 
     <!-- mootools for effects and javascript sanity -->
     <script type='text/javascript' src="{V_[templatepath]}js/mootools-core.js"></script>
