@@ -137,50 +137,50 @@ sub generate_feed {
             $url = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"}, $url)
                 if($image -> {"type"} eq "file");
 
-            $images .= $self -> {"template"} -> load_template("rss/image.tem", {"***url***"   => $url,
-                                                                                "***name***"  => $image -> {"name"},
-                                                                                "***order***" => $image -> {"order"}});
+            $images .= $self -> {"template"} -> load_template("feeds/rss/image.tem", {"***url***"   => $url,
+                                                                                      "***name***"  => $image -> {"name"},
+                                                                                      "***order***" => $image -> {"order"}});
         }
-        $images = $self -> {"template"} -> load_template("rss/images.tem", {"***images***" => $images})
+        $images = $self -> {"template"} -> load_template("feeds/rss/images.tem", {"***images***" => $images})
             if($images);
 
         # If fulltext is activated, include the text in the item
-        $extra .= $self -> {"template"} -> load_template("rss/newsagent.tem", {"***elem***"    => "fulltext",
-                                                                               "***attrs***"   => "",
-                                                                               "***content***" => "<![CDATA[\n".$result -> {"fulltext"}."\n]]>" })
+        $extra .= $self -> {"template"} -> load_template("feeds/rss/newsagent.tem", {"***elem***"    => "fulltext",
+                                                                                     "***attrs***"   => "",
+                                                                                     "***content***" => "<![CDATA[\n".$result -> {"fulltext"}."\n]]>" })
             if($result -> {"fulltext"});
 
         # The date can be needed in both the title and date fields.
         my $pubdate = $self -> {"template"} -> format_time($result -> {"release_time"}, $self -> {"timefmt"});
 
         # Put the item together!
-        $items .= $self -> {"template"} -> load_template("rss/item.tem", {"***title***"       => $result -> {"title"} || $pubdate,
-                                                                          "***description***" => $result -> {"summary"},
-                                                                          "***images***"      => $images,
-                                                                          "***site***"        => $result -> {"sitename"},
-                                                                          "***extra***"       => $extra,
-                                                                          "***date***"        => $pubdate,
-                                                                          "***guid***"        => $result -> {"siteurl"}."?id=".$result -> {"id"},
-                                                                          "***link***"        => $result -> {"siteurl"}."?id=".$result -> {"id"},
-                                                                          "***email***"       => $result -> {"email"},
-                                                                          "***name***"        => $result -> {"realname"} || $result -> {"username"},
-                                                                          "***gravhash***"    => md5_hex(lc(trimspace($result -> {"email"} || ""))),
+        $items .= $self -> {"template"} -> load_template("feeds/rss/item.tem", {"***title***"       => $result -> {"title"} || $pubdate,
+                                                                                "***description***" => $result -> {"summary"},
+                                                                                "***images***"      => $images,
+                                                                                "***site***"        => $result -> {"sitename"},
+                                                                                "***extra***"       => $extra,
+                                                                                "***date***"        => $pubdate,
+                                                                                "***guid***"        => $result -> {"siteurl"}."?id=".$result -> {"id"},
+                                                                                "***link***"        => $result -> {"siteurl"}."?id=".$result -> {"id"},
+                                                                                "***email***"       => $result -> {"email"},
+                                                                                "***name***"        => $result -> {"realname"} || $result -> {"username"},
+                                                                                "***gravhash***"    => md5_hex(lc(trimspace($result -> {"email"} || ""))),
                                                          });
     }
 
     # Put everything together in a channel to send back to the user.
-    my $feed = $self -> {"template"} -> load_template("rss/channel.tem", {"***generator***"   => "Newsagent",
-                                                                          "***editor***"      => $self -> {"settings"} -> {"config"} -> {"RSS:editor"},
-                                                                          "***webmaster***"   => $self -> {"settings"} -> {"config"} -> {"RSS:webmaster"},
-                                                                          "***title***"       => $self -> {"settings"} -> {"config"} -> {"RSS:title"},
-                                                                          "***description***" => $self -> {"settings"} -> {"config"} -> {"RSS:description"},
-                                                                          "***link***"        => path_join($self -> {"cgi"} -> url(-base => 1),
-                                                                                                           $self -> {"settings"} -> {"config"} -> {"scriptpath"}, "rss"),
-                                                                          "***lang***"        => "en",
-                                                                          "***now***"         => $self -> {"template"} -> format_time(time(), $self -> {"timefmt"}),
-                                                                          "***changed***"     => $self -> {"template"} -> format_time($maxdate, $self -> {"timefmt"}),
-                                                                          "***items***"       => $items,
-                                                                          "***extra***"       => ""});
+    my $feed = $self -> {"template"} -> load_template("feeds/rss/channel.tem", {"***generator***"   => "Newsagent",
+                                                                                "***editor***"      => $self -> {"settings"} -> {"config"} -> {"RSS:editor"},
+                                                                                "***webmaster***"   => $self -> {"settings"} -> {"config"} -> {"RSS:webmaster"},
+                                                                                "***title***"       => $self -> {"settings"} -> {"config"} -> {"RSS:title"},
+                                                                                "***description***" => $self -> {"settings"} -> {"config"} -> {"RSS:description"},
+                                                                                "***link***"        => path_join($self -> {"cgi"} -> url(-base => 1),
+                                                                                                                 $self -> {"settings"} -> {"config"} -> {"scriptpath"}, "rss"),
+                                                                                "***lang***"        => "en",
+                                                                                "***now***"         => $self -> {"template"} -> format_time(time(), $self -> {"timefmt"}),
+                                                                                "***changed***"     => $self -> {"template"} -> format_time($maxdate, $self -> {"timefmt"}),
+                                                                                "***items***"       => $items,
+                                                                                "***extra***"       => ""});
 
     # Do not use the normal page generation process to send back the feed - that sends back
     # html, not xml. This sends the feed to the user, and then cleans up and shuts down the
