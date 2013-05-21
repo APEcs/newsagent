@@ -89,8 +89,8 @@ window.addEvent('domready', function() {
     $('comp-release').addEvent('change', function() { date_control('release_date', 'rtimestamp', 'comp-release'); });
     date_control('release_date', 'rtimestamp', 'comp-release');
 
-    $('comp-summ').addEvent('keyup', function() { limit_textfield('comp-summ', 'sumchars', 140); });
-    limit_textfield('comp-summ', 'sumchars', 140);
+    $('comp-summ').addEvent('keyup', function() { limit_textfield('comp-summ', 'sumchars', 240); });
+    limit_textfield('comp-summ', 'sumchars', 240);
 
     $('imagea_mode').addEvent('change', function() { show_image_subopt('imagea_mode'); });
     show_image_subopt('imagea_mode');

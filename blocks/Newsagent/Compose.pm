@@ -223,7 +223,7 @@ sub _validate_article_fields {
     ($args -> {"summary"}, $error) = $self -> validate_string("summary", {"required" => 1,
                                                                           "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_SUMMARY"),
                                                                           "minlen"   => 8,
-                                                                          "maxlen"   => 100});
+                                                                          "maxlen"   => 240});
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
     ($args -> {"article"}, $error) = $self -> validate_htmlarea("article", {"required" => 1,
