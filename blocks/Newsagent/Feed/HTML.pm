@@ -1,5 +1,5 @@
 # @file
-# This file contains the implementation of the RSS/API facility.
+# This file contains the implementation of the HTML query facility.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
 #
@@ -17,10 +17,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ## @class
-package Newsagent::Feed::RSS;
+package Newsagent::Feed::HTML;
 
 use strict;
-use base qw(Newsagent::Feed); # This class extends the Newsagent Feed class
+use base qw(Newsagent::Feed); # This class extends the Newsagent::Feed class
 use Newsagent::System::Article;
 use Digest::MD5 qw(md5_hex);
 use Webperl::Utils qw(trimspace path_join);
