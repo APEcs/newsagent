@@ -66,38 +66,40 @@ sub generate_feed {
         my $pubdate = $self -> {"template"} -> format_time($result -> {"release_time"}, $self -> {"timefmt"});
 
         # Generate the image urls
-        my $images = {"leader" => "", "article" => "" };
+        my @images;
 
-        $images -> {"leader"} = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
-                                          $result -> {"images"} -> [0] -> {"location"})
-            if($settings -> {"images"} && $result -> {"images"} -> [0] -> {"location"} && $result -> {"images"} -> [0] -> {"location"} !~ /^http/);
+        if($settings -> {"images"}) {
+            for(my $img = 0; $img < 2; ++$img) {
+                $images[$img] = $result -> {"images"} -> [$img] -> {"location"}
+                    if($result -> {"images"} -> [$img] -> {"location"});
+
+                $images[$img] = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"}, $images[$img])
+                    if($images[$img] && $images[$img] !~ /^http/);
+            }
+        }
 
         # Force default leader image if needed
-        $images -> {"leader"} = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
-                                          $self -> {"settings"} -> {"config"} -> {"HTML:default_image"})
-            if($settings -> {"images"} && !$images -> {"leader"} && $self -> {"settings"} -> {"config"} -> {"HTML:default_image"});
-
-        $images -> {"article"} = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
-                                           $result -> {"images"} -> [1] -> {"location"})
-            if($settings -> {"images"} && $result -> {"images"} -> [1] -> {"location"} && $result -> {"images"} -> [1] -> {"location"} !~ /^http/);
+        $images[0] = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
+                               $self -> {"settings"} -> {"config"} -> {"HTML:default_image"})
+            if($settings -> {"images"} && !$images[0] && $self -> {"settings"} -> {"config"} -> {"HTML:default_image"});
 
         # Wrap the images in html
-        $images -> {"leader"} = $self -> {"template"} -> load_template("feeds/html/image.tem", {"***class***" => "leader",
-                                                                                                "***url***"   => $images -> {"leader"},
-                                                                                                "***title***" => $result -> {"title"}})
-            if($images -> {"leader"});
+        $images[0] = $self -> {"template"} -> load_template("feeds/html/image.tem", {"***class***" => "leader",
+                                                                                     "***url***"   => $images[0],
+                                                                                     "***title***" => $result -> {"title"}})
+            if($images[0]);
 
-        $images -> {"article"} = $self -> {"template"} -> load_template("feeds/html/image.tem", {"***class***" => "article",
-                                                                                                 "***url***"   => $images -> {"article"},
-                                                                                                 "***title***" => $result -> {"title"}})
-            if($images -> {"article"});
+        $images[1] = $self -> {"template"} -> load_template("feeds/html/image.tem", {"***class***" => "article",
+                                                                                     "***url***"   => $images[1],
+                                                                                     "***title***" => $result -> {"title"}})
+            if($images[1]);
 
 
         # Put the item together!
         $items .= $self -> {"template"} -> load_template("feeds/html/item-$mode.tem", {"***title***"       => $result -> {"title"} || $pubdate,
                                                                                        "***summary***"     => $result -> {"summary"},
-                                                                                       "***leaderimg***"   => $images -> {"leader"},
-                                                                                       "***articleimg***"  => $images -> {"article"},
+                                                                                       "***leaderimg***"   => $images[0],
+                                                                                       "***articleimg***"  => $images[1],
                                                                                        "***site***"        => $result -> {"sitename"},
                                                                                        "***date***"        => $pubdate,
                                                                                        "***guid***"        => $result -> {"siteurl"}."?id=".$result -> {"id"},
