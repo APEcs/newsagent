@@ -1,7 +1,7 @@
     <item>
       <title>***title***</title>
       <link>***link***</link>
-      <description>***description***</description>
+      <description><![CDATA[***description***]]></description>
       <pubDate>***date***</pubDate>
       <guid>***guid***</guid>
       <author>***email*** (***name***)</author>
