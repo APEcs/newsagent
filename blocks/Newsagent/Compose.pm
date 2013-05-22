@@ -65,6 +65,51 @@ sub new {
                             {"value" => "img",
                              "name"  => "{L_COMPOSE_IMG}" },
                           ];
+    $self -> {"allow_tags"} = [
+        "a", "b", "blockquote", "br", "caption", "col", "colgroup", "comment",
+        "em", "h1", "h2", "h3", "h4", "h5", "h6", "hr", "li", "ol", "p",
+        "pre", "small", "span", "strong", "sub", "sup", "table", "tbody", "td",
+        "tfoot", "th", "thead", "tr", "tt", "ul"
+        ];
+
+    $self -> {"tag_rules"} = [
+        a => {
+            href   => qr{^(?:http|https)://}i,
+            name   => 1,
+            '*'    => 0,
+        },
+        table => {
+            cellspacing => 1,
+            cellpadding => 1,
+            style       => 1,
+            class       => 1,
+            '*'         => 0,
+        },
+        td => {
+            colspan => 1,
+            rowspan => 1,
+            style   => 1,
+            '*'     => 0,
+        },
+        blockquote => {
+            cite  => qr{^(?:http|https)://}i,
+            style => 1,
+            '*'   => 0,
+        },
+        span => {
+            class => 1,
+            style => 1,
+            title => 1,
+            '*'   => 0,
+        },
+        div => {
+            class => 1,
+            style => 1,
+            title => 1,
+            '*'   => 0,
+        },
+        ];
+
     return $self;
 }
 
@@ -226,10 +271,12 @@ sub _validate_article_fields {
                                                                           "maxlen"   => 240});
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
-    ($args -> {"article"}, $error) = $self -> validate_htmlarea("article", {"required" => 1,
-                                                                            "minlen"   => 8,
-                                                                            "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_DESC"),
-                                                                            "validate" => $self -> {"config"} -> {"Core:validate_htmlarea"}});
+    ($args -> {"article"}, $error) = $self -> validate_htmlarea("article", {"required"   => 1,
+                                                                            "minlen"     => 8,
+                                                                            "nicename"   => $self -> {"template"} -> replace_langvar("COMPOSE_DESC"),
+                                                                            "validate"   => $self -> {"config"} -> {"Core:validate_htmlarea"},
+                                                                            "allow_tags" => $self -> {"allow_tags"},
+                                                                            "tag_rules"  => $self -> {"tag_rules"}});
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
     ($args -> {"site"}, $error) = $self -> validate_options("site", {"required" => 1,
