@@ -70,7 +70,7 @@ sub generate_feed {
 
         $images -> {"leader"} = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
                                           $result -> {"images"} -> [0] -> {"location"})
-            if($settings -> {"images"} && $result -> {"images"} -> [0] -> {"location"});
+            if($settings -> {"images"} && $result -> {"images"} -> [0] -> {"location"} && $result -> {"images"} -> [0] -> {"location"} !~ /^http/);
 
         # Force default leader image if needed
         $images -> {"leader"} = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
@@ -79,7 +79,7 @@ sub generate_feed {
 
         $images -> {"article"} = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
                                            $result -> {"images"} -> [1] -> {"location"})
-            if($settings -> {"images"} && $result -> {"images"} -> [1] -> {"location"});
+            if($settings -> {"images"} && $result -> {"images"} -> [1] -> {"location"} && $result -> {"images"} -> [1] -> {"location"} !~ /^http/);
 
         # Wrap the images in html
         $images -> {"leader"} = $self -> {"template"} -> load_template("feeds/html/image.tem", {"***class***" => "leader",
