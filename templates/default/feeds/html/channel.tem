@@ -1,0 +1,6 @@
+<ul class="newsagent">
+***items***</ul>
+<div class="newsagent listfooter">
+    <div class="gendate">Generated: ***now***</div>
+    <div class="updated">Last change: ***changed***</div>
+</div>

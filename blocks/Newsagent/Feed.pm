@@ -72,6 +72,10 @@ sub _validate_settings {
     $settings -> {"fulltext"} = 1
         if(defined($self -> {"cgi"} -> param("fulltext")));
 
+    # Image control is only used by some feeds
+    $settings -> {"images"} = 1
+        if(defined($self -> {"cgi"} -> param("images")));
+
     # count and offset are easy
     ($settings -> {"id"}, $error)  = $self -> validate_numeric("id", {"required" => 0,
                                                                       "intonly"  => 1,
@@ -128,10 +132,6 @@ sub page_display {
             }
         }
     } else {
-        my @pathinfo = $self -> {"cgi"} -> param('pathinfo');
-        # Normal page operation.
-        # ... handle operations here...
-
         $self -> generate_feed();
     }
 }

@@ -1,0 +1,8 @@
+<li class="feed">
+    ***leaderimg***
+    <div>
+        <h3><a href="***link***">***title***</a></h3>
+        <div class="datestrap">***date***</div>
+        <div class="summary">***summary***</div>
+    </div>
+</li>

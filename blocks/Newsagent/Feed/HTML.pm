@@ -25,6 +25,7 @@ use Newsagent::System::Article;
 use Digest::MD5 qw(md5_hex);
 use Webperl::Utils qw(trimspace path_join);
 use v5.12;
+use Data::Dumper;
 
 # ============================================================================
 #  Content generators
@@ -37,75 +38,92 @@ use v5.12;
 # to the aggregators is likely to be an undesirable state of affairs.
 sub generate_feed {
     my $self     = shift;
-    my $settings = {};
+    my $settings = $self -> _validate_settings();
 
-    my $results = $self -> {"article"} -> get_feed_articles($self -> _validate_settings());
+    my @pathinfo = $self -> {"cgi"} -> param("pathinfo");
+
+    # obtain the feed mode, and force it to a known value
+    my $mode = $pathinfo[0];
+    $mode = "feed" unless($pathinfo[0] eq "compact" || $pathinfo[0] eq "full");
+
+    # Any mode other than full forces no fulltext, full forces it on
+    $settings -> {"fulltext"} = ($mode eq "full");
+
+    # Compact format disables all images
+    $settings -> {"images"}   = ($mode ne "compact");
+
+    # Fetch the article(s) to output
+    my $results = $self -> {"article"} -> get_feed_articles($settings);
 
     my $items   = "";
     my $maxdate = 0;
     foreach my $result (@{$results}) {
-        my ($images, $extra) = ("", "");
-
         # Keep track of the latest date (should be the first result, really)
         $maxdate = $result -> {"release_time"}
             if($result -> {"release_time"} > $maxdate);
 
-        # Build the image list
-        foreach my $image (@{$result -> {"images"}}) {
-            # Work out where the image is
-            my $url = $image -> {"location"};
-            $url = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"}, $url)
-                if($image -> {"type"} eq "file");
-
-            $images .= $self -> {"template"} -> load_template("feeds/rss/image.tem", {"***url***"   => $url,
-                                                                                      "***name***"  => $image -> {"name"},
-                                                                                      "***order***" => $image -> {"order"}});
-        }
-        $images = $self -> {"template"} -> load_template("feeds/rss/images.tem", {"***images***" => $images})
-            if($images);
-
-        # If fulltext is activated, include the text in the item
-        $extra .= $self -> {"template"} -> load_template("feeds/rss/newsagent.tem", {"***elem***"    => "fulltext",
-                                                                                     "***attrs***"   => "",
-                                                                                     "***content***" => "<![CDATA[\n".$result -> {"fulltext"}."\n]]>" })
-            if($result -> {"fulltext"});
-
         # The date can be needed in both the title and date fields.
         my $pubdate = $self -> {"template"} -> format_time($result -> {"release_time"}, $self -> {"timefmt"});
 
+        # Generate the image urls
+        my $images = {"leader" => "", "article" => "" };
+
+        $images -> {"leader"} = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
+                                          $result -> {"images"} -> [0] -> {"location"})
+            if($settings -> {"images"} && $result -> {"images"} -> [0] -> {"location"});
+
+        # Force default leader image if needed
+        $images -> {"leader"} = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
+                                          $self -> {"settings"} -> {"config"} -> {"HTML:default_image"})
+            if($settings -> {"images"} && !$images -> {"leader"} && $self -> {"settings"} -> {"config"} -> {"HTML:default_image"});
+
+        $images -> {"article"} = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
+                                           $result -> {"images"} -> [1] -> {"location"})
+            if($settings -> {"images"} && $result -> {"images"} -> [1] -> {"location"});
+
+        # Wrap the images in html
+        $images -> {"leader"} = $self -> {"template"} -> load_template("feeds/html/image.tem", {"***class***" => "leader",
+                                                                                                "***url***"   => $images -> {"leader"},
+                                                                                                "***title***" => $result -> {"title"}})
+            if($images -> {"leader"});
+
+        $images -> {"article"} = $self -> {"template"} -> load_template("feeds/html/image.tem", {"***class***" => "article",
+                                                                                                 "***url***"   => $images -> {"article"},
+                                                                                                 "***title***" => $result -> {"title"}})
+            if($images -> {"article"});
+
+
         # Put the item together!
-        $items .= $self -> {"template"} -> load_template("feeds/rss/item.tem", {"***title***"       => $result -> {"title"} || $pubdate,
-                                                                                "***description***" => $result -> {"summary"},
-                                                                                "***images***"      => $images,
-                                                                                "***site***"        => $result -> {"sitename"},
-                                                                                "***extra***"       => $extra,
-                                                                                "***date***"        => $pubdate,
-                                                                                "***guid***"        => $result -> {"siteurl"}."?id=".$result -> {"id"},
-                                                                                "***link***"        => $result -> {"siteurl"}."?id=".$result -> {"id"},
-                                                                                "***email***"       => $result -> {"email"},
-                                                                                "***name***"        => $result -> {"realname"} || $result -> {"username"},
-                                                                                "***gravhash***"    => md5_hex(lc(trimspace($result -> {"email"} || ""))),
-                                                         });
+        $items .= $self -> {"template"} -> load_template("feeds/html/item-$mode.tem", {"***title***"       => $result -> {"title"} || $pubdate,
+                                                                                       "***summary***"     => $result -> {"summary"},
+                                                                                       "***leaderimg***"   => $images -> {"leader"},
+                                                                                       "***articleimg***"  => $images -> {"article"},
+                                                                                       "***site***"        => $result -> {"sitename"},
+                                                                                       "***date***"        => $pubdate,
+                                                                                       "***guid***"        => $result -> {"siteurl"}."?id=".$result -> {"id"},
+                                                                                       "***link***"        => $result -> {"siteurl"}."?id=".$result -> {"id"},
+                                                                                       "***email***"       => $result -> {"email"},
+                                                                                       "***name***"        => $result -> {"realname"} || $result -> {"username"},
+                                                                                       "***fulltext***"    => $result -> {"fulltext"},
+                                                                                       "***gravhash***"    => md5_hex(lc(trimspace($result -> {"email"} || ""))),
+                                                             });
     }
 
     # Put everything together in a channel to send back to the user.
-    my $feed = $self -> {"template"} -> load_template("feeds/rss/channel.tem", {"***generator***"   => "Newsagent",
-                                                                                "***editor***"      => $self -> {"settings"} -> {"config"} -> {"RSS:editor"},
-                                                                                "***webmaster***"   => $self -> {"settings"} -> {"config"} -> {"RSS:webmaster"},
-                                                                                "***title***"       => $self -> {"settings"} -> {"config"} -> {"RSS:title"},
-                                                                                "***description***" => $self -> {"settings"} -> {"config"} -> {"RSS:description"},
-                                                                                "***link***"        => path_join($self -> {"cgi"} -> url(-base => 1),
-                                                                                                                 $self -> {"settings"} -> {"config"} -> {"scriptpath"}, "rss"),
-                                                                                "***lang***"        => "en",
-                                                                                "***now***"         => $self -> {"template"} -> format_time(time(), $self -> {"timefmt"}),
-                                                                                "***changed***"     => $self -> {"template"} -> format_time($maxdate, $self -> {"timefmt"}),
-                                                                                "***items***"       => $items,
-                                                                                "***extra***"       => ""});
+    my $feed = $self -> {"template"} -> load_template("feeds/html/channel.tem", {"***title***"       => $self -> {"settings"} -> {"config"} -> {"RSS:title"},
+                                                                                 "***description***" => $self -> {"settings"} -> {"config"} -> {"RSS:description"},
+                                                                                 "***link***"        => path_join($self -> {"cgi"} -> url(-base => 1),
+                                                                                                                  $self -> {"settings"} -> {"config"} -> {"scriptpath"}, "rss"),
+                                                                                 "***lang***"        => "en",
+                                                                                 "***now***"         => $self -> {"template"} -> format_time(time(), $self -> {"timefmt"}),
+                                                                                 "***changed***"     => $self -> {"template"} -> format_time($maxdate, $self -> {"timefmt"}),
+                                                                                 "***items***"       => $items,
+                                                                                 "***extra***"       => ""});
 
     # Do not use the normal page generation process to send back the feed - that sends back
     # html, not xml. This sends the feed to the user, and then cleans up and shuts down the
     # script.
-    print $self -> {"cgi"} -> header(-type => 'application/xml',
+    print $self -> {"cgi"} -> header(-type => 'text/html',
                                      -charset => 'utf-8');
     print Encode::encode_utf8($feed);
 
