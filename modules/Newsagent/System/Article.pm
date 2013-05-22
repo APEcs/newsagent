@@ -721,43 +721,6 @@ sub _add_image_relation {
 
     $self -> clear_error();
 
-    my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"images"}."`
-                                            (article_id, image_id, order)
-                                            VALUES('?, ?, ?)");
-    my $rows = $newh -> execute($articleid, $imageid, $order);
-    return $self -> self_error("Unable to perform image file insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
-    return $self -> self_error("Image file insert failed, no rows inserted") if($rows eq "0E0");
-
-    # FIXME: This ties to MySQL, but is more reliable that last_insert_id in general.
-    #        Try to find a decent solution for this mess...
-    # NOTE: the DBD::mysql documentation doesn't actually provide any useful information
-    #       about what this will contain if the insert fails. In fact, DBD::mysql calls
-    #       libmysql's mysql_insert_id(), which returns 0 on error (last insert failed).
-    #       There, why couldn't they bloody /say/ that?!
-    my $newid = $self -> {"dbh"} -> {"mysql_insertid"};
-
-    return $self -> self_error("Unable to obtain id for new image file row")
-        if(!$newid);
-
-    return $newid;
-}
-
-
-## @method private $ _add_image_relation($articleid, $imageid, $order)
-# Add a relation between an article and an image
-#
-# @param articleid The ID of the article to add the relation for.
-# @param imageid   The ID of the image to add the relation to.
-# @param order     The order of the relation. The first imge should be 1, second 2, and so on.
-# @return The id of the new image association row on success, undef on error.
-sub _add_image_relation {
-    my $self      = shift;
-    my $articleid = shift;
-    my $imageid   = shift;
-    my $order     = shift;
-
-    $self -> clear_error();
-
     my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"articleimages"}."`
                                             (`article_id`, `image_id`, `order`)
                                             VALUES(?, ?, ?)");
