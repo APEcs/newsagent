@@ -1,7 +1,7 @@
-<li class="full-news">
+<li class="newsagent-full">
     <h1>***title***</h1>
-    <div class="fulldate">Published: ***date***</div>
+    <div class="newsagent-fulldate">Published: ***date***</div>
     ***articleimg***
     <h3>***summary***</h3>
-    <div class="article">***fulltext***</div>
+    <div class="newsagent-article">***fulltext***</div>
 </li>

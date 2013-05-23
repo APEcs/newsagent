@@ -1,8 +1,8 @@
-<li class="feed">
+<li class="newsagent-feed">
     ***leaderimg***
     <div>
         <h3><a href="***link***">***title***</a></h3>
-        <div class="datestrap">***date***</div>
-        <div class="summary">***summary***</div>
+        <div class="newsagent-datestrap">***date***</div>
+        <div class="newsagent-summary">***summary*** <a href="***link***">...</a></div>
     </div>
 </li>
