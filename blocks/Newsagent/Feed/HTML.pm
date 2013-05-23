@@ -79,7 +79,7 @@ sub generate_feed {
     my $items   = "";
     my $maxdate = 0;
     foreach my $result (@{$results}) {
-        $items .= "<!-- ".Dumper($result)." -->";
+        #$items .= "<!-- ".Dumper($result)." -->";
 
         # Keep track of the latest date (should be the first result, really)
         $maxdate = $result -> {"release_time"}
