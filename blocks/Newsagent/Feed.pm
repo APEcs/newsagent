@@ -105,6 +105,14 @@ sub _validate_settings {
                                                                           "formattest" => '^\w+(?:,\w+)*$',
                                                                           "formatdesc" => "",
                                                                           "nicename"   => ""});
+    ($settings -> {"urllevel"}, $error) = $self -> validate_string("level", {"required"   => 0,
+                                                                          "default"    => "",
+                                                                          "formattest" => '^\w+$',
+                                                                          "formatdesc" => "",
+                                                                          "nicename"   => ""});
+    ($settings -> {"urllevel"}) = $settings -> {"level"} =~ /^(\w+)/
+        if(!$settings -> {"urllevel"} && $settings -> {"level"});
+
 
     return $settings;
 }

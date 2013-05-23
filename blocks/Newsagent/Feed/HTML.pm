@@ -43,7 +43,7 @@ sub generate_feed {
     my @pathinfo = $self -> {"cgi"} -> param("pathinfo");
 
     # obtain the feed mode, and force it to a known value
-    my $mode = $pathinfo[0];
+    my $mode = $pathinfo[0] || "feed";
     $mode = "feed" unless($pathinfo[0] eq "compact" || $pathinfo[0] eq "full");
 
     # Any mode other than full forces no fulltext, full forces it on
@@ -58,6 +58,8 @@ sub generate_feed {
     my $items   = "";
     my $maxdate = 0;
     foreach my $result (@{$results}) {
+        $items .= "<!-- ".Dumper($result)." -->";
+
         # Keep track of the latest date (should be the first result, really)
         $maxdate = $result -> {"release_time"}
             if($result -> {"release_time"} > $maxdate);
@@ -94,6 +96,8 @@ sub generate_feed {
                                                                                      "***title***" => $result -> {"title"}})
             if($images[1]);
 
+        # work out the URL
+        my $siteurl = $result -> {"siteurl"} || $result -> {"defaulturl"};
 
         # Put the item together!
         $items .= $self -> {"template"} -> load_template("feeds/html/item-$mode.tem", {"***title***"       => $result -> {"title"} || $pubdate,
@@ -102,8 +106,8 @@ sub generate_feed {
                                                                                        "***articleimg***"  => $images[1],
                                                                                        "***site***"        => $result -> {"sitename"},
                                                                                        "***date***"        => $pubdate,
-                                                                                       "***guid***"        => $result -> {"siteurl"}."?id=".$result -> {"id"},
-                                                                                       "***link***"        => $result -> {"siteurl"}."?id=".$result -> {"id"},
+                                                                                       "***guid***"        => $siteurl."?id=".$result -> {"id"},
+                                                                                       "***link***"        => $siteurl."?id=".$result -> {"id"},
                                                                                        "***email***"       => $result -> {"email"},
                                                                                        "***name***"        => $result -> {"realname"} || $result -> {"username"},
                                                                                        "***fulltext***"    => $result -> {"fulltext"},

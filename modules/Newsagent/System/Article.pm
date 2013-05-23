@@ -150,7 +150,7 @@ sub get_user_sites {
     my @sitelist = ();
     while(my $site = $sitesh -> fetchrow_hashref()) {
         if($self -> {"roles"} -> user_has_capability($site -> {"metadata_id"}, $userid, "author")) {
-            push(@sitelist, {"name"       => $site -> {"description"}." (".$site -> {"full_url"}.")",
+            push(@sitelist, {"name"       => $site -> {"description"},
                              "value"      => $site -> {"name"},
                              "id"         => $site -> {"id"},
                              "metadataid" => $site -> {"metadata_id"}});
@@ -245,29 +245,47 @@ sub get_image_info {
 sub get_feed_articles {
     my $self     = shift;
     my $settings = hash_or_hashref(@_);
+    my @params;
+
+    $self -> clear_error();
 
     # Fix up defaults
     $settings -> {"count"} = $self -> {"settings"} -> {"config"} -> {"Article:rss_count"}
-        if(!$settings -> {"count"});
+    if(!$settings -> {"count"});
 
     $settings -> {"offset"} = 0
         if(!$settings -> {"offset"});
 
+    # And work out what the level for the site url should be
+    my $urllevel = $settings -> {"urllevel"};
+    $urllevel = $self -> {"settings"} -> {"config"} -> {"Article:default_level"}
+    if(!$urllevel);
+
+    # convert to a site id for a simpler query
+    $urllevel = $self -> _get_level_byname($urllevel)
+        or return undef;
+
     # Now start constructing the query. These are the tables and where clauses that are
     # needed regardless of the settings provided by the caller.
-    my $from  = "`".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `article`,
-                 `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `user`,
-                 `".$self -> {"settings"} -> {"database"} -> {"sites"}."` AS `site`";
-    my $where = "`user`.`user_id` = `article`.`creator_id`
-                 AND `site`.`id` = `article`.`site_id`
-                 AND (`article`.`release_mode` = 'now'
-                      OR (`article`.`release_mode` = 'timed'
-                          AND `article`.`release_time` <= UNIX_TIMESTAMP()
-                         )
-                     )";
+    # All the fields the query is interested in, normally fulltext is omitted unless explicitly requested
+    my $fields = "`article`.`id`, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `user`.`email`, `article`.`created`, `site`.`name` AS `sitename`, `site`.`default_url` AS `defaulturl`, `article`.`title`, `article`.`summary`, `article`.`release_time`, `urls`.`url` AS `siteurl`";
+    $fields   .= ", `article`.`article` AS `fulltext`" if($settings -> {"fulltext"});
+
+    my $from  = "`".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `article`
+                 LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `user`
+                     ON `user`.`user_id` = `article`.`creator_id`
+                 LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"sites"}."` AS `site`
+                     ON `site`.`id` = `article`.`site_id`
+                 LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"siteurls"}."` AS `urls`
+                     ON (`urls`.`site_id` = `article`.`site_id` AND `urls`.`level_id` = ?)";
+    my $where = "(`article`.`release_mode` = 'now'
+                   OR (`article`.`release_mode` = 'timed'
+                        AND `article`.`release_time` <= UNIX_TIMESTAMP()
+                      )
+                 )";
+    push(@params, $urllevel);   # argument for urls.level_id = ?
 
     # The next lot are extensions to the above to support filters requested by the caller.
-    my @params;
     if($settings -> {"id"}) {
         $where .= " AND `article`.`id` = ?";
         push(@params, $settings -> {"id"});
@@ -306,16 +324,14 @@ sub get_feed_articles {
                     AND `artlevels`.`level_id` = `level`.`id`";
     }
 
-    # All the fields the query is interested in, normally fulltext is omitted unless explicitly requested
-    my $fields = "`article`.`id`, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `user`.`email`, `article`.`created`, `site`.`name` AS `sitename`, `site`.`full_url` AS `siteurl`, `article`.`title`, `article`.`summary`, `article`.`release_time`";
-    $fields   .= ", `article`.`article` AS `fulltext`" if($settings -> {"fulltext"});
+    my $sql = "SELECT $fields
+               FROM $from
+               WHERE $where
+               ORDER BY `article`.`release_time` DESC
+               LIMIT ".$settings -> {"offset"}.", ".$settings -> {"count"};
 
     # Now put it all together and fire it at the database
-    my $query = $self -> {"dbh"} -> prepare("SELECT $fields
-                                             FROM $from
-                                             WHERE $where
-                                             ORDER BY `article`.`release_time` DESC
-                                             LIMIT ".$settings -> {"offset"}.", ".$settings -> {"count"});
+    my $query = $self -> {"dbh"} -> prepare($sql);
     $query -> execute(@params)
         or return $self -> self_error("Unable to execute article query: ".$self -> {"dbh"} -> errstr);
 
@@ -346,7 +362,7 @@ sub get_feed_articles {
 
             $article -> {"images"} = $imageh -> fetchall_arrayref({});
         }
-    } # if(scalar(@{$articles})) {
+    }                           # if(scalar(@{$articles})) {
 
     return $articles;
 }

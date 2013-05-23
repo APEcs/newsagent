@@ -73,6 +73,9 @@ sub generate_feed {
         # The date can be needed in both the title and date fields.
         my $pubdate = $self -> {"template"} -> format_time($result -> {"release_time"}, $self -> {"timefmt"});
 
+        # work out the URL
+        my $siteurl = $result -> {"siteurl"} || $result -> {"defaulturl"};
+
         # Put the item together!
         $items .= $self -> {"template"} -> load_template("feeds/rss/item.tem", {"***title***"       => $result -> {"title"} || $pubdate,
                                                                                 "***description***" => $result -> {"summary"},
@@ -80,8 +83,8 @@ sub generate_feed {
                                                                                 "***site***"        => $result -> {"sitename"},
                                                                                 "***extra***"       => $extra,
                                                                                 "***date***"        => $pubdate,
-                                                                                "***guid***"        => $result -> {"siteurl"}."?id=".$result -> {"id"},
-                                                                                "***link***"        => $result -> {"siteurl"}."?id=".$result -> {"id"},
+                                                                                "***guid***"        => $siteurl."?id=".$result -> {"id"},
+                                                                                "***link***"        => $siteurl."?id=".$result -> {"id"},
                                                                                 "***email***"       => $result -> {"email"},
                                                                                 "***name***"        => $result -> {"realname"} || $result -> {"username"},
                                                                                 "***gravhash***"    => md5_hex(lc(trimspace($result -> {"email"} || ""))),
