@@ -28,6 +28,27 @@ use v5.12;
 use Data::Dumper;
 
 # ============================================================================
+#  Constructor
+
+## @cmethod $ new(%args)
+# Overloaded constructor for the feed facility, loads the System::Article model
+# and other classes required to generate the feeds.
+#
+# @param args A hash of values to initialise the object with. See the Block docs
+#             for more information.
+# @return A reference to a new Newsagent::Feed object on success, undef on error.
+sub new {
+    my $invocant = shift;
+    my $class    = ref($invocant) || $invocant;
+    my $self     = $class -> SUPER::new("timefmt"      => '%A, %d %B %Y',
+                                        "timefmt_full" => '%A, %d %B %Y %H:%M:%S',
+                                        @_)
+        or return undef;
+
+    return $self;
+}
+
+# ============================================================================
 #  Content generators
 
 ## @method void generate_feed()
@@ -121,8 +142,8 @@ sub generate_feed {
                                                                                  "***link***"        => path_join($self -> {"cgi"} -> url(-base => 1),
                                                                                                                   $self -> {"settings"} -> {"config"} -> {"scriptpath"}, "rss"),
                                                                                  "***lang***"        => "en",
-                                                                                 "***now***"         => $self -> {"template"} -> format_time(time(), $self -> {"timefmt"}),
-                                                                                 "***changed***"     => $self -> {"template"} -> format_time($maxdate, $self -> {"timefmt"}),
+                                                                                 "***now***"         => $self -> {"template"} -> format_time(time(), $self -> {"timefmt_full"}),
+                                                                                 "***changed***"     => $self -> {"template"} -> format_time($maxdate, $self -> {"timefmt_full"}),
                                                                                  "***items***"       => $items,
                                                                                  "***extra***"       => ""});
 
