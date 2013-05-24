@@ -44,13 +44,6 @@
     background-position: left center;
 }
 
-.controlicon {
-    vertical-align: middle;
-    border: none;
-    width: 16px;
-    height: 16px;
-}
-
 .newsagent #botbar {
     position: absolute;
     left: 0px;

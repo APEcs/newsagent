@@ -184,47 +184,12 @@
     min-width: 140px;
 }
 
-
-/* Site menu */
-#userbar #site-menu > .item > .site-front-icon {
-    width: 20px;
-    height: 20px;
-    padding-top: 4px;
-    background: url("../userbar/images/sitefront.png") center center no-repeat;
-    display: block;
-}
-
-
-/* Course menu */
-#userbar #course-config > .item > .course-config-icon {
-    width: 20px;
-    height: 20px;
-    padding-top: 8px;
-    background: url("../userbar/images/settings.png") center center no-repeat;
-    display: block;
-}
-
-
-/* Warning entry */
-#userbar .top-menu .menu-warning {
-    padding-left: 24px;
-    background: url("../userbar/images/warning.png") 6px center no-repeat;
-    color: #ff7700;
-}
-
-/* Feedback notice */
-#userbar .top-menu .menu-feedback {
-    color: #ffff00;
-}
-
-#userbar .top-menu .menu-feedback img {
+#userbar .bar-container ul li a img.controlicon {
     width: 16px;
     height: 16px;
     padding: 0;
     line-height: 24px;
     vertical-align: middle;
-    float: none;
-    display: inline;
 }
 
 /* User profile */
