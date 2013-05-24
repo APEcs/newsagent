@@ -71,6 +71,15 @@ obtained by any of the feeds. Some examples are given after the documentation.
   to the count. With this you can tell it to skip items, so if you do
   `offset=5`, the first 5 newest items are skipped.
 
+* `maxage=<number><d|m|y>` controls the maximum age of the articles included
+  in the feed. If this is specified, only articles less than the specified
+  age will be included. The number specified is, by default, the age in days
+  but you can append `m` or `y` to indicate that the number is a number of
+  months or years, eg: `maxage=6m` will mean that the feed will include
+  articles that are up to 6 months old, `maxage=2y` will include articles
+  up to two years old. The default for this is `1y`, ie: articles up to one
+  year old will be included in the feed.
+
 ### Examples
 
 The following will generate an RSS/Atom feed of the first 3 articles posted
