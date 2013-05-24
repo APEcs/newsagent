@@ -230,7 +230,7 @@ sub get_image_info {
 #   site name, not the site ID, and valid sites are defined in the `sites` table.
 #   If no site is specified, all sites with messages at the current level are matched.
 # - `count`: how many articles to return. If not specified, this defaults to the
-#   system-wide setting defined in `Article:rss_count` in the settings table.
+#   system-wide setting defined in `Feed:count` in the settings table.
 # - `offset`: article offset, first returned article is at offset 0.
 # - `fulltext`: if specified, the full article text will be included in the result,
 #   otherwise only the title and summary will be included.
@@ -250,15 +250,15 @@ sub get_feed_articles {
     $self -> clear_error();
 
     # Fix up defaults
-    $settings -> {"count"} = $self -> {"settings"} -> {"config"} -> {"Article:rss_count"}
-    if(!$settings -> {"count"});
+    $settings -> {"count"} = $self -> {"settings"} -> {"config"} -> {"Feed:count"}
+        if(!$settings -> {"count"});
 
     $settings -> {"offset"} = 0
         if(!$settings -> {"offset"});
 
     # And work out what the level for the site url should be
     my $urllevel = $settings -> {"urllevel"};
-    $urllevel = $self -> {"settings"} -> {"config"} -> {"Article:default_level"}
+    $urllevel = $self -> {"settings"} -> {"config"} -> {"Feed:default_level"}
     if(!$urllevel);
 
     # convert to a site id for a simpler query
@@ -322,6 +322,11 @@ sub get_feed_articles {
         $where .= " AND ($levelfrag)
                     AND `artlevels`.`article_id` = `article`.`id`
                     AND `artlevels`.`level_id` = `level`.`id`";
+    }
+
+    if($settings -> {"maxage"}) {
+        $where .= " AND `article`.`release_time` > ?";
+        push(@params, $settings -> {"maxage"});
     }
 
     my $sql = "SELECT $fields

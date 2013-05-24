@@ -24,6 +24,7 @@ use base qw(Newsagent); # This class extends the Newsagent block class
 use Newsagent::System::Article;
 use Digest::MD5 qw(md5_hex);
 use Webperl::Utils qw(trimspace path_join);
+use Date::Calc qw(Add_Delta_YMD Localtime Date_to_Time);
 use v5.12;
 
 
@@ -82,9 +83,9 @@ sub _validate_settings {
                                                                });
     ($settings -> {"count"}, $error)  = $self -> validate_numeric("count", {"required" => 0,
                                                                             "intonly"  => 1,
-                                                                            "default"  => $self -> {"settings"} -> {"config"} -> {"Article:rss_count"},
+                                                                            "default"  => $self -> {"settings"} -> {"config"} -> {"Feed:count"},
                                                                             "min"      => 1,
-                                                                            "max"      => $self -> {"settings"} -> {"config"} -> {"Article:rss_count_limit"},
+                                                                            "max"      => $self -> {"settings"} -> {"config"} -> {"Feed:count_limit"},
                                                                             "nicename" => ""
                                                                   });
     ($settings -> {"offset"}, $error)  = $self -> validate_numeric("offset", {"required" => 0,
@@ -113,6 +114,27 @@ sub _validate_settings {
     ($settings -> {"urllevel"}) = $settings -> {"level"} =~ /^(\w+)/
         if(!$settings -> {"urllevel"} && $settings -> {"level"});
 
+    # If a maximum age is specified, convert it to a unix timestamp to use for filtering
+    ($settings -> {"maxage"}, $error) = $self -> validate_string("maxage", {"required"   => 0,
+                                                                            "default"    => $self -> {"settings"} -> {"config"} -> {"Feed:max_age"},
+                                                                            "formattest" => '^\d+[dmy]?$',
+                                                                            "formatdesc" => "",
+                                                                            "nicename"   => ""});
+    if($settings -> {"maxage"}) {
+        my ($count, $modifier) = $settings -> {"maxage"} =~ /^(\d+)([dmy])?$/;
+        my ($year, $month, $day) = Localtime();
+        my ($dyear, $dmonth, $dday);
+
+        given($modifier) {
+            when("m") { ($dyear, $dmonth, $dday) = Add_Delta_YMD($year, $month, $day, 0, (-1 * $count), 0); }
+            when("y") { ($dyear, $dmonth, $dday) = Add_Delta_YMD($year, $month, $day, (-1 * $count), 0, 0); }
+            default {
+                ($dyear, $dmonth, $dday) = Add_Delta_YMD($year, $month, $day, 0, 0, (-1 * $count));
+            }
+        }
+
+        $settings -> {"maxage"} = Date_to_Time($dyear, $dmonth, $dday, 0, 0, 0);
+    }
 
     return $settings;
 }
