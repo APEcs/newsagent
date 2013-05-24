@@ -5,6 +5,7 @@
 @import url('messagebox.css'); /* support for message boxes            */
 @import url('button.css');     /* button rules (okay?)                 */
 @import url('userbar.css');    /* Userbar styling.                     */
+@import url('inputglow.css');  /* make input boxes glow when active    */
 
 #errorcore {
     margin: 0px auto;
@@ -25,16 +26,4 @@ input[type=text], input[type=password] {
     font-size: 20px;
     margin-bottom: 10px;
     margin-top: 2px;
-}
-
-input[type=text]:focus, input[type=password]:focus, input[type=checkbox]:focus {
-    box-shadow: 0 0 5px rgba(0, 0, 255, 1);
-    -webkit-box-shadow: 0 0 5px rgba(0, 0, 255, 1);
-    -moz-box-shadow: 0 0 5px rgba(0, 0, 255, 1);
-}
-
-textarea:focus {
-    box-shadow: 0 0 5px rgba(0, 0, 255, 1);
-    -webkit-box-shadow: 0 0 5px rgba(0, 0, 255, 1);
-    -moz-box-shadow: 0 0 5px rgba(0, 0, 255, 1);
 }

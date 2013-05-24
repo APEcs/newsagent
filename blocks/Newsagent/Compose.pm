@@ -357,8 +357,9 @@ sub _validate_article {
 
     $self -> log("compose", "Added article $aid");
 
-    # FIXME: redirect to article view/article list here
-    print $self -> {"cgi"} -> redirect($self -> build_url(block => "compose", pathinfo => []));
+    # redirect to a success page
+    # Doing this prevents page reloads adding multiple article copies!
+    print $self -> {"cgi"} -> redirect($self -> build_url(block => "compose", pathinfo => ["success"]));
     exit;
 }
 
@@ -502,6 +503,30 @@ sub _generate_compose {
 }
 
 
+## @method private @ _generate_success()
+# Generate a success page to send to the user. This creates a message box telling the
+# user that their article has been added - this is needed to ensure that users get a
+# confirmation, but it isn't generated inside _add_article() or _validate_article() so
+# that page refreshes don't submit multiple copies.
+#
+# @return The page title, content, and meta refresh strings.
+sub _generate_success {
+    my $self = shift;
+
+    return ("{L_COMPOSE_ADDED_TITLE}",
+            $self -> {"template"} -> message_box("{L_COMPOSE_ADDED_TITLE}",
+                                                 "articleok",
+                                                 "{L_COMPOSE_ADDED_SUMMARY}",
+                                                 "{L_COMPOSE_ADDED_DESC}",
+                                                 undef,
+                                                 "messagecore",
+                                                 [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
+                                                    "colour"  => "blue",
+                                                    "action"  => "location.href='".$self -> build_url(block => "compose", pathinfo => [])."'"} ]),
+            $self -> {"template"} -> load_template("refreshmeta.tem", {"***url***" => $self -> build_url(block => "compose", pathinfo => []) } )
+        );
+}
+
 # ============================================================================
 #  Addition functions
 
@@ -554,7 +579,7 @@ sub page_display {
                                                            "errorcore",
                                                            [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
                                                               "colour"  => "blue",
-                                                              "action"  => "location.href='".$self -> build_url(block => "news")."'"} ]);
+                                                              "action"  => "location.href='".$self -> build_url(block => "compose", pathinfo => [])."'"} ]);
 
         return $self -> {"template"} -> load_template("error/general.tem",
                                                       {"***title***"     => "{L_PERMISSION_FAILED_TITLE}",
@@ -583,7 +608,8 @@ sub page_display {
             ($title, $content, $extrahead) = $self -> _generate_compose();
         } else {
             given($pathinfo[0]) {
-                when("add")  { ($title, $content, $extrahead) = $self -> _add_article(); }
+                when("add")      { ($title, $content, $extrahead) = $self -> _add_article(); }
+                when("success")  { ($title, $content, $extrahead) = $self -> _generate_success(); }
                 default {
                     ($title, $content, $extrahead) = $self -> _generate_compose();
                 }
