@@ -3,6 +3,7 @@ Required modules, usually provided within distro repositories:
 Class::Accessor
 Class::Mix
 Compress::Bzip2
+Date-Calc
 DBI
 Email::MIME
 Email::Sender::Simple (in Email-Sender)

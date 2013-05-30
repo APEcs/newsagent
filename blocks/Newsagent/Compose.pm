@@ -152,7 +152,7 @@ sub _validate_article_file {
 
 ## @method private $ _validate_article_image($args, $imgid)
 # Validate the image field for an article. This checks the values set for one
-# of th epossible images attached to an article.
+# of the possible images attached to an article.
 #
 # @param args  A reference to a hash to store validated data in.
 # @param imgid The id of the image fields to check, should be 'a' or 'b'
@@ -526,6 +526,7 @@ sub _generate_success {
             $self -> {"template"} -> load_template("refreshmeta.tem", {"***url***" => $self -> build_url(block => "compose", pathinfo => []) } )
         );
 }
+
 
 # ============================================================================
 #  Addition functions

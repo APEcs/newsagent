@@ -1,5 +1,6 @@
-PERMISSION_FAILED_TITLE   = Access denied
-PERMISSION_FAILED_SUMMARY = You do not have permission to perform this operation.
+PERMISSION_FAILED_TITLE     = Access denied
+PERMISSION_FAILED_SUMMARY   = You do not have permission to perform this operation.
 
-PERMISSION_VIEW_DESC      = You do not have permission to view the requested resource. If you think this is incorrect, please contact <a href="mailto:{V_[admin_email]}">{V_[admin_email]}</a> for assistance.
-PERMISSION_COMPOSE_DESC   = You do not have permission to compose articles. If you think this is incorrect, please contact <a href="mailto:{V_[admin_email]}">{V_[admin_email]}</a> for assistance.
+PERMISSION_VIEW_DESC        = You do not have permission to view the requested resource. If you think this is incorrect, please contact <a href="mailto:{V_[admin_email]}">{V_[admin_email]}</a> for assistance.
+PERMISSION_COMPOSE_DESC     = You do not have permission to compose articles. If you think this is incorrect, please contact <a href="mailto:{V_[admin_email]}">{V_[admin_email]}</a> for assistance.
+PERMISSION_LISTARTICLE_DESC = You do not have permission to view the list of articles. If you think this is incorrect, please contact <a href="mailto:{V_[admin_email]}">{V_[admin_email]}</a> for assistance.

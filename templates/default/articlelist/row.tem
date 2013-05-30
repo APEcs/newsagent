@@ -1,0 +1,6 @@
+<tr>
+    <td class="mode ***modeclass***" title="***modeinfo***">&nbsp</td>
+    <td class="date ***modeclass***">***date***</td>
+    <td class="site">***site***</td>
+    <td class="title"><a href="***editurl***">***title***</a> [{L_ALIST_CREATED} ***created***, ***user***]</td>
+</tr>

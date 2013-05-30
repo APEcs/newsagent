@@ -61,6 +61,14 @@ sub new {
                                    "image/gif"   => "gif",
     };
 
+    # Allowed sort fields
+    $self -> {"allowed_fields"} = {"creator_id"   => "creator_id",
+                                   "created"      => "created",
+                                   "title"        => "title",
+                                   "release_mode" => "release_mode",
+                                   "release_time" => "release_time",
+    };
+
     return $self;
 }
 
@@ -371,6 +379,88 @@ sub get_feed_articles {
 
     return $articles;
 }
+
+
+## @method $ get_user_articles($userid, $settings)
+# Fetch the list of articles the user has editor access to. This will go through
+# the articles in the database, ordered by the specified field, recording which
+# articles the user can edit.
+#
+# @param userid    The ID of the user requesting the article list.
+# @param count     The number of articles to return.
+# @param offset    An offset to start returning articles from. The first article
+#                  is at offset = 0.
+# @param sortfield The field to sort the results on, if not specified defaults
+#                  to `release_time`
+# @param sortdir   The direction to sort in, if not specified defaults to `DESC`,
+#                  valid values are `ASC` and `DESC`.
+# @return A reference to an array of articles the user can edit.
+sub get_user_articles {
+    my $self      = shift;
+    my $userid    = shift;
+    my $settings  = shift;
+    my $sortfield = $settings -> {"sortfield"} || 'release_time';
+    my $sortdir   = $settings -> {"sortdir"} || 'DESC';
+    my @articles;
+
+    # Force the sortfield to a supported value
+    $sortfield =  $self -> {"allowed_fields"} -> {$sortfield} || 'release_time';
+
+    # And the sort direction too.
+    $sortdir = $sortdir eq "DESC" ? "DESC" : "ASC";
+
+    my $fields = "`article`.*, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `user`.`email`, `site`.`name` AS `sitename`, `site`.`description` AS `sitedesc`";
+    my $from   = "`".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `article`
+                  LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `user`
+                      ON `user`.`user_id` = `article`.`creator_id`
+                  LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"sites"}."` AS `site`
+                      ON `site`.`id` = `article`.`site_id`";
+    my $where  = $settings -> {"showdeleted"} ? "" : " WHERE `article`.`release_mode` != 'deleted'";
+
+    # The actual query can't contain a limit directive: there's no way to determine at this point
+    # whether the user has access to any particular article, so any limit may be being applied to
+    # entries the user should never even see.
+    my $articleh = $self -> {"dbh"} -> prepare("SELECT $fields
+                                                FROM $from
+                                                $where
+                                                ORDER BY `article`.`$sortfield` $sortdir, `article`.`created` $sortdir");
+
+    my $levelh = $self -> {"dbh"} -> prepare("SELECT `level`.*
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {"levels"}."` AS `level`,
+                                                   `".$self -> {"settings"} -> {"database"} -> {"articlelevels"}."` AS `artlevels`
+                                              WHERE `level`.`id` = `artlevels`.`level_id`
+                                              AND `artlevels`.`article_id` = ?");
+    $articleh -> execute()
+        or return $self -> self_error("Unable to execute article query: ".$self -> {"dbh"} -> errstr);
+
+    my ($pos, $added) = (0, 0);
+    while(my $article = $articleh -> fetchrow_hashref()) {
+        # Does the user have edit access to this article?
+        if($self -> {"roles"} -> user_has_capability($article -> {"metadata_id"}, $userid, "edit")) {
+
+            # If an offset has been specified, have enough articles been skipped?
+            if(!$settings -> {"offset"} || $pos >= $settings -> {"offset"}) {
+                # Yes, fetch the level information for the article
+                $levelh -> execute($article -> {"id"})
+                    or return $self -> self_error("Unable to execute article level query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
+
+                $article -> {"levels"} = $levelh -> fetchall_arrayref({});
+
+                # And store it
+                push(@articles, $article);
+
+                # If enough articles have been added to the list, stop fetching
+                ++$added;
+                last if($settings -> {"count"} && $added == $settings -> {"count"});
+            }
+
+            ++$pos;
+        }
+    }
+
+    return \@articles;
+}
+
 
 
 # ==============================================================================

@@ -1,0 +1,4 @@
+<ul class="paginate">
+<li class="pagebox location">{L_NAVBOX_PAGEOF}</li>
+***pages***
+</ul>

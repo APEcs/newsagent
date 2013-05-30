@@ -1,0 +1,11 @@
+<div id="articlelist" class="shadowbox">
+    <h2>{L_ALIST_TITLE}</h2>
+    <div class="sbcontent">
+        <table class="listtable">
+            <tbody>
+***articles***
+            </tbody>
+        </table>
+***paginate***
+    </div>
+</div>

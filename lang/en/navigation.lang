@@ -1,0 +1,6 @@
+NAVBOX_PAGEOF  = Page ***pagenum*** of ***maxpage***
+NAVBOX_FIRST   = First
+NAVBOX_PREV    = Prev
+NAVBOX_NEXT    = Next
+NAVBOX_LAST    = Last
+NAVBOX_SPACER  =

@@ -1,0 +1,52 @@
+@charset "utf-8";
+
+#articlelist {
+    margin: 0px auto;
+    margin-top: 40px;
+    width: 1130px;
+}
+
+table.listtable {
+    width: 100%;
+}
+
+table.listtable tr td {
+    border-bottom: 1px solid #eee;
+    padding: 7px 3px;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+table.listtable tr:last-child td {
+    border-bottom: none;
+}
+
+table.listtable tr td.mode {
+    width: 22px;
+    background-repeat: no-repeat;
+    background-position: left center;
+}
+
+table.listtable tr td.mode.now {
+    background-image: url('../images/modes/now.png');
+}
+
+table.listtable tr td.mode.released {
+    background-image: url('../images/modes/released.png');
+}
+
+table.listtable tr td.mode.timed {
+    background-image: url('../images/modes/timed.png');
+}
+
+table.listtable tr td.mode.edited {
+    background-image: url('../images/modes/edited.png');
+}
+
+table.listtable tr td.mode.deleted {
+    background-image: url('../images/modes/deleted.png');
+}
+
+table.listtable tr td.date.timed {
+    color: #777;
+}
