@@ -286,7 +286,7 @@ sub get_feed_articles {
                      ON `site`.`id` = `article`.`site_id`
                  LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"siteurls"}."` AS `urls`
                      ON (`urls`.`site_id` = `article`.`site_id` AND `urls`.`level_id` = ?)";
-    my $where = "(`article`.`release_mode` = 'now'
+    my $where = "(`article`.`release_mode` = 'visible'
                    OR (`article`.`release_mode` = 'timed'
                         AND `article`.`release_time` <= UNIX_TIMESTAMP()
                       )
@@ -381,7 +381,7 @@ sub get_feed_articles {
 }
 
 
-## @method $ get_user_articles($userid, $settings)
+## @method @ get_user_articles($userid, $settings)
 # Fetch the list of articles the user has editor access to. This will go through
 # the articles in the database, ordered by the specified field, recording which
 # articles the user can edit.
@@ -394,7 +394,9 @@ sub get_feed_articles {
 #                  to `release_time`
 # @param sortdir   The direction to sort in, if not specified defaults to `DESC`,
 #                  valid values are `ASC` and `DESC`.
-# @return A reference to an array of articles the user can edit.
+# @return A reference to an array of articles the user can edit, and a count of the
+#         number of articles the user can edit (which may be larger than the size
+#         of the returned array, if `count` is specified.
 sub get_user_articles {
     my $self      = shift;
     my $userid    = shift;
@@ -415,7 +417,7 @@ sub get_user_articles {
                       ON `user`.`user_id` = `article`.`creator_id`
                   LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"sites"}."` AS `site`
                       ON `site`.`id` = `article`.`site_id`";
-    my $where  = $settings -> {"showdeleted"} ? "" : " WHERE `article`.`release_mode` != 'deleted'";
+    my $where  = $settings -> {"hidedeleted"} ? " WHERE `article`.`release_mode` != 'deleted'" : "";
 
     # The actual query can't contain a limit directive: there's no way to determine at this point
     # whether the user has access to any particular article, so any limit may be being applied to
@@ -433,13 +435,16 @@ sub get_user_articles {
     $articleh -> execute()
         or return $self -> self_error("Unable to execute article query: ".$self -> {"dbh"} -> errstr);
 
-    my ($pos, $added) = (0, 0);
+    my ($added, $count) = (0, 0);
     while(my $article = $articleh -> fetchrow_hashref()) {
         # Does the user have edit access to this article?
         if($self -> {"roles"} -> user_has_capability($article -> {"metadata_id"}, $userid, "edit")) {
 
-            # If an offset has been specified, have enough articles been skipped?
-            if(!$settings -> {"offset"} || $pos >= $settings -> {"offset"}) {
+            # If an offset has been specified, have enough articles been skipped, and if
+            # a count has been specified, is there still space for more entries?
+            if((!$settings -> {"offset"} || $count >= $settings -> {"offset"}) &&
+               (!$settings -> {"count"}  || $added < $settings -> {"count"})) {
+
                 # Yes, fetch the level information for the article
                 $levelh -> execute($article -> {"id"})
                     or return $self -> self_error("Unable to execute article level query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
@@ -448,17 +453,13 @@ sub get_user_articles {
 
                 # And store it
                 push(@articles, $article);
-
-                # If enough articles have been added to the list, stop fetching
-                ++$added;
-                last if($settings -> {"count"} && $added == $settings -> {"count"});
+                ++$added; # keep a separate 'added' counter, it may be faster than scalar()
             }
-
-            ++$pos;
+            ++$count;
         }
     }
 
-    return \@articles;
+    return (\@articles, $count);
 }
 
 

@@ -73,7 +73,7 @@ sub _generate_articlelist {
                     "sortdir"   => ""};
     my $now = time();
 
-    my $articles = $self -> {"article"} -> get_user_articles($userid, $settings);
+    my ($articles, $count) = $self -> {"article"} -> get_user_articles($userid, $settings);
     my $list = "";
     foreach my $article (@{$articles}) {
         # fix up the release status for timed entries

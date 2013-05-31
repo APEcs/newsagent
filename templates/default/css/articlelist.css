@@ -50,3 +50,18 @@ table.listtable tr td.mode.deleted {
 table.listtable tr td.date.timed {
     color: #777;
 }
+
+table.listtable tr td.controls {
+    width: 74px;
+    padding: 0px;
+}
+
+table.listtable tr td.controls img.control {
+    border: none;
+    padding: 0px 0px 0px 1px;
+    display: none;
+}
+
+table.listtable tr:hover td.controls img.control {
+    display: inline-block;
+}

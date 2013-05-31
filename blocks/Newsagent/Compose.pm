@@ -48,7 +48,7 @@ sub new {
                                                              metadata => $self -> {"system"} -> {"metadata"})
         or return SystemModule::set_error("Compose initialisation failed: ".$SystemModule::errstr);
 
-    $self -> {"relops"} = [ {"value" => "now",
+    $self -> {"relops"} = [ {"value" => "visible",
                              "name"  => "{L_COMPOSE_RELNOW}" },
                             {"value" => "timed",
                              "name"  => "{L_COMPOSE_RELTIME}" },
@@ -301,7 +301,7 @@ sub _validate_article_fields {
         $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
         ($args -> {"mode"}, $error) = $self -> validate_options("mode", {"required" => 1,
-                                                                         "default"  => "now",
+                                                                         "default"  => "visible",
                                                                          "source"   => $self -> {"relops"},
                                                                          "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_RELEASE")});
         $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);

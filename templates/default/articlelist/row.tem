@@ -3,4 +3,7 @@
     <td class="date ***modeclass***">***date***</td>
     <td class="site">***site***</td>
     <td class="title"><a href="***editurl***">***title***</a> [{L_ALIST_CREATED} ***created***, ***user***]</td>
+    <td class="controls">
+***controls***
+    </td>
 </tr>
