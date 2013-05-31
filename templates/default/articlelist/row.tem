@@ -1,4 +1,4 @@
-<tr>
+<tr id="artrow-***id***">
     <td class="mode ***modeclass***" title="***modeinfo***">&nbsp</td>
     <td class="date ***modeclass***">***date***</td>
     <td class="site">***site***</td>

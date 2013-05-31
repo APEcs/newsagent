@@ -1,1 +1,8 @@
+    <script type="text/javascript" src="{V_[templatepath]}js/api.js"></script>
+    <script type="text/javascript" src="{V_[templatepath]}js/articlelist.js"></script>
     <link href="{V_[templatepath]}css/articlelist.css" rel="stylesheet" />
+
+    <script type="text/javascript">
+        spinner_url  = "{V_[templatepath]}images/spinner.gif";
+        edit_url = "{V_[scriptpath]}edit/";
+    </script>

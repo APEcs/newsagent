@@ -5,6 +5,7 @@
 @import url('messagebox.css'); /* support for message boxes            */
 @import url('button.css');     /* button rules (okay?)                 */
 @import url('inputglow.css');  /* make input boxes glow when active    */
+@import url('controls.css');   /* sprite-based control buttons         */
 
 .newsagent #topbar {
     position: absolute;

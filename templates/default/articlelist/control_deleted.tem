@@ -1,0 +1,4 @@
+<ul class="controls">
+    <li><div class="control edit"     id="editbtn-a***id***"     onclick="edit_article('***id***');" title="{L_ALIST_CTRLEDIT}"></div></li>
+    <li><div class="control undelete" id="undeletebtn-a***id***" onclick="undelete_article('***id***');" title="{L_ALIST_CTRLUNDELETE}"></div></li>
+</ul>

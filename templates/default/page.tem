@@ -31,7 +31,20 @@
 <body id="newsagent" class="newsagent">
 <div id="content" class="content clear">
 ***content***
-</div>
+            <script type="text/javascript">
+// <![CDATA[
+window.addEvent('domready', function() {
+    errbox = new LightFace({title: '{L_PAGE_ERROR}',
+                            draggable: false,
+                            overlayAll: true,
+                            buttons: [
+                                      { title: '{L_PAGE_ERROROK}', event: function() { errbox.close(); }, color: 'blue' },
+                            ],
+                            content: '<table><tr><td class="nbox-image"><img src="{V_[scriptpath]}templates/default/images/error.png" width="48" height="48" alt="error" /></td><td class="nbox-text" id="errboxmsg"></td></tr></table>'
+    });
+});
+// ]]>
+            </script></div>
 ***userbar***
 </body>
 </html>

@@ -463,6 +463,49 @@ sub get_user_articles {
 }
 
 
+## @method $ get_article($articleid)
+# Obtain the data for the specified article.
+#
+# @param articleid The ID of the article to fetch the data for.
+# @return A reference to a hash containing the article data on success, undef
+#         on error
+sub get_article {
+    my $self      = shift;
+    my $articleid = shift;
+
+    my $fields = "`article`.*, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `user`.`email`, `site`.`name` AS `sitename`, `site`.`description` AS `sitedesc`";
+    my $from   = "`".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `article`
+                  LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `user`
+                      ON `user`.`user_id` = `article`.`creator_id`
+                  LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"sites"}."` AS `site`
+                      ON `site`.`id` = `article`.`site_id`";
+
+    # The actual query can't contain a limit directive: there's no way to determine at this point
+    # whether the user has access to any particular article, so any limit may be being applied to
+    # entries the user should never even see.
+    my $articleh = $self -> {"dbh"} -> prepare("SELECT $fields
+                                                FROM $from
+                                                WHERE `article`.`id` = ?");
+
+    my $levelh = $self -> {"dbh"} -> prepare("SELECT `level`.*
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {"levels"}."` AS `level`,
+                                                   `".$self -> {"settings"} -> {"database"} -> {"articlelevels"}."` AS `artlevels`
+                                              WHERE `level`.`id` = `artlevels`.`level_id`
+                                              AND `artlevels`.`article_id` = ?");
+    $articleh -> execute($articleid)
+        or return $self -> self_error("Unable to execute article query: ".$self -> {"dbh"} -> errstr);
+
+    my $article = $articleh -> fetchrow_hashref()
+        or return $self -> self_error("Request for non-existent article with ID $articleid");
+
+    $levelh -> execute($article -> {"id"})
+        or return $self -> self_error("Unable to execute article level query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
+
+    $article -> {"levels"} = $levelh -> fetchall_arrayref({});
+
+    return $article;
+}
+
 
 # ==============================================================================
 #  Storage and addition functions
@@ -592,9 +635,9 @@ sub add_article {
 
     # Add the article itself
     my $addh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"articles"}."`
-                                            (previous_id, metadata_id, creator_id, created, site_id, title, summary, article, release_mode, release_time)
-                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    my $rows = $addh -> execute($previd, $metadataid, $userid, $now, $site -> {"id"}, $article -> {"title"}, $article -> {"summary"}, $article -> {"article"}, $article -> {"mode"}, $article -> {"rtimestamp"});
+                                            (previous_id, metadata_id, creator_id, created, site_id, title, summary, article, release_mode, release_time, updated)
+                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    my $rows = $addh -> execute($previd, $metadataid, $userid, $now, $site -> {"id"}, $article -> {"title"}, $article -> {"summary"}, $article -> {"article"}, $article -> {"mode"}, $article -> {"rtimestamp"}, $now);
     return $self -> self_error("Unable to perform article insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Article insert failed, no rows inserted") if($rows eq "0E0");
 
@@ -631,6 +674,33 @@ sub add_article {
         or return $self -> self_error($self -> {"roles"} -> errstr());
 
     return $newid;
+}
+
+
+## @method $ set_article_status($articleid, $newmode, $setdate)
+# Update the release mode for the specified article. This will update the mode
+# set for the article and change its `updated` timestamp, it may also modify
+# the release time timestamp if required.
+#
+# @param articleid The ID of the article to update.
+# @param newmode   The new mode to set for the article.
+# @param setdate   Update the release_time to the current time.
+# @return A reference to a hash containing the updated article data on success,
+#         undef on error.
+sub set_article_status {
+    my $self      = shift;
+    my $articleid = shift;
+    my $newmode   = shift;
+    my $setdate   = shift;
+
+    my $updateh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"articles"}."`
+                                               SET `updated` = UNIX_TIMESTAMP(), `release_mode` = ?".($setdate ? ", `release_time` = UNIX_TIMESTAMP()" : "")."
+                                               WHERE id = ?");
+    my $result = $updateh -> execute($newmode, $articleid);
+    return $self -> self_error("Unable to update article mode: ".$self -> {"dbh"} -> errstr) if(!$result);
+    return $self -> self_error("Article mode update failed: no rows updated.") if($result eq "0E0");
+
+    return $self -> get_article($articleid);
 }
 
 

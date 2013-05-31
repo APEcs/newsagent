@@ -64,7 +64,39 @@ sub new {
 # ============================================================================
 #  Content generators
 
+## @method private $ _build_article_row($article, $now)
+# Generate the article list row for the specified article.
+#
+# @param article The article to generate the list row for.
+# @param now     The current time as a unix timestamp.
+# @return A string containing the article row html.
+sub _build_article_row {
+    my $self    = shift;
+    my $article = shift;
+    my $now     = shift;
 
+    # fix up the release status for timed entries
+    $article -> {"release_mode"} = "released"
+        if($article -> {"release_mode"} eq "timed" && $article -> {"release_time"} <= $now);
+
+    return $self -> {"template"} -> load_template("articlelist/row.tem", {"***modeclass***" => $article -> {"release_mode"},
+                                                                          "***modeinfo***"  => $self -> {"relops"} -> {$article -> {"release_mode"}},
+                                                                          "***date***"      => $self -> {"template"} -> fancy_time($article -> {"release_time"}),
+                                                                          "***created***"   => $self -> {"template"} -> fancy_time($article -> {"created"}),
+                                                                          "***site***"      => $article -> {"sitedesc"},
+                                                                          "***title***"     => $article -> {"title"} || $self -> {"template"} -> format_time($article -> {"release_time"}),
+                                                                          "***user***"      => $article -> {"realname"} || $article -> {"username"},
+                                                                          "***controls***"  => $self -> {"template"} -> load_template("articlelist/control_".$article -> {"release_mode"}.".tem"),
+                                                                          "***id***"        => $article -> {"id"}});
+}
+
+
+## @method private @ _generate_articlelist()
+# Generate the contents of a page listing the articles the user has permission to edit.
+#
+# @todo pagination control
+#
+# @return Two strings: the page title, and the contents of the page.
 sub _generate_articlelist {
     my $self     = shift;
     my $userid   = $self -> {"session"} -> get_session_userid();
@@ -72,30 +104,80 @@ sub _generate_articlelist {
                     "offset" => 0,
                     "sortfield" => "",
                     "sortdir"   => ""};
-    my $now = time();
+    my $now  = time();
 
     my ($articles, $count) = $self -> {"article"} -> get_user_articles($userid, $settings);
-    my $list = "";
-    foreach my $article (@{$articles}) {
-        # fix up the release status for timed entries
-        $article -> {"release_mode"} = "released"
-            if($article -> {"release_mode"} eq "timed" && $article -> {"release_time"} <= $now);
+    if($articles) {
+        my $list = "";
+        foreach my $article (@{$articles}) {
+            $list .= $self -> _build_article_row($article, $now);
+        }
 
-        $list .= $self -> {"template"} -> load_template("articlelist/row.tem", {"***modeclass***" => $article -> {"release_mode"},
-                                                                                "***modeinfo***"  => $self -> {"relops"} -> {$article -> {"release_mode"}},
-                                                                                "***date***"      => $self -> {"template"} -> fancy_time($article -> {"release_time"}),
-                                                                                "***created***"   => $self -> {"template"} -> fancy_time($article -> {"created"}),
-                                                                                "***site***"      => $article -> {"sitedesc"},
-                                                                                "***title***"     => $article -> {"title"} || $self -> {"template"} -> format_time($article -> {"release_time"}),
-                                                                                "***user***"      => $article -> {"realname"} || $article -> {"username"},
-                                                                                "***editurl***"   => $self -> build_url(block => "edit", pathinfo => [$article -> {"id"}])});
+        return ($self -> {"template"} -> replace_langvar("ALIST_TITLE"),
+                $self -> {"template"} -> load_template("articlelist/content.tem", {"***articles***" => $list,
+                                                                                   "***paginate***" => ""}));
+    } else {
+        return $self -> build_error_box($self -> {"article"} -> errstr());
     }
-
-    return ($self -> {"template"} -> replace_langvar("ALIST_TITLE"),
-            $self -> {"template"} -> load_template("articlelist/content.tem", {"***articles***" => $list,
-                                                                               "***paginate***" => ""}));
 }
 
+
+# ============================================================================
+#  API functions
+
+
+sub _build_api_delete_response {
+    my $self = shift;
+
+    # Pull the article ID from the api data
+    my @api  = $self -> {"cgi"} -> param('api');
+    my $articleid = $api[2]
+        or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_API_ERROR_NOAID}"}));
+
+    # Check that the article id is numeric
+    ($articleid) = $articleid =~ /^(\d+)$/;
+    return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_API_ERROR_BADAID}"}))
+        if(!$articleid);
+
+    $self -> log("delete", "User deleting article $articleid");
+
+    # Do the update, and spit out the row html if successful
+    my $updated = $self -> {"article"} -> set_article_status($articleid, "deleted")
+        or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"article"} -> errstr()}));
+
+    return $self -> _build_article_row($updated);
+}
+
+
+sub _build_api_undelete_response {
+    my $self = shift;
+
+    # Pull the article ID from the api data
+    my @api  = $self -> {"cgi"} -> param('api');
+    my $articleid = $api[2]
+        or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_API_ERROR_NOAID}"}));
+
+    # Check that the article id is numeric
+    ($articleid) = $articleid =~ /^(\d+)$/;
+    return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_API_ERROR_BADAID}"}))
+        if(!$articleid);
+
+    $self -> log("undelete", "User undeleting article $articleid");
+
+    my $article = $self -> {"article"} -> get_article($articleid)
+        or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"article"} -> errstr()}));
+
+    # Work out which state to set for the article. Normally 'visible' is fine, but
+    # articles published in the future are timed!
+    my $newmode = "visible";
+    $newmode = "timed" if($article -> {"release_time"} > time());
+
+    # Do the update, and spit out the row html if successful
+    my $updated = $self -> {"article"} -> set_article_status($articleid, $newmode)
+        or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"article"} -> errstr()}));
+
+    return $self -> _build_article_row($updated);
+}
 
 # ============================================================================
 #  Interface functions
@@ -142,6 +224,8 @@ sub page_display {
     if(defined($apiop)) {
         # API call - dispatch to appropriate handler.
         given($apiop) {
+            when("delete")   { return $self -> api_html_response($self -> _build_api_delete_response()); }
+            when("undelete") { return $self -> api_html_response($self -> _build_api_undelete_response()); }
             default {
                 return $self -> api_html_response($self -> api_errorhash('bad_op',
                                                                          $self -> {"template"} -> replace_langvar("API_BAD_OP")))

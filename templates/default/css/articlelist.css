@@ -11,7 +11,7 @@ table.listtable {
 }
 
 table.listtable tr td {
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #ddd;
     padding: 7px 3px;
     vertical-align: middle;
     white-space: nowrap;
@@ -56,12 +56,71 @@ table.listtable tr td.controls {
     padding: 0px;
 }
 
-table.listtable tr td.controls img.control {
-    border: none;
-    padding: 0px 0px 0px 1px;
+table.listtable tr td.controls ul.controls {
     display: none;
 }
 
-table.listtable tr:hover td.controls img.control {
+table.listtable tr:hover td.controls ul.controls {
     display: inline-block;
+}
+
+
+.control.edit {
+    background-position: 0px 0px;
+}
+
+.control.edit:hover {
+    background-position: 0px -32px;
+}
+
+.control.edit.ctrldisabled {
+    background-position: 0px -16px;
+}
+
+.control.delete {
+    background-position: -16px 0px;
+}
+
+.control.delete:hover {
+    background-position: -16px -32px;
+}
+
+.control.delete.ctrldisabled {
+    background-position: -16px -16px;
+}
+
+.control.undelete {
+    background-position: -64px 0px;
+}
+
+.control.undelete:hover {
+    background-position: -64px -32px;
+}
+
+.control.undelete.ctrldisabled {
+    background-position: -64px -16px;
+}
+
+.control.publish {
+    background-position: -32px 0px;
+}
+
+.control.publish:hover {
+    background-position: -32px -32px;
+}
+
+.control.publish.ctrldisabled {
+    background-position: -32px -16px;
+}
+
+.control.hide {
+    background-position: -48px 0px;
+}
+
+.control.hide:hover {
+    background-position: -48px -32px;
+}
+
+.control.hide.ctrldisabled {
+    background-position: -48px -16px;
 }

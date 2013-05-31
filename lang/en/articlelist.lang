@@ -1,9 +1,15 @@
 ALIST_TITLE          = Article list
 ALIST_CREATED        = Created
 
+ALIST_RELHIDDEN      = Hidden (not currently published)
 ALIST_RELNOW         = Released immediately
 ALIST_RELTIME_WAIT   = Waiting for timed release
 ALIST_RELTIME_PASSED = Released after timed release
 ALIST_RELNONE        = Draft article (never released)
 ALIST_RELEDIT        = Edited (not publicly visible)
 ALIST_RELDELETED     = Deleted
+
+ALIST_CTRLEDIT       = Edit this article
+ALIST_CTRLHIDE       = Unpublish (hide) this article
+ALIST_CTRLDELETE     = Delete this article
+ALIST_CTRLUNDELETE   = Restore this article

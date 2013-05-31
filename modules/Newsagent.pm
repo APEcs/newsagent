@@ -70,7 +70,7 @@ sub generate_newsagent_page {
 
     return $self -> {"template"} -> load_template("page.tem", {"***extrahead***" => $extrahead,
                                                                "***title***"     => $title,
-                                                               "***userbar***"   => ($userbar ? $userbar -> block_display($title) : "<!-- Userbar load failed: ".$self -> {"module"} -> errstr()." -->"),
+                                                               "***userbar***"   => ($userbar ? $userbar -> block_display($title, $self -> {"block"}) : "<!-- Userbar load failed: ".$self -> {"module"} -> errstr()." -->"),
                                                                "***content***"   => $content});
 }
 
