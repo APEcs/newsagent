@@ -4,4 +4,5 @@ USERBAR_PROFILE_LOGOUT  = Log out
 USERBAR_PROFILE_LOGIN   = Log in
 
 USERBAR_ARTICLE_LIST    = Article list
+USERBAR_COMPOSE         = Add an article
 USERBAR_SITE_SETTINGS   = Administer site

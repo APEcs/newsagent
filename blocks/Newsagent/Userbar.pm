@@ -28,31 +28,40 @@ use v5.12;
 # ==============================================================================
 #  Bar generation
 
-## @method $ block_display($title)
+## @method $ block_display($title, $current)
 # Generate a user toolbar, populating it as needed to reflect the user's options
 # at the current time.
 #
-# @param title A string to show as the page title.
+# @param title   A string to show as the page title.
+# @param current The current page name.
 # @return A string containing the user toolbar html on success, undef on error.
 sub block_display {
-    my $self  = shift;
-    my $title = shift;
+    my $self    = shift;
+    my $title   = shift;
+    my $current = shift;
 
     $self -> clear_error();
 
     # Initialise fragments to sane "logged out" defaults.
-    my ($siteadmin, $userprofile, $msglist) =
+    my ($siteadmin, $userprofile, $msglist, $compose) =
         ($self -> {"template"} -> load_template("userbar/siteadmin_disabled.tem"),
          $self -> {"template"} -> load_template("userbar/profile_loggedout.tem"),
-         $self -> {"template"} -> load_template("userbar/msglist_disabled.tem"));
+         $self -> {"template"} -> load_template("userbar/msglist_disabled.tem"),
+         $self -> {"template"} -> load_template("userbar/compose_disabled.tem"));
 
     # Is the user logged in?
     if(!$self -> {"session"} -> anonymous_session()) {
         my $user = $self -> {"session"} -> get_user_byid()
             or return $self -> self_error("Unable to obtain user data for logged in user. This should not happen!");
 
-        $msglist   = $self -> {"template"} -> load_template("userbar/msglist_enabled.tem"  , {"***url-msglist***" => $self -> build_url(block => "articles", pathinfo => [])});
-        $siteadmin = $self -> {"template"} -> load_template("userbar/siteadmin_enabled.tem", {"***url-admin***"   => $self -> build_url(block => "admin"   , pathinfo => [])});
+        $compose   = $self -> {"template"} -> load_template("userbar/compose_enabled.tem"  , {"***url-compose***" => $self -> build_url(block => "compose", pathinfo => [])})
+            if($self -> check_permission("compose") && $current ne "compose");
+
+        $msglist   = $self -> {"template"} -> load_template("userbar/msglist_enabled.tem"  , {"***url-msglist***" => $self -> build_url(block => "articles", pathinfo => [])})
+            if($self -> check_permission("listarticles") && $current ne "articles");
+
+        $siteadmin = $self -> {"template"} -> load_template("userbar/siteadmin_enabled.tem", {"***url-admin***"   => $self -> build_url(block => "admin"   , pathinfo => [])})
+            if($self -> check_permission("siteadmin"));
 
         # User is logged in, so actually reflect their current options and state
         $userprofile = $self -> {"template"} -> load_template("userbar/profile_loggedin.tem", {"***realname***"    => $user -> {"fullname"},
@@ -63,6 +72,7 @@ sub block_display {
 
     return $self -> {"template"} -> load_template("userbar/userbar.tem", {"***pagename***"   => $title,
                                                                           "***site-admin***" => $siteadmin,
+                                                                          "***compose***"    => $compose,
                                                                           "***msglist***"    => $msglist,
                                                                           "***profile***"    => $userprofile});
 }

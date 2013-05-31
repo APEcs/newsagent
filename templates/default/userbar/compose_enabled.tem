@@ -1,0 +1,1 @@
+            <li id="user-compose" title="{L_USERBAR_COMPOSE}"><a href="***url-compose***" class="item"><img class="controlicon" src="{V_[templatepath]}userbar/images/compose.png" alt="compose" /></a></li>
