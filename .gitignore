@@ -1,6 +1,7 @@
 *~
 autodocs/
 images/
+!templates/default/images
 config/site.cfg
 ckeditor
 testharness.pl

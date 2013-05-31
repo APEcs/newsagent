@@ -49,7 +49,8 @@ sub new {
                                                              metadata => $self -> {"system"} -> {"metadata"})
         or return SystemModule::set_error("Compose initialisation failed: ".$SystemModule::errstr);
 
-    $self -> {"relops"} = { "now"      => "{L_ALIST_RELNOW}",
+    $self -> {"relops"} = { "hidden"   => "{L_ALIST_RELHIDDEN}",
+                            "visible"  => "{L_ALIST_RELNOW}",
                             "timed"    => "{L_ALIST_RELTIME_WAIT}",
                             "released" => "{L_ALIST_RELTIME_PASSED}",
                             "draft"    => "{L_ALIST_RELNONE}",

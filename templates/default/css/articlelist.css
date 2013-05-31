@@ -27,8 +27,8 @@ table.listtable tr td.mode {
     background-position: left center;
 }
 
-table.listtable tr td.mode.now {
-    background-image: url('../images/modes/now.png');
+table.listtable tr td.mode.visible {
+    background-image: url('../images/modes/visible.png');
 }
 
 table.listtable tr td.mode.released {
