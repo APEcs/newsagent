@@ -1,5 +1,6 @@
 ALIST_TITLE          = Article list
 ALIST_CREATED        = Created
+ALIST_UPDATED        = Updated
 
 ALIST_RELHIDDEN      = Hidden (not currently published)
 ALIST_RELNOW         = Released immediately

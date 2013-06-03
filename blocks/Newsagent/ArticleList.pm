@@ -79,13 +79,22 @@ sub _build_article_row {
     $article -> {"release_mode"} = "visible"
         if($article -> {"release_mode"} eq "timed" && $article -> {"release_time"} <= $now);
 
+    my ($action, $actdate, $actuser) = ("{L_ALIST_CREATED}", $self -> {"template"} -> fancy_time($article -> {"updated"}), $article -> {"realname"} || $article -> {"username"});
+    if($article -> {"updated"} != $article -> {"created"}) {
+        $action = "{L_ALIST_UPDATED}";
+        my $user = $self -> {"session"} -> get_user_byid($article -> {"updated_id"});
+        $actuser = $user -> {"realname"} || $user -> {"username"}
+            if($user);
+    }
+
     return $self -> {"template"} -> load_template("articlelist/row.tem", {"***modeclass***" => $article -> {"release_mode"},
                                                                           "***modeinfo***"  => $self -> {"relops"} -> {$article -> {"release_mode"}},
                                                                           "***date***"      => $self -> {"template"} -> fancy_time($article -> {"release_time"}, 0, 1),
-                                                                          "***created***"   => $self -> {"template"} -> fancy_time($article -> {"created"}),
                                                                           "***site***"      => $article -> {"sitedesc"},
                                                                           "***title***"     => $article -> {"title"} || $self -> {"template"} -> format_time($article -> {"release_time"}),
-                                                                          "***user***"      => $article -> {"realname"} || $article -> {"username"},
+                                                                          "***action***"    => $action,
+                                                                          "***actdate***"   => $actdate,
+                                                                          "***actuser***"   => $actuser,
                                                                           "***controls***"  => $self -> {"template"} -> load_template("articlelist/control_".$article -> {"release_mode"}.".tem"),
                                                                           "***id***"        => $article -> {"id"}});
 }
