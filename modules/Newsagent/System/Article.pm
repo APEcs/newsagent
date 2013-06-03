@@ -635,9 +635,9 @@ sub add_article {
 
     # Add the article itself
     my $addh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"articles"}."`
-                                            (previous_id, metadata_id, creator_id, created, site_id, title, summary, article, release_mode, release_time, updated)
-                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    my $rows = $addh -> execute($previd, $metadataid, $userid, $now, $site -> {"id"}, $article -> {"title"}, $article -> {"summary"}, $article -> {"article"}, $article -> {"mode"}, $article -> {"rtimestamp"}, $now);
+                                            (previous_id, metadata_id, creator_id, created, site_id, title, summary, article, release_mode, release_time, updated, updated_id)
+                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    my $rows = $addh -> execute($previd, $metadataid, $userid, $now, $site -> {"id"}, $article -> {"title"}, $article -> {"summary"}, $article -> {"article"}, $article -> {"mode"}, $article -> {"rtimestamp"}, $now, $userid);
     return $self -> self_error("Unable to perform article insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Article insert failed, no rows inserted") if($rows eq "0E0");
 
@@ -677,12 +677,13 @@ sub add_article {
 }
 
 
-## @method $ set_article_status($articleid, $newmode, $setdate)
+## @method $ set_article_status($articleid, $userid, $newmode, $setdate)
 # Update the release mode for the specified article. This will update the mode
 # set for the article and change its `updated` timestamp, it may also modify
 # the release time timestamp if required.
 #
 # @param articleid The ID of the article to update.
+# @param userid    The ID of the user updating the article.
 # @param newmode   The new mode to set for the article.
 # @param setdate   Update the release_time to the current time.
 # @return A reference to a hash containing the updated article data on success,
@@ -690,13 +691,14 @@ sub add_article {
 sub set_article_status {
     my $self      = shift;
     my $articleid = shift;
+    my $userid    = shift;
     my $newmode   = shift;
     my $setdate   = shift;
 
     my $updateh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"articles"}."`
-                                               SET `updated` = UNIX_TIMESTAMP(), `release_mode` = ?".($setdate ? ", `release_time` = UNIX_TIMESTAMP()" : "")."
+                                               SET `updated` = UNIX_TIMESTAMP(), `updated_id` = ?, `release_mode` = ?".($setdate ? ", `release_time` = UNIX_TIMESTAMP()" : "")."
                                                WHERE id = ?");
-    my $result = $updateh -> execute($newmode, $articleid);
+    my $result = $updateh -> execute($userid, $newmode, $articleid);
     return $self -> self_error("Unable to update article mode: ".$self -> {"dbh"} -> errstr) if(!$result);
     return $self -> self_error("Article mode update failed: no rows updated.") if($result eq "0E0");
 

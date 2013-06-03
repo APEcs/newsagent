@@ -131,6 +131,7 @@ sub _build_api_setmode_response {
     my $self    = shift;
     my $newmode = shift;
     my $setdate = shift;
+    my $userid  = $self -> {"session"} -> get_session_userid();
 
     # Pull the article ID from the api data
     my @api  = $self -> {"cgi"} -> param('api');
@@ -147,6 +148,10 @@ sub _build_api_setmode_response {
     my $article = $self -> {"article"} -> get_article($articleid)
         or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"article"} -> errstr()}));
 
+    # check that the user has edit permission
+    return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_PERMISSION_EDIT_DESC}"}))
+        unless($self -> check_permission("edit", $article -> {"metadata_id"}, $userid));
+
     # handle special cases for deletion: edited and draft articles can not be deleted
     $newmode = $article -> {"release_mode"}
         if($newmode eq "deleted" && ($article -> {"release_mode"} eq "edited" || $article -> {"release_mode"} eq "draft"));
@@ -159,7 +164,7 @@ sub _build_api_setmode_response {
     # Only attempt to change the status if needed
     if($article -> {"release_mode"} ne $newmode) {
         # Do the update, and spit out the row html if successful
-        $article = $self -> {"article"} -> set_article_status($articleid, $newmode, $setdate)
+        $article = $self -> {"article"} -> set_article_status($articleid, $userid, $newmode, $setdate)
             or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"article"} -> errstr()}));
     } else {
         $self -> log($newmode, "Article $articleid is already marked as $newmode");
