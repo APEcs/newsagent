@@ -1,0 +1,6 @@
+<ul class="controls">
+    <li><div class="control edit"    id="editbtn-a***id***"   onclick="edit_article('***id***');"    title="{L_ALIST_CTRLEDIT}"></div></li>
+    <li><div class="control publish" id="pubbtn-a***id***"    onclick="publish_article('***id***');" title="{L_ALIST_CTRLPUBLISH}"></div></li>
+    <li><div class="control hide"    id="hidebtn-a***id***"   onclick="hide_article('***id***');"    title="{L_ALIST_CTRLHIDE}"></div></li>
+    <li><div class="control delete"  id="deletebtn-a***id***" onclick="delete_article('***id***');"  title="{L_ALIST_CTRLDELETE}"></div></li>
+</ul>

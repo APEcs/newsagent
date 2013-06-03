@@ -57,6 +57,17 @@ function unhide_article(articleid)
 }
 
 
+/** Force an article to be published immediately, even if its time delay
+ *  has not yet been reached.
+ *
+ * @param articleid The ID of the article to publish
+ */
+function publish_article(articleid)
+{
+    change_article_state(articleid, "publish", "pubbtn-a" + articleid);
+}
+
+
 /** Send an API request to update the status of an article, and update the
  *  corresponding table row as needed.
  *

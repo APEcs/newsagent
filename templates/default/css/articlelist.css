@@ -27,6 +27,10 @@ table.listtable tr td.mode {
     background-position: left center;
 }
 
+table.listtable tr td.mode.hidden {
+    background-image: url('../images/modes/hidden.png');
+}
+
 table.listtable tr td.mode.visible {
     background-image: url('../images/modes/visible.png');
 }
@@ -43,6 +47,10 @@ table.listtable tr td.mode.edited {
     background-image: url('../images/modes/edited.png');
 }
 
+table.listtable tr td.mode.draft {
+    background-image: url('../images/modes/edited.png');
+}
+
 table.listtable tr td.mode.deleted {
     background-image: url('../images/modes/deleted.png');
 }
@@ -52,12 +60,13 @@ table.listtable tr td.date.timed {
 }
 
 table.listtable tr td.controls {
-    width: 74px;
+    width: 100px;
     padding: 0px;
 }
 
 table.listtable tr td.controls ul.controls {
     display: none;
+    float: right;
 }
 
 table.listtable tr:hover td.controls ul.controls {

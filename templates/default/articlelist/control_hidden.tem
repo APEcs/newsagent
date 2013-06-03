@@ -1,0 +1,3 @@
+<ul class="controls">
+    <li><div class="control publish" id="unhidebtn-a***id***" onclick="unhide_article('***id***');" title="{L_ALIST_CTRLUNHIDE}"></div></li>
+</ul>

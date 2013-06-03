@@ -76,12 +76,12 @@ sub _build_article_row {
     my $now     = shift;
 
     # fix up the release status for timed entries
-    $article -> {"release_mode"} = "released"
+    $article -> {"release_mode"} = "visible"
         if($article -> {"release_mode"} eq "timed" && $article -> {"release_time"} <= $now);
 
     return $self -> {"template"} -> load_template("articlelist/row.tem", {"***modeclass***" => $article -> {"release_mode"},
                                                                           "***modeinfo***"  => $self -> {"relops"} -> {$article -> {"release_mode"}},
-                                                                          "***date***"      => $self -> {"template"} -> fancy_time($article -> {"release_time"}),
+                                                                          "***date***"      => $self -> {"template"} -> fancy_time($article -> {"release_time"}, 0, 1),
                                                                           "***created***"   => $self -> {"template"} -> fancy_time($article -> {"created"}),
                                                                           "***site***"      => $article -> {"sitedesc"},
                                                                           "***title***"     => $article -> {"title"} || $self -> {"template"} -> format_time($article -> {"release_time"}),
@@ -126,8 +126,11 @@ sub _generate_articlelist {
 #  API functions
 
 
-sub _build_api_delete_response {
-    my $self = shift;
+# @param newmode The new mode to set for the article
+sub _build_api_setmode_response {
+    my $self    = shift;
+    my $newmode = shift;
+    my $setdate = shift;
 
     # Pull the article ID from the api data
     my @api  = $self -> {"cgi"} -> param('api');
@@ -139,45 +142,32 @@ sub _build_api_delete_response {
     return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_API_ERROR_BADAID}"}))
         if(!$articleid);
 
-    $self -> log("delete", "User deleting article $articleid");
-
-    # Do the update, and spit out the row html if successful
-    my $updated = $self -> {"article"} -> set_article_status($articleid, "deleted")
-        or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"article"} -> errstr()}));
-
-    return $self -> _build_article_row($updated);
-}
-
-
-sub _build_api_undelete_response {
-    my $self = shift;
-
-    # Pull the article ID from the api data
-    my @api  = $self -> {"cgi"} -> param('api');
-    my $articleid = $api[2]
-        or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_API_ERROR_NOAID}"}));
-
-    # Check that the article id is numeric
-    ($articleid) = $articleid =~ /^(\d+)$/;
-    return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_API_ERROR_BADAID}"}))
-        if(!$articleid);
-
-    $self -> log("undelete", "User undeleting article $articleid");
+    $self -> log($newmode, "User setting article $articleid mode to $newmode");
 
     my $article = $self -> {"article"} -> get_article($articleid)
         or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"article"} -> errstr()}));
 
-    # Work out which state to set for the article. Normally 'visible' is fine, but
-    # articles published in the future are timed!
-    my $newmode = "visible";
-    $newmode = "timed" if($article -> {"release_time"} > time());
+    # handle special cases for deletion: edited and draft articles can not be deleted
+    $newmode = $article -> {"release_mode"}
+        if($newmode eq "deleted" && ($article -> {"release_mode"} eq "edited" || $article -> {"release_mode"} eq "draft"));
 
-    # Do the update, and spit out the row html if successful
-    my $updated = $self -> {"article"} -> set_article_status($articleid, $newmode)
-        or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"article"} -> errstr()}));
+    # Handle the situation where updating the mode will make the item visible,
+    # but its release time is in the future (ie: it needs to be timed)
+    $newmode = "timed"
+        if($newmode eq "visible" && $article -> {"release_time"} > time() && !$setdate);
 
-    return $self -> _build_article_row($updated);
+    # Only attempt to change the status if needed
+    if($article -> {"release_mode"} ne $newmode) {
+        # Do the update, and spit out the row html if successful
+        $article = $self -> {"article"} -> set_article_status($articleid, $newmode, $setdate)
+            or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"article"} -> errstr()}));
+    } else {
+        $self -> log($newmode, "Article $articleid is already marked as $newmode");
+    }
+
+    return $self -> _build_article_row($article);
 }
+
 
 # ============================================================================
 #  Interface functions
@@ -224,8 +214,11 @@ sub page_display {
     if(defined($apiop)) {
         # API call - dispatch to appropriate handler.
         given($apiop) {
-            when("delete")   { return $self -> api_html_response($self -> _build_api_delete_response()); }
-            when("undelete") { return $self -> api_html_response($self -> _build_api_undelete_response()); }
+            when("delete")   { return $self -> api_html_response($self -> _build_api_setmode_response("deleted")); }
+            when("undelete") { return $self -> api_html_response($self -> _build_api_setmode_response("visible")); }
+            when("hide")     { return $self -> api_html_response($self -> _build_api_setmode_response("hidden")); }
+            when("unhide")   { return $self -> api_html_response($self -> _build_api_setmode_response("visible")); }
+            when("publish")  { return $self -> api_html_response($self -> _build_api_setmode_response("visible", 1)); }
             default {
                 return $self -> api_html_response($self -> api_errorhash('bad_op',
                                                                          $self -> {"template"} -> replace_langvar("API_BAD_OP")))

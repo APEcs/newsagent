@@ -24,6 +24,21 @@ TIMES_MONTHS  = %t months ago
 TIMES_YEAR    = a year ago
 TIMES_YEARS   = %t years ago
 
+FUTURE_JUSTNOW = shortly
+FUTURE_SECONDS = in %t seconds
+FUTURE_MINUTE  = in a minute
+FUTURE_MINUTES = in %t minutes
+FUTURE_HOUR    = in an hour
+FUTURE_HOURS   = in %t hours
+FUTURE_DAY     = in a day
+FUTURE_DAYS    = in %t days
+FUTURE_WEEK    = in a week
+FUTURE_WEEKS   = in %t weeks
+FUTURE_MONTH   = in a month
+FUTURE_MONTHS  = in %t months
+FUTURE_YEAR    = in a year
+FUTURE_YEARS   = in %t years
+
 BLOCK_BLOCK_DISPLAY   = Direct call to unimplemented block_display()
 BLOCK_SECTION_DISPLAY = Direct call to unimplemented section_display()
 
