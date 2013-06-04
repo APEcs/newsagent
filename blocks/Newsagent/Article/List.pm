@@ -39,7 +39,7 @@ sub _build_article_row {
     my $now     = shift;
 
     # fix up the release status for timed entries
-    $article -> {"release_mode"} = "visible"
+    $article -> {"release_mode"} = "released"
         if($article -> {"release_mode"} eq "timed" && $article -> {"release_time"} <= $now);
 
     my ($action, $actdate, $actuser) = ("{L_ALIST_CREATED}", $self -> {"template"} -> fancy_time($article -> {"updated"}), $article -> {"realname"} || $article -> {"username"});
