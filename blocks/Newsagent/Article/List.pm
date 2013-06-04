@@ -59,7 +59,9 @@ sub _build_article_row {
                                                                           "***actdate***"   => $actdate,
                                                                           "***actuser***"   => $actuser,
                                                                           "***controls***"  => $self -> {"template"} -> load_template("articlelist/control_".$article -> {"release_mode"}.".tem"),
-                                                                          "***id***"        => $article -> {"id"}});
+                                                                          "***id***"        => $article -> {"id"},
+                                                                          "***editurl***"   => $self -> build_url(block => "edit", pathinfo => [$article -> {"id"}]),
+                                                  });
 }
 
 
