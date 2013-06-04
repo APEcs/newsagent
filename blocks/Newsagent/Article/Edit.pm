@@ -177,7 +177,7 @@ sub _generate_edit {
     # And generate the page title and content.
     return ($self -> {"template"} -> replace_langvar("EDIT_FORM_TITLE"),
             $self -> {"template"} -> load_template("edit/edit.tem", {"***errorbox***"         => $error,
-                                                                     "***form_url***"         => $self -> build_url(block => "edit", pathinfo => [""]),
+                                                                     "***form_url***"         => $self -> build_url(block => "edit", pathinfo => ["update", $args -> {"id"}]),
                                                                      "***title***"            => $args -> {"title"},
                                                                      "***summary***"          => $args -> {"summary"},
                                                                      "***article***"          => $args -> {"article"},
@@ -194,7 +194,7 @@ sub _generate_edit {
                                                                      "***imagebimgs***"       => $imageb_img,
                                                                      "***relmode***"          => $args -> {"relmode"} || 0,
                                                                      "***userlevels***"       => $site_levels,
-                                                                          }));
+                                                   }));
 }
 
 
