@@ -17,48 +17,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ## @class
-package Newsagent::ArticleList;
+package Newsagent::Article::List;
 
 use strict;
-use base qw(Newsagent); # This class extends the Newsagent block class
-use Newsagent::System::Article;
-use File::Basename;
+use base qw(Newsagent::Article); # This class extends the Newsagent block class
 use v5.12;
-
-
-# ============================================================================
-#  Constructor
-
-## @cmethod $ new(%args)
-# Overloaded constructor for the Compose facility, loads the System::Article model
-# and other classes required to generate the compose pages.
-#
-# @param args A hash of values to initialise the object with. See the Block docs
-#             for more information.
-# @return A reference to a new Newsagent::Compose object on success, undef on error.
-sub new {
-    my $invocant = shift;
-    my $class    = ref($invocant) || $invocant;
-    my $self     = $class -> SUPER::new(@_)
-        or return undef;
-
-    $self -> {"article"} = Newsagent::System::Article -> new(dbh      => $self -> {"dbh"},
-                                                             settings => $self -> {"settings"},
-                                                             logger   => $self -> {"logger"},
-                                                             roles    => $self -> {"system"} -> {"roles"},
-                                                             metadata => $self -> {"system"} -> {"metadata"})
-        or return SystemModule::set_error("Compose initialisation failed: ".$SystemModule::errstr);
-
-    $self -> {"relops"} = { "hidden"   => "{L_ALIST_RELHIDDEN}",
-                            "visible"  => "{L_ALIST_RELNOW}",
-                            "timed"    => "{L_ALIST_RELTIME_WAIT}",
-                            "released" => "{L_ALIST_RELTIME_PASSED}",
-                            "draft"    => "{L_ALIST_RELNONE}",
-                            "edited"   => "{L_ALIST_RELEDIT}",
-                            "deleted"  => "{L_ALIST_RELDELETED}",
-                          };
-    return $self;
-}
 
 
 # ============================================================================
@@ -88,7 +51,7 @@ sub _build_article_row {
     }
 
     return $self -> {"template"} -> load_template("articlelist/row.tem", {"***modeclass***" => $article -> {"release_mode"},
-                                                                          "***modeinfo***"  => $self -> {"relops"} -> {$article -> {"release_mode"}},
+                                                                          "***modeinfo***"  => $self -> {"relmodes"} -> {$article -> {"release_mode"}},
                                                                           "***date***"      => $self -> {"template"} -> fancy_time($article -> {"release_time"}, 0, 1),
                                                                           "***site***"      => $article -> {"sitedesc"},
                                                                           "***title***"     => $article -> {"title"} || $self -> {"template"} -> format_time($article -> {"release_time"}),
