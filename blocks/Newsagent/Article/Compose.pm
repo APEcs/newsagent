@@ -22,7 +22,6 @@ package Newsagent::Article::Compose;
 use strict;
 use base qw(Newsagent::Article); # This class extends the Article block class
 use v5.12;
-use Data::Dumper;
 
 # ============================================================================
 #  Content generators
@@ -38,8 +37,6 @@ sub _generate_compose {
     my $self  = shift;
     my $args  = shift || { };
     my $error = shift;
-
-    print STDERR Dumper($args);
 
     my $userid = $self -> {"session"} -> get_session_userid();
 

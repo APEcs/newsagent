@@ -22,7 +22,6 @@ package Newsagent::Article::Edit;
 use strict;
 use base qw(Newsagent::Article); # This class extends the Newsagent block class
 use v5.12;
-use Data::Dumper;
 
 # ============================================================================
 #  Support functions
