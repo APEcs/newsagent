@@ -118,6 +118,20 @@ sub _generate_edit {
                                                                                 [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
                                                                                    "colour"  => "blue",
                                                                                    "action"  => "location.href='".$self -> build_url(block => "compose", pathinfo => [])."'"} ]));
+
+    # Does the user have edit permission?
+    unless($self -> check_permission("edit", $article -> {"metadata_id"})) {
+        return("{L_PERMISSION_FAILED_TITLE}", $self -> {"template"} -> message_box("{L_PERMISSION_FAILED_TITLE}",
+                                                                                   "error",
+                                                                                   "{L_PERMISSION_FAILED_SUMMARY}",
+                                                                                   "{L_PERMISSION_EDIT_DESC}",
+                                                                                   undef,
+                                                                                   "messagecore",
+                                                                                   [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
+                                                                                      "colour"  => "blue",
+                                                                                      "action"  => "location.href='".$self -> build_url(block => "compose", pathinfo => [])."'"} ]));
+    }
+
     # Convert the levels and image data in the article into something easier to use
     $article -> {"levels"} = $self -> _fixup_levels($article -> {"levels"});
     $article -> {"images"} = $self -> _fixup_images($article -> {"images"});
