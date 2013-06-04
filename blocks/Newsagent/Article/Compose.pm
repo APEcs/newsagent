@@ -161,8 +161,6 @@ sub page_display {
     return $error if($error);
 
     # Exit with a permission error unless the user has permission to compose
-    # Note that this should never actually happen - all users should have compose
-    # permission of some kind - but this is here to make really sure of that.
     if(!$self -> check_permission("compose")) {
         $self -> log("error:compose:permission", "User does not have permission to compose articles");
 

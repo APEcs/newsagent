@@ -12,14 +12,16 @@ function date_control(datefield, tsfield, control) {
     if(disabled) {
         $(datefield).set('value', '');
         $(tsfield).set('value', '');
+    } else if(!$(tsfield).get('value')) {
+        // Create a default date one day from now
+        var defdate = new Date();
+        defdate.setTime(defdate.getTime() + 86400000);
+
+        $(tsfield).set('value', defdate.getTime() / 1000);
+        rdate_picker.select(defdate);
     } else {
-        var now = new Date();
-
-        var offset = (mode == 'close') ? 7 : 0;
-        var targdate = new Date(now.getTime() + (offset * 86400000));
-
-        $(tsfield).set('value', targdate.getTime() / 1000);
-        rdate_picker.select(targdate);
+        var defdate = new Date($(tsfield).get('value') * 1000);
+        rdate_picker.select(defdate);
     }
 }
 
