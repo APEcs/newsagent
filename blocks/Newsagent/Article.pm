@@ -394,20 +394,24 @@ sub _build_image_options {
 }
 
 
-## @method private $ _build_image_options($levels)
+## @method private $ _build_image_options($levels, $setlevels)
 # Generate the level options available in the system.
 #
-# @param levels A reference to a hash of available levels.
+# @param levels    A reference to a hash of available levels.
+# @param setlevels A reference to a hash of levels selected.
 # @return A string containing the level options
 sub _build_level_options {
-    my $self    = shift;
-    my $levels  = shift || {};
-    my $options = "";
+    my $self      = shift;
+    my $levels    = shift || {};
+    my $setlevels = shift || {};
+    my $options   = "";
 
     foreach my $level (@{$levels}) {
+        my $checked = $setlevels -> {$level -> {"value"}} ? " checked=\"checked\"": "";
+
         $options .= $self -> {"template"} -> load_template("compose/levelop.tem", {"***desc***"    => $level -> {"name"},
                                                                                    "***value***"   => $level -> {"value"},
-                                                                                   "***checked***" => ""
+                                                                                   "***checked***" => $checked,
                                                            });
     }
 

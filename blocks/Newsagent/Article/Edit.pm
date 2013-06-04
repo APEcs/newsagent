@@ -22,6 +22,59 @@ package Newsagent::Article::Edit;
 use strict;
 use base qw(Newsagent::Article); # This class extends the Newsagent block class
 use v5.12;
+use Data::Dumper;
+
+# ============================================================================
+#  Support functions
+
+## @method private $ _fixup_levels($setlevels)
+# Convert an array of set importance levels to a hash suitable for passing to
+# _build_level_options(). This convers an array of level record hashrefs into
+# something that the _build_level_options() function can understand in order
+# to prepopulate the edit form correctly.
+#
+# @param setlevels A reference to an array of hashrefs of selected posting levels.
+# @return A reference to a hash describing the selected levels.
+sub _fixup_levels {
+    my $self      = shift;
+    my $setlevels = shift;
+    my $levels = {};
+
+    foreach my $level (@{$setlevels}) {
+        $levels -> {$level -> {"level"}}++;
+    }
+
+    return $levels;
+}
+
+
+## @method private $ _fixup_images($setimages)
+# Convert an array of set selected images to a hash suitable for passing to
+# use in _generate_edit(). This converts an array of image hashrefs into
+# something that the _generate_edit() function can understand in order
+# to prepopulate the edit form correctly.
+#
+# @param setimages A reference to an array of image hashrefs.
+# @return A reference to a hash describing the selected images.
+sub _fixup_images {
+    my $self      = shift;
+    my $setimages = shift;
+    my $images = {};
+    my $imgids = ["a", "b"];
+
+    foreach my $image (@{$setimages}) {
+        given($image -> {"type"}) {
+            when("url" ) {  $images -> {$imgids -> [$image -> {"order"}]} -> {"mode"} = "url";
+                            $images -> {$imgids -> [$image -> {"order"}]} -> {"url"} = $image -> {"location"};
+            }
+            when("file") {  $images -> {$imgids -> [$image -> {"order"}]} -> {"mode"} = "img";
+                            $images -> {$imgids -> [$image -> {"order"}]} -> {"img"} = $image -> {"id"};
+            }
+        }
+    }
+
+    return $images;
+}
 
 
 # ============================================================================
@@ -66,15 +119,19 @@ sub _generate_edit {
                                                                                 [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
                                                                                    "colour"  => "blue",
                                                                                    "action"  => "location.href='".$self -> build_url(block => "compose", pathinfo => [])."'"} ]));
+    # Convert the levels and image data in the article into something easier to use
+    $article -> {"levels"} = $self -> _fixup_levels($article -> {"levels"});
+    $article -> {"images"} = $self -> _fixup_images($article -> {"images"});
+
+    # copy the article into the args hash, skipping anything already set in the args.
     foreach my $key (keys %{$article}) {
         $args -> {$key} = $article -> {$key} unless($args -> {$key});
     }
 
-
     # Get a list of available posting levels in the system (which may be more than the
     # user has access to - we don't care about that at this point)
     my $sys_levels = $self -> {"article"} -> get_all_levels();
-    my $levels     = $self -> _build_level_options($sys_levels);
+    my $levels     = $self -> _build_level_options($sys_levels, $args -> {"levels"});
 
     # Work out where the user is allowed to post from
     my $user_sites = $self -> {"article"} -> get_user_sites($userid);

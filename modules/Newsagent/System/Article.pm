@@ -492,6 +492,13 @@ sub get_article {
                                                    `".$self -> {"settings"} -> {"database"} -> {"articlelevels"}."` AS `artlevels`
                                               WHERE `level`.`id` = `artlevels`.`level_id`
                                               AND `artlevels`.`article_id` = ?");
+
+    my $imageh = $self -> {"dbh"} -> prepare("SELECT `image`.*, `artimgs`.`order`
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {"images"}."` AS `image`,
+                                                   `".$self -> {"settings"} -> {"database"} -> {"articleimages"}."` AS `artimgs`
+                                              WHERE `image`.`id` = `artimgs`.`image_id`
+                                              AND `artimgs`.`article_id` = ?
+                                              ORDER BY `artimgs`.`order`");
     $articleh -> execute($articleid)
         or return $self -> self_error("Unable to execute article query: ".$self -> {"dbh"} -> errstr);
 
@@ -502,6 +509,11 @@ sub get_article {
         or return $self -> self_error("Unable to execute article level query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
 
     $article -> {"levels"} = $levelh -> fetchall_arrayref({});
+
+    $imageh -> execute($article -> {"id"})
+        or return $self -> self_error("Unable to execute article image query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
+
+    $article -> {"images"} = $imageh -> fetchall_arrayref({});
 
     return $article;
 }

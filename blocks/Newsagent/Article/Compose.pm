@@ -22,7 +22,7 @@ package Newsagent::Article::Compose;
 use strict;
 use base qw(Newsagent::Article); # This class extends the Article block class
 use v5.12;
-
+use Data::Dumper;
 
 # ============================================================================
 #  Content generators
@@ -39,12 +39,14 @@ sub _generate_compose {
     my $args  = shift || { };
     my $error = shift;
 
+    print STDERR Dumper($args);
+
     my $userid = $self -> {"session"} -> get_session_userid();
 
     # Get a list of available posting levels in the system (which may be more than the
     # user has access to - we don't care about that at this point)
     my $sys_levels = $self -> {"article"} -> get_all_levels();
-    my $levels     = $self -> _build_level_options($sys_levels);
+    my $levels     = $self -> _build_level_options($sys_levels, $args -> {"levels"});
 
     # Work out where the user is allowed to post from
     my $user_sites = $self -> {"article"} -> get_user_sites($userid);
