@@ -23,36 +23,43 @@ table.listtable tr:last-child td {
 
 table.listtable tr td.mode {
     width: 22px;
+}
+
+table.listtable tr td.mode div {
+    background-image: url('../images/mode_sprites.png');
     background-repeat: no-repeat;
-    background-position: left center;
+    background-position: 0px 0px;
+    width: 16px;
+    height: 16px;
+    display: inline-block;
 }
 
-table.listtable tr td.mode.hidden {
-    background-image: url('../images/modes/hidden.png');
+table.listtable tr td.mode div.hidden {
+    background-position: 0px 0px;
 }
 
-table.listtable tr td.mode.visible {
-    background-image: url('../images/modes/visible.png');
+table.listtable tr td.mode div.visible {
+    background-position: -16px 0px;
 }
 
-table.listtable tr td.mode.released {
-    background-image: url('../images/modes/released.png');
+table.listtable tr td.mode div.timed {
+    background-position: -32px 0px;
 }
 
-table.listtable tr td.mode.timed {
-    background-image: url('../images/modes/timed.png');
+table.listtable tr td.mode div.released {
+    background-position: -48px 0px;
 }
 
-table.listtable tr td.mode.edited {
-    background-image: url('../images/modes/edited.png');
+table.listtable tr td.mode div.draft {
+    background-position: -64px 0px;
 }
 
-table.listtable tr td.mode.draft {
-    background-image: url('../images/modes/edited.png');
+table.listtable tr td.mode div.edited {
+    background-position: -80px 0px;
 }
 
-table.listtable tr td.mode.deleted {
-    background-image: url('../images/modes/deleted.png');
+table.listtable tr td.mode div.deleted {
+    background-position: -96px 0px;
 }
 
 table.listtable tr td.date.timed {

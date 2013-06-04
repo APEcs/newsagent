@@ -1,5 +1,5 @@
 <tr id="artrow-***id***">
-    <td class="mode ***modeclass***" title="***modeinfo***">&nbsp</td>
+    <td class="mode ***modeclass***" title="***modeinfo***"><div class="***modeclass***">&nbsp;</div></td>
     <td class="date ***modeclass***">***date***</td>
     <td class="site">***site***</td>
     <td class="title"><a href="***editurl***">***title***</a> [***action*** ***actdate***, ***actuser***]</td>
