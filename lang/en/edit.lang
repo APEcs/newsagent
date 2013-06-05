@@ -6,3 +6,10 @@ EDIT_ERROR_BADID_SUMMARY = Unable to obtain the data for the requested article.
 EDIT_FORM_TITLE          = Edit article
 EDIT_ARTICLE             = Edit article
 EDIT_SUBMIT              = Edit article
+
+EDIT_FAILED              = Article editing failed
+
+
+EDIT_EDITED_TITLE       = Article Edited
+EDIT_EDITED_SUMMARY     = Article edited successfully.
+EDIT_EDITED_DESC        = Your article has been updated successfully. If you set it for immediate publication, it should be visible on feeds now; timed articles will be released when the selected time has passed. You will be redirected to your article list shortly, or you can click 'continue' to return to it now.

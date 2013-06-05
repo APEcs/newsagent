@@ -76,24 +76,9 @@ sub _fixup_images {
 }
 
 
-# ============================================================================
-#  Content generators
-
-## @method private @ _generate_edit($articleid, $args, $error)
-# Generate the page content for an edit page.
-#
-# @param articleid The ID of the article to edit.
-# @param args      An optional reference to a hash containing defaults for the form fields.
-# @param error     An optional error message to display above the form if needed.
-# @return Two strings, the first containing the page title, the second containing the
-#         page content.
-sub _generate_edit {
+sub _check_articleid {
     my $self      = shift;
     my $articleid = shift;
-    my $args      = shift || { };
-    my $error     = shift;
-
-    my $userid = $self -> {"session"} -> get_session_userid();
 
     # Check that the article ID is valid
     unless($articleid && $articleid =~ /^\d+$/) {
@@ -131,6 +116,32 @@ sub _generate_edit {
                                                                                       "colour"  => "blue",
                                                                                       "action"  => "location.href='".$self -> build_url(block => "compose", pathinfo => [])."'"} ]));
     }
+
+    return $article;
+}
+
+
+# ============================================================================
+#  Content generators
+
+## @method private @ _generate_edit($articleid, $args, $error)
+# Generate the page content for an edit page.
+#
+# @param articleid The ID of the article to edit.
+# @param args      An optional reference to a hash containing defaults for the form fields.
+# @param error     An optional error message to display above the form if needed.
+# @return Two strings, the first containing the page title, the second containing the
+#         page content.
+sub _generate_edit {
+    my $self      = shift;
+    my $articleid = shift;
+    my $args      = shift || { };
+    my $error     = shift;
+
+    my $userid = $self -> {"session"} -> get_session_userid();
+
+    my ($article, $message) = $self -> _check_articleid($articleid);
+    return ($article, $message) unless(ref($article) eq "HASH");
 
     # Convert the levels and image data in the article into something easier to use
     $article -> {"levels"} = $self -> _fixup_levels($article -> {"levels"});
@@ -197,6 +208,57 @@ sub _generate_edit {
                                                    }));
 }
 
+
+# ============================================================================
+#  Update functions
+
+## @method private @ _edit_article($articleid)
+# Update an article in the system. This validates and processes the values submitted by
+# the user in the edit form, and stores the result in the database. The edited article
+# is marked as edited, and a new one added with the new settings.
+#
+# @return Three values: the page title, the content to show in the page, and the extra
+#         css and javascript directives to place in the header.
+sub _edit_article {
+    my $self      = shift;
+    my $articleid = shift;
+    my $error = "";
+    my $args  = {};
+
+    my ($article, $message) = $self -> _check_articleid($articleid);
+    return ($article, $message) unless(ref($article) eq "HASH");
+
+    if($self -> {"cgi"} -> param("editarticle")) {
+        ($error, $args) = $self -> _validate_article($articleid);
+    }
+
+    return $self -> _generate_edit($articleid, $args, $error);
+}
+
+
+## @method private @ _generate_success()
+# Generate a success page to send to the user. This creates a message box telling the
+# user that their article has been edited - this is needed to ensure that users get a
+# confirmation, but it isn't generated inside _edit_article() or _validate_article() so
+# that page refreshes don't submit multiple copies.
+#
+# @return The page title, content, and meta refresh strings.
+sub _generate_success {
+    my $self = shift;
+
+    return ("{L_EDIT_EDITED_TITLE}",
+            $self -> {"template"} -> message_box("{L_EDIT_EDITED_TITLE}",
+                                                 "articleok",
+                                                 "{L_EDIT_EDITED_SUMMARY}",
+                                                 "{L_EDIT_EDITED_DESC}",
+                                                 undef,
+                                                 "messagecore",
+                                                 [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
+                                                    "colour"  => "blue",
+                                                    "action"  => "location.href='".$self -> build_url(block => "articles", pathinfo => [])."'"} ]),
+            $self -> {"template"} -> load_template("refreshmeta.tem", {"***url***" => $self -> build_url(block => "articles", pathinfo => []) } )
+        );
+}
 
 
 # ============================================================================
@@ -265,6 +327,7 @@ sub page_display {
                                                                "action"  => "location.href='".$self -> build_url(block => "compose", pathinfo => [])."'"} ]);
         } else {
             given($pathinfo[0]) {
+                when("update")   { ($title, $content, $extrahead) = $self -> _edit_article($pathinfo[1]); }
                 when("success")  { ($title, $content, $extrahead) = $self -> _generate_success(); }
                 default {
                     ($title, $content, $extrahead) = $self -> _generate_edit($pathinfo[0]);

@@ -336,40 +336,60 @@ sub _validate_article_fields {
 }
 
 
-## @method private $ _validate_article()
+## @method private $ _validate_article($articleid)
 # Validate the article data submitted by the user, and potentially add
 # a new article to the system. Note that this will not return if the article
 # fields validate; it will redirect the user to the new article and exit.
 #
+# @param articleid Optional article ID used when doing edits. Note that the
+#                  caller must ensure this ID is valid and the user can edit it.
 # @return An error message, and a reference to a hash containing
 #         the fields that passed validation.
 sub _validate_article {
-    my $self = shift;
+    my $self      = shift;
+    my $articleid = shift;
     my ($args, $errors, $error) = ({}, "", "");
     my $userid = $self -> {"session"} -> get_session_userid();
+
+    my $failmode = $articleid ? "{L_EDIT_FAILED}" : "{L_COMPOSE_FAILED}";
 
     $error = $self -> _validate_article_fields($args, $userid);
     $errors .= $error if($error);
 
     # Give up here if there are any errors
-    return ($self -> {"template"} -> load_template("error/error_list.tem",
-                                                   {"***message***" => "{L_COMPOSE_FAILED}",
-                                                    "***errors***"  => $errors}), $args)
+    return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
+                                                                            "***errors***"  => $errors}), $args)
         if($errors);
 
-    my $aid = $self -> {"article"} -> add_article($args, $self -> {"session"} -> get_session_userid())
-        or return ($self -> {"template"} -> load_template("error/error_list.tem",
-                                                          {"***message***" => "{L_COMPOSE_FAILED}",
-                                                           "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
-                                                                                                                     {"***error***" => $self -> {"article"} -> errstr()
-                                                                                                                     })
+    # If an articleid has been specified, this is an edit - update the status of the article
+    if($articleid) {
+        my $article = $self -> {"article"} -> get_article($articleid)
+            or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
+                                                                                       "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
+                                                                                                                                                 {"***error***" => $self -> {"article"} -> errstr()
+                                                                                                                                                 })
+                                                              }), $args);
+
+        $self -> {"article"} -> set_article_status($articleid, $userid, "edited", $article -> {"release_mode"} eq "timed")
+            or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
+                                                                                       "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
+                                                                                                                                                 {"***error***" => $self -> {"article"} -> errstr()
+                                                                                                                                                 })
+                                                              }), $args);
+    }
+
+    my $aid = $self -> {"article"} -> add_article($args, $self -> {"session"} -> get_session_userid(), $articleid)
+        or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
+                                                                                   "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
+                                                                                                                                             {"***error***" => $self -> {"article"} -> errstr()
+                                                                                                                                             })
                                                           }), $args);
 
-    $self -> log("compose", "Added article $aid");
+    $self -> log("article", "Added article $aid");
 
     # redirect to a success page
     # Doing this prevents page reloads adding multiple article copies!
-    print $self -> {"cgi"} -> redirect($self -> build_url(block => "compose", pathinfo => ["success"]));
+    print $self -> {"cgi"} -> redirect($self -> build_url(pathinfo => ["success"]));
     exit;
 }
 
