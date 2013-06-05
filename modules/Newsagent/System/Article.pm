@@ -151,7 +151,7 @@ sub get_user_sites {
     $self -> clear_error();
 
     my $sitesh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"sites"}."`
-                                              ORDER BY `name`");
+                                              ORDER BY `description`");
     $sitesh -> execute()
         or return $self -> self_error("Unable to execute user sites query: ".$self -> {"dbh"} -> errstr);
 
