@@ -71,3 +71,8 @@ input.fillwide.datepick {
 label.disabled {
     color: #777;
 }
+
+div.fancy-select {
+    max-height: 64px;
+    max-width: 300px;
+}
