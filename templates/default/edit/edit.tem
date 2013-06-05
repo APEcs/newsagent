@@ -43,7 +43,7 @@
                 </ul>
                 <div class="content">
                     <dl class="input">
-                        <dt><label for="comp-level">{L_COMPOSE_LEVEL}</label></dt>
+                        <dt><strong>{L_COMPOSE_LEVEL}</strong></dt>
                         <dd>***levels***
                         </dd>
                     </dl>
@@ -67,7 +67,7 @@
             </div>
         </div>
     </div>
-    <div id="settings" class="shadowbox">
+    <div id="images" class="shadowbox">
         <h2>{L_COMPOSE_IMAGES}</h2>
         <div class="sbcontent">
             <dl class="input">
@@ -76,7 +76,7 @@
 ***imageaopts***
                     </select>
                     <div class="subopt" id="imagea_mode_url"><input class="fillwide" type="text" name="imagea_url" id="imagea_url" size="32" value="***imagea_url***" /></div>
-                    <div class="subopt" id="imagea_mode_file"><input class="fillwide" type="file" name="imagea_file" id="imagea_file" size="32" /></div>
+                    <div class="subopt" id="imagea_mode_file"><input class="fillwide" type="file" name="imagea_file" id="imagea_file" /></div>
                     <div class="subopt" id="imagea_mode_img"><select name="imagea_img" id="imagea_img" class="fancyselect">
 ***imageaimgs***
                             </select></div>
@@ -88,7 +88,7 @@
 ***imagebopts***
                     </select>
                     <div class="subopt" id="imageb_mode_url"><input class="fillwide" type="text" name="imageb_url" id="imageb_url" size="32" value="***imageb_url***" /></div>
-                    <div class="subopt" id="imageb_mode_file"><input class="fillwide" type="file" name="imageb_file" id="imageb_file" size="32" /></div>
+                    <div class="subopt" id="imageb_mode_file"><input class="fillwide" type="file" name="imageb_file" id="imageb_file" /></div>
                     <div class="subopt" id="imageb_mode_img"><select name="imageb_img" id="imageb_img" class="fancyselect">
 ***imagebimgs***
                             </select></div>
@@ -96,6 +96,7 @@
             </dl>
         </div>
     </div>
+    </form>
 </div>
 <script type="text/javascript">
 window.addEvent('domready', function() {

@@ -1,5 +1,5 @@
 ***error***
-<div class="shadowbox logincore">
+<div id="coreform" class="shadowbox logincore">
     <h2>{L_LOGIN_LOGINFORM}</h2>
     <div class="sbcontent">
         <div class="loginform">

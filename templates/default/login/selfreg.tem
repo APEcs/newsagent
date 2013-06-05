@@ -11,6 +11,7 @@ window.addEvent('domready', function() {
                             content: '<p class="left">{L_LOGIN_SEC_INTRO}</p><div class="entry"><label for="secquest">***question***:<br /><input type="text" id="secquest" name="secquest" class="highlight" size="24" maxlength="255" /></label></div>'
     });
     $('showq').addEvent('click', function() { regbox.open(); });
+    $('coreform').setStyle('width', '900px');
 });
             </script>
             <p>{L_LOGIN_REG_INTRO}</p>
@@ -31,4 +32,3 @@ window.addEvent('domready', function() {
                 </div>
             </form>
         </div>
-        <style type="text/css">div.logincore { width: 900px; }</style>
