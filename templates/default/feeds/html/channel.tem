@@ -3,4 +3,5 @@
 <div class="newsagent-listfooter">
     <div class="newsagent-gendate">Generated: ***now***</div>
     <div class="newsagent-updated">Last change: ***changed***</div>
+    <div class="newsagent-rsslink"><a href="***link***"><img src="{V_[templatepath]}images/feed-icon-14.png" width="14" height="14" alt="rss" /></a></div>
 </div>

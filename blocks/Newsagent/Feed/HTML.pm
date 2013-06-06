@@ -23,6 +23,7 @@ use strict;
 use base qw(Newsagent::Feed); # This class extends the Newsagent::Feed class
 use Newsagent::System::Article;
 use Digest::MD5 qw(md5_hex);
+use CGI::Util qw(escape);
 use Webperl::Utils qw(trimspace path_join);
 use v5.12;
 use Data::Dumper;
@@ -136,11 +137,24 @@ sub generate_feed {
                                                              });
     }
 
+    # Construct a nice feed url
+    my $rssurl = path_join($self -> {"cgi"} -> url(-base => 1), $self -> {"settings"} -> {"config"} -> {"scriptpath"}, "rss/");
+    my $query  = "";
+
+    # Can't use join/bap trickery here, as don't want to include "unset" elements
+    foreach my $key (keys %{$settings}) {
+        # skip settings not specified in the original query
+        next unless($settings -> {$key} && defined($self -> {"cgi"} -> param($key)));
+
+        $query .= "&amp;" if($query);
+        $query .= $key."=".escape($settings -> {$key});
+    }
+    $rssurl .= "?$query" if($query);
+
     # Put everything together in a channel to send back to the user.
     my $feed = $self -> {"template"} -> load_template("feeds/html/channel.tem", {"***title***"       => $self -> {"settings"} -> {"config"} -> {"RSS:title"},
                                                                                  "***description***" => $self -> {"settings"} -> {"config"} -> {"RSS:description"},
-                                                                                 "***link***"        => path_join($self -> {"cgi"} -> url(-base => 1),
-                                                                                                                  $self -> {"settings"} -> {"config"} -> {"scriptpath"}, "rss"),
+                                                                                 "***link***"        => $rssurl,
                                                                                  "***lang***"        => "en",
                                                                                  "***now***"         => $self -> {"template"} -> format_time(time(), $self -> {"timefmt_full"}),
                                                                                  "***changed***"     => $self -> {"template"} -> format_time($maxdate, $self -> {"timefmt_full"}),
