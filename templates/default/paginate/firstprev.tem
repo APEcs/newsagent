@@ -1,2 +1,2 @@
-<li class="pagebox"><a href="***first***">&#x25C0;&#x25C0; {L_NAVBOX_FIRST}</a></li>
+<li class="pagebox">&middot; <a href="***first***">&#x25C0;&#x25C0; {L_NAVBOX_FIRST}</a></li>
 <li class="pagebox"><a href="***prev***">&#x25C0; {L_NAVBOX_PREV}</a></li>

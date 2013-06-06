@@ -222,3 +222,17 @@ li.tab.active {
     background-color: #fff;
     border: 1px #aaa solid;
 }
+
+ul.paginate {
+    float: right;
+    font-size: smaller;
+}
+
+li.pagebox {
+    display: inline;
+    list-style: none;
+    padding: 4px 2px 2px 2px;
+}
+
+li.pagebox.active {
+}

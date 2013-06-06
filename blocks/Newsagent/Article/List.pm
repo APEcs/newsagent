@@ -65,7 +65,7 @@ sub _build_article_row {
 }
 
 
-## @method private @ _generate_articlelist()
+## @method private @ _generate_articlelist($pagenum)
 # Generate the contents of a page listing the articles the user has permission to edit.
 #
 # @todo pagination control
@@ -73,12 +73,17 @@ sub _build_article_row {
 # @return Two strings: the page title, and the contents of the page.
 sub _generate_articlelist {
     my $self     = shift;
+    my $pagenum  = shift || 1;
+
+    my $now      = time();
     my $userid   = $self -> {"session"} -> get_session_userid();
-    my $settings = {"count"  => 20,
-                    "offset" => 0,
+    my $settings = {"count"     => $self -> {"settings"} -> {"config"} -> {"Article::List:count"},
+                    "pagenum"   => 1,
                     "sortfield" => "",
                     "sortdir"   => ""};
-    my $now  = time();
+
+    $settings -> {"pagenum"} = $pagenum if(defined($pagenum) && $pagenum =~ /^\d+$/ && $pagenum > 0);
+    $settings -> {"offset"}  = ($settings -> {"pagenum"} - 1) * $settings -> {"count"};
 
     my ($articles, $count) = $self -> {"article"} -> get_user_articles($userid, $settings);
     if($articles) {
@@ -87,9 +92,11 @@ sub _generate_articlelist {
             $list .= $self -> _build_article_row($article, $now);
         }
 
+        my $maxpage = int($count / $settings -> {"count"}) + 1;
+
         return ($self -> {"template"} -> replace_langvar("ALIST_TITLE"),
                 $self -> {"template"} -> load_template("articlelist/content.tem", {"***articles***" => $list,
-                                                                                   "***paginate***" => ""}));
+                                                                                   "***paginate***" => $self -> build_pagination($maxpage, $settings -> {"pagenum"}, "page")}));
     } else {
         return $self -> build_error_box($self -> {"article"} -> errstr());
     }
@@ -204,7 +211,14 @@ sub page_display {
             }
         }
     } else {
-        ($title, $content) = $self -> _generate_articlelist();
+        my @pathinfo = $self -> {"cgi"} -> param('pathinfo');
+
+        given($pathinfo[0]) {
+            when("page") { ($title, $content) = $self -> _generate_articlelist($pathinfo[1]); }
+            default {
+                ($title, $content) = $self -> _generate_articlelist();
+            }
+        }
 
         $extrahead .= $self -> {"template"} -> load_template("articlelist/extrahead.tem");
         return $self -> generate_newsagent_page($title, $content, $extrahead);
