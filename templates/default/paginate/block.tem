@@ -1,4 +1,6 @@
-<ul class="paginate">
-<li class="pagebox location">{L_NAVBOX_PAGEOF}</li>
+<div class="paginate">
+    <div class="location">{L_NAVBOX_PAGEOF}</div>
+    <ul class="paginate">
 ***pages***
-</ul>
+    </ul>
+</div>

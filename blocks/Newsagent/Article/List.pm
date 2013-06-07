@@ -96,7 +96,7 @@ sub _generate_articlelist {
 
         return ($self -> {"template"} -> replace_langvar("ALIST_TITLE"),
                 $self -> {"template"} -> load_template("articlelist/content.tem", {"***articles***" => $list,
-                                                                                   "***paginate***" => $self -> build_pagination($maxpage, $settings -> {"pagenum"}, "page")}));
+                                                                                   "***paginate***" => $self -> build_pagination($maxpage, $settings -> {"pagenum"}, "page", 0, 0)}));
     } else {
         return $self -> build_error_box($self -> {"article"} -> errstr());
     }

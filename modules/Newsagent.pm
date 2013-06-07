@@ -446,66 +446,25 @@ sub build_url {
 # a series of boxes and controls to allow users to move between pages of message
 # list.
 #
-# @param maxpage The last page number (first is page 1).
-# @param pagenum The selected page (first is page 1)
-# @param mode    The view mode
-# @param count   The number of pages to show in the bar, defaults to 5. Odd numbers
-#                are recommended whenever possible.
+# @param maxpage   The last page number (first is page 1).
+# @param pagenum   The selected page (first is page 1)
+# @param mode      The view mode
 # @return A string containing the navigation block.
 sub build_pagination {
-    my $self    = shift;
-    my $maxpage = shift;
-    my $pagenum = shift;
-    my $mode    = shift;
-    my $count   = shift || 5;
+    my $self      = shift;
+    my $maxpage   = shift;
+    my $pagenum   = shift;
+    my $mode      = shift;
 
     # If there is more than one page, generate a full set of page controls
     if($maxpage > 1) {
         my $pagelist = "";
 
-        # If the user is not on the first page, we need to add the left jump controls
-        $pagelist .= $self -> {"template"} -> load_template("paginate/firstprev.tem", {"***first***" => $self -> build_url(pathinfo => [$mode, 1]),
-                                                                                       "***prev***"  => $self -> build_url(pathinfo => [$mode, $pagenum - 1])})
-            if($pagenum > 1);
+        my $active = ($pagenum > 1) ? "newer.tem" : "newer_disabled.tem";
+        $pagelist .= $self -> {"template"} -> load_template("paginate/$active", {"***prev***"  => $self -> build_url(pathinfo => [$mode, $pagenum - 1])});
 
-        # load some templates to speed up page list generation...
-        my $pagetem    = $self -> {"template"} -> load_template("paginate/page.tem");
-        my $pageacttem = $self -> {"template"} -> load_template("paginate/active.tem");
-        my $spacertem  = $self -> {"template"} -> load_template("paginate/spacer.tem");
-
-        # Work out where the start and end are
-        my $start = $pagenum - int($count / 2);
-        $start = 1 if($start < 1);
-
-        my $end = $start + ($count - 1);
-        $end = $maxpage if($end > $maxpage);
-
-        # The first page is always visible in the list
-        $pagelist .= $self -> {"template"} -> process_template($pagetem, {"***page***"    => $self -> build_url(pathinfo => [$mode, 1]),
-                                                                          "***pagenum***" => 1})
-            if($start > 1);
-
-        # Potentially add a spacer if needed
-        $pagelist .= $spacertem if($start > 2);
-
-        # Generate the list of pages
-        for(my $pnum = $start; $pnum <= $end; ++$pnum) {
-            $pagelist .= $self -> {"template"} -> process_template(($pagenum == $pnum) ? $pageacttem : $pagetem,
-                                                                   {"***page***"    => $self -> build_url(pathinfo => [$mode, $pnum]),
-                                                                    "***pagenum***" => $pnum });
-        }
-
-        # Possibly add another spacer if not up against the right end
-        $pagelist .= $spacertem if($end < ($maxpage - 1));
-        $pagelist .= $self -> {"template"} -> process_template($pagetem, {"***page***"    => $self -> build_url(pathinfo => [$mode, $maxpage]),
-                                                                          "***pagenum***" => $maxpage})
-            if($end < $maxpage);
-
-
-        # Append the right jump controls if we're not on the last page
-        $pagelist .= $self -> {"template"} -> load_template("paginate/nextlast.tem", {"***last***" => $self -> build_url(pathinfo => [$mode, $maxpage]),
-                                                                                      "***next***" => $self -> build_url(pathinfo => [$mode, $pagenum + 1])})
-            if($pagenum < $maxpage);
+        $active = ($pagenum < $maxpage) ? "older.tem" : "older_disabled.tem";
+        $pagelist .= $self -> {"template"} -> load_template("paginate/$active", {"***next***" => $self -> build_url(pathinfo => [$mode, $pagenum + 1])});
 
         return $self -> {"template"} -> load_template("paginate/block.tem", {"***pagenum***" => $pagenum,
                                                                              "***maxpage***" => $maxpage,
