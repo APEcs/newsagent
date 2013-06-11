@@ -224,8 +224,8 @@ li.tab.active {
 }
 
 div.paginate {
-    float: right;
-    margin: 1em auto;
+    text-align: right;
+    margin: 4px auto;
 }
 
 div.paginate div.location {
