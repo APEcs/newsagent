@@ -12,7 +12,7 @@ ALIST_RELDELETED     = Deleted
 
 ALIST_CTRLEDIT       = Edit this article
 ALIST_CTRLHIDE       = Unpublish (hide) this article
-ALIST_CTRLDELETE     = Delete this article
+ALIST_CTRLDELETE     = Delete this article (can't be undone!)
 ALIST_CTRLUNDELETE   = Restore this article
 ALIST_CTRLUNHIDE     = Show this article
 ALIST_CTRLPUBLISH    = Publish this article immediately

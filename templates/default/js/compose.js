@@ -1,5 +1,6 @@
 
 var rdate_picker;
+var sdate_picker;
 var site_levels;
 
 function date_control(datefield, tsfield, control) {
@@ -59,7 +60,7 @@ function show_image_subopt(selid)
 
 function set_visible_levels()
 {
-    var site = $('comp-site').options[$('comp-site').selectedIndex].value;
+    var site = $('comp-site').getSelected().get("value");
 
     Object.each(site_levels[site], function (value, key) {
                      var box = $('level-'+key);
@@ -74,6 +75,26 @@ function set_visible_levels()
                          }
                      }
                  });
+}
+
+
+function set_schedule_sections()
+{
+    var sched_drop = $('comp-schedule');
+
+    if(sched_drop) {
+        var schedule = sched_drop.getSelected().get("value");
+
+        $('schedule-next1').set('html', schedule_data['id_'+schedule]['next'][0]);
+        $('schedule-next2').set('html', schedule_data['id_'+schedule]['next'][1]);
+
+        $('comp-section').empty();
+
+        schedule_data['id_'+schedule]['sections'].each(function (item, index) {
+            $('comp-section').adopt(new Element('option', {'html': item.name, 'value': item.value}));
+            if(item.selected) $('comp-section').selectedIndex = index;
+        });
+    }
 }
 
 
@@ -100,4 +121,21 @@ window.addEvent('domready', function() {
     show_image_subopt('imageb_mode');
 
     $('comp-site').addEvent('change', function() { set_visible_levels(); });
+
+    if($('comp-schedule')) {
+        sdate_picker = new Picker.Date($('schedule_date'), { timePicker: true,
+                                                             yearPicker: true,
+                                                             positionOffset: {x: 5, y: 0},
+                                                             pickerClass: 'datepicker_dashboard',
+                                                             useFadeInOut: !Browser.ie,
+                                                             onSelect: function(date) {
+                                                                 $('stimestamp').set('value', date.format('%s'));
+                                                             }
+                                                           });
+        $('comp-schedule').addEvent('change', function() { set_schedule_sections(); });
+        set_schedule_sections();
+
+        $('comp-srelease').addEvent('change', function() { date_control('schedule_date', 'stimestamp', 'comp-srelease'); });
+        date_control('schedule_date', 'stimestamp', 'comp-srelease');
+    }
 });

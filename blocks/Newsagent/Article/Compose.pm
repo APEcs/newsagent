@@ -23,6 +23,7 @@ use strict;
 use base qw(Newsagent::Article); # This class extends the Article block class
 use v5.12;
 
+use Data::Dumper;
 # ============================================================================
 #  Content generators
 
@@ -60,6 +61,37 @@ sub _generate_compose {
     my $format_release = $self -> {"template"} -> format_time($args -> {"rtimestamp"}, "%d/%m/%Y %H:%M")
         if($args -> {"rtimestamp"});
 
+
+    # Which schedules and sections can the user post to?
+    my $schedules  = $self -> {"article"} -> get_user_schedule_sections($userid);
+    my $schedblock = $self -> {"template"} -> load_template("compose/schedule_noaccess.tem"); # default to 'none of them'
+    if($schedules && scalar(keys(%{$schedules}))) {
+        my $schedlist    = $self -> {"template"} -> build_optionlist($schedules -> {"_schedules"}, $args -> {"schedule"});
+        my $schedmode    = $self -> {"template"} -> build_optionlist($self -> {"schedrelops"}, $args -> {"schedule_mode"});
+        my $schedrelease = $self -> {"template"} -> format_time($args -> {"stimestamp"}, "%d/%m/%Y %H:%M")
+            if($args -> {"stimestamp"});
+
+        my $scheddata = "";
+        $args -> {"section"} = "" if(!$args -> {"section"});
+        foreach my $id (sort(keys(%{$schedules}))) {
+            next unless($id =~ /^id_/);
+
+            $scheddata .= '"'.$id.'": { next: ['.join(",", map { '"'.$self -> {"template"} -> format_time($_).'"' } @{$schedules -> {$id} -> {"next_run"}}).'],';
+            $scheddata .= '"sections": ['.join(",",
+                                               map {
+                                                   '{ "value": "'. $_ -> {"value"}.'", "name": "'.$_ -> {"name"}.'", "selected": '.($_ -> {"value"} == $args -> {"section"} && $id == $args -> {"schedule"} ? 'true' : 'false').'}'
+                                               } @{$schedules -> {$id} -> {"sections"}}).']},';
+        }
+
+        $schedblock = $self -> {"template"} -> load_template("compose/schedule.tem", {"***schedule***"          => $schedlist,
+                                                                                      "***schedule_mode***"     => $schedmode,
+                                                                                      "***schedule_date_fmt***" => $schedrelease,
+                                                                                      "***stimestamp***"        => $args -> {"stimestamp"} || 0,
+                                                                                      "***priority***"          => $args -> {"priority"} || 2,
+                                                                                      "***scheduledata***"      => $scheddata,
+                                                             });
+    }
+
     # Image options
     my $imagea_opts = $self -> _build_image_options($args -> {"images"} -> {"a"} -> {"mode"});
     my $imageb_opts = $self -> _build_image_options($args -> {"images"} -> {"b"} -> {"mode"});
@@ -93,6 +125,7 @@ sub _generate_compose {
                                                                            "***imagebimgs***"       => $imageb_img,
                                                                            "***relmode***"          => $args -> {"relmode"} || 0,
                                                                            "***userlevels***"       => $site_levels,
+                                                                           "***batchstuff***"       => $schedblock,
                                                                           }));
 }
 

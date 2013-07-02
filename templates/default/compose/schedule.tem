@@ -1,0 +1,57 @@
+                    <dl class="input">
+                        <dt><label for="comp-schedule">{L_COMPOSE_SCHEDULE}</label></dt>
+                        <dd><select class="fillwide" id="comp-schedule" name="schedule">
+                                ***schedule***
+                            </select>
+                        </dd>
+                        <dd class="alignright next1">{L_COMPOSE_NEXTREL}: <span id="schedule-next1"></span></dd>
+                        <dd class="alignright next2">{L_COMPOSE_NEXTREL}: <span id="schedule-next2"></span></dd>
+                    </dl>
+                    <dl class="input">
+                        <dt><label for="comp-section">{L_COMPOSE_SECTION}</label></dt>
+                        <dd><select class="fillwide" id="comp-section" name="section">
+                            </select>
+                        </dd>
+                    </dl>
+                    <dl class="input">
+                        <dt><strong>{L_COMPOSE_PRIORITY}</strong></dt>
+                        <dd><div id="prilabel">
+                                <div class="fltright">{L_COMPOSE_PRI_HIGHEST}</div>
+                                {L_COMPOSE_PRI_LOWEST}
+                            </div>
+                            <div id="prislider" class="slider">
+                                <div class="slidebar"></div>
+                                <div class="slideknob"></div>
+                            </div>
+                            <div>{L_COMPOSE_PRIORITY}: <span id="priname"></span></div>
+                            <input type="hidden" id="privalue" name="priority" value="" />
+                        </dd>
+                    </dl>
+                    <dl class="input">
+                        <dt><label for="comp-release">{L_COMPOSE_RELEASE}</label></dt>
+                        <dd><select class="fillwide" id="comp-srelease" name="schedule_mode">
+                                ***schedule_mode***
+                            </select>
+                        </dd>
+                    </dl>
+                    <dl class="input">
+                        <dt><label for="schedule_date">{L_COMPOSE_RELAFTER}</label></dt>
+                        <dd><input class="fillwide datepick" type="text" name="schedule_date" id="schedule_date" size="16" maxlength="16" value="***schedule_date_fmt***" /></dd>
+                    </dl>
+                    <input type="hidden" name="stimestamp" id="stimestamp" value="***stimestamp***" />
+                    <script type="text/javascript">
+                        window.addEvent('domready', function() {
+                            var levels = new Array("{L_COMPOSE_PRI_LOWEST}", "{L_COMPOSE_PRI_LOW}", "{L_COMPOSE_PRI_NORM}", "{L_COMPOSE_PRI_HIGH}", "{L_COMPOSE_PRI_HIGHEST}");
+                            var slider = $('prislider');
+
+                            new Slider(slider, slider.getElement('.slideknob'), {
+                                range: [0, 4],
+                                initialStep: ***priority***,
+                                onChange: function(value) {
+                                    $('priname').set('text', levels[value]);
+                                    $('privalue').set('value', value);
+                                }
+                            });
+                        });
+                        var schedule_data = { ***scheduledata*** };
+                    </script>

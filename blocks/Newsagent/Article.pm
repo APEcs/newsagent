@@ -48,6 +48,12 @@ sub new {
                                                              metadata => $self -> {"system"} -> {"metadata"})
         or return SystemModule::set_error("Compose initialisation failed: ".$SystemModule::errstr);
 
+    $self -> {"schedrelops"} = [ {"value" => "next",
+                                  "name"  => "{L_COMPOSE_RELNEXT}" },
+                                 {"value" => "timed",
+                                  "name"  => "{L_COMPOSE_RELAFTER}" },
+        ];
+
     $self -> {"relops"} = [ {"value" => "visible",
                              "name"  => "{L_COMPOSE_RELNOW}" },
                             {"value" => "timed",

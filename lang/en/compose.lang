@@ -24,6 +24,20 @@ COMPOSE_RELTIME = At the specified time
 COMPOSE_RELNONE = Never (save as draft)
 COMPOSE_RELDATE = Publish time
 
+COMPOSE_NOSCHEDULE  = You do not currently have access to any scheduled releases.
+COMPOSE_SCHEDULE    = Scheduled release
+COMPOSE_NEXTREL     = Next release
+COMPOSE_SECTION     = Section
+COMPOSE_PRIORITY    = Priority
+COMPOSE_PRI_LOWEST  = Lowest
+COMPOSE_PRI_LOW     = Low
+COMPOSE_PRI_NORM    = Normal
+COMPOSE_PRI_HIGH    = High
+COMPOSE_PRI_HIGHEST = Highest
+COMPOSE_RELNEXT     = In next publication
+COMPOSE_RELLATER    = After the specified time
+COMPOSE_RELAFTER    = Publish at or after
+
 COMPOSE_SUBMIT  = Create article
 COMPOSE_FAILED   = Unable to create new article, the following errors were encountered:
 

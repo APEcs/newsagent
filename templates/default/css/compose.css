@@ -76,3 +76,42 @@ div.fancy-select {
     max-height: 64px;
     max-width: 300px;
 }
+
+div.slider {
+    width: 300px;
+    height: 16px;
+}
+
+div.slider div.slidebar {
+    position: relative;
+    left: 0px;
+    top: 8px;
+    height: 0px;
+    width: 300px;
+    border-top: 1px solid #AAAAAA; /* Recklessly disregard gravity! */
+    border-bottom: 1px solid #DDD;
+}
+
+div.slider div.slideknob {
+    width: 16px;
+    height: 16px;
+    background: url('../images/slideknob.png') no-repeat center;
+}
+
+div#prilabel {
+    width: 300px;
+}
+
+div#prilabel div.fltright {
+    float: right;
+}
+
+dd.next1 {
+    color: #555;
+    font-size: 85%;
+}
+
+dd.next2 {
+    color: #999;
+    font-size: 75%;
+}

@@ -23,6 +23,7 @@ XML::Simple
 
 Required modules, usuallny not in repost, install from CPAN:
 
+DateTime::Event::Cron
 MediaWiki::API
 HTML::Tidy (Requires tidyp from http://tidyp.com/ )
 WebService::Validator::HTML::W3C

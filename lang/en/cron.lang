@@ -1,0 +1,32 @@
+
+CRON_ATEACHDAY   = At ***times*** each day,
+CRON_EACHMINUNTE = Every munute during the ***hour*** hour each day,
+CRON_MINUTEPAST  = At ***minutes*** past each hour,
+CRON_DAYMONTH    = " on the ***day*** day of the month"
+CRON_ORDAYWEEK   = " and every ***days***"
+CRON_DAYWEEK     = " every ***days***"
+CRON_MONTHS      = " during ***months***"
+
+CRON_RANGE       = ***start*** through ***end***
+CRON_AND         = and ***last***
+
+CRON_SUNDAY      = Sunday
+CRON_MONDAY      = Monday
+CRON_TUESDAY     = Tuesday
+CRON_WEDNESDAY   = Wednesday
+CRON_THURSDAY    = Thursday
+CRON_FRIDAY      = Friday
+CRON_SATURDAY    = Saturday
+
+CRON_JAN         = January
+CRON_FEB         = February
+CRON_MAR         = March
+CRON_APR         = April
+CRON_MAY         = May
+CRON_JUN         = June
+CRON_JUL         = July
+CRON_AUG         = August
+CRON_SEP         = September
+CRON_OCT         = October
+CRON_NOV         = November
+CRON_DEC         = December

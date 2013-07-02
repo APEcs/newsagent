@@ -23,12 +23,12 @@ use strict;
 use base qw(Webperl::SystemModule); # This class extends the Newsagent block class
 use v5.12;
 
+use DateTime::Event::Cron;
 use File::Path qw(make_path);
 use File::Copy;
 use File::Type;
 use Digest;
 use Webperl::Utils qw(path_join hash_or_hashref);
-
 
 # ============================================================================
 #  Constructor
@@ -166,6 +166,70 @@ sub get_user_sites {
     }
 
     return \@sitelist;
+}
+
+
+## @method $ get_user_schedule_sections($userid)
+# Fetch a list of the shedules and schedule sections the user has access to
+# post messages in. This goes through the scheduled release settings and
+# the sections for the same, and generates a hash containing the lists of
+# each that the user can post to.
+#
+# @param userid The ID of the user to get the schedules and sections for.
+# @return A reference to a hash containing the schedule and section data on
+#         success, undef on error.
+sub get_user_schedule_sections {
+    my $self   = shift;
+    my $userid = shift;
+
+    $self -> clear_error();
+
+    # What we're /actually/ interested in here is which sections the user
+    # can post message to, the schedules they can post to come along as a
+    # resuslt of that information. So we need to traverse the list of sections
+    # recording which ones the user has permission to post to, and then
+    # pull in the data for the schedules later as a side-effect.
+
+    my $sectionh = $self -> {"dbh"} -> prepare("SELECT sec.id, sec.metadata_id, sec.name, sec.schedule_id, sch.name AS schedule_name, sch.schedule
+                                                FROM ".$self -> {"settings"} -> {"database"} -> {"schedule_sections"}." AS sec,
+                                                     ".$self -> {"settings"} -> {"database"} -> {"schedules"}." AS sch
+                                                WHERE sch.id = sec.schedule_id
+                                                ORDER BY sch.name, sec.sort_order");
+    $sectionh -> execute()
+        or return $self -> self_error("Unable to execute section lookup query: ".$self -> {"dbh"} -> errstr);
+
+    my $result = {};
+    while(my $section = $sectionh -> fetchrow_hashref()) {
+        if($self -> {"roles"} -> user_has_capability($section -> {"metadata_id"}, $userid, "schedule")) {
+            # Store the section name and id.
+            push(@{$result -> {"id_".$section -> {"schedule_id"}} -> {"sections"}},
+                 {"value" => $section -> {"id"},
+                  "name"  => $section -> {"name"}});
+
+            # And set the schedule fields if needed.
+            if(!$result -> {"id_".$section -> {"schedule_id"}} -> {"schedule_name"}) {
+                $result -> {"id_".$section -> {"schedule_id"}} -> {"schedule_name"} = $section -> {"schedule_name"};
+
+                # Work out when the next two runs of the schedule are
+                my $cron = DateTime::Event::Cron -> new($section -> {"schedule"});
+                my $next_time = undef;
+                for(my $i = 0; $i < 2; ++$i) {
+                    $next_time = $cron -> next($next_time);
+                    push(@{$result -> {"id_".$section -> {"schedule_id"}} -> {"next_run"}}, $next_time -> epoch);
+                }
+
+                # And store the cron for later user in the view
+                $result -> {"id_".$section -> {"schedule_id"}} -> {"schedule"} = $section -> {"schedule"};
+            }
+        }
+    }
+
+    foreach my $id (sort(keys(%{$result}))) {
+        push(@{$result -> {"_schedules"}}, {"value" => substr($id, 3),
+                                            "name"  => $result -> {$id} -> {"schedule_name"}});
+    }
+
+    return $result;
 }
 
 

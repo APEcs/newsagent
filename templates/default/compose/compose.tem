@@ -62,7 +62,7 @@
                     <input type="hidden" name="rtimestamp" id="rtimestamp" value="***rtimestamp***" />
                 </div>
                 <div class="content">
-                    <p>Batch release stuff goes here. This is pending.</p>
+***batchstuff***
                 </div>
                 <input type="hidden" name="relmode" id="relmode" value="***relmode***" />
             </div>
