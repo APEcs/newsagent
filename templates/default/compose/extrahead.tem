@@ -15,5 +15,10 @@
     <script src="{V_[templatepath]}fancyselect/FancySelect.js" type="text/javascript"></script>
     <link href="{V_[templatepath]}fancyselect/FancySelect.css" rel="stylesheet" />
 
+    <script src="{V_[templatepath]}MultiSelect/Source/MultiSelect.js" type="text/javascript"></script>
+    <link href="{V_[templatepath]}MultiSelect/css/MultiSelect.css" rel="stylesheet" />
+
     <script type="text/javascript" src="{V_[templatepath]}js/compose.js"></script>
     <link href="{V_[templatepath]}css/compose.css" rel="stylesheet" />
+
+    <script type="text/javascript" src="{V_[templatepath]}js/matrix.js"></script>

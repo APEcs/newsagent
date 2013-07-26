@@ -23,7 +23,9 @@ use strict;
 use base qw(Newsagent::Article); # This class extends the Article block class
 use v5.12;
 
+use Newsagent::System::Matrix;
 use Data::Dumper;
+
 # ============================================================================
 #  Content generators
 
@@ -105,6 +107,9 @@ sub _generate_compose {
     $error = $self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $error})
         if($error);
 
+    my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix");
+    my $notifyblock = $matrix -> build_matrix($userid);
+
     # And generate the page title and content.
     return ($self -> {"template"} -> replace_langvar("COMPOSE_FORM_TITLE"),
             $self -> {"template"} -> load_template("compose/compose.tem", {"***errorbox***"         => $error,
@@ -126,6 +131,7 @@ sub _generate_compose {
                                                                            "***relmode***"          => $args -> {"relmode"} || 0,
                                                                            "***userlevels***"       => $site_levels,
                                                                            "***batchstuff***"       => $schedblock,
+                                                                           "***notifystuff***"      => $notifyblock,
                                                                           }));
 }
 

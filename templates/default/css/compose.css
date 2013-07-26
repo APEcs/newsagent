@@ -6,17 +6,20 @@
     width: 1130px;
 }
 
-#article {
+#leftcol {
     float: left;
-    width: 774px;
+    width: 800px;
+    margin: 0px;
+    padding: 0px;
+}
+
+#leftcol li {
+    list-style-type: none;
+    margin: 0px 0px 10px 0px;
+    overflow: hidden;
 }
 
 #settings {
-    float: right;
-    width: 300px;
-}
-
-#images {
     float: right;
     width: 300px;
 }
@@ -35,6 +38,12 @@ dl.input {
 
 dl.float {
     float: left;
+    margin-right: 1em;
+}
+
+dl.iblock {
+    display: inline-block;
+    vertical-align: top;
     margin-right: 1em;
 }
 
@@ -114,4 +123,42 @@ dd.next1 {
 dd.next2 {
     color: #999;
     font-size: 75%;
+}
+
+/* Matrix */
+ul.reciplist {
+    margin: 0px;
+    padding: 0px;
+}
+
+ul.reciplist li {
+    padding: 0px 0px 0px 11px;
+    list-style-type: none;
+}
+
+div.content > ul.reciplist > li {
+    padding: 0px;
+}
+
+ul.reciplist li > div.recipient {
+    padding-left: 11px;
+}
+
+ul.reciplist li.haschild > div.recipient {
+    background-image: url("../images/tree_closed.png");
+    background-repeat: no-repeat;
+    background-position: 0px 4px;
+}
+
+
+ul.reciplist li div.MultiSelect {
+    display: inline-block;
+    width: 160px;
+    text-align: left;
+}
+div.recip-meths {
+    text-align: right;
+}
+div.recipient {
+    float: left;
 }

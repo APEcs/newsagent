@@ -1,4 +1,4 @@
-div.shadowbox {
+.shadowbox {
     border: 1px solid #ddd;
     border-radius: 4px;
     -moz-box-shadow: 3px 3px 4px rgba(0,0,0,0.6);
@@ -10,7 +10,7 @@ div.shadowbox {
     background-color: #fff;
 }
 
-div.shadowbox > h2 {
+.shadowbox > h2 {
     font-size: 14px;
     margin: 0px;
     white-space: nowrap;
@@ -20,7 +20,7 @@ div.shadowbox > h2 {
     color: #555;
 }
 
-div.shadowbox div.sbcontent {
+.shadowbox div.sbcontent {
     border-top: 1px solid #eee;
     color: #000;
     background: #f4f4f4;

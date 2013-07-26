@@ -1,0 +1,1 @@
+var multisel***id*** = new MultiSelect('#***selector***');

@@ -20,7 +20,7 @@
 package Newsagent::Article;
 
 use strict;
-use base qw(Newsagent); # This class extends the Article block class
+use base qw(Newsagent); # This class extends the Newsagent block class
 use Newsagent::System::Article;
 use File::Basename;
 use v5.12;

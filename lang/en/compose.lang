@@ -2,7 +2,7 @@ COMPOSE_FORM_TITLE = Compose article
 
 FORM_OPTIONAL      = (optional)
 
-COMPOSE_TITLE      = Title
+COMPOSE_TITLE      = Subject
 COMPOSE_URL        = Link to more information
 COMPOSE_SUMMARY    = Summary
 COMPOSE_SUMM_INFO  = Enter a short summary of your article here (<span id="sumchars"></span> characters left)
@@ -15,7 +15,7 @@ COMPOSE_NORMAL     = Standard Release
 COMPOSE_IMAGEA     = Lead Image
 COMPOSE_IMAGEB     = Article Image
 
-COMPOSE_SITE   = Post from
+COMPOSE_SITE   = Show in feed
 COMPOSE_LEVEL  = Visibility levels
 
 COMPOSE_RELEASE = Publish
@@ -43,11 +43,14 @@ COMPOSE_FAILED   = Unable to create new article, the following errors were encou
 
 COMPOSE_ARTICLE  = Article
 COMPOSE_SETTINGS = Settings
-COMPOSE_IMAGES   = Images
-COMPOSE_IMGNONE  = No image
-COMPOSE_IMGURL   = Image URL
-COMPOSE_IMGFILE  = Upload image file
-COMPOSE_IMG      = Existing image
+
+COMPOSE_IMAGESFILES = Images and files
+COMPOSE_IMAGES      = Images
+COMPOSE_FILES       = Files
+COMPOSE_IMGNONE     = No image
+COMPOSE_IMGURL      = Image URL
+COMPOSE_IMGFILE     = Upload image file
+COMPOSE_IMG         = Existing image
 
 COMPOSE_IMGURL_DESC = The image URL must be an absolute URL stating http:// or https://
 
