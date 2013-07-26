@@ -117,7 +117,7 @@ sub _build_matrix_level {
             $methods .= $self -> {"template"} -> load_template("matrix/method.tem", {"***recipient***" => $method -> {"recipient_id"},
                                                                                      "***method***"    => $method -> {"method_id"},
                                                                                      "***name***"      => $method -> {"name"},
-                                                                                     "***checked***"   => $selected -> {$method -> {"recipient_id"}} -> {$method -> {"method_id"}}});
+                                                                                     "***checked***"   => $selected -> {$method -> {"recipient_id"}} -> {$method -> {"method_id"}} ? 'checked="checked"' : ''});
         }
 
         $methods = $self -> {"template"} -> load_template("matrix/methodblock.tem", {"***methods***"   => $methods,

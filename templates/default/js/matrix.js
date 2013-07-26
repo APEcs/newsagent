@@ -26,7 +26,7 @@ function fold_matrix(level)
                                                            if(item.hasClass('haschild')) {
                                                                count += fold_matrix(item);
                                                            } else {
-                                                               var methods = item.getElement('recip-meths');
+                                                               var methods = item.getElement('div.recip-meths');
                                                                if(methods) {
                                                                    var checked = methods.getElements('input[type="checkbox"]').filter(function(box) { return box.get('checked'); });
                                                                    count += checked.length;
