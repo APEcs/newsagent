@@ -57,7 +57,14 @@ sub new {
 # ============================================================================
 #  Data access
 
-
+## @method $ get_user_matrix($userid)
+# Generare a nested array structure (really a tree) describing the recipients the
+# specified user is allowed to send notifications to, and the methods by which the
+# notifications may be sent.
+#
+# @param userid The ID of the user to get the recipient/method matrix for.
+# @return A reference to an array containing the user's recipient/method matrix
+#         on success, undef on error.
 sub get_user_matrix {
     my $self   = shift;
     my $userid = shift;

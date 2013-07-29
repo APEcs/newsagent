@@ -54,18 +54,21 @@ sub new {
 # ============================================================================
 #  Interface functions
 
-
-## @method $ build_matrix($userid, $selected)
+## @method $ build_matrix($userid, $selected, $acyear)
 # Build a HTML block containing the recipient/method matrix.
 #
 # @param userid   The ID of the user accessing the page.
 # @param selected A reference to a hash of selected methods.
+# @param acyear   The ID of the selected academic year.
 # @return A string containing the matrix html on success, undef
 #         on error.
 sub build_matrix {
     my $self     = shift;
     my $userid   = shift;
     my $selected = shift;
+    my $acyear   = shift;
+
+    $self -> clear_error();
 
     # Generate the matrix data
     my $matrix = $self -> {"matrix"} -> get_user_matrix($userid)
@@ -86,7 +89,21 @@ sub build_matrix {
                                                                                            "***selector***" => $method});
         }
 
-        return $self -> {"template"} -> load_template("matrix/container.tem", {"***matrix***" => $html,
+        # Build the year list
+        my $years = $self -> {"system"} -> {"userdata"} -> get_valid_years()
+            or return $self -> self_error($self -> {"system"} -> {"userdata"} -> errstr());
+
+        my @yearlist = ();
+        foreach my $year (@{$years}) {
+            push(@yearlist, { "value" => $year -> {"id"},
+                              "name"  => $year -> {"start_year"}."/".$year -> {"end_year"}});
+        }
+
+        # default the year
+        $acyear = $yearlist[0] -> {"value"} if(!$acyear);
+
+        return $self -> {"template"} -> load_template("matrix/container.tem", {"***matrix***"   => $html,
+                                                                               "***acyears***"  => $self -> {"template"} -> build_optionlist(\@yearlist, $acyear),
                                                                                "***multisel***" => $multisel});
     }
 
@@ -94,6 +111,8 @@ sub build_matrix {
 }
 
 
+# ============================================================================
+#  Private code
 
 sub _build_matrix_level {
     my $self     = shift;

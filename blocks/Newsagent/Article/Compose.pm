@@ -81,7 +81,7 @@ sub _generate_compose {
             $scheddata .= '"'.$id.'": { next: ['.join(",", map { '"'.$self -> {"template"} -> format_time($_).'"' } @{$schedules -> {$id} -> {"next_run"}}).'],';
             $scheddata .= '"sections": ['.join(",",
                                                map {
-                                                   '{ "value": "'. $_ -> {"value"}.'", "name": "'.$_ -> {"name"}.'", "selected": '.($_ -> {"value"} == $args -> {"section"} && $id == $args -> {"schedule"} ? 'true' : 'false').'}'
+                                                   '{ "value": "'. $_ -> {"value"}.'", "name": "'.$_ -> {"name"}.'", "selected": '.($_ -> {"value"} eq $args -> {"section"} && $id eq $args -> {"schedule"} ? 'true' : 'false').'}'
                                                } @{$schedules -> {$id} -> {"sections"}}).']},';
         }
 
@@ -112,7 +112,7 @@ sub _generate_compose {
     $args -> {"notify_matrix"} -> {"2"} -> {"2"} = 1;
 
     my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix");
-    my $notifyblock = $matrix -> build_matrix($userid, $args -> {"notify_matrix"});
+    my $notifyblock = $matrix -> build_matrix($userid, $args -> {"notify_matrix"}, $args -> {"notify_year"});
 
     # And generate the page title and content.
     return ($self -> {"template"} -> replace_langvar("COMPOSE_FORM_TITLE"),

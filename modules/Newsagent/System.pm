@@ -28,6 +28,7 @@ use base qw(Webperl::System);
 use Newsagent::System::Metadata;
 use Newsagent::System::Roles;
 use Newsagent::System::Tags;
+use Newsagent::System::UserDataBridge;
 
 ## @method $ init(%args)
 # Initialise the Newsagent System's references to other system objects. This
@@ -69,6 +70,13 @@ sub init {
                                                         settings => $self -> {"settings"},
                                                         logger   => $self -> {"logger"},
                                                         metadata => $self -> {"metadata"})
+        or return $self -> self_error("Roles system init failed: ".$Roles::errstr);
+
+    $self -> {"userdata"} = Newsagent::System::UserDataBridge -> new(dbh      => $self -> {"dbh"},
+                                                                     settings => $self -> {"settings"},
+                                                                     logger   => $self -> {"logger"},
+                                                                     metadata => $self -> {"metadata"},
+                                                                     roles    => $self -> {"roles"})
         or return $self -> self_error("Roles system init failed: ".$Roles::errstr);
 
     return 1;
