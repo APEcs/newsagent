@@ -142,11 +142,13 @@ sub get_user_levels {
 # the list of sites available to the user.
 #
 # @param userid The ID of the user requesting the site list.
+# @param levels A reference to an array of levels, as returned by get_all_levels()
 # @return A reference to an array of hashrefs. Each hashref contains a site
 #         available to the user as a pair of key/value pairs.
 sub get_user_sites {
     my $self   = shift;
     my $userid = shift;
+    my $levels = shift;
 
     $self -> clear_error();
 
@@ -157,11 +159,14 @@ sub get_user_sites {
 
     my @sitelist = ();
     while(my $site = $sitesh -> fetchrow_hashref()) {
-        if($self -> {"roles"} -> user_has_capability($site -> {"metadata_id"}, $userid, "author")) {
-            push(@sitelist, {"name"       => $site -> {"description"},
-                             "value"      => $site -> {"name"},
-                             "id"         => $site -> {"id"},
-                             "metadataid" => $site -> {"metadata_id"}});
+        foreach my $level (@{$levels}) {
+            if($self -> {"roles"} -> user_has_capability($site -> {"metadata_id"}, $userid, $level -> {"capability"})) {
+                push(@sitelist, {"name"       => $site -> {"description"},
+                                 "value"      => $site -> {"name"},
+                                 "id"         => $site -> {"id"},
+                                 "metadataid" => $site -> {"metadata_id"}});
+                last;
+            }
         }
     }
 

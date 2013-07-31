@@ -158,7 +158,7 @@ sub _generate_edit {
     my $levels     = $self -> _build_level_options($sys_levels, $args -> {"levels"});
 
     # Work out where the user is allowed to post from
-    my $user_sites = $self -> {"article"} -> get_user_sites($userid);
+    my $user_sites = $self -> {"article"} -> get_user_sites($userid, $sys_levels);
     my $sites      = $self -> {"template"} -> build_optionlist($user_sites, $args -> {"sitename"});
 
     # Work out which levels the user has access to for each site. This generates a

@@ -49,7 +49,7 @@ sub _generate_compose {
     my $levels     = $self -> _build_level_options($sys_levels, $args -> {"levels"});
 
     # Work out where the user is allowed to post from
-    my $user_sites = $self -> {"article"} -> get_user_sites($userid);
+    my $user_sites = $self -> {"article"} -> get_user_sites($userid, $sys_levels);
     my $sites      = $self -> {"template"} -> build_optionlist($user_sites, $args -> {"site"});
 
     # Work out which levels the user has access to for each site. This generates a
@@ -107,9 +107,9 @@ sub _generate_compose {
     $error = $self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $error})
         if($error);
 
-    $args -> {"notify_matrix"} -> {"5"} -> {"1"} = 1;
-    $args -> {"notify_matrix"} -> {"2"} -> {"1"} = 1;
-    $args -> {"notify_matrix"} -> {"2"} -> {"2"} = 1;
+#    $args -> {"notify_matrix"} -> {"5"} -> {"1"} = 1;
+#    $args -> {"notify_matrix"} -> {"2"} -> {"1"} = 1;
+#    $args -> {"notify_matrix"} -> {"2"} -> {"2"} = 1;
 
     my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix");
     my $notifyblock = $matrix -> build_matrix($userid, $args -> {"notify_matrix"}, $args -> {"notify_year"});
