@@ -237,7 +237,7 @@ sub _validate_levels {
 
     # Get the levels, sites, and which levels the user has access to on each site
     my $sys_levels  = $self -> {"article"} -> get_all_levels();
-    my $user_sites  = $self -> {"article"} -> get_user_sites($userid);
+    my $user_sites  = $self -> {"article"} -> get_user_sites($userid, $sys_levels);
     my $user_levels = $self -> {"article"} -> get_user_levels($user_sites, $sys_levels, $userid);
 
     my @selected = $self -> {"cgi"} -> param("level");

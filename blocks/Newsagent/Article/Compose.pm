@@ -107,10 +107,6 @@ sub _generate_compose {
     $error = $self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $error})
         if($error);
 
-#    $args -> {"notify_matrix"} -> {"5"} -> {"1"} = 1;
-#    $args -> {"notify_matrix"} -> {"2"} -> {"1"} = 1;
-#    $args -> {"notify_matrix"} -> {"2"} -> {"2"} = 1;
-
     my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix");
     my $notifyblock = $matrix -> build_matrix($userid, $args -> {"notify_matrix"}, $args -> {"notify_year"});
 
