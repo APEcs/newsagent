@@ -97,7 +97,8 @@ sub generate_feed {
                 $images[$img] = $result -> {"images"} -> [$img] -> {"location"}
                     if($result -> {"images"} -> [$img] -> {"location"});
 
-                $images[$img] = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"}, $images[$img])
+                $images[$img] = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
+                                          $images[$img])
                     if($images[$img] && $images[$img] !~ /^http/);
             }
         }

@@ -54,7 +54,8 @@ sub generate_feed {
         foreach my $image (@{$result -> {"images"}}) {
             # Work out where the image is
             my $url = $image -> {"location"};
-            $url = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"}, $url)
+            $url = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
+                             $url)
                 if($image -> {"type"} eq "file");
 
             $images .= $self -> {"template"} -> load_template("feeds/rss/image.tem", {"***url***"   => $url,
