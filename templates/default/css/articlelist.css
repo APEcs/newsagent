@@ -80,6 +80,15 @@ table.listtable tr:hover td.controls ul.controls {
     display: inline-block;
 }
 
+table.listtable td.title div.title {
+    overflow: hide;
+}
+
+table.listtable td.title div.info {
+    font-size: 10px;
+    color: #666;
+}
+
 
 .control.edit {
     background-position: 0px 0px;
