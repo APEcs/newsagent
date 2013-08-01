@@ -15,9 +15,9 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package Newsagent::Method;
+package Newsagent::Notification::Method;
 
-## @class Newsagent::Method
+## @class Newsagent::Notification::Method
 # A base class for Method modules that provides minimal implementations
 # of the interface functions expected by the rest of the system.
 #
@@ -31,9 +31,56 @@ package Newsagent::Method;
 use strict;
 use base qw(Newsagent);
 
+# ============================================================================
+#  Constructor
+
+## @cmethod $ new(%args)
+# Create a new Method object. This ensures that the method ID has been set, as
+# required by Prophesy (and the get_method_config() function).
+#
+# @param args A hash of arguments to initialise the object with
+# @return A blessed reference to the object
+sub new {
+    my $invocant = shift;
+    my $class    = ref($invocant) || $invocant;
+    my $self     = $class -> SUPER::new(@_);
+
+    return Webperl::SystemModule::set_error("No method ID specified when creating an instance of $class")
+        if(!$self -> {"method_id"});
+
+    return $self;
+}
+
+
 ################################################################################
 # Model/support functions
 ################################################################################
+
+## @method $ get_method_config($name, $default)
+# Obtain the specified configuration setting for the current notification
+# method.
+#
+# @param name The name of the configuration option to fetch the value for.
+# @return The named configuration option if it is set, otherwise the default
+#         (or the empty string if the default is not set). Undef on error.
+sub get_method_config {
+    my $self    = shift;
+    my $name    = shift;
+    my $default = shift || "";
+
+    $self -> clear_error();
+
+    my $configh = $self -> {"dbh"} -> prepare("SELECT `value`
+                                               FROM `".$self -> {"settings"} -> {"database"} -> {"notify_meth_cfg"}."`
+                                               WHERE `method_id` = ?
+                                               AND `name` LIKE ?");
+    $configh -> execute($self -> {"method_id"}, $name)
+        or return $self -> self_error("Unable to execute method config lookup: ".$self -> {"dbh"} -> errstr);
+
+    my $row = $configh -> fetchrow_arrayref();
+    return ($row && $row -> [0] ? $row -> [0] : $default);
+}
+
 
 ## @method void set_config($args)
 # Set the current configuration to the module to the values in the provided

@@ -1,1 +1,1 @@
-<input type="checkbox" id="matrix-***recipient***-***method***" name="matrix" value="***recipient***-***method***" ***checked*** /> <label for="matrix-***recipient***-***method***">***name***</label>
+<input type="checkbox" class="matrix ***name***"id="matrix-***recipient***-***method***" name="matrix" value="***recipient***-***method***" ***checked*** /> <label for="matrix-***recipient***-***method***">***name***</label>

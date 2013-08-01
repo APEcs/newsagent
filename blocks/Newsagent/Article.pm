@@ -46,7 +46,12 @@ sub new {
                                                              logger   => $self -> {"logger"},
                                                              roles    => $self -> {"system"} -> {"roles"},
                                                              metadata => $self -> {"system"} -> {"metadata"})
-        or return SystemModule::set_error("Compose initialisation failed: ".$SystemModule::errstr);
+        or return Webperl::SystemModule::set_error("Compose initialisation failed: ".$SystemModule::errstr);
+
+    # Load the notification method modules, as they may be needed for content generation,
+    # validation, and miscellaneous other tasks of dubious import.
+    $self -> _load_notification_method_modules()
+        or return Webperl::SystemModule::set_error($self -> errstr());
 
     $self -> {"schedrelops"} = [ {"value" => "next",
                                   "name"  => "{L_COMPOSE_RELNEXT}" },
@@ -471,5 +476,38 @@ sub _build_site_levels {
     return $incantation."};\n";
 }
 
+
+# ============================================================================
+#  Things of which Man was Not Meant To Know (also support code)
+
+
+## @method private $ _load_notification_method_modules()
+# Attempt to load all defined notification method modules and store them
+# in the $self -> {"notify_methods"} hash reference.
+#
+# @return true on succes, undef on error
+sub _load_notification_method_modules {
+    my $self = shift;
+
+    $self -> clear_error();
+
+    my $modlisth = $self -> {"dbh"} -> prepare("SELECT meths.id, meths.name, mods.perl_module
+                                                FROM `".$self -> {"settings"} -> {"database"} -> {"modules"}."` AS mods,
+                                                     `".$self -> {"settings"} -> {"database"} -> {"notify_methods"}."` AS meths
+                                                WHERE mods.module_id = meths.module_id
+                                                AND mods.active = 1");
+    $modlisth -> execute()
+        or return $self -> self_error("Unable to execute notification module lookup: ".$self -> {"dbh"} -> errstr);
+
+    while(my $modrow = $modlisth -> fetchrow_hashref()) {
+        my $module = $self -> {"module"} -> load_module($modrow -> {"perl_module"}, "method_id" => $modrow -> {"id"},
+                                                                                    "method_name" => $modrow -> {"name"})
+            or return $self -> self_error("Unable to load notification module '".$modrow -> {"name"}."': ".$self -> {"module"} -> errstr());
+
+        $self -> {"notify_methods"} -> {$modrow -> {"name"}} = $module;
+    }
+
+    return 1;
+}
 
 1;

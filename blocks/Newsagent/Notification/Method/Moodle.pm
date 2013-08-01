@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package Newsagent::Notification::MethodMoodle;
+package Newsagent::Notification::Method::Moodle;
 
 ## @class Newsagent::Notification::MethodMoodle
 # A moodle method implementation. Supported arguments are:
@@ -30,7 +30,7 @@ package Newsagent::Notification::MethodMoodle;
 # included in the moodle discussion subject.
 
 use strict;
-use base qw(Newsagent::Method); # This class is a Method module
+use base qw(Newsagent::Notification::Method); # This class is a Method module
 
 # ============================================================================
 #  Constructor
@@ -105,9 +105,9 @@ sub send {
         or return $self -> self_error("Method::Moodle: Unable to get user details for message ".$message -> {"id"});
 
     # Open the moodle database connection.
-    $self -> {"moodle"} = DBI->connect($self -> get_method_config("database"},
-                                       $self -> get_method_config("username"},
-                                       $self -> get_method_config("password"},
+    $self -> {"moodle"} = DBI->connect($self -> get_method_config("database"),
+                                       $self -> get_method_config("username"),
+                                       $self -> get_method_config("password"),
                                        { RaiseError => 0, AutoCommit => 1, mysql_enable_utf8 => 1 })
         or return $self -> self_error("Method::Moodle: Unable to connect to database: ".$DBI::errstr);
 
@@ -119,20 +119,20 @@ sub send {
     my $fallback = 0;
     if(!$moodleuser) {
         $fallback = 1;
-        $moodleuser = $self -> _get_moodle_userid($self -> get_method_config("fallback_user"})
+        $moodleuser = $self -> _get_moodle_userid($self -> get_method_config("fallback_user"))
             or return $self -> self_error("Method::Moodle: Unable to obtain a moodle user (username and fallback failed)");
     }
 
     # Precache queries
-    my $discussh = $self -> {"moodle"} -> prepare("INSERT INTO ".$self -> get_method_config("discussions"}."
+    my $discussh = $self -> {"moodle"} -> prepare("INSERT INTO ".$self -> get_method_config("discussions")."
                                                    (course, forum, name, userid, timemodified, usermodified)
                                                    VALUES(?, ?, ?, ?, ?, ?)");
 
-    my $posth   =  $self -> {"moodle"} -> prepare("INSERT INTO ".$self -> get_method_config("posts"}."
+    my $posth   =  $self -> {"moodle"} -> prepare("INSERT INTO ".$self -> get_method_config("posts")."
                                                   (discussion, userid, created, modified, subject, message)
                                                   VALUES(?, ?, ?, ?, ?, ?)");
 
-    my $updateh = $self -> {"moodle"} -> prepare("UPDATE ".$self -> get_method_config("discussions"}."
+    my $updateh = $self -> {"moodle"} -> prepare("UPDATE ".$self -> get_method_config("discussions")."
                                                   SET firstpost = ?
                                                   WHERE id = ?");
 
@@ -144,7 +144,7 @@ sub send {
             if($message -> {"prefix_id"} == 0) {
                 $prefix = $message -> {"prefixother"};
             } else {
-                my $prefixh = $self -> {"dbh"} -> prepare("SELECT prefix FROM ".$self -> {"settings"} -> {"database"} -> {"prefixes"}."
+                my $prefixh = $self -> {"dbh"} -> prepare("SELECT prefix FROM ".$self -> {"settings"} -> {"database"} -> {"notify_prefixes"}."
                                                    WHERE id = ?");
                 $prefixh -> execute($message -> {"prefix_id"})
                     or return $self -> self_error("Unable to execute prefix query: ".$self -> {"dbh"} -> errstr);
@@ -202,13 +202,13 @@ sub _get_moodle_userid {
     my $self     = shift;
     my $username = shift;
 
-    $self -> clear_error()
+    $self -> clear_error();
 
     # Pretty simple query, really...
     my $userh = $self -> {"moodle"} -> prepare("SELECT id FROM ".$self -> get_method_config("users")."
                                                 WHERE username LIKE ?");
     $userh -> execute($username)
-        or return $self -> self_error("Method::Moodle: Unable to execute user query: ".$self -> {"moodle"} -> errstr));
+        or return $self -> self_error("Method::Moodle: Unable to execute user query: ".$self -> {"moodle"} -> errstr);
 
     my $user = $userh -> fetchrow_arrayref();
 
