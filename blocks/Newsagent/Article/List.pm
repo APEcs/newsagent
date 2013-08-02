@@ -53,7 +53,7 @@ sub _build_article_row {
     return $self -> {"template"} -> load_template("articlelist/row.tem", {"***modeclass***" => $article -> {"release_mode"},
                                                                           "***modeinfo***"  => $self -> {"relmodes"} -> {$article -> {"release_mode"}},
                                                                           "***date***"      => $self -> {"template"} -> fancy_time($article -> {"release_time"}, 0, 1),
-                                                                          "***site***"      => $article -> {"sitedesc"},
+                                                                          "***feed***"      => $article -> {"feeddesc"},
                                                                           "***title***"     => $article -> {"title"} || $self -> {"template"} -> format_time($article -> {"release_time"}),
                                                                           "***action***"    => $action,
                                                                           "***actdate***"   => $actdate,

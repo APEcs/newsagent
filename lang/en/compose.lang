@@ -15,7 +15,7 @@ COMPOSE_NORMAL     = Standard Release
 COMPOSE_IMAGEA     = Lead Image
 COMPOSE_IMAGEB     = Article Image
 
-COMPOSE_SITE   = Show in feed
+COMPOSE_FEED   = Show in feed
 COMPOSE_LEVEL  = Visibility levels
 
 COMPOSE_RELEASE = Publish

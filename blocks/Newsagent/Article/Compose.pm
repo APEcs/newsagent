@@ -49,14 +49,14 @@ sub _generate_compose {
     my $levels     = $self -> _build_level_options($sys_levels, $args -> {"levels"});
 
     # Work out where the user is allowed to post from
-    my $user_sites = $self -> {"article"} -> get_user_sites($userid, $sys_levels);
-    my $sites      = $self -> {"template"} -> build_optionlist($user_sites, $args -> {"site"});
+    my $user_feeds = $self -> {"article"} -> get_user_feeds($userid, $sys_levels);
+    my $feeds      = $self -> {"template"} -> build_optionlist($user_feeds, $args -> {"feed"});
 
-    # Work out which levels the user has access to for each site. This generates a
+    # Work out which levels the user has access to for each feed. This generates a
     # chunk of javascript to stick into the page to hide/show options and default-tick
     # them as appropriate.
-    my $user_levels = $self -> {"article"} -> get_user_levels($user_sites, $sys_levels, $userid);
-    my $site_levels = $self -> _build_site_levels($user_levels, $args -> {"site"}, $args -> {"levels"});
+    my $user_levels = $self -> {"article"} -> get_user_levels($user_feeds, $sys_levels, $userid);
+    my $feed_levels = $self -> _build_feed_levels($user_levels, $args -> {"feed"}, $args -> {"levels"});
 
     # Release timing options
     my $relops = $self -> {"template"} -> build_optionlist($self -> {"relops"}, $args -> {"mode"});
@@ -117,7 +117,7 @@ sub _generate_compose {
                                                                            "***title***"            => $args -> {"title"},
                                                                            "***summary***"          => $args -> {"summary"},
                                                                            "***article***"          => $args -> {"article"},
-                                                                           "***allowed_sites***"    => $sites,
+                                                                           "***allowed_feeds***"    => $feeds,
                                                                            "***levels***"           => $levels,
                                                                            "***release_mode***"     => $relops,
                                                                            "***release_date_fmt***" => $format_release,
@@ -129,7 +129,7 @@ sub _generate_compose {
                                                                            "***imageaimgs***"       => $imagea_img,
                                                                            "***imagebimgs***"       => $imageb_img,
                                                                            "***relmode***"          => $args -> {"relmode"} || 0,
-                                                                           "***userlevels***"       => $site_levels,
+                                                                           "***userlevels***"       => $feed_levels,
                                                                            "***batchstuff***"       => $schedblock,
                                                                            "***notifystuff***"      => $notifyblock,
                                                                           }));

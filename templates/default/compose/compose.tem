@@ -72,9 +72,9 @@ Not here yet.
         <h2>{L_COMPOSE_SETTINGS}</h2>
         <div class="sbcontent">
             <dl class="input">
-                <dt><label for="comp-site">{L_COMPOSE_SITE}</label></dt>
-                <dd><select class="fillwide" id="comp-site" name="site">
-                        ***allowed_sites***
+                <dt><label for="comp-feed">{L_COMPOSE_FEED}</label></dt>
+                <dd><select class="fillwide" id="comp-feed" name="feed">
+                        ***allowed_feeds***
                     </select>
 
                 </dd>

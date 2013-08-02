@@ -120,17 +120,17 @@ sub generate_feed {
             if($images[1]);
 
         # work out the URL
-        my $siteurl = $result -> {"siteurl"} || $result -> {"defaulturl"};
+        my $feedurl = $result -> {"feedurl"} || $result -> {"defaulturl"};
 
         # Put the item together!
         $items .= $self -> {"template"} -> load_template("feeds/html/item-$mode.tem", {"***title***"       => $result -> {"title"} || $pubdate,
                                                                                        "***summary***"     => $result -> {"summary"},
                                                                                        "***leaderimg***"   => $images[0],
                                                                                        "***articleimg***"  => $images[1],
-                                                                                       "***site***"        => $result -> {"sitename"},
+                                                                                       "***feed***"        => $result -> {"feedname"},
                                                                                        "***date***"        => $pubdate,
-                                                                                       "***guid***"        => $siteurl."?articleid=".$result -> {"id"},
-                                                                                       "***link***"        => $siteurl."?articleid=".$result -> {"id"},
+                                                                                       "***guid***"        => $feedurl."?articleid=".$result -> {"id"},
+                                                                                       "***link***"        => $feedurl."?articleid=".$result -> {"id"},
                                                                                        "***email***"       => $result -> {"email"},
                                                                                        "***name***"        => $result -> {"realname"} || $result -> {"username"},
                                                                                        "***fulltext***"    => $result -> {"fulltext"},

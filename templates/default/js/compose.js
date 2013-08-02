@@ -1,7 +1,7 @@
 
 var rdate_picker;
 var sdate_picker;
-var site_levels;
+var feed_levels;
 
 function date_control(datefield, tsfield, control) {
     var selVal = $(control).getSelected().get("value");
@@ -60,9 +60,9 @@ function show_image_subopt(selid)
 
 function set_visible_levels()
 {
-    var site = $('comp-site').getSelected().get("value");
+    var feed = $('comp-feed').getSelected().get("value");
 
-    Object.each(site_levels[site], function (value, key) {
+    Object.each(feed_levels[feed], function (value, key) {
                      var box = $('level-'+key);
                      if(box) {
                          if(value) {
@@ -120,7 +120,7 @@ window.addEvent('domready', function() {
     $('imageb_mode').addEvent('change', function() { show_image_subopt('imageb_mode'); });
     show_image_subopt('imageb_mode');
 
-    $('comp-site').addEvent('change', function() { set_visible_levels(); });
+    $('comp-feed').addEvent('change', function() { set_visible_levels(); });
 
     if($('comp-schedule')) {
         sdate_picker = new Picker.Date($('schedule_date'), { timePicker: true,

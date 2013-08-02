@@ -79,7 +79,7 @@ sub new {
 ## @method $ get_all_levels()
 # Obtain the list of article levels supported by the system. This returns a list
 # of supported article levels, even if the user does not have permission to post
-# at that level in any of their permitted sites. Use get_users_levels to obtain
+# at that level in any of their permitted feeds. Use get_users_levels to obtain
 # a list of levels the user hash access to.
 #
 # @return A reference to an array of hashrefs. Each hashref contains a level
@@ -105,29 +105,29 @@ sub get_all_levels {
 }
 
 
-## @method $ get_user_levels($sites, $levels, $userid)
+## @method $ get_user_levels($feeds, $levels, $userid)
 # Generate a hash representing the posting levels available to a user
-# for each site in the system.
+# for each feed in the system.
 #
-# @param sites         A reference to an array of site hashes, as returned by get_user_sites()
+# @param feeds         A reference to an array of feed hashes, as returned by get_user_feeds()
 # @param levels        A reference to an array of levels, as returned by get_all_levels()
 # @param userid        The ID of the user.
-# @return A reference to a hash of user site/level permissions on succes,
+# @return A reference to a hash of user feed/level permissions on succes,
 #         undef on error.
 sub get_user_levels {
     my $self   = shift;
-    my $sites  = shift;
+    my $feeds  = shift;
     my $levels = shift;
     my $userid = shift;
     my $userlevels = {};
 
-    # Fetch the user's capabilities for each site
-    foreach my $site (@{$sites}) {
-        my $capabilities = $self -> {"roles"} -> user_capabilities($site -> {"metadataid"}, $userid);
+    # Fetch the user's capabilities for each feed
+    foreach my $feed (@{$feeds}) {
+        my $capabilities = $self -> {"roles"} -> user_capabilities($feed -> {"metadataid"}, $userid);
 
         # And for each level, record whether they have the capability required to use the level
         foreach my $level (@{$levels}) {
-            $userlevels -> {$site -> {"value"}} -> {$level -> {"value"}} = $capabilities -> {$level -> {"capability"}} || 0;
+            $userlevels -> {$feed -> {"value"}} -> {$level -> {"value"}} = $capabilities -> {$level -> {"capability"}} || 0;
         }
     }
 
@@ -135,42 +135,42 @@ sub get_user_levels {
 }
 
 
-## @method $ get_user_sites($userid)
-# Obtain the list of sites the user has permission to post from. This
-# checks through the list of available sites, and determines whether
-# the user is able to post messages from that site before adding it to
-# the list of sites available to the user.
+## @method $ get_user_feeds($userid)
+# Obtain the list of feeds the user has permission to post from. This
+# checks through the list of available feeds, and determines whether
+# the user is able to post messages from that feed before adding it to
+# the list of feeds available to the user.
 #
-# @param userid The ID of the user requesting the site list.
+# @param userid The ID of the user requesting the feed list.
 # @param levels A reference to an array of levels, as returned by get_all_levels()
-# @return A reference to an array of hashrefs. Each hashref contains a site
+# @return A reference to an array of hashrefs. Each hashref contains a feed
 #         available to the user as a pair of key/value pairs.
-sub get_user_sites {
+sub get_user_feeds {
     my $self   = shift;
     my $userid = shift;
     my $levels = shift;
 
     $self -> clear_error();
 
-    my $sitesh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"sites"}."`
+    my $feedsh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"feeds"}."`
                                               ORDER BY `description`");
-    $sitesh -> execute()
-        or return $self -> self_error("Unable to execute user sites query: ".$self -> {"dbh"} -> errstr);
+    $feedsh -> execute()
+        or return $self -> self_error("Unable to execute user feeds query: ".$self -> {"dbh"} -> errstr);
 
-    my @sitelist = ();
-    while(my $site = $sitesh -> fetchrow_hashref()) {
+    my @feedlist = ();
+    while(my $feed = $feedsh -> fetchrow_hashref()) {
         foreach my $level (@{$levels}) {
-            if($self -> {"roles"} -> user_has_capability($site -> {"metadata_id"}, $userid, $level -> {"capability"})) {
-                push(@sitelist, {"name"       => $site -> {"description"},
-                                 "value"      => $site -> {"name"},
-                                 "id"         => $site -> {"id"},
-                                 "metadataid" => $site -> {"metadata_id"}});
+            if($self -> {"roles"} -> user_has_capability($feed -> {"metadata_id"}, $userid, $level -> {"capability"})) {
+                push(@feedlist, {"name"       => $feed -> {"description"},
+                                 "value"      => $feed -> {"name"},
+                                 "id"         => $feed -> {"id"},
+                                 "metadataid" => $feed -> {"metadata_id"}});
                 last;
             }
         }
     }
 
-    return \@sitelist;
+    return \@feedlist;
 }
 
 
@@ -303,9 +303,9 @@ sub get_image_info {
 #   the *name* of the level, not the level id, for readability. Valid levels are
 #   defined in the `levels` table. Unknown/invalid levels will produce no matches.
 #   If no level is specified, all levels are matched.
-# - `site`: obtain articles published by the specified site or group. This is the
-#   site name, not the site ID, and valid sites are defined in the `sites` table.
-#   If no site is specified, all sites with messages at the current level are matched.
+# - `feed`: obtain articles published by the specified feed or group. This is the
+#   feed name, not the feed ID, and valid feeds are defined in the `feeds` table.
+#   If no feed is specified, all feeds with messages at the current level are matched.
 # - `count`: how many articles to return. If not specified, this defaults to the
 #   system-wide setting defined in `Feed:count` in the settings table.
 # - `offset`: article offset, first returned article is at offset 0.
@@ -333,28 +333,28 @@ sub get_feed_articles {
     $settings -> {"offset"} = 0
         if(!$settings -> {"offset"});
 
-    # And work out what the level for the site url should be
+    # And work out what the level for the feed url should be
     my $urllevel = $settings -> {"urllevel"};
     $urllevel = $self -> {"settings"} -> {"config"} -> {"Feed:default_level"}
     if(!$urllevel);
 
-    # convert to a site id for a simpler query
+    # convert to a feed id for a simpler query
     $urllevel = $self -> _get_level_byname($urllevel)
         or return undef;
 
     # Now start constructing the query. These are the tables and where clauses that are
     # needed regardless of the settings provided by the caller.
     # All the fields the query is interested in, normally fulltext is omitted unless explicitly requested
-    my $fields = "`article`.`id`, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `user`.`email`, `article`.`created`, `site`.`name` AS `sitename`, `site`.`default_url` AS `defaulturl`, `article`.`title`, `article`.`summary`, `article`.`release_time`, `urls`.`url` AS `siteurl`";
+    my $fields = "`article`.`id`, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `user`.`email`, `article`.`created`, `feed`.`name` AS `feedname`, `feed`.`default_url` AS `defaulturl`, `article`.`title`, `article`.`summary`, `article`.`release_time`, `urls`.`url` AS `feedurl`";
     $fields   .= ", `article`.`article` AS `fulltext`" if($settings -> {"fulltext"});
 
     my $from  = "`".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `article`
                  LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `user`
                      ON `user`.`user_id` = `article`.`creator_id`
-                 LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"sites"}."` AS `site`
-                     ON `site`.`id` = `article`.`site_id`
-                 LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"siteurls"}."` AS `urls`
-                     ON (`urls`.`site_id` = `article`.`site_id` AND `urls`.`level_id` = ?)";
+                 LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"feeds"}."` AS `feed`
+                     ON `feed`.`id` = `article`.`feed_id`
+                 LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"feedurls"}."` AS `urls`
+                     ON (`urls`.`feed_id` = `article`.`feed_id` AND `urls`.`level_id` = ?)";
     my $where = "(`article`.`release_mode` = 'visible'
                    OR (`article`.`release_mode` = 'timed'
                         AND `article`.`release_time` <= UNIX_TIMESTAMP()
@@ -368,18 +368,18 @@ sub get_feed_articles {
         push(@params, $settings -> {"id"});
     }
 
-    # There can be multiple, comma separated sites specified in the settings, so split them
+    # There can be multiple, comma separated feeds specified in the settings, so split them
     # and create an OR clause for the lot
-    if($settings -> {"site"}) {
-        my @sites = split(/,/, $settings -> {"site"});
-        my $sitefrag = "";
+    if($settings -> {"feed"}) {
+        my @feeds = split(/,/, $settings -> {"feed"});
+        my $feedfrag = "";
 
-        foreach my $site (@sites) {
-            $sitefrag .= " OR " if($sitefrag);
-            $sitefrag .= "`site`.`name` LIKE ?";
-            push(@params, $site);
+        foreach my $feed (@feeds) {
+            $feedfrag .= " OR " if($feedfrag);
+            $feedfrag .= "`feed`.`name` LIKE ?";
+            push(@params, $feed);
         }
-        $where .= " AND ($sitefrag)";
+        $where .= " AND ($feedfrag)";
     }
 
     # Level filtering is a bit trickier, as it needs to do more joining, and has to deal with
@@ -480,12 +480,12 @@ sub get_user_articles {
     # And the sort direction too.
     $sortdir = $sortdir eq "DESC" ? "DESC" : "ASC";
 
-    my $fields = "`article`.*, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `user`.`email`, `site`.`name` AS `sitename`, `site`.`description` AS `sitedesc`";
+    my $fields = "`article`.*, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `user`.`email`, `feed`.`name` AS `feedname`, `feed`.`description` AS `feeddesc`";
     my $from   = "`".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `article`
                   LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `user`
                       ON `user`.`user_id` = `article`.`creator_id`
-                  LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"sites"}."` AS `site`
-                      ON `site`.`id` = `article`.`site_id`";
+                  LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"feeds"}."` AS `feed`
+                      ON `feed`.`id` = `article`.`feed_id`";
     my $where  = $settings -> {"hidedeleted"} ? " WHERE `article`.`release_mode` != 'deleted'" : "";
 
     # The actual query can't contain a limit directive: there's no way to determine at this point
@@ -542,12 +542,12 @@ sub get_article {
     my $self      = shift;
     my $articleid = shift;
 
-    my $fields = "`article`.*, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `user`.`email`, `site`.`name` AS `sitename`, `site`.`description` AS `sitedesc`";
+    my $fields = "`article`.*, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `user`.`email`, `feed`.`name` AS `feedname`, `feed`.`description` AS `feeddesc`";
     my $from   = "`".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `article`
                   LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `user`
                       ON `user`.`user_id` = `article`.`creator_id`
-                  LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"sites"}."` AS `site`
-                      ON `site`.`id` = `article`.`site_id`";
+                  LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"feeds"}."` AS `feed`
+                      ON `feed`.`id` = `article`.`feed_id`";
 
     # The actual query can't contain a limit directive: there's no way to determine at this point
     # whether the user has access to any particular article, so any limit may be being applied to
@@ -694,8 +694,8 @@ sub add_article {
 
     $self -> clear_error();
 
-    # resolve the site
-    my $site = $self -> _get_site_byname($article -> {"site"})
+    # resolve the feed
+    my $feed = $self -> _get_feed_byname($article -> {"feed"})
         or return undef;
 
     # Add urls to the database
@@ -707,7 +707,7 @@ sub add_article {
     }
 
     # Make a new metadata context to attach to the article
-    my $metadataid = $self -> {"metadata"} -> create($site -> {"metadata_id"})
+    my $metadataid = $self -> {"metadata"} -> create($feed -> {"metadata_id"})
         or return $self -> self_error("Unable to create new metadata context: ".$self -> {"metadata"} -> errstr());
 
     # Fix up release time
@@ -716,9 +716,9 @@ sub add_article {
 
     # Add the article itself
     my $addh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"articles"}."`
-                                            (previous_id, metadata_id, creator_id, created, site_id, title, summary, article, release_mode, release_time, updated, updated_id)
+                                            (previous_id, metadata_id, creator_id, created, feed_id, title, summary, article, release_mode, release_time, updated, updated_id)
                                             VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    my $rows = $addh -> execute($previd, $metadataid, $userid, $now, $site -> {"id"}, $article -> {"title"}, $article -> {"summary"}, $article -> {"article"}, $article -> {"mode"}, $article -> {"rtimestamp"}, $now, $userid);
+    my $rows = $addh -> execute($previd, $metadataid, $userid, $now, $feed -> {"id"}, $article -> {"title"}, $article -> {"summary"}, $article -> {"article"}, $article -> {"mode"}, $article -> {"rtimestamp"}, $now, $userid);
     return $self -> self_error("Unable to perform article insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Article insert failed, no rows inserted") if($rows eq "0E0");
 
@@ -1067,22 +1067,22 @@ sub _add_level_relation {
 }
 
 
-## @method private $ _get_site_byname($name)
-# Obtain the data for the site with the specified name, if possible.
+## @method private $ _get_feed_byname($name)
+# Obtain the data for the feed with the specified name, if possible.
 #
-# @param name The name of the site to get the ID for
-# @return A reference to the site data hash on success, undef on failure
-sub _get_site_byname {
+# @param name The name of the feed to get the ID for
+# @return A reference to the feed data hash on success, undef on failure
+sub _get_feed_byname {
     my $self  = shift;
-    my $site = shift;
+    my $feed = shift;
 
-    my $siteh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"sites"}."`
+    my $feedh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"feeds"}."`
                                               WHERE `name` LIKE ?");
-    $siteh -> execute($site)
-        or return $self -> self_error("Unable to execute site lookup query: ".$self -> {"dbh"} -> errstr);
+    $feedh -> execute($feed)
+        or return $self -> self_error("Unable to execute feed lookup query: ".$self -> {"dbh"} -> errstr);
 
-    my $levrow = $siteh -> fetchrow_hashref()
-        or return $self -> self_error("Request for non-existent site '$site', giving up");
+    my $levrow = $feedh -> fetchrow_hashref()
+        or return $self -> self_error("Request for non-existent feed '$feed', giving up");
 
     return $levrow;
 }

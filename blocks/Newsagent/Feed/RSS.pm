@@ -75,17 +75,17 @@ sub generate_feed {
         my $pubdate = $self -> {"template"} -> format_time($result -> {"release_time"}, $self -> {"timefmt"});
 
         # work out the URL
-        my $siteurl = $result -> {"siteurl"} || $result -> {"defaulturl"};
+        my $feedurl = $result -> {"feedurl"} || $result -> {"defaulturl"};
 
         # Put the item together!
         $items .= $self -> {"template"} -> load_template("feeds/rss/item.tem", {"***title***"       => $result -> {"title"} || $pubdate,
                                                                                 "***description***" => $result -> {"summary"},
                                                                                 "***images***"      => $images,
-                                                                                "***site***"        => $result -> {"sitename"},
+                                                                                "***feed***"        => $result -> {"feedname"},
                                                                                 "***extra***"       => $extra,
                                                                                 "***date***"        => $pubdate,
-                                                                                "***guid***"        => $siteurl."?id=".$result -> {"id"},
-                                                                                "***link***"        => $siteurl."?id=".$result -> {"id"},
+                                                                                "***guid***"        => $feedurl."?id=".$result -> {"id"},
+                                                                                "***link***"        => $feedurl."?id=".$result -> {"id"},
                                                                                 "***email***"       => $result -> {"email"},
                                                                                 "***name***"        => $result -> {"realname"} || $result -> {"username"},
                                                                                 "***gravhash***"    => md5_hex(lc(trimspace($result -> {"email"} || ""))),

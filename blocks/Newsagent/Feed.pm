@@ -95,12 +95,20 @@ sub _validate_settings {
                                                                               "nicename" => ""
                                                                    });
 
-    # Site and level are up next
+    # Feed and level are up next
+    ($settings -> {"feed"}, $error) = $self -> validate_string("feed", {"required"   => 0,
+                                                                        "default"    => "",
+                                                                        "formattest" => '^\w+(?:,\w+)*$',
+                                                                        "formatdesc" => "",
+                                                                        "nicename"   => ""});
     ($settings -> {"site"}, $error) = $self -> validate_string("site", {"required"   => 0,
                                                                         "default"    => "",
                                                                         "formattest" => '^\w+(?:,\w+)*$',
                                                                         "formatdesc" => "",
                                                                         "nicename"   => ""});
+    $settings -> {"feed"} = $settings -> {"site"}
+        if(!$settings -> {"feed"} && $settings -> {"site"});
+
     ($settings -> {"level"}, $error) = $self -> validate_string("level", {"required"   => 0,
                                                                           "default"    => "",
                                                                           "formattest" => '^\w+(?:,\w+)*$',
