@@ -110,6 +110,13 @@ sub _generate_compose {
     my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix");
     my $notifyblock = $matrix -> build_matrix($userid, $args -> {"notify_matrix"}, $args -> {"notify_year"});
 
+    my $notify_settings = "";
+    my $userdata = $self -> {"session"} -> get_user_byid($userid);
+
+    foreach my $method (keys(%{$self -> {"notify_methods"}})) {
+        $notify_settings .= $self -> {"notify_methods"} -> {$method} -> generate_compose($args, $userdata);
+    }
+
     # And generate the page title and content.
     return ($self -> {"template"} -> replace_langvar("COMPOSE_FORM_TITLE"),
             $self -> {"template"} -> load_template("compose/compose.tem", {"***errorbox***"         => $error,
@@ -132,6 +139,7 @@ sub _generate_compose {
                                                                            "***userlevels***"       => $feed_levels,
                                                                            "***batchstuff***"       => $schedblock,
                                                                            "***notifystuff***"      => $notifyblock,
+                                                                           "***notifysettings***"   => $notify_settings,
                                                                           }));
 }
 

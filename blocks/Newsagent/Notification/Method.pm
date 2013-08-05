@@ -43,7 +43,8 @@ use base qw(Newsagent);
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    my $self     = $class -> SUPER::new(@_);
+    my $self     = $class -> SUPER::new(@_)
+        or return undef;
 
     return Webperl::SystemModule::set_error("No method ID specified when creating an instance of $class")
         if(!$self -> {"method_id"});
@@ -95,54 +96,51 @@ sub set_config {
 }
 
 
-## @method $ store_message($args, $user, $mess_id, $prev_id)
+## @method $ store_article($args, $userid, $articleid)
 # Store the data for this method. This will store any method-specific
 # data in the args hash in the appropriate tables in the database.
 #
-# @param args    A reference to a hash containing the message data.
-# @param user    A reference to a hash containing the user's data.
-# @param mess_id The ID of the message being stored.
-# @param prev_id If set, this is the ID of the message that the current
-#                mess_id is an edit of.
+# @param args      A reference to a hash containing the article data.
+# @param userid    A reference to a hash containing the user's data.
+# @param articleid The ID of the article being stored.
 # @return true on success, undef on error
-sub store_message {
-    my $self    = shift;
-    my $args    = shift;
-    my $user    = shift;
-    my $mess_id = shift;
-    my $prev_id = shift;
+sub store_article {
+    my $self      = shift;
+    my $args      = shift;
+    my $userid    = shift;
+    my $articleid = shift;
 
     # Does nothing
     return 1;
 }
 
 
-## @method void get_message($msgid, $message)
-# Populate the specified message hash with data specific to this method.
+## @method void get_article($msgid, $article)
+# Populate the specified article hash with data specific to this method.
 # This will pull any data appropriate for the current method out of
-# the database and shove it into the message hash.
+# the database and shove it into the article hash.
 #
-# @param msgid   The ID of the message to fetch the data for.
-# @param message A reference to the hash into which the data should be written.
+# @param msgid   The ID of the article to fetch the data for.
+# @param article A reference to the hash into which the data should be written.
 # @return true on success, undef on error
-sub get_message {
+sub get_article {
     my $self    = shift;
     my $msgid   = shift;
-    my $message = shift;
+    my $article = shift;
 
     # Does nothing.
     return 1;
 }
 
 
-## @method $ send($message)
-# Attempt to send the specified message to the method system.
+## @method $ send($article)
+# Attempt to send the specified article to the method system.
 #
-# @param message A reference to a hash containing the message to send.
-# @return undef on success, an error message on failure.
+# @param article A reference to a hash containing the article to send.
+# @return undef on success, an error article on failure.
 sub send {
     my $self    = shift;
-    my $message = shift;
+    my $article = shift;
 
     return undef;
 }
@@ -158,7 +156,7 @@ sub send {
 #
 # @param args A reference to a hash of arguments to use in the form
 # @param user A reference to a hash containing the user's data
-# @return A string containing the message form fragment.
+# @return A string containing the article form fragment.
 sub generate_compose {
     my $self = shift;
     my $args = shift;
@@ -173,8 +171,8 @@ sub generate_compose {
 # Generate the string to insert into the edit page for this method.
 #
 # @param args A reference to a hash of arguments to use in the form
-# @return A string containing the message edit form fragment.
-sub generate_message_edit {
+# @return A string containing the article edit form fragment.
+sub generate_article_edit {
     my $self = shift;
     my $args = shift;
 
@@ -187,8 +185,8 @@ sub generate_message_edit {
 #
 # @param args      A reference to a hash of arguments to use in the form
 # @param outfields A reference to a hash of output values.
-# @return A string containing the message view form fragment.
-sub generate_message_view {
+# @return A string containing the article view form fragment.
+sub generate_article_view {
     my $self      = shift;
     my $args      = shift;
     my $outfields = shift;
@@ -202,39 +200,40 @@ sub generate_message_view {
 # the provided args hash.
 #
 # @param args A reference to a hash into which the Method's data should be stored.
-# @return A string containing any error messages encountered during validation.
+# @return A reference to an array containing any error articles encountered
+#         during validation,
 sub validate_article {
     my $self = shift;
     my $args = shift;
 
-    return "";
+    return [];
 }
 
 
-## @method $ generate_messagelist_visibility($message)
+## @method $ generate_articlelist_visibility($article)
 # Generate the fragment to display in the 'visibility' column of the user
-# message list for the specified message.
+# article list for the specified article.
 #
-# @param message The message being processed.
+# @param article The article being processed.
 # @return A string containing the HTML fragment to show in the visibility column.
-sub generate_messagelist_visibility {
+sub generate_articlelist_visibility {
     my $self    = shift;
-    my $message = shift;
+    my $article = shift;
 
     return "";
 }
 
 
-## @method $ generate_messagelist_ops($message, $args)
+## @method $ generate_articlelist_ops($article, $args)
 # Generate the fragment to display in the 'ops' column of the user
-# message list for the specified message.
+# article list for the specified article.
 #
-# @param message The message being processed.
+# @param article The article being processed.
 # @param args    Additional arguments to use when filling in fragment templates.
 # @return A string containing the HTML fragment to show in the ops column.
-sub generate_messagelist_ops {
+sub generate_articlelist_ops {
     my $self    = shift;
-    my $message = shift;
+    my $article = shift;
     my $args    = shift;
 
     return "";
@@ -243,8 +242,8 @@ sub generate_messagelist_ops {
 
 ## @method $ known_op()
 # Determine whether the method module can understand the operation specified
-# in the query string. This function allows UserMessages to determine which
-# Method modules understand operations added by methods during generate_messagelist_ops().
+# in the query string. This function allows UserArticles to determine which
+# Method modules understand operations added by methods during generate_articlelist_ops().
 #
 # @return true if the Method module can understand the operation, false otherwise.
 sub known_op {
@@ -254,16 +253,16 @@ sub known_op {
 }
 
 
-## @method @ process_op($message)
-# Perform the query-stringspecified operation on a message. This allows Method
-# modules to implement the operations added as part of generate_messagelist_ops().
+## @method @ process_op($article)
+# Perform the query-stringspecified operation on a article. This allows Method
+# modules to implement the operations added as part of generate_articlelist_ops().
 #
-# @param message A reference to a hash containing the message data.
-# @return A string containing a status update message to show above the list, and
-#         a flag specifying whether the returned string is an error message or not.
+# @param article A reference to a hash containing the article data.
+# @return A string containing a status update article to show above the list, and
+#         a flag specifying whether the returned string is an error article or not.
 sub process_op {
     my $self    = shift;
-    my $message = shift;
+    my $article = shift;
 
     return ("", 0);
 }

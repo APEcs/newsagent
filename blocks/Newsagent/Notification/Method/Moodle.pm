@@ -15,42 +15,19 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package Newsagent::Notification::Method::Moodle;
 
-## @class Newsagent::Notification::MethodMoodle
+## @class
 # A moodle method implementation. Supported arguments are:
 #
 # - forum_id=&lt;fid&gt; - ID of the forum to post to
 # - course_id=&lt;cid&gt; - course id the forum resides in
-# - prefix=&lt;1/0&gt; - if set, the subject prefix is used. Otherwise it is omitted (the default).
 #
 # If multiple forum_id/course_id arguments are specified, this will
-# insert the message into each forum. The prefix is completely optional,
-# and defaults to 0, if true then the subject prefix for the message is
-# included in the moodle discussion subject.
+# insert the message into each forum.
+package Newsagent::Notification::Method::Moodle;
 
 use strict;
 use base qw(Newsagent::Notification::Method); # This class is a Method module
-
-# ============================================================================
-#  Constructor
-
-## @cmethod $ new(%args)
-# An overridden constructor, required to correctly parse out settings for the
-# message sender.
-#
-# @param args A hash of arguments to initialise the object with
-# @return A blessed reference to the object
-sub new {
-    my $invocant = shift;
-    my $class    = ref($invocant) || $invocant;
-    my $self     = $class -> SUPER::new(@_);
-
-    # If there are any arguments to convert, split and store
-    $self -> set_config($self -> {"args"}) if($self && $self -> {"args"});
-
-    return $self;
-}
 
 
 ################################################################################
@@ -87,22 +64,22 @@ sub set_config {
 
 
 # ============================================================================
-#  Message send functions
+#  Article send functions
 
-## @method $ send($message)
-# Attempt to send the specified message as a moodle forum post.
+## @method $ send($article)
+# Attempt to send the specified article as a moodle forum post.
 #
-# @param message A reference to a hash containing the message to send.
-# @return undef on success, an error message on failure.
+# @param article A reference to a hash containing the article to send.
+# @return undef on success, an error article on failure.
 sub send {
     my $self    = shift;
-    my $message = shift;
+    my $article = shift;
 
     $self -> clear_error();
 
     # Get the user's data
-    my $user = $self -> {"session"} -> {"auth"} -> get_user_byid($message -> {"user_id"})
-        or return $self -> self_error("Method::Moodle: Unable to get user details for message ".$message -> {"id"});
+    my $user = $self -> {"session"} -> {"auth"} -> get_user_byid($article -> {"creator_id"})
+        or return $self -> self_error("Method::Moodle: Unable to get user details for article ".$article -> {"id"});
 
     # Open the moodle database connection.
     $self -> {"moodle"} = DBI->connect($self -> get_method_config("database"),
@@ -128,40 +105,25 @@ sub send {
                                                    (course, forum, name, userid, timemodified, usermodified)
                                                    VALUES(?, ?, ?, ?, ?, ?)");
 
+    # Note: format = 1 here is telling moodle that the post is in html format (in theory, the data straight out
+    # of the article text should work perfectly)
     my $posth   =  $self -> {"moodle"} -> prepare("INSERT INTO ".$self -> get_method_config("posts")."
-                                                  (discussion, userid, created, modified, subject, message)
-                                                  VALUES(?, ?, ?, ?, ?, ?)");
+                                                  (discussion, userid, created, modified, subject, message, format)
+                                                  VALUES(?, ?, ?, ?, ?, ?, 1)");
 
     my $updateh = $self -> {"moodle"} -> prepare("UPDATE ".$self -> get_method_config("discussions")."
                                                   SET firstpost = ?
                                                   WHERE id = ?");
 
-    # Go through each moodle forum, posting the message there.
+    # Go through each moodle forum, posting the article there.
     foreach my $arghash (@{$self -> {"args"}}) {
-        # Get the prefix sorted if needed
-        my $prefix = "";
-        if($arghash -> {"prefix"}) {
-            if($message -> {"prefix_id"} == 0) {
-                $prefix = $message -> {"prefixother"};
-            } else {
-                my $prefixh = $self -> {"dbh"} -> prepare("SELECT prefix FROM ".$self -> {"settings"} -> {"database"} -> {"notify_prefixes"}."
-                                                   WHERE id = ?");
-                $prefixh -> execute($message -> {"prefix_id"})
-                    or return $self -> self_error("Unable to execute prefix query: ".$self -> {"dbh"} -> errstr);
-
-                my $prefixr = $prefixh -> fetchrow_arrayref();
-                $prefix = $prefixr ? $prefixr -> [0] : $self -> {"template"} -> replace_langvar("MESSAGE_BADPREFIX");
-            }
-            $prefix .= " " if($prefix);
-        }
-
         # Timestamp for posting is now
         my $now = time();
 
         # Make the discussion
         $discussh -> execute($arghash -> {"course_id"},
                              $arghash -> {"forum_id"},
-                             $prefix.$message -> {"subject"},
+                             $article -> {"title"},
                              $moodleuser,
                              $now,
                              $moodleuser)
@@ -171,8 +133,8 @@ sub send {
         my $discussid = $self -> {"moodle"} -> {"mysql_insertid"};
         $self -> self_error("Unable to get ID of new discussion. This should not happen.") if(!$discussid);
 
-        # Post the message body
-        $posth -> execute($discussid, $moodleuser, $now, $now, $prefix.$message -> {"subject"}, $message -> {"message"})
+        # Post the article body
+        $posth -> execute($discussid, $moodleuser, $now, $now, $article -> {"title"}, $article -> {"article"})
             or return $self -> self_error("Unable to execute post insert query: ".$self -> {"moodle"} -> errstr);
 
         # Get the post id..

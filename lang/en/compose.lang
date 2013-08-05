@@ -1,11 +1,11 @@
 COMPOSE_FORM_TITLE = Compose article
 
-FORM_OPTIONAL      = (optional)
+FORM_OPTIONAL      = <span class="helptext">(optional)</span>
 
 COMPOSE_TITLE      = Subject
 COMPOSE_URL        = Link to more information
 COMPOSE_SUMMARY    = Summary
-COMPOSE_SUMM_INFO  = Enter a short summary of your article here (<span id="sumchars"></span> characters left)
+COMPOSE_SUMM_INFO  = <span class="helptext">Enter a short summary of your article here (<span id="sumchars"></span> characters left)</span>
 COMPOSE_DESC       = Full text
 
 COMPOSE_RELMODE    = Release mode

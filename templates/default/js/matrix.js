@@ -52,6 +52,30 @@ function fold_matrix(level)
 }
 
 
+function show_hide_block(method)
+{
+    // Has this method been set for any recipients?
+    var count = $$('input[type=checkbox].'+method).filter(function(box) { return box.get('checked'); }).length;
+
+    if(count) {
+        $(method+'-settings').reveal();
+    } else {
+        $(method+'-settings').dissolve();
+    }
+}
+
+
+function update_method_block(box)
+{
+    var method_patt = /^matrix (\w+)$/;
+    var classes = box.get('class');
+
+    var result = method_patt.exec(classes);
+    if(result) {
+        show_hide_block(result[1]);
+    }
+}
+
 
 window.addEvent('domready', function() {
 
@@ -60,5 +84,16 @@ window.addEvent('domready', function() {
     });
 
     $$('ul#matrix > li').each(function(element) { fold_matrix(element); });
+
+    var method_patt = /^shadowbox method (\w+)$/;
+    $$('li.shadowbox.method').each(function(element) {
+        var classes = element.get('class');
+
+        var result = method_patt.exec(classes);
+        if(result) {
+            show_hide_block(result[1]);
+        }
+    });
+
 
 });

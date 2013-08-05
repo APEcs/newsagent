@@ -367,6 +367,16 @@ sub _validate_article {
     $error = $self -> _validate_article_fields($args, $userid);
     $errors .= $error if($error);
 
+    # Call each notifocation method to let it validate and add its data to the args hash
+    foreach my $method (keys(%{$self -> {"notify_methods"}})) {
+        my $meth_errs = $self -> {"notify_methods"} -> {$method} -> validate_article($args);
+
+        # If the validator returned any errors, add them to the list.
+        foreach $error (@{$meth_errs}) {
+            $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "***error***" => $error });
+        }
+    }
+
     # Give up here if there are any errors
     return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
                                                                             "***errors***"  => $errors}), $args)
@@ -397,6 +407,18 @@ sub _validate_article {
                                                           }), $args);
 
     $self -> log("article", "Added article $aid");
+
+    # Let notification modules store any data they need
+    foreach my $method (keys(%{$self -> {"notify_methods"}})) {
+        $self -> {"notify_methods"} -> {$method} -> store_article($args, $userid, $aid)
+            or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
+                                                                                       "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
+                                                                                                                                                 {"***error***" => $self -> {"notify_methods"} -> {$method} -> errstr()
+                                                                                                                                                 })
+                                                              }), $args);
+
+    }
+
 
     # redirect to a success page
     # Doing this prevents page reloads adding multiple article copies!

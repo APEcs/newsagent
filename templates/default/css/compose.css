@@ -65,7 +65,13 @@ dl.input > dd > input[type="radio"] {
     width: 16px;
 }
 
-dl.input > dd > input[type="text"], dl.input > dd > input[type="file"] {
+#leftcol dl.input > dd > input[type="text"],
+#leftcol dl.input > dd > textarea.fillwide {
+    width: 772px;
+}
+
+#leftcol dl.input > dd > input[type="text"].twocol,
+dl.input > dd > input[type="file"] {
     width: 274px;
 }
 
@@ -168,4 +174,9 @@ div.content h3 {
     font-weight: bold;
     border-bottom: 1px dotted #666;
     margin: 5px 0px 2px 0px;
+}
+
+span.helptext {
+    font-size: 75%;
+    color: #666;
 }

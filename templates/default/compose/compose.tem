@@ -27,6 +27,7 @@
             </div>
         </div>
     </li>
+***notifysettings***
     <li id="images" class="shadowbox">
         <h2>{L_COMPOSE_IMAGESFILES}</h2>
         <div class="sbcontent">

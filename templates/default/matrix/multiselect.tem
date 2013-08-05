@@ -1,1 +1,1 @@
-var multisel***id*** = new MultiSelect('#***selector***');
+var multisel***id*** = new MultiSelect('#***selector***', { onItemChanged: function(box) { update_method_block(box); } });

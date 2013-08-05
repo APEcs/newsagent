@@ -1,0 +1,21 @@
+    <li id="Email-settings" class="shadowbox method Email">
+        <h2>{L_METHOD_EMAIL_SETTINGS}</h2>
+        <div class="sbcontent">
+            <dl class="input">
+                <dt><label for="email-cc">{L_METHOD_EMAIL_CC}</label> {L_METHOD_EMAIL_MULTIPLE}</dt>
+                <dd><input class="fillwide" type="text" name="email-cc" id="email-cc" size="100" title="{L_METHOD_EMAIL_CC}" value="***email-cc***" /></dd>
+            </dl>
+            <dl class="input">
+                <dt><label for="email-bcc">{L_METHOD_EMAIL_BCC}</label> {L_METHOD_EMAIL_MULTIPLE}</dt>
+                <dd><input class="fillwide" type="text" name="email-bcc" id="email-bcc" size="100" title="{L_METHOD_EMAIL_BCC}" value="***email-bcc***" /></dd>
+            </dl>
+            <dl class="input iblock">
+                <dt><label for="email-replyto">{L_METHOD_EMAIL_REPLYTO}</label> {L_FORM_OPTIONAL}</dt>
+                <dd><input class="twocol" type="text" name="email-replyto" id="email-replyto" size="100" title="{L_METHOD_EMAIL_REPLYTO}" value="***email-replyto***" /></dd>
+            </dl>
+            <dl class="input iblock">
+                <dt><label for="email-prefix">{L_METHOD_EMAIL_PREFIX}</label></dt>
+                <dd><select id="email-prefix" name="email-prefix">***email-prefix***</select></dd>
+            </dl>
+        </div>
+    </li>
