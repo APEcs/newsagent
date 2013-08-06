@@ -9,6 +9,7 @@ Email::MIME
 Email::Sender::Simple (in Email-Sender)
 Email::Sender::Transport::SMTP (in Email-Sender)
 Email::Sender::Transport::SMTP::Persistent (in Email-Sender)
+Email::Valid
 Expect
 File::Type
 HTML::Entities (in HTML::Parser)

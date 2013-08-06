@@ -54,6 +54,40 @@ sub new {
 # ============================================================================
 #  Interface functions
 
+## @method $ get_used_methods($userid)
+# Determine which of the user's recipients have methods set.
+#
+# @param userid The ID of the user accessing the page/
+# @return A referencce to a hash containing the selected matrix data.
+sub get_used_methods {
+    my $self   = shift;
+    my $userid = shift;
+
+    $self -> clear_error();
+
+    # Generate the matrix data
+    my $matrix = $self -> {"matrix"} -> get_user_matrix($userid)
+        or return $self -> self_error("Unable to generate matrix: ".$self -> {"matrix"} -> errstr());
+
+    # convert the set options to a usable format. Note that, at this point, there's no validation done
+    # on whether the user can actually set the recipient/method - that is done in '_check_used_methods()'
+    my @set_methods = $self -> {"cgi"} -> param("matrix");
+    my $methods = {};
+    foreach my $set_meth (@set_methods) {
+        my ($recip, $meth) = $set_meth =~ /^(\d+)-(\d+)$/;
+
+        if($recip && $meth) {
+            $methods -> {$recip} -> {$meth} = 1;
+        }
+    }
+
+    my $result = { "matrix" => $matrix };
+    $self -> _check_used_methods($matrix, $methods, $result);
+
+    return $result;
+}
+
+
 ## @method $ build_matrix($userid, $selected, $acyear)
 # Build a HTML block containing the recipient/method matrix.
 #
@@ -157,6 +191,34 @@ sub _build_matrix_level {
         if($result);
 
     return $result;
+}
+
+
+
+## @method private void _check_used_methods($level, $methods, $base)
+# Determine which methods have been used at this level, or in the children
+#
+# @param level   A reference to an array containing the level to check methods at.
+# @param methods A reference to a hash containing the methods the user has enabled.
+# @param base    A reference to the base of the tree
+sub _check_used_methods {
+    my $self    = shift;
+    my $level   = shift;
+    my $methods = shift;
+    my $base    = shift;
+
+    foreach my $entry (@{$level}) {
+        my $children = $self -> _check_used_methods($entry -> {"children"}, $methods, $base)
+            if($entry -> {"children"});
+
+        foreach my $method (@{$entry -> {"methods"}}) {
+            if($methods -> {$entry -> {"id"}} -> {$method -> {"method_id"}}) {
+               $base -> {"used_methods"} -> {$method -> {"name"}}++;
+               $base -> {"enabled"} -> {$entry -> {"id"}} -> {$method -> {"method_id"}} = 1;
+               $method -> {"enabled"} = 1;
+            }
+        }
+    }
 }
 
 1;

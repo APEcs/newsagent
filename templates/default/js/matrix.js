@@ -54,13 +54,17 @@ function fold_matrix(level)
 
 function show_hide_block(method)
 {
-    // Has this method been set for any recipients?
-    var count = $$('input[type=checkbox].'+method).filter(function(box) { return box.get('checked'); }).length;
+    // Does this method have any settings anyway?
+    if($(method+'-settings')) {
 
-    if(count) {
-        $(method+'-settings').reveal();
-    } else {
-        $(method+'-settings').dissolve();
+        // Has this method been set for any recipients?
+        var count = $$('input[type=checkbox].'+method).filter(function(box) { return box.get('checked'); }).length;
+
+        if(count) {
+            $(method+'-settings').reveal();
+        } else {
+            $(method+'-settings').dissolve();
+        }
     }
 }
 

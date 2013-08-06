@@ -195,16 +195,18 @@ sub generate_article_view {
 }
 
 
-## @method $ validate_article($args)
+## @method $ validate_article($args, $userid)
 # Validate this method's settings in the posted data, and store them in
 # the provided args hash.
 #
-# @param args A reference to a hash into which the Method's data should be stored.
+# @param args   A reference to a hash into which the Method's data should be stored.
+# @param userid The ID of the user who submitted the form
 # @return A reference to an array containing any error articles encountered
 #         during validation,
 sub validate_article {
-    my $self = shift;
-    my $args = shift;
+    my $self   = shift;
+    my $args   = shift;
+    my $userid = shift;
 
     return [];
 }

@@ -1,6 +1,10 @@
 METHOD_EMAIL_SETTINGS = Email settings
 METHOD_EMAIL_CC       = CC recipients
-METHOD_EMAIL_MULTIPLE = <span class="helptext">(separate multiple recipients with commas)</span>
+METHOD_EMAIL_MULTIPLE = <span class="helptext">(optional, separate multiple recipients with commas)</span>
 METHOD_EMAIL_BCC      = BCC recipients
 METHOD_EMAIL_REPLYTO  = Reply To
 METHOD_EMAIL_PREFIX   = Subject prefix
+
+
+METHOD_EMAIL_ERR_SINGLEADDR = ***field*** contains more than one email address; it should contain a single address.
+METHOD_EMAIL_ERR_BADADDR    = One or more email addresses specified in ***field*** are invalid.

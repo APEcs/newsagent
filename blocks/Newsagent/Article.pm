@@ -367,13 +367,21 @@ sub _validate_article {
     $error = $self -> _validate_article_fields($args, $userid);
     $errors .= $error if($error);
 
-    # Call each notifocation method to let it validate and add its data to the args hash
-    foreach my $method (keys(%{$self -> {"notify_methods"}})) {
-        my $meth_errs = $self -> {"notify_methods"} -> {$method} -> validate_article($args);
+    my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix");
+    $args -> {"notify_matrix"} = $matrix -> get_used_methods($userid)
+        or $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "***error***" => $matrix -> errstr()});
 
-        # If the validator returned any errors, add them to the list.
-        foreach $error (@{$meth_errs}) {
-            $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "***error***" => $error });
+    if($args -> {"notify_matrix"} && $args -> {"notify_matrix"} -> {"used_methods"} && scalar(keys(%{$args -> {"notify_matrix"} -> {"used_methods"}}))) {
+        # Call each notifocation method to let it validate and add its data to the args hash
+        foreach my $method (keys(%{$self -> {"notify_methods"}})) {
+            next unless($args -> {"notify_matrix"} -> {"used_methods"} -> {$method});
+
+            my $meth_errs = $self -> {"notify_methods"} -> {$method} -> validate_article($args, $userid);
+
+            # If the validator returned any errors, add them to the list.
+            foreach $error (@{$meth_errs}) {
+                $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "***error***" => $error });
+            }
         }
     }
 

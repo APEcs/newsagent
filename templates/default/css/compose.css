@@ -156,6 +156,9 @@ ul.reciplist li.haschild > div.recipient {
     background-position: 0px 4px;
 }
 
+ul.reciplist li.haschild.open > div.recipient {
+    background-image: url("../images/tree_open.png");
+}
 
 ul.reciplist li div.MultiSelect {
     display: inline-block;
