@@ -63,7 +63,6 @@ sub _generate_compose {
     my $format_release = $self -> {"template"} -> format_time($args -> {"rtimestamp"}, "%d/%m/%Y %H:%M")
         if($args -> {"rtimestamp"});
 
-
     # Which schedules and sections can the user post to?
     my $schedules  = $self -> {"article"} -> get_user_schedule_sections($userid);
     my $schedblock = $self -> {"template"} -> load_template("compose/schedule_noaccess.tem"); # default to 'none of them'

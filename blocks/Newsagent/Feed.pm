@@ -81,6 +81,12 @@ sub _validate_settings {
     ($settings -> {"id"}, $error)  = $self -> validate_numeric("id", {"required" => 0,
                                                                       "intonly"  => 1,
                                                                });
+    ($settings -> {"articleid"}, $error)  = $self -> validate_numeric("articleid", {"required" => 0,
+                                                                                    "intonly"  => 1,
+                                                                      });
+    $settings -> {"id"} = $settings -> {"articleid"}
+        if(!$settings -> {"id"} && $settings -> {"articleid"});
+
     ($settings -> {"count"}, $error)  = $self -> validate_numeric("count", {"required" => 0,
                                                                             "intonly"  => 1,
                                                                             "default"  => $self -> {"settings"} -> {"config"} -> {"Feed:count"},

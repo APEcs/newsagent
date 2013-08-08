@@ -96,22 +96,59 @@ sub set_config {
 }
 
 
-## @method $ store_article($args, $userid, $articleid)
+## @method $ store_article($args, $userid, $articleid, $recip_methods)
 # Store the data for this method. This will store any method-specific
 # data in the args hash in the appropriate tables in the database.
 #
-# @param args      A reference to a hash containing the article data.
-# @param userid    A reference to a hash containing the user's data.
-# @param articleid The ID of the article being stored.
-# @return true on success, undef on error
+# @param args          A reference to a hash containing the article data.
+# @param userid        A reference to a hash containing the user's data.
+# @param articleid     The ID of the article being stored.
+# @param recip_methods A reference to an array containing the recipient/method
+#                      map IDs for the recipients this method is being used to
+#                      send messages to.
+# @return The ID of the article notify row on success, undef on error
 sub store_article {
-    my $self      = shift;
-    my $args      = shift;
-    my $userid    = shift;
-    my $articleid = shift;
+    my $self          = shift;
+    my $args          = shift;
+    my $userid        = shift;
+    my $articleid     = shift;
+    my $recip_methods = shift;
 
-    # Does nothing
-    return 1;
+    $self -> clear_error();
+
+    # First create the notification header for this article for the current
+    # notification method.
+    my $notifyh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."`
+                                               (article_id, method_id, year_id, updated)
+                                               VALUES(?, ?, ?, UNIX_TIMESTAMP())");
+    my $rows = $notifyh -> execute($articleid, $self -> {"method_id"}, $args -> {"notify_matrix"} -> {"year"});
+    return $self -> self_error("Unable to perform article notification insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("Article notification insert failed, no rows inserted") if($rows eq "0E0");
+
+    # FIXME: This ties to MySQL, but is more reliable that last_insert_id in general.
+    #        Try to find a decent solution for this mess...
+    # NOTE: the DBD::mysql documentation doesn't actually provide any useful information
+    #       about what this will contain if the insert fails. In fact, DBD::mysql calls
+    #       libmysql's mysql_insert_id(), which returns 0 on error (last insert failed).
+    #       There, why couldn't they bloody /say/ that?!
+    my $newid = $self -> {"dbh"} -> {"mysql_insertid"};
+
+    return $self -> self_error("Unable to obtain id for new article notification row")
+        if(!$newid);
+
+    # Now there needs to be recipient/method map maps set up to tell this notification
+    # method which recipients it needs to be sending to, and how
+    my $rmmaph = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"article_notify_rms"}."`
+                                              (article_notify_id, recip_meth_id)
+                                              VALUES(?, ?)");
+
+    foreach my $rmid (@{$recip_methods}) {
+        $rows = $rmmaph -> execute($newid, $rmid);
+        return $self -> self_error("Unable to perform article notification rm map insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
+        return $self -> self_error("Article notification rm map insert failed, no rows inserted") if($rows eq "0E0");
+    }
+
+    return $newid;
 }
 
 
@@ -143,6 +180,56 @@ sub send {
     my $article = shift;
 
     return undef;
+}
+
+
+## @method $ set_notification_data($nid, $dataid)
+# Update the data id contained in the specified notification header.
+#
+# @param nid    The ID of the article notification header.
+# @param dataid The ID of the data row to associate with this header.
+# @return true on success, undef on error.
+sub set_notification_data {
+    my $self   = shift;
+    my $nid    = shift;
+    my $dataid = shift;
+
+    $self -> clear_error();
+
+    my $updateh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."`
+                                               SET `data_id` = ?
+                                               WHERE id = ?");
+    my $rows = $updateh -> execute($dataid, $nid);
+    return $self -> self_error("Unable to update article notification: ".$self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("Article notification update failed: no rows updated.") if($rows eq "0E0");
+
+    return 1;
+}
+
+
+## @method $ set_notification_status($nid, $status, $message)
+# Update the status for the specified article notification header.
+#
+# @param nid     The ID of the article notification header.
+# @param status  The new status to set.
+# @param message The message to set for the new status
+# @return true on success, undef on error
+sub set_notification_status {
+    my $self    = shift;
+    my $nid     = shift;
+    my $status  = shift;
+    my $message = shift;
+
+    $self -> clear_error();
+
+    my $updateh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."`
+                                               SET `status` = ?, `message` = ?, `updated` = UNIX_TIMESTAMP()
+                                               WHERE id = ?");
+    my $rows = $updateh -> execute($status, $message, $nid);
+    return $self -> self_error("Unable to update article notification: ".$self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("Article notification update failed: no rows updated.") if($rows eq "0E0");
+
+    return 1;
 }
 
 

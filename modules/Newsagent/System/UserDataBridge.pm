@@ -62,14 +62,18 @@ sub new {
 # ============================================================================
 #  Data access
 
-## @method $ get_valid_years()
+## @method $ get_valid_years($as_options)
 # Obtain a list of academic years for which there is user information in the userdata
 # database.
 #
+# @param as_options If this is set to true, the reference returned by this function
+#                   contains the year data in a format suitable for use as <select>
+#                   options via Webperl::Template::build_optionlist().
 # @return A reference to an array containing year data hashrefs on success, undef
 #         on error.
 sub get_valid_years {
-    my $self = shift;
+    my $self       = shift;
+    my $as_options = shift;
 
     $self -> clear_error();
 
@@ -81,7 +85,21 @@ sub get_valid_years {
     $lookuph -> execute()
         or return $self -> self_error("Unable to execute academic year lookup: ".$self -> {"udata_dbh"} -> errstr);
 
-    return $lookuph -> fetchall_arrayref({});
+    my $rows = $lookuph -> fetchall_arrayref({})
+        or return $self -> self_error("Error fetching rows from year lookup");
+
+    # If the data should be returned as-is, do so.
+    return $rows if(!$as_options);
+
+    # Otherwise, convert to an options-friendly format
+
+    my @yearlist = ();
+    foreach my $year (@{$rows}) {
+        push(@yearlist, { "value" => $year -> {"id"},
+                          "name"  => $year -> {"start_year"}."/".$year -> {"end_year"}});
+    }
+
+    return \@yearlist;
 }
 
 

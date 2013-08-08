@@ -25,6 +25,58 @@ use base qw(Newsagent::Notification::Method); # This class is a Method module
 use Email::Valid;
 use HTML::Entities;
 
+
+################################################################################
+# Model/support functions
+################################################################################
+
+
+## @method $ store_article($args, $userid, $articleid, $recip_methods)
+# Store the data for this method. This will store any method-specific
+# data in the args hash in the appropriate tables in the database.
+#
+# @param args          A reference to a hash containing the article data.
+# @param userid        A reference to a hash containing the user's data.
+# @param articleid     The ID of the article being stored.
+# @param recip_methods A reference to an array containing the recipient/method
+#                      map IDs for the recipients this method is being used to
+#                      send messages to.
+# @return The ID of the article notify row on success, undef on error
+sub store_article {
+    my $self          = shift;
+    my $args          = shift;
+    my $userid        = shift;
+    my $articleid     = shift;
+    my $recip_methods = shift;
+
+    my $nid = $self -> SUPER::store_article($args, $userid, $articleid, $recip_methods)
+        or return undef;
+
+    my $emailh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"method:email"} -> {"data"}."`
+                                              (prefix_id, cc, bcc, reply_to)
+                                              VALUES(?, ?, ?, ?)");
+    my $rows = $emailh -> execute($args -> {"methods"} -> {"email"} -> {"prefix"},
+                                  $args -> {"methods"} -> {"email"} -> {"cc"},
+                                  $args -> {"methods"} -> {"email"} -> {"bcc"},
+                                  $args -> {"methods"} -> {"email"} -> {"replyto"});
+    return $self -> self_error("Unable to perform article email notification data insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("Article email notification data insert failed, no rows inserted") if($rows eq "0E0");
+    my $dataid = $self -> {"dbh"} -> {"mysql_insertid"};
+
+    return $self -> self_error("Unable to obtain id for new article email notification data row")
+        if(!$dataid);
+
+    $self -> set_notification_data($nid, $dataid)
+        or return undef;
+
+    # Finally, enable the notification
+    $self -> set_notification_status($nid, "pending")
+        or return undef;
+
+    return $nid;
+}
+
+
 ################################################################################
 #  View and controller functions
 ################################################################################
@@ -92,8 +144,6 @@ sub validate_article {
 
     return \@errors;
 }
-
-
 
 
 ################################################################################

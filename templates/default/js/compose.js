@@ -5,7 +5,7 @@ var feed_levels;
 
 function date_control(datefield, tsfield, control) {
     var selVal = $(control).getSelected().get("value");
-    var disabled = (selVal != 'timed');
+    var disabled = (selVal != 'timed' && selVal != 'after');
 
     $(datefield).set("disabled", disabled);
 

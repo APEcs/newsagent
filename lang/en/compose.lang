@@ -9,8 +9,8 @@ COMPOSE_SUMM_INFO  = <span class="helptext">Enter a short summary of your articl
 COMPOSE_DESC       = Full text
 
 COMPOSE_RELMODE    = Release mode
-COMPOSE_BATCH      = Batch Release
-COMPOSE_NORMAL     = Standard Release
+COMPOSE_BATCH      = Newsletter
+COMPOSE_NORMAL     = Normal Article
 
 COMPOSE_IMAGEA     = Lead Image
 COMPOSE_IMAGEB     = Article Image

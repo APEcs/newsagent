@@ -124,20 +124,14 @@ sub build_matrix {
         }
 
         # Build the year list
-        my $years = $self -> {"system"} -> {"userdata"} -> get_valid_years()
+        my $years = $self -> {"system"} -> {"userdata"} -> get_valid_years(1)
             or return $self -> self_error($self -> {"system"} -> {"userdata"} -> errstr());
 
-        my @yearlist = ();
-        foreach my $year (@{$years}) {
-            push(@yearlist, { "value" => $year -> {"id"},
-                              "name"  => $year -> {"start_year"}."/".$year -> {"end_year"}});
-        }
-
         # default the year
-        $acyear = $yearlist[0] -> {"value"} if(!$acyear);
+        $acyear = $years -> [0] -> {"value"} if(!$acyear);
 
         return $self -> {"template"} -> load_template("matrix/container.tem", {"***matrix***"   => $html,
-                                                                               "***acyears***"  => $self -> {"template"} -> build_optionlist(\@yearlist, $acyear),
+                                                                               "***acyears***"  => $self -> {"template"} -> build_optionlist($years, $acyear),
                                                                                "***multisel***" => $multisel});
     }
 
@@ -213,9 +207,11 @@ sub _check_used_methods {
 
         foreach my $method (@{$entry -> {"methods"}}) {
             if($methods -> {$entry -> {"id"}} -> {$method -> {"method_id"}}) {
-               $base -> {"used_methods"} -> {$method -> {"name"}}++;
-               $base -> {"enabled"} -> {$entry -> {"id"}} -> {$method -> {"method_id"}} = 1;
-               $method -> {"enabled"} = 1;
+                # Store the recipient/method mapping ID for this method
+                push(@{$base -> {"used_methods"} -> {$method -> {"name"}}}, $method -> {"id"}) ;
+
+                $base -> {"enabled"} -> {$entry -> {"id"}} -> {$method -> {"method_id"}} = 1;
+                $method -> {"enabled"} = 1;
             }
         }
     }

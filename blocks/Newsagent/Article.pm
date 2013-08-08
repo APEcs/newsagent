@@ -55,9 +55,11 @@ sub new {
 
     $self -> {"schedrelops"} = [ {"value" => "next",
                                   "name"  => "{L_COMPOSE_RELNEXT}" },
-                                 {"value" => "timed",
+                                 {"value" => "after",
                                   "name"  => "{L_COMPOSE_RELAFTER}" },
-        ];
+                                 {"value" => "draft",
+                                  "name"  => "{L_COMPOSE_RELNONE}" },
+                               ];
 
     $self -> {"relops"} = [ {"value" => "visible",
                              "name"  => "{L_COMPOSE_RELNOW}" },
@@ -300,13 +302,13 @@ sub _validate_article_fields {
                                                                             "tag_rules"  => $self -> {"tag_rules"}});
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
-    ($args -> {"feed"}, $error) = $self -> validate_options("feed", {"required" => 1,
-                                                                     "source"   => $self -> {"settings"} -> {"database"} -> {"feeds"},
-                                                                     "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_FEED"),
-                                                                     "where"    => "WHERE `name` LIKE ?" });
-    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+    $args -> {"minor_edit"} = $self -> {"cgi"} -> param("minor_edit") ? 1 : 0;
 
-    # TODO: check user has permission to post from this feed.
+    my $sys_levels = $self -> {"article"} -> get_all_levels();
+    ($args -> {"feed"}, $error) = $self -> validate_options("feed", {"required" => 1,
+                                                                     "source"   => $self -> {"article"} -> get_user_feeds($userid, $sys_levels),
+                                                                     "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_FEED")});
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
     # Which release mode is the user using? 0 is default, 1 is batch
     ($args -> {"relmode"}, $error) = $self -> validate_numeric("relmode", {"required" => 1,
@@ -318,7 +320,9 @@ sub _validate_article_fields {
 
     # Release mode 0 is "standard" release - potentially with timed delay.
     if($args -> {"relmode"} == 0) {
+        # This will check that the user has access to the level and feed
         $error = $self -> _validate_levels($args, $userid);
+
         $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
         ($args -> {"mode"}, $error) = $self -> validate_options("mode", {"required" => 1,
@@ -359,7 +363,7 @@ sub _validate_article_fields {
 sub _validate_article {
     my $self      = shift;
     my $articleid = shift;
-    my ($args, $errors, $error) = ({}, "", "");
+    my ($args, $errors, $error, $matrix) = ({}, "", "", undef);
     my $userid = $self -> {"session"} -> get_session_userid();
 
     my $failmode = $articleid ? "{L_EDIT_FAILED}" : "{L_COMPOSE_FAILED}";
@@ -367,22 +371,34 @@ sub _validate_article {
     $error = $self -> _validate_article_fields($args, $userid);
     $errors .= $error if($error);
 
-    my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix");
-    $args -> {"notify_matrix"} = $matrix -> get_used_methods($userid)
-        or $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "***error***" => $matrix -> errstr()});
+    # Only bother checking notification code if the release mode is "standard". "Batch" handles its
+    # notification code separately.
+    if($args -> {"relmode"} == 0) {
+        $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix");
+        $args -> {"notify_matrix"} = $matrix -> get_used_methods($userid)
+            or $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "***error***" => $matrix -> errstr()});
 
-    if($args -> {"notify_matrix"} && $args -> {"notify_matrix"} -> {"used_methods"} && scalar(keys(%{$args -> {"notify_matrix"} -> {"used_methods"}}))) {
-        # Call each notifocation method to let it validate and add its data to the args hash
-        foreach my $method (keys(%{$self -> {"notify_methods"}})) {
-            next unless($args -> {"notify_matrix"} -> {"used_methods"} -> {$method});
+        if($args -> {"notify_matrix"} && $args -> {"notify_matrix"} -> {"used_methods"} && scalar(keys(%{$args -> {"notify_matrix"} -> {"used_methods"}}))) {
+            # Call each notifocation method to let it validate and add its data to the args hash
+            foreach my $method (keys(%{$self -> {"notify_methods"}})) {
+                next unless(scalar(@{$args -> {"notify_matrix"} -> {"used_methods"} -> {$method}}));
 
-            my $meth_errs = $self -> {"notify_methods"} -> {$method} -> validate_article($args, $userid);
+                my $meth_errs = $self -> {"notify_methods"} -> {$method} -> validate_article($args, $userid);
 
-            # If the validator returned any errors, add them to the list.
-            foreach $error (@{$meth_errs}) {
-                $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "***error***" => $error });
+                # If the validator returned any errors, add them to the list.
+                foreach $error (@{$meth_errs}) {
+                    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "***error***" => $error });
+                }
             }
         }
+
+        # Get the year here, too - technically it's part of the notificiation matrix, but
+        # shoving this in get_used_methods() is a bit manky
+        my $years = $self -> {"system"} -> {"userdata"} -> get_valid_years(1);
+        ($args -> {"notify_matrix"} -> {"year"}, $error) = $self -> validate_options("acyear", {"required" => 1,
+                                                                                                "source"   => $years,
+                                                                                                "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_ACYEAR")});
+        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
     }
 
     # Give up here if there are any errors
@@ -405,9 +421,11 @@ sub _validate_article {
                                                                                                                                                  {"***error***" => $self -> {"article"} -> errstr()
                                                                                                                                                  })
                                                               }), $args);
+        $args -> {"rtimestamp"} = $article -> {"release_time"}
+            if($args -> {"minor_edit"});
     }
 
-    my $aid = $self -> {"article"} -> add_article($args, $self -> {"session"} -> get_session_userid(), $articleid)
+    my $aid = $self -> {"article"} -> add_article($args, $userid, $articleid)
         or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
                                                                                    "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
                                                                                                                                              {"***error***" => $self -> {"article"} -> errstr()
@@ -417,16 +435,17 @@ sub _validate_article {
     $self -> log("article", "Added article $aid");
 
     # Let notification modules store any data they need
-    foreach my $method (keys(%{$self -> {"notify_methods"}})) {
-        $self -> {"notify_methods"} -> {$method} -> store_article($args, $userid, $aid)
-            or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
-                                                                                       "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
-                                                                                                                                                 {"***error***" => $self -> {"notify_methods"} -> {$method} -> errstr()
-                                                                                                                                                 })
-                                                              }), $args);
+    if($args -> {"relmode"} == 0) {
+        foreach my $method (keys(%{$args -> {"notify_matrix"} -> {"used_methods"}})) {
+            $self -> {"notify_methods"} -> {$method} -> store_article($args, $userid, $aid, $args -> {"notify_matrix"} -> {"used_methods"} -> {$method})
+                or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
+                                                                                           "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
+                                                                                                                                                     {"***error***" => $self -> {"notify_methods"} -> {$method} -> errstr()
+                                                                                                                                                     })
+                                                                  }), $args);
 
+        }
     }
-
 
     # redirect to a success page
     # Doing this prevents page reloads adding multiple article copies!

@@ -33,11 +33,11 @@ feed. If no feed is explicitly selected, the `feed` version is used.
 The following query string parameters may used to modify the list of articles
 obtained by any of the feeds. Some examples are given after the documentation.
 
-* `id=<article id>`: allows the selection of a specific article in the system
-  by its internal id. In general, if you include the `id` parameter in the
-  query string, you will want to avoid including any other parameters to
-  ensure that the article you are trying to select is not filtered out by
-  other parameters!
+* `id=<article id>` or `articleid=<article id>`: allows the selection of a
+  specific article in the system by its internal id. In general, if you include
+  the `id`or `articleid` parameter in the query string, you will want to avoid
+  including any other parameters to ensure that the article you are trying to
+  select is not filtered out by other parameters!
 
 * `level=<selected level(s)>`: select only articles that have been set
   to be published at the specified level(s). This can either be a single
@@ -54,9 +54,9 @@ obtained by any of the feeds. Some examples are given after the documentation.
   and it will default to the value set for `level`, if that is set, or an
   internal default (usually `group` level).
 
-* `site=<selected site(s)>`: select articles that have been published by the
-  specified site(s). This is, again, either a single site name, or a comma
-  separated list of sites, eg: `site=acso` or `site=acso,apecs`
+* `feed=<selected feed(s)>`: select articles that have been published in the
+  specified feed(s). This is, again, either a single feed name, or a comma
+  separated list of feeds, eg: `feed=acso` or `feed=acso,apecs`
 
 * `fulltext=enabled` turns on the inclusion of the full article text in
   each returned article. Note that this is ignored by the HTML feed - the
@@ -83,9 +83,9 @@ obtained by any of the feeds. Some examples are given after the documentation.
 ### Examples
 
 The following will generate an RSS/Atom feed of the first 3 articles posted
-from either the `foo` or `bar` sites at the `leader` importance level:
+from either the `foo` or `bar` feeds at the `leader` importance level:
 
-    https://server.org/newsagent/rss/?level=leader&count=3&site=foo,bar
+    https://server.org/newsagent/rss/?level=leader&count=3&feed=foo,bar
 
 This will generate a HTML feed of the first 10 articles posted at the `home`
 importance level in a form suitable for inclusion in a sidebar:
