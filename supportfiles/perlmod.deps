@@ -14,6 +14,7 @@ Expect
 File::Type
 HTML::Entities (in HTML::Parser)
 HTML::Scrubber
+HTML::TokeParser::Simple
 JSON
 Net::LDAPS (perl-ldap)
 Params::Classify
@@ -31,3 +32,4 @@ WebService::Validator::HTML::W3C
 Crypt::Eksblowfish::Bcrypt
 Net::SSH::Expect
 CGI::Compress::Gzip
+Lingua::EN::Sentence

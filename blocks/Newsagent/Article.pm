@@ -23,6 +23,7 @@ use strict;
 use base qw(Newsagent); # This class extends the Newsagent block class
 use Newsagent::System::Article;
 use File::Basename;
+use Lingua::EN::Sentence qw(get_sentences);
 use v5.12;
 
 # ============================================================================
@@ -269,6 +270,37 @@ sub _validate_levels {
 }
 
 
+## @method private $ _validate_summary_text($args)
+# Determine whether the summary and article texts are valid.
+#
+# @param args A reference to a hash to store validated data in.
+# @return empty string on success, otherwise an error string.
+sub _validate_summary_text {
+    my $self = shift;
+    my $args = shift;
+
+    my $nohtml = $args -> {"article"} ? $self -> {"template"} -> html_strip($args -> {"article"}) : "";
+
+    # Got both summary and article text? Nothing to do, then...
+    if($args -> {"summary"} && $nohtml) {
+        return undef;
+
+    # If there's a summary, and no article text, copy the summary over
+    } elsif($args -> {"summary"} && !$nohtml) {
+        $args -> {"article"} = "<p>".$args -> {"summary"}."</p>";
+        return undef;
+
+    # If there's an article text, but no summary, copy over the first <240 chars
+    } elsif(!$args -> {"summary"} && $nohtml) {
+        $args -> {"summary"} = $self -> _truncate_article($nohtml, 240);
+        return undef;
+    }
+
+    # Last possible case: no summary or article text - complain about it.
+    return "{L_COMPOSE_ERR_NOSUMMARYARTICLE}";
+}
+
+
 ## @method private $ _validate_article_fields($args, $userid)
 # Validate the contents of the fields in the article form. This will validate the
 # fields, and perform any background file-wrangling operations necessary to deal
@@ -288,19 +320,24 @@ sub _validate_article_fields {
                                                                       "maxlen"   => 100});
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
-    ($args -> {"summary"}, $error) = $self -> validate_string("summary", {"required" => 1,
+    ($args -> {"summary"}, $error) = $self -> validate_string("summary", {"required" => 0,
                                                                           "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_SUMMARY"),
                                                                           "minlen"   => 8,
                                                                           "maxlen"   => 240});
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
-    ($args -> {"article"}, $error) = $self -> validate_htmlarea("article", {"required"   => 1,
+    ($args -> {"article"}, $error) = $self -> validate_htmlarea("article", {"required"   => 0,
                                                                             "minlen"     => 8,
                                                                             "nicename"   => $self -> {"template"} -> replace_langvar("COMPOSE_DESC"),
                                                                             "validate"   => $self -> {"config"} -> {"Core:validate_htmlarea"},
                                                                             "allow_tags" => $self -> {"allow_tags"},
                                                                             "tag_rules"  => $self -> {"tag_rules"}});
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+
+    # sort out the summary/full text
+    $error = $self -> _validate_summary_text($args);
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+
 
     $args -> {"minor_edit"} = $self -> {"cgi"} -> param("minor_edit") ? 1 : 0;
 
@@ -557,6 +594,38 @@ sub _load_notification_method_modules {
     }
 
     return 1;
+}
+
+
+## @method private $ _truncate_article($text, $limit)
+# Given an article string containing plain text (NOT HTML!), produce a string
+# that can be used as a summary. This truncates the specified text to the
+# nearest sentence boundary less than the specified limit.
+#
+# @param text The text to truncate to a sentence boundary less than the limit.
+# @param limit The number of characters the output may contain
+# @return A string containing the truncated text
+sub _truncate_article {
+    my $self  = shift;
+    my $text  = shift;
+    my $limit = shift;
+
+    # If the text fits in the limit, just return it
+    return $text
+        if(length($text) <= $limit);
+
+    # Otherwise, split into sentences and stick sentences together until the limit
+    my $sentences = get_sentences($text);
+    my $trunc = "";
+    for(my $i = 0; $i < scalar(@{$sentences}) && (length($trunc) + length($sentences -> [$i])) <= $limit; ++$i) {
+        $trunc .= $sentences -> [$i];
+    }
+
+    # If the first sentence was too long (trunc is empty), truncate to word boundaries instead
+    $trunc = $self -> {"template"} -> truncate_words($text, $limit)
+        if(!$trunc);
+
+    return $trunc;
 }
 
 1;
