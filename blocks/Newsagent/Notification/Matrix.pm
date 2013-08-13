@@ -88,6 +88,28 @@ sub get_used_methods {
 }
 
 
+## @method $ get_article_settings($args, $articleid, $methods)
+# Obtain the notification method data.
+#
+# @param args      A reference to a hash to store the notification data in.
+# @param articleid The article to fetch notification data for
+# @param methods   A reference to a hash of notification method objects
+# @return true on success, undef on error.
+sub get_article_settings {
+    my $self      = shift;
+    my $args      = shift;
+    my $articleid = shift;
+    my $methods   = shift;
+
+    $self -> clear_error();
+
+    $self -> {"matrix"} -> get_article_settings($args, $articleid, $methods)
+        or return $self -> self_error($self -> {"matrix"} -> errstr());
+
+    return 1;
+}
+
+
 ## @method $ build_matrix($userid, $selected, $acyear)
 # Build a HTML block containing the recipient/method matrix.
 #

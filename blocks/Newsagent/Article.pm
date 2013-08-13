@@ -25,7 +25,7 @@ use Newsagent::System::Article;
 use File::Basename;
 use Lingua::EN::Sentence qw(get_sentences);
 use v5.12;
-
+use Data::Dumper;
 # ============================================================================
 #  Constructor
 
@@ -68,6 +68,24 @@ sub new {
                              "name"  => "{L_COMPOSE_RELTIME}" },
                             {"value" => "draft",
                              "name"  => "{L_COMPOSE_RELNONE}" },
+                          ];
+
+    $self -> {"stickyops"} = [ {"value" => "0",
+                                "name"  => "{L_COMPOSE_NOTSTICKY}" },
+                               {"value" => "1",
+                                "name"  => "{L_COMPOSE_STICKYDAYS1}" },
+                               {"value" => "2",
+                                "name"  => "{L_COMPOSE_STICKYDAYS2}" },
+                               {"value" => "3",
+                                "name"  => "{L_COMPOSE_STICKYDAYS3}" },
+                               {"value" => "4",
+                                "name"  => "{L_COMPOSE_STICKYDAYS4}" },
+                               {"value" => "5",
+                                "name"  => "{L_COMPOSE_STICKYDAYS5}" },
+                               {"value" => "6",
+                                "name"  => "{L_COMPOSE_STICKYDAYS6}" },
+                               {"value" => "7",
+                                "name"  => "{L_COMPOSE_STICKYDAYS7}" },
                           ];
 
     $self -> {"relmodes"} = { "hidden"   => "{L_ALIST_RELHIDDEN}",
@@ -375,6 +393,11 @@ sub _validate_article_fields {
             $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
         }
 
+        ($args -> {"sticky"}, $error) = $self -> validate_options("sticky", {"required" => 0,
+                                                                             "source"   => $self -> {"stickyops"},
+                                                                             "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_STICKY")});
+        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+
     # Release mode 1 is "batch" release.
     } elsif($args -> {"relmode"} == 1) {
         # FIXME: validate batch fields
@@ -400,7 +423,7 @@ sub _validate_article_fields {
 sub _validate_article {
     my $self      = shift;
     my $articleid = shift;
-    my ($args, $errors, $error, $matrix) = ({}, "", "", undef);
+    my ($args, $errors, $error) = ({}, "", "", undef);
     my $userid = $self -> {"session"} -> get_session_userid();
 
     my $failmode = $articleid ? "{L_EDIT_FAILED}" : "{L_COMPOSE_FAILED}";
@@ -408,17 +431,19 @@ sub _validate_article {
     $error = $self -> _validate_article_fields($args, $userid);
     $errors .= $error if($error);
 
+    my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix");
+
     # Only bother checking notification code if the release mode is "standard". "Batch" handles its
     # notification code separately.
     if($args -> {"relmode"} == 0) {
-        $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix");
-        $args -> {"notify_matrix"} = $matrix -> get_used_methods($userid)
+         $args -> {"notify_matrix"} = $matrix -> get_used_methods($userid)
             or $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "***error***" => $matrix -> errstr()});
 
         if($args -> {"notify_matrix"} && $args -> {"notify_matrix"} -> {"used_methods"} && scalar(keys(%{$args -> {"notify_matrix"} -> {"used_methods"}}))) {
             # Call each notifocation method to let it validate and add its data to the args hash
             foreach my $method (keys(%{$self -> {"notify_methods"}})) {
-                next unless(scalar(@{$args -> {"notify_matrix"} -> {"used_methods"} -> {$method}}));
+                next unless($args -> {"notify_matrix"} -> {"used_methods"} -> {$method} &&
+                            scalar(@{$args -> {"notify_matrix"} -> {"used_methods"} -> {$method}}));
 
                 my $meth_errs = $self -> {"notify_methods"} -> {$method} -> validate_article($args, $userid);
 
@@ -458,8 +483,19 @@ sub _validate_article {
                                                                                                                                                  {"***error***" => $self -> {"article"} -> errstr()
                                                                                                                                                  })
                                                               }), $args);
-        $args -> {"rtimestamp"} = $article -> {"release_time"}
-            if($args -> {"minor_edit"});
+
+        foreach my $method (keys(%{$self -> {"notify_methods"}})) {
+            $self -> {"notify_methods"} -> {$method} -> cancel_notifications($articleid)
+                or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
+                                                                                           "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
+                                                                                                                                                     {"***error***" => $self -> {"article"} -> errstr()
+                                                                                                                                                     })
+                                                                  }), $args);
+        }
+
+        if($args -> {"minor_edit"}) {
+            $args -> {"rtimestamp"} = $article -> {"release_time"};
+        }
     }
 
     my $aid = $self -> {"article"} -> add_article($args, $userid, $articleid)

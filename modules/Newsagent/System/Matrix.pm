@@ -75,8 +75,81 @@ sub get_user_matrix {
 }
 
 
+## @method $ get_article_settings($args, $articleid, $methods)
+# Obtain the notification method data.
+#
+# @param args      A reference to a hash to store the notification data in.
+# @param articleid The article to fetch notification data for
+# @param methods   A reference to a hash of notification method objects
+# @return true on success, undef on error.
+sub get_article_settings {
+    my $self      = shift;
+    my $args      = shift;
+    my $articleid = shift;
+    my $methods   = shift;
+
+    $self -> clear_error();
+
+    $self -> _fetch_enabled_methods($args, $articleid, $methods)
+        or return undef;
+
+    return 1;
+}
+
+
 # ============================================================================
 #  Private incantations
+
+## @method private $ _fetch_enabled_methods($args, $articleid, $methods)
+# Generate a hash containing the enabled recipients and methods, and a hash of used methods.
+#
+#
+sub _fetch_enabled_methods {
+    my $self      = shift;
+    my $args      = shift;
+    my $articleid = shift;
+    my $methods   = shift;
+
+    $self -> clear_error();
+
+    # First we need to fetch the list of notification headers - this will give the
+    # list of used methods, and can be used to loop up the recipients
+    my $notifyh = $self -> {"dbh"} -> prepare("SELECT n.*, m.name
+                                               FROM `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."` AS n,
+                                                    `".$self -> {"settings"} -> {"database"} -> {"notify_methods"}."` AS m
+                                               WHERE m.id = n.method_id
+                                               AND n.article_id = ?");
+
+    # And a query will be needed to fetch recipients
+    my $reciph = $self -> {"dbh"} -> prepare("SELECT rm.recipient_id
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {"article_notify_rms"}."` AS a,
+                                                   `".$self -> {"settings"} -> {"database"} -> {"notify_matrix"}."` AS rm
+                                              WHERE rm.id = a.recip_meth_id
+                                              AND a.article_notify_id = ?");
+
+    # Start the ball rolling on fetching headers
+    $notifyh -> execute($articleid)
+        or return $self -> self_error("Unable to fetch notification headers: ".$self -> {"dbh"} -> errstr());
+
+    while(my $header = $notifyh -> fetchrow_hashref()) {
+        # All the years will be the same, so use the first one encountered
+        $args -> {"notify_matrix"} -> {"year"} = $header -> {"year_id"}
+            if(!$args -> {"notify_matrix"} -> {"year"});
+
+        # Fetch all recipient/method maps associated with this notification
+        $reciph -> execute($header -> {"id"})
+            or return $self -> self_error("Unable to fetch notification map: ".$self -> {"dbh"} -> errstr());
+
+        while(my $recip = $reciph -> fetchrow_arrayref()) {
+            push(@{$args -> {"notify_matrix"} -> {"used_methods"} -> {$header -> {"name"}}}, $recip -> [0]);
+            $args -> {"notify_matrix"} -> {"enabled"} -> {$recip -> [0]} -> {$header -> {"method_id"}} = 1;
+        }
+
+        # May as well fetch the method-specific data here, too!
+        $args -> {"methods"} -> {$header -> {"name"}} = $methods -> {$header -> {"name"}} -> get_article($articleid);
+    }
+}
+
 
 ## @method private $ _build_matrix($userid, $parent)
 # Determine which entries in the recipient/method notification matrix the user has

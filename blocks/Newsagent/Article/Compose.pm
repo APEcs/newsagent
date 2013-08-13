@@ -24,7 +24,7 @@ use base qw(Newsagent::Article); # This class extends the Article block class
 use v5.12;
 
 use Newsagent::System::Matrix;
-use Data::Dumper;
+
 
 # ============================================================================
 #  Content generators
@@ -107,7 +107,7 @@ sub _generate_compose {
         if($error);
 
     my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix");
-    my $notifyblock = $matrix -> build_matrix($userid, $args -> {"notify_matrix"} -> {"enabled"}, $args -> {"notify_year"});
+    my $notifyblock = $matrix -> build_matrix($userid, $args -> {"notify_matrix"} -> {"enabled"}, $args -> {"notify_matrix"} -> {"year"});
 
     my $notify_settings = "";
     my $userdata = $self -> {"session"} -> get_user_byid($userid);
@@ -136,6 +136,7 @@ sub _generate_compose {
                                                                            "***imagebimgs***"       => $imageb_img,
                                                                            "***relmode***"          => $args -> {"relmode"} || 0,
                                                                            "***userlevels***"       => $feed_levels,
+                                                                           "***sticky_mode***"      => $self -> {"template"} -> build_optionlist($self -> {"stickyops"}, $args -> {"sticky"}),
                                                                            "***batchstuff***"       => $schedblock,
                                                                            "***notifystuff***"      => $notifyblock,
                                                                            "***notifysettings***"   => $notify_settings,

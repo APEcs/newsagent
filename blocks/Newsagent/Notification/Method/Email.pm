@@ -55,10 +55,10 @@ sub store_article {
     my $emailh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"method:email"} -> {"data"}."`
                                               (prefix_id, cc, bcc, reply_to)
                                               VALUES(?, ?, ?, ?)");
-    my $rows = $emailh -> execute($args -> {"methods"} -> {"email"} -> {"prefix"},
-                                  $args -> {"methods"} -> {"email"} -> {"cc"},
-                                  $args -> {"methods"} -> {"email"} -> {"bcc"},
-                                  $args -> {"methods"} -> {"email"} -> {"replyto"});
+    my $rows = $emailh -> execute($args -> {"methods"} -> {"Email"} -> {"prefix_id"},
+                                  $args -> {"methods"} -> {"Email"} -> {"cc"},
+                                  $args -> {"methods"} -> {"Email"} -> {"bcc"},
+                                  $args -> {"methods"} -> {"Email"} -> {"reply_to"});
     return $self -> self_error("Unable to perform article email notification data insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Article email notification data insert failed, no rows inserted") if($rows eq "0E0");
     my $dataid = $self -> {"dbh"} -> {"mysql_insertid"};
@@ -77,6 +77,32 @@ sub store_article {
 }
 
 
+## @method $ get_article($articleid)
+# Populate the specified article hash with data specific to this method.
+# This will pull any data appropriate for the current method out of
+# the database and shove it into the article hash.
+#
+# @param articleid The ID of the article to fetch the data for.
+# @return A reference to a hash containing the data on success, undef on error
+sub get_article {
+    my $self      = shift;
+    my $articleid = shift;
+
+    $self -> clear_error();
+
+    my $dataid = $self -> get_notification_dataid($articleid)
+        or return $self -> self_error("Unable to get email settings for $articleid: ".($self -> errstr() || "No data stored"));
+
+    my $datah = $self -> {"dbh"} -> prepare("SELECT *
+                                             FROM `".$self -> {"settings"} -> {"method:email"} -> {"data"}."`
+                                             WHERE id = ?");
+    $datah -> execute($dataid)
+        or return $self -> self_error("Unable to perform data lookup: ".$self -> {"dbh"} -> errstr);
+
+    return $datah -> fetchrow_hashref();
+}
+
+
 ################################################################################
 #  View and controller functions
 ################################################################################
@@ -92,10 +118,10 @@ sub generate_compose {
     my $args = shift;
     my $user = shift;
 
-    return $self -> {"template"} -> load_template("Notification/Method/Email/compose.tem", {"***email-cc***"      => $self -> {"template"} -> html_clean($args -> {"methods"} -> {"email"} -> {"cc"}),
-                                                                                            "***email-bcc***"     => $self -> {"template"} -> html_clean($args -> {"methods"} -> {"email"} -> {"bcc"}),
-                                                                                            "***email-replyto***" => $self -> {"template"} -> html_clean($args -> {"methods"} -> {"email"} -> {"replyto"} || $user -> {"email"}),
-                                                                                            "***email-prefix***"  => $self -> {"template"} -> build_optionlist($self -> _get_prefixes(), $args -> {"methods"} -> {"email"} -> {"prefix"}),
+    return $self -> {"template"} -> load_template("Notification/Method/Email/compose.tem", {"***email-cc***"      => $self -> {"template"} -> html_clean($args -> {"methods"} -> {"Email"} -> {"cc"}),
+                                                                                            "***email-bcc***"     => $self -> {"template"} -> html_clean($args -> {"methods"} -> {"Email"} -> {"bcc"}),
+                                                                                            "***email-replyto***" => $self -> {"template"} -> html_clean($args -> {"methods"} -> {"Email"} -> {"reply_to"} || $user -> {"email"}),
+                                                                                            "***email-prefix***"  => $self -> {"template"} -> build_optionlist($self -> _get_prefixes(), $args -> {"methods"} -> {"Email"} -> {"prefix_id"}),
                                                   });
 }
 
@@ -116,30 +142,30 @@ sub validate_article {
     my @errors = ();
 
     # Email field validation can be done all in one loop
-    foreach my $mode ("cc", "bcc", "replyto") {
+    foreach my $mode ("cc", "bcc", "reply_to") {
         my $fieldname = $self -> {"template"} -> replace_langvar("METHOD_EMAIL_".uc($mode));
 
-        ($args -> {"methods"} -> {"email"} -> {$mode}, $error) = $self -> validate_string("email-$mode", {"required"   => 0,
+        ($args -> {"methods"} -> {"Email"} -> {$mode}, $error) = $self -> validate_string("email-$mode", {"required"   => 0,
                                                                                                           "default"    => "",
                                                                                                           "nicename"   => $fieldname});
         # Fix up <, >, and "
-        $args -> {"methods"} -> {"email"} -> {$mode} = decode_entities($args -> {"methods"} -> {"email"} -> {$mode});
+        $args -> {"methods"} -> {"Email"} -> {$mode} = decode_entities($args -> {"methods"} -> {"Email"} -> {$mode});
 
         # If we have an error, store it, otherwise check the address is valid
         if($error) {
             push(@errors, $error);
         } else {
-            ($args -> {"methods"} -> {"email"} -> {$mode}, $error) = $self -> _validate_emails($args -> {"methods"} -> {"email"} -> {$mode}, $fieldname, $mode eq "replyto" ? 1 : 0);
+            ($args -> {"methods"} -> {"Email"} -> {$mode}, $error) = $self -> _validate_emails($args -> {"methods"} -> {"Email"} -> {$mode}, $fieldname, $mode eq "reply_to" ? 1 : 0);
 
             push(@errors, $error) if($error);
         }
     }
 
     # prefix validation must be done separately
-    ($args -> {"methods"} -> {"email"} -> {"prefix"}, $error) = $self -> validate_options("email-prefix", {"required" => 1,
-                                                                                                           "default"  => "1",
-                                                                                                           "source"   => $self -> _get_prefixes(),
-                                                                                                           "nicename" => $self -> {"template"} -> replace_langvar("METHOD_EMAIL_PREFIX")});
+    ($args -> {"methods"} -> {"Email"} -> {"prefix_id"}, $error) = $self -> validate_options("email-prefix", {"required" => 1,
+                                                                                                              "default"  => "1",
+                                                                                                              "source"   => $self -> _get_prefixes(),
+                                                                                                              "nicename" => $self -> {"template"} -> replace_langvar("METHOD_EMAIL_PREFIX")});
     push(@errors, $error) if($error);
 
     return \@errors;

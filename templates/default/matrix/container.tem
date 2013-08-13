@@ -10,6 +10,7 @@
                         <dt><strong>{L_COMPOSE_RECIPIENTS}</strong></dt>
                         <dd>***matrix***
                         </dd>
+                        <dd>{L_MATRIX_DELAYNOTE}</dd>
                     </dl>
 <script type="text/javascript">
 window.addEvent('domready', function() {

@@ -24,6 +24,16 @@ COMPOSE_RELTIME = At the specified time
 COMPOSE_RELNONE = Never (save as draft)
 COMPOSE_RELDATE = Publish time
 
+COMPOSE_STICKY      = Sticky
+COMPOSE_NOTSTICKY   = Article is not sticky
+COMPOSE_STICKYDAYS1 = Sticky for 1 day
+COMPOSE_STICKYDAYS2 = Sticky for 2 days
+COMPOSE_STICKYDAYS3 = Sticky for 3 days
+COMPOSE_STICKYDAYS4 = Sticky for 4 days
+COMPOSE_STICKYDAYS5 = Sticky for 5 days
+COMPOSE_STICKYDAYS6 = Sticky for 6 days
+COMPOSE_STICKYDAYS7 = Sticky for 7 days
+
 COMPOSE_NOSCHEDULE  = You do not currently have access to any scheduled releases.
 COMPOSE_SCHEDULE    = Scheduled release
 COMPOSE_NEXTREL     = Next release
@@ -67,3 +77,5 @@ COMPOSE_ADDED_DESC        = Your article has been added to the system. If you se
 COMPOSE_NOTIFICATION = Notifications
 COMPOSE_ACYEAR       = Academic Year
 COMPOSE_RECIPIENTS   = Recipients
+
+MATRIX_DELAYNOTE     = <span class="helptext">Note: all notifications are held for at least 5 minutes before being sent in order to allow notifications to be cancelled or edited.</span>

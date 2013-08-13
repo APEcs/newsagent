@@ -23,6 +23,7 @@ use strict;
 use base qw(Newsagent::Article); # This class extends the Newsagent block class
 use v5.12;
 
+
 # ============================================================================
 #  Support functions
 
@@ -76,6 +77,52 @@ sub _fixup_images {
 }
 
 
+## @method private void _fixup_sticky($article)
+# Convert the "is_sticky" and "sticky_until" fields in the article into a
+# single 'sticky' field that can be used to control the stickiness. Note
+# that the time the article will remain sticky for is based on the amount of
+# time the article has remaining as sticky, rather than the time it was
+# set on originally.
+#
+# @param article A reference to a hash containing the article data
+sub _fixup_sticky {
+    my $self    = shift;
+    my $article = shift;
+
+    # Default is not to be sticky...
+    $article -> {"sticky"} = 0;
+
+    if($article -> {"is_sticky"}) {
+        my $now    = time();
+        my $remain = 0;
+
+        # if the article is visible, the sticky time remaining is based on
+        # the current time
+        if($article -> {"release_mode"} eq "visible" ||
+           ($article -> {"release_mode"} eq "timed" && $article -> {"release_time"} <= $now)) {
+
+            # Work out how many days of stickiness remain for the article. Note the + 1 here
+            # is needed because the integer conversion will round down.
+            $article -> {"sticky"} = int(($article -> {"sticky_until"} - $now) / 86400) + 1;;
+        } else {
+            # Article hasn't been released yet, so use its original sticky time
+            $article -> {"sticky"} = int(($article -> {"sticky_until"} - $article -> {"release_time"}) / 86400);
+        }
+    }
+}
+
+
+## @method private $ _check_articleid($articleid)
+# Determine whether the specified article ID is valid, and whether the user
+# has access to edit it. If both are true, this returns a reference to the
+# article.
+#
+# @note The data returned by this function does not include the notification
+#       information. That must be fetched separately by calling the
+#       Newsagent::Notification::Matrix::get_article_settings() function.
+#
+# @param articleid The ID of the article to fetch the data for
+# @return A reference to a hash containing the article data.
 sub _check_articleid {
     my $self      = shift;
     my $articleid = shift;
@@ -147,6 +194,9 @@ sub _generate_edit {
     $article -> {"levels"} = $self -> _fixup_levels($article -> {"levels"});
     $article -> {"images"} = $self -> _fixup_images($article -> {"images"});
 
+    # Convert the sticky data into something the dropdown can use
+    $self -> _fixup_sticky($article);
+
     # copy the article into the args hash, skipping anything already set in the args.
     foreach my $key (keys %{$article}) {
         $args -> {$key} = $article -> {$key} unless($args -> {$key});
@@ -172,6 +222,36 @@ sub _generate_edit {
     my $format_release = $self -> {"template"} -> format_time($args -> {"rtimestamp"}, "%d/%m/%Y %H:%M")
         if($args -> {"rtimestamp"});
 
+    # Which schedules and sections can the user post to?
+    my $schedules  = $self -> {"article"} -> get_user_schedule_sections($userid);
+    my $schedblock = $self -> {"template"} -> load_template("compose/schedule_noaccess.tem"); # default to 'none of them'
+    if($schedules && scalar(keys(%{$schedules}))) {
+        my $schedlist    = $self -> {"template"} -> build_optionlist($schedules -> {"_schedules"}, $args -> {"schedule"});
+        my $schedmode    = $self -> {"template"} -> build_optionlist($self -> {"schedrelops"}, $args -> {"schedule_mode"});
+        my $schedrelease = $self -> {"template"} -> format_time($args -> {"stimestamp"}, "%d/%m/%Y %H:%M")
+            if($args -> {"stimestamp"});
+
+        my $scheddata = "";
+        $args -> {"section"} = "" if(!$args -> {"section"});
+        foreach my $id (sort(keys(%{$schedules}))) {
+            next unless($id =~ /^id_/);
+
+            $scheddata .= '"'.$id.'": { next: ['.join(",", map { '"'.$self -> {"template"} -> format_time($_).'"' } @{$schedules -> {$id} -> {"next_run"}}).'],';
+            $scheddata .= '"sections": ['.join(",",
+                                               map {
+                                                   '{ "value": "'. $_ -> {"value"}.'", "name": "'.$_ -> {"name"}.'", "selected": '.($_ -> {"value"} eq $args -> {"section"} && $id eq $args -> {"schedule"} ? 'true' : 'false').'}'
+                                               } @{$schedules -> {$id} -> {"sections"}}).']},';
+        }
+
+        $schedblock = $self -> {"template"} -> load_template("compose/schedule.tem", {"***schedule***"          => $schedlist,
+                                                                                      "***schedule_mode***"     => $schedmode,
+                                                                                      "***schedule_date_fmt***" => $schedrelease,
+                                                                                      "***stimestamp***"        => $args -> {"stimestamp"} || 0,
+                                                                                      "***priority***"          => $args -> {"priority"} || 2,
+                                                                                      "***scheduledata***"      => $scheddata,
+                                                             });
+    }
+
     # Image options
     my $imagea_opts = $self -> _build_image_options($args -> {"images"} -> {"a"} -> {"mode"});
     my $imageb_opts = $self -> _build_image_options($args -> {"images"} -> {"b"} -> {"mode"});
@@ -184,6 +264,19 @@ sub _generate_edit {
     # Wrap the error in an error box, if needed.
     $error = $self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $error})
         if($error);
+
+    my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix");
+
+    # Suck in all the notification settings so they can be shown
+    $matrix -> get_article_settings($args, $articleid, $self -> {"notify_methods"});
+    my $notifyblock = $matrix -> build_matrix($userid, $args -> {"notify_matrix"} -> {"enabled"}, $args -> {"notify_matrix"} -> {"year"});
+
+    my $notify_settings = "";
+    my $userdata = $self -> {"session"} -> get_user_byid($userid);
+
+    foreach my $method (keys(%{$self -> {"notify_methods"}})) {
+        $notify_settings .= $self -> {"notify_methods"} -> {$method} -> generate_compose($args, $userdata);
+    }
 
     # And generate the page title and content.
     return ($self -> {"template"} -> replace_langvar("EDIT_FORM_TITLE"),
@@ -205,6 +298,10 @@ sub _generate_edit {
                                                                      "***imagebimgs***"       => $imageb_img,
                                                                      "***relmode***"          => $args -> {"relmode"} || 0,
                                                                      "***userlevels***"       => $feed_levels,
+                                                                     "***sticky_mode***"      => $self -> {"template"} -> build_optionlist($self -> {"stickyops"}, $args -> {"sticky"}),
+                                                                     "***batchstuff***"       => $schedblock,
+                                                                     "***notifystuff***"      => $notifyblock,
+                                                                     "***notifysettings***"   => $notify_settings,
                                                    }));
 }
 

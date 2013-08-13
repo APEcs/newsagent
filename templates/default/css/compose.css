@@ -182,4 +182,5 @@ div.content h3 {
 span.helptext {
     font-size: 75%;
     color: #666;
+    white-space: normal;
 }

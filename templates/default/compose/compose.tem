@@ -77,7 +77,6 @@ Not here yet.
                 <dd><select class="fillwide" id="comp-feed" name="feed">
                         ***allowed_feeds***
                     </select>
-
                 </dd>
             </dl>
             <div id="relmode-tabs">
@@ -103,6 +102,13 @@ Not here yet.
                         <dd><input class="fillwide datepick" type="text" name="release_date" id="release_date" size="16" maxlength="16" value="***release_date_fmt***" /></dd>
                     </dl>
                     <input type="hidden" name="rtimestamp" id="rtimestamp" value="***rtimestamp***" />
+                    <dl class="input">
+                        <dt><label for="comp-sticky">{L_COMPOSE_STICKY}</label></dt>
+                        <dd><select class="fillwide" id="comp-sticky" name="sticky">
+                                ***sticky_mode***
+                            </select>
+                        </dd>
+                    </dl>
 ***notifystuff***
                 </div>
                 <div class="content">

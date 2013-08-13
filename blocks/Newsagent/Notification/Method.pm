@@ -152,21 +152,19 @@ sub store_article {
 }
 
 
-## @method void get_article($msgid, $article)
+## @method $ get_article($articleid)
 # Populate the specified article hash with data specific to this method.
 # This will pull any data appropriate for the current method out of
 # the database and shove it into the article hash.
 #
-# @param msgid   The ID of the article to fetch the data for.
-# @param article A reference to the hash into which the data should be written.
-# @return true on success, undef on error
+# @param articleid The ID of the article to fetch the data for.
+# @return A reference to a hash containing the data on success, undef on error
 sub get_article {
-    my $self    = shift;
-    my $msgid   = shift;
-    my $article = shift;
+    my $self      = shift;
+    my $articleid = shift;
 
     # Does nothing.
-    return 1;
+    return {};
 }
 
 
@@ -228,6 +226,54 @@ sub set_notification_status {
     my $rows = $updateh -> execute($status, $message, $nid);
     return $self -> self_error("Unable to update article notification: ".$self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Article notification update failed: no rows updated.") if($rows eq "0E0");
+
+    return 1;
+}
+
+
+## @method $ get_notification_dataid($articleid)
+# Given an article ID, fetch the data id for the current method from it.
+#
+# @param articleid The ID of the article to fetch the notification data for.
+# @return The ID of the data row (or zero, if there is no data) on success, undef
+#         on error.
+sub get_notification_dataid {
+    my $self = shift;
+    my $articleid = shift;
+
+    $self -> clear_error();
+
+    my $headh = $self -> {"dbh"} -> prepare("SELECT data_id
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."`
+                                             WHERE `article_id` = ?
+                                             AND `method_id` = ?");
+    $headh -> execute($articleid, $self -> {"method_id"})
+        or return $self -> self_error("Unable to execute notification header lookip: ".$self -> {"dbh"} -> errstr());
+
+    my $dataid = $headh -> fetchrow_arrayref();
+    return 0 if(!$dataid || !$dataid -> [0]);  # not having any data is not an error, just does nothing
+
+    return $dataid -> [0];
+}
+
+
+## @method $ cancel_notifications($articleid)
+# Cancel all notifications for the specified method for the provided article.
+#
+# @param articleid The ID of the article to cancel notifications for
+# @return true on success, undef on error.
+sub cancel_notifications {
+    my $self      = shift;
+    my $articleid = shift;
+
+    $self -> clear_error();
+
+    my $updateh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."`
+                                               SET `status` = 'cancelled', `updated` = UNIX_TIMESTAMP()
+                                               WHERE article_id = ? AND method_id = ?");
+    my $rows = $updateh -> execute($articleid, $self -> {"method_id"});
+    return $self -> self_error("Unable to update article notification: ".$self -> {"dbh"} -> errstr) if(!$rows);
+    # Note that updating no rows here is valid - there may be no notification set for a given method
 
     return 1;
 }

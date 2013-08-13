@@ -342,6 +342,10 @@ sub get_feed_articles {
     $urllevel = $self -> _get_level_byname($urllevel)
         or return undef;
 
+    # Clear outdated sticky values
+    $self -> _clear_sticky()
+        or return undef;
+
     # Now start constructing the query. These are the tables and where clauses that are
     # needed regardless of the settings provided by the caller.
     # All the fields the query is interested in, normally fulltext is omitted unless explicitly requested
@@ -409,7 +413,7 @@ sub get_feed_articles {
     my $sql = "SELECT $fields
                FROM $from
                WHERE $where
-               ORDER BY `article`.`release_time` DESC
+               ORDER BY `article`.`is_sticky` DESC, `article`.`release_time` DESC
                LIMIT ".$settings -> {"offset"}.", ".$settings -> {"count"};
 
     # Now put it all together and fire it at the database
@@ -473,6 +477,12 @@ sub get_user_articles {
     my $sortfield = $settings -> {"sortfield"} || 'release_time';
     my $sortdir   = $settings -> {"sortdir"} || 'DESC';
     my @articles;
+
+    $self -> clear_error();
+
+    # Clear outdated sticky values
+    $self -> _clear_sticky()
+        or return undef;
 
     # Force the sortfield to a supported value
     $sortfield =  $self -> {"allowed_fields"} -> {$sortfield} || 'release_time';
@@ -714,11 +724,17 @@ sub add_article {
     my $now = time();
     $article -> {"rtimestamp"} = $now if(!$article -> {"rtimestamp"});
 
+    my ($is_sticky, $sticky_until) = (0, undef);
+    if($article -> {"sticky"}) {
+        $is_sticky = 1;
+        $sticky_until = $article -> {"rtimestamp"} + ($article -> {"sticky"} * 86400)
+    }
+
     # Add the article itself
     my $addh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"articles"}."`
-                                            (previous_id, metadata_id, creator_id, created, feed_id, title, summary, article, release_mode, release_time, updated, updated_id)
-                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    my $rows = $addh -> execute($previd, $metadataid, $userid, $now, $feed -> {"id"}, $article -> {"title"}, $article -> {"summary"}, $article -> {"article"}, $article -> {"mode"}, $article -> {"rtimestamp"}, $now, $userid);
+                                            (previous_id, metadata_id, creator_id, created, feed_id, title, summary, article, release_mode, release_time, updated, updated_id, sticky_until, is_sticky)
+                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    my $rows = $addh -> execute($previd, $metadataid, $userid, $now, $feed -> {"id"}, $article -> {"title"}, $article -> {"summary"}, $article -> {"article"}, $article -> {"mode"}, $article -> {"rtimestamp"}, $now, $userid, $sticky_until, $is_sticky);
     return $self -> self_error("Unable to perform article insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Article insert failed, no rows inserted") if($rows eq "0E0");
 
@@ -1088,5 +1104,25 @@ sub _get_feed_byname {
 }
 
 
+## @method private $ _clear_sticky()
+# Clears all outdated sticky bits in the articles table. This must be called
+# before any article list fetches happen, to ensure that sticky articles do
+# not hang around longer than they should.
+#
+# @return true on success, undef on error
+sub _clear_sticky {
+    my $self = shift;
+
+    $self -> clear_error();
+
+    my $teflon = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"articles"}."`
+                                              SET is_sticky = 0
+                                              WHERE is_sticky = 1
+                                              AND sticky_until < UNIX_TIMESTAMP()");
+    $teflon -> execute()
+        or return $self -> self_error("Unable to clear outdated sticky articles: ".$self -> {"dbh"} -> errstr);
+
+    return 1;
+}
 
 1;
