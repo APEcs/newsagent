@@ -43,11 +43,12 @@ sub block_display {
     $self -> clear_error();
 
     # Initialise fragments to sane "logged out" defaults.
-    my ($siteadmin, $userprofile, $msglist, $compose) =
+    my ($siteadmin, $msglist, $compose, $userprofile) =
         ($self -> {"template"} -> load_template("userbar/siteadmin_disabled.tem"),
-         $self -> {"template"} -> load_template("userbar/profile_loggedout.tem"),
          $self -> {"template"} -> load_template("userbar/msglist_disabled.tem"),
-         $self -> {"template"} -> load_template("userbar/compose_disabled.tem"));
+         $self -> {"template"} -> load_template("userbar/compose_disabled.tem"),
+         $self -> {"template"} -> load_template("userbar/profile_loggedout.tem", {"***url-login***" => $self -> build_url(block => "login")}),
+        );
 
     # Is the user logged in?
     if(!$self -> {"session"} -> anonymous_session()) {

@@ -6,3 +6,7 @@ USERBAR_PROFILE_LOGIN   = Log in
 USERBAR_ARTICLE_LIST    = Article list
 USERBAR_COMPOSE         = Add an article
 USERBAR_SITE_SETTINGS   = Administer site
+
+USERBAR_LOGIN_USER      = Username
+USERBAR_LOGIN_PASS      = Password
+USERBAR_LOGIN           = Log in
