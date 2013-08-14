@@ -1,0 +1,4 @@
+<div class="shadowbox core">
+    <h2>{L_CRONJOB_SUMMARY}</h2>
+    <div class="sbcontent">{L_CRONJOB_NOPENDING}</div>
+</div>

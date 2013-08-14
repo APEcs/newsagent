@@ -161,6 +161,22 @@ sub build_matrix {
 }
 
 
+## @method $ get_pending_notifications()
+# Generate a list of currently pending notifications that are capable of being sent
+# (ie: the article has been published, at least 5 minutes have elapsed between
+# publish time and this call).
+#
+# @return A reference to an array of pending article notifications
+sub get_pending_notifications {
+    my $self = shift;
+
+    $self -> clear_error();
+
+    return $self -> {"matrix"} -> get_pending_notifications()
+        or return $self -> self_error($self -> {"matrix"} -> errstr());
+}
+
+
 # ============================================================================
 #  Private code
 

@@ -97,6 +97,37 @@ sub get_article_settings {
 }
 
 
+## @method $ get_pending_notifications()
+# Generate a list of currently pending notifications that are capable of being sent
+# (ie: the article has been published, at least 5 minutes have elapsed between
+# publish time and this call).
+#
+# @return A reference to an array of pending article notifications
+sub get_pending_notifications {
+    my $self = shift;
+
+    $self -> clear_error();
+
+    my $pendingh = $self -> {"dbh"} -> prepare("SELECT `m`.`name`, `n`.`id`, `n`.`article_id`, `n`.`year_id`
+                                                FROM `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."` AS `n`,
+                                                     `".$self -> {"settings"} -> {"database"} -> {"notify_methods"}."` AS `m`,
+                                                     `".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `a`
+                                                WHERE `m`.`id` = `n`.`method_id`
+                                                AND `a`.`id` = `n`.`article_id`
+                                                AND `n`.`status` = 'pending'
+                                                AND (`a`.`release_mode` = 'visible'
+                                                     OR (`a`.`release_mode` = 'timed'
+                                                         AND `a`.`release_time` <= UNIX_TIMESTAMP()
+                                                        )
+                                                    )
+                                                ORDER BY `a`.`release_time`");
+    $pendingh -> execute()
+        or return $self -> self_error("Unable to perform pending notification lookup: ".$self -> {"dbh"} -> errstr);
+
+    return $pendingh -> fetchall_arrayref({});
+}
+
+
 # ============================================================================
 #  Private incantations
 

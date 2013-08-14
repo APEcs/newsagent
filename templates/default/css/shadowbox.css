@@ -10,6 +10,12 @@
     background-color: #fff;
 }
 
+.shadowbox.core {
+    margin: 0px auto;
+    margin-top: 40px;
+    width: 1130px;
+}
+
 .shadowbox > h2 {
     font-size: 14px;
     margin: 0px;

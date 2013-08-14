@@ -75,6 +75,40 @@ sub generate_newsagent_page {
 }
 
 
+## @method $ generate_errorbox($message, $title)
+# Generate the HTML to show in the page when a fatal error has been encountered.
+#
+# @param message The message to show in the page.
+# @param title   The title to use for the error. If not set "{L_FATAL_ERROR}" is used.
+# @return A string containing the page
+sub generate_errorbox {
+    my $self    = shift;
+    my $message = shift;
+    my $title   = shift || "{L_FATAL_ERROR}";
+
+    $self -> log("error:fatal", $message);
+
+    my $message = $self -> {"template"} -> message_box($title,
+                                                       "error",
+                                                       "{L_FATAL_ERROR_SUMMARY}",
+                                                       $message,
+                                                       undef,
+                                                       "errorcore",
+                                                       [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
+                                                          "colour"  => "blue",
+                                                          "action"  => "location.href='{V_[scriptpath]}'"} ]);
+    my $userbar = $self -> {"module"} -> load_module("Newsagent::Userbar");
+
+    # Build the error page...
+    return $self -> {"template"} -> load_template("error/general.tem",
+                                                  {"***title***"     => $title,
+                                                   "***message***"   => $message,
+                                                   "***extrahead***" => "",
+                                                   "***userbar***"   => ($userbar ? $userbar -> block_display($title) : "<!-- Userbar load failed: ".$self -> {"module"} -> errstr()." -->"),
+                                                  });
+}
+
+
 # ============================================================================
 #  Permissions/Roles related.
 
@@ -110,6 +144,8 @@ sub check_login {
 
     # Anonymous users need to get punted over to the login form
     if($self -> {"session"} -> anonymous_session()) {
+        $self -> log("error:anonymous", "Redirecting anonymous user to login form");
+
         print $self -> {"cgi"} -> redirect($self -> build_login_url());
         exit;
 
@@ -365,7 +401,7 @@ sub build_return_url {
     my ($block, $pathinfo, $api, $qstring) = $self -> get_saved_state();
 
     # Return url block should never be "login"
-    $block = $self -> {"settings"} -> {"config"} -> {"default_block"} if($block eq "login");
+    $block = $self -> {"settings"} -> {"config"} -> {"default_block"} if($block eq "login" || !$block);
 
     # Build the URL from them
     return $self -> build_url("block"    => $block,

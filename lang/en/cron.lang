@@ -30,3 +30,12 @@ CRON_SEP         = September
 CRON_OCT         = October
 CRON_NOV         = November
 CRON_DEC         = December
+
+CRONJOB_TITLE     = Newsagent Cron Processor
+CRONJOB_NOPENDING = No pending notifications to send at this time.
+
+CRONJOB_SUMMARY   = Notification summary
+CRONJOB_ID        = ID
+CRONJOB_ARTICLE   = Article ID
+CRONJOB_METHOD    = Method
+CRONJOB_YEAR      = Year ID

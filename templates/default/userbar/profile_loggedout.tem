@@ -1,7 +1,7 @@
             <li id="user-login" class="menu">
-                <a class="item">{L_USERBAR_LOGIN}</a>
+                <a class="item">{L_USERBAR_PROFILE_LOGIN}</a>
                 <div class="menu-wrapper">
-                    <form action="***url-login***">
+                    <form action="***url-login***" method="post">
                     <ul class="menu-submenu-nohl">
                         <li id="login-fields"><div>
                                 <label  for="login-username">{L_USERBAR_LOGIN_USER}: <input id="login-username" name="username" type="text" size="12" maxlength="255" title="Username" /></label>
@@ -9,7 +9,6 @@
                                 <button type="submit" id="login-dologin" name="login" class="button blue">{L_USERBAR_LOGIN}</button>
                             </div>
                         </li>
-                        <li id="login-ops"><div><a href="***url-register***">{L_USERNAME_LOGIN_REG}</a> <span style="font-weight:bold;">&middot;</span> <a href="***url-recover***">{L_USERBAR_LOGIN_REC}</a></div></li>
                     </ul>
                     </form>
                 </div>
