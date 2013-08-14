@@ -1091,6 +1091,8 @@ sub page_display {
                 # Does the user need to change their password?
                 my $passchange = $self -> {"session"} -> {"auth"} -> force_passchange($user -> {"username"});
                 if(!$passchange) {
+                    $self -> log("login", "Revisit to login form by logged in user ".$user -> {"username"});
+
                     # No passchange needed, user is good
                     ($title, $body, $extrahead) = $self -> generate_loggedin();
                 } else {
