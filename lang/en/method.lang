@@ -8,3 +8,11 @@ METHOD_EMAIL_PREFIX   = Subject prefix
 
 METHOD_EMAIL_ERR_SINGLEADDR = ***field*** contains more than one email address; it should contain a single address.
 METHOD_EMAIL_ERR_BADADDR    = One or more email addresses specified in ***field*** are invalid.
+
+METHOD_STATE_INVALID   = Invalid
+METHOD_STATE_DRAFT     = Draft
+METHOD_STATE_PENDING   = Pending
+METHOD_STATE_SENDING   = Sending
+METHOD_STATE_SENT      = Sent
+METHOD_STATE_CANCELLED = Aborted
+METHOD_STATE_FAILED    = Failed

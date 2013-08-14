@@ -3,7 +3,8 @@
     <td class="date ***modeclass***">***date***</td>
     <td class="feed">***feed***</td>
     <td class="title"><div class="title"><a href="***editurl***">***title***</a></div>
-                      <div class="info">***action*** ***actdate***, ***actuser***</div></td>
+                      <ul class="info"><li class="intro">***action*** ***actdate***, ***actuser***</li>
+***status***</ul></td>
     <td class="controls">
 ***controls***
     </td>

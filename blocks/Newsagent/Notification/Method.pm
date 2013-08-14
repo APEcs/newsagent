@@ -96,13 +96,14 @@ sub set_config {
 }
 
 
-## @method $ store_article($args, $userid, $articleid, $recip_methods)
+## @method $ store_article($args, $userid, $articleid, $is_draft, $recip_methods)
 # Store the data for this method. This will store any method-specific
 # data in the args hash in the appropriate tables in the database.
 #
 # @param args          A reference to a hash containing the article data.
 # @param userid        A reference to a hash containing the user's data.
 # @param articleid     The ID of the article being stored.
+# @param is_draft      True if the article is a draft, false otherwise.
 # @param recip_methods A reference to an array containing the recipient/method
 #                      map IDs for the recipients this method is being used to
 #                      send messages to.
@@ -112,6 +113,7 @@ sub store_article {
     my $args          = shift;
     my $userid        = shift;
     my $articleid     = shift;
+    my $is_draft      = shift;
     my $recip_methods = shift;
 
     $self -> clear_error();
@@ -279,6 +281,32 @@ sub cancel_notifications {
 }
 
 
+## @method @ get_method_state($articleid)
+# Obtain the state, message, and timestamp for the current method for the specified
+# article.
+#
+# @param articleid The ID of the article to fetch the method state for.
+# @return Three values: the state, message, and timestamp for the method on
+#         success, undefs on error.
+sub get_method_state {
+    my $self      = shift;
+    my $articleid = shift;
+
+    $self -> clear_error();
+
+    my $stateh = $self -> {"dbh"} -> prepare("SELECT status, message, updated
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."`
+                                              WHERE article_id = ? AND method_id = ?");
+    $stateh -> execute($articleid, $self -> {"method_id"})
+        or return $self -> self_error("Unable to execute notification lookup: ".$self -> {"dbh"} -> errstr());
+
+    my $staterow = $stateh -> fetchrow_arrayref();
+    return ("", "", 0) if(!$staterow);
+
+    return @{$staterow};
+}
+
+
 ################################################################################
 #  View and controller functions
 ################################################################################
@@ -345,16 +373,27 @@ sub validate_article {
 }
 
 
-## @method $ generate_articlelist_visibility($article)
-# Generate the fragment to display in the 'visibility' column of the user
-# article list for the specified article.
+## @method $ generate_notification_state($articleid)
+# Generate the fragment to show in the status area of the article list for this method.
 #
-# @param article The article being processed.
-# @return A string containing the HTML fragment to show in the visibility column.
-sub generate_articlelist_visibility {
-    my $self    = shift;
-    my $article = shift;
+# @param articleid The ID of article being processed.
+# @return A string containing the HTML fragment to show in the status area
+sub generate_notification_state {
+    my $self      = shift;
+    my $articleid = shift;
 
+    my ($state, $message, $timestamp) = $self -> get_method_state($articleid);
+    return "Error getting state: ".$self -> errstr() if(!defined($state));
+
+    if($state) {
+        return $self -> {"template"} -> load_template("articlelist/status.tem", {"***name***"     => $self -> {"method_name"},
+                                                                                 "***id***"       => $self -> {"method_id"},
+                                                                                 "***status***"   => $state,
+                                                                                 "***statemsg***" => "{L_METHOD_STATE_".uc($state)."}",
+                                                                                 "***date***"     => $self -> {"template"} -> fancy_time($timestamp),
+                                                                                 "***title***"    => $message || $state,
+                                                      });
+    }
     return "";
 }
 

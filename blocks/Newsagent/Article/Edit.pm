@@ -299,6 +299,7 @@ sub _generate_edit {
                                                                      "***relmode***"          => $args -> {"relmode"} || 0,
                                                                      "***userlevels***"       => $feed_levels,
                                                                      "***sticky_mode***"      => $self -> {"template"} -> build_optionlist($self -> {"stickyops"}, $args -> {"sticky"}),
+                                                                     "***isminor***"          => $args -> {"minor_edit"} ? 'checked="checked"' : "",
                                                                      "***batchstuff***"       => $schedblock,
                                                                      "***notifystuff***"      => $notifyblock,
                                                                      "***notifysettings***"   => $notify_settings,

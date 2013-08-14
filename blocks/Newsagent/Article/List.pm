@@ -42,6 +42,12 @@ sub _build_article_row {
     $article -> {"release_mode"} = "released"
         if($article -> {"release_mode"} eq "timed" && $article -> {"release_time"} <= $now);
 
+    # build the list of notification states
+    my $states = "";
+    foreach my $method (sort keys(%{$self -> {"notify_methods"}})) {
+        $states .= $self -> {"notify_methods"} -> {$method} -> generate_notification_state($article -> {"id"});
+    }
+
     my ($action, $actdate, $actuser) = ("{L_ALIST_CREATED}", $self -> {"template"} -> fancy_time($article -> {"updated"}), $article -> {"realname"} || $article -> {"username"});
     if($article -> {"updated"} != $article -> {"created"}) {
         $action = "{L_ALIST_UPDATED}";
@@ -58,6 +64,7 @@ sub _build_article_row {
                                                                           "***action***"    => $action,
                                                                           "***actdate***"   => $actdate,
                                                                           "***actuser***"   => $actuser,
+                                                                          "***status***"    => $states,
                                                                           "***controls***"  => $self -> {"template"} -> load_template("articlelist/control_".$article -> {"release_mode"}.".tem"),
                                                                           "***id***"        => $article -> {"id"},
                                                                           "***editurl***"   => $self -> build_url(block => "edit", pathinfo => [$article -> {"id"}]),
@@ -147,6 +154,15 @@ sub _build_api_setmode_response {
         # Do the update, and spit out the row html if successful
         $article = $self -> {"article"} -> set_article_status($articleid, $userid, $newmode, $setdate)
             or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"article"} -> errstr()}));
+
+        # abort edited/deleted article notifications
+        if($newmode eq "deleted" || $newmode eq "edited") {
+            foreach my $method (keys(%{$self -> {"notify_methods"}})) {
+                $self -> {"notify_methods"} -> {$method} -> cancel_notifications($articleid)
+                    or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"notify_methods"} -> {$method} -> errstr()}));
+            }
+        }
+
     } else {
         $self -> log($newmode, "Article $articleid is already marked as $newmode");
     }

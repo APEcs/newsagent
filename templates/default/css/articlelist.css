@@ -81,14 +81,22 @@ table.listtable tr:hover td.controls ul.controls {
 }
 
 table.listtable td.title div.title {
-    overflow: hide;
+    white-space: normal; /* There's very little else that can reasonably be done to prevent very long subject lines from
+                          * breaking the control buttons, other than allowing them to wrap as needed. */
 }
 
-table.listtable td.title div.info {
+table.listtable td.title ul.info {
     font-size: 10px;
     color: #666;
+    margin: 0px;
+    padding: 0px;
 }
 
+table.listtable td.title ul.info li {
+    padding: 0px;
+    list-style-type: none;
+    display: inline;
+}
 
 .control.edit {
     background-position: 0px 0px;
@@ -148,4 +156,31 @@ table.listtable td.title div.info {
 
 .control.hide.ctrldisabled {
     background-position: -48px -16px;
+}
+
+
+ul.info li .state.invalid {
+    color: #666;
+}
+
+ul.info li .state.pending {
+    color: #007b74;
+}
+
+ul.info li .state.sending {
+    color: #a69400;
+}
+
+ul.info li .state.draft,
+ul.info li .state.sent {
+    color: #00a600;
+}
+
+ul.info li .state.cancelled {
+    color: #a68d00;
+}
+
+ul.info li .state.failed {
+    color: #ff0000;
+    font-weight: bold;
 }

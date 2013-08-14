@@ -31,13 +31,14 @@ use HTML::Entities;
 ################################################################################
 
 
-## @method $ store_article($args, $userid, $articleid, $recip_methods)
+## @method $ store_article($args, $userid, $articleid, $is_draft, $recip_methods)
 # Store the data for this method. This will store any method-specific
 # data in the args hash in the appropriate tables in the database.
 #
 # @param args          A reference to a hash containing the article data.
 # @param userid        A reference to a hash containing the user's data.
 # @param articleid     The ID of the article being stored.
+# @param is_draft      True if the article is a draft, false otherwise.
 # @param recip_methods A reference to an array containing the recipient/method
 #                      map IDs for the recipients this method is being used to
 #                      send messages to.
@@ -47,9 +48,10 @@ sub store_article {
     my $args          = shift;
     my $userid        = shift;
     my $articleid     = shift;
+    my $is_draft      = shift;
     my $recip_methods = shift;
 
-    my $nid = $self -> SUPER::store_article($args, $userid, $articleid, $recip_methods)
+    my $nid = $self -> SUPER::store_article($args, $userid, $articleid, $is_draft, $recip_methods)
         or return undef;
 
     my $emailh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"method:email"} -> {"data"}."`
@@ -70,7 +72,7 @@ sub store_article {
         or return undef;
 
     # Finally, enable the notification
-    $self -> set_notification_status($nid, "pending")
+    $self -> set_notification_status($nid, $is_draft ? "draft" : "pending")
         or return undef;
 
     return $nid;

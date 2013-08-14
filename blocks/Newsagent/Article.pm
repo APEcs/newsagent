@@ -25,7 +25,7 @@ use Newsagent::System::Article;
 use File::Basename;
 use Lingua::EN::Sentence qw(get_sentences);
 use v5.12;
-use Data::Dumper;
+
 # ============================================================================
 #  Constructor
 
@@ -488,7 +488,7 @@ sub _validate_article {
             $self -> {"notify_methods"} -> {$method} -> cancel_notifications($articleid)
                 or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
                                                                                            "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
-                                                                                                                                                     {"***error***" => $self -> {"article"} -> errstr()
+                                                                                                                                                     {"***error***" => $self -> {"notify_methods"} -> {$method} -> errstr()
                                                                                                                                                      })
                                                                   }), $args);
         }
@@ -509,8 +509,10 @@ sub _validate_article {
 
     # Let notification modules store any data they need
     if($args -> {"relmode"} == 0) {
+        my $isdraft = $args -> {"mode"} eq "draft";
+
         foreach my $method (keys(%{$args -> {"notify_matrix"} -> {"used_methods"}})) {
-            $self -> {"notify_methods"} -> {$method} -> store_article($args, $userid, $aid, $args -> {"notify_matrix"} -> {"used_methods"} -> {$method})
+            $self -> {"notify_methods"} -> {$method} -> store_article($args, $userid, $aid, $isdraft, $args -> {"notify_matrix"} -> {"used_methods"} -> {$method})
                 or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
                                                                                            "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
                                                                                                                                                      {"***error***" => $self -> {"notify_methods"} -> {$method} -> errstr()

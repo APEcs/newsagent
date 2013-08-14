@@ -22,7 +22,7 @@
                 </dl>
             </div>
             <dl class="input">
-                <dd><label for="edit-minor" class="check"><input type="checkbox" name="minor_edit" id="edit-minor" />{L_EDIT_ISMINOR}</label></dd>
+                <dd><label for="edit-minor" class="check"><input type="checkbox" name="minor_edit" id="edit-minor" ***isminor*** />{L_EDIT_ISMINOR}</label></dd>
             </dl>
             <hr />
             <div class="submitbox">
