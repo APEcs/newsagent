@@ -1,7 +1,9 @@
 <tr>
+<td>***state***</td>
 <td>***id***</td>
 <td>***method***</td>
 <td>***article***</td>
 <td>***year***</td>
-<td>***time***</td>
+<td>***name***</td>
+<td>***message***</td>
 </tr>

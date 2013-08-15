@@ -39,3 +39,9 @@ CRONJOB_ID        = ID
 CRONJOB_ARTICLE   = Article ID
 CRONJOB_METHOD    = Method
 CRONJOB_YEAR      = Year ID
+CRONJOB_RELEASED  = Released
+
+CRONJOB_STATUS    = Notification delivery status
+CRONJOB_STATE     = Status
+CRONJOB_NAME      = Recipient
+CRONJOB_MESSAGE   = Message

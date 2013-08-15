@@ -108,7 +108,11 @@ sub get_pending_notifications {
 
     $self -> clear_error();
 
-    my $pendingh = $self -> {"dbh"} -> prepare("SELECT `m`.`name`, `n`.`id`, `n`.`article_id`, `n`.`year_id`
+    # Default delay is 5 minutes. Entries must have been released at least this long
+    # ago to qualify for pending release
+    my $time_delay = time() - (($self -> {"settings"} -> {"config"} -> {"Notification:hold_delay"} || 5) * 60);
+
+    my $pendingh = $self -> {"dbh"} -> prepare("SELECT `m`.`name`, `n`.`id`, `n`.`article_id`, `n`.`year_id`, `a`.`release_time`
                                                 FROM `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."` AS `n`,
                                                      `".$self -> {"settings"} -> {"database"} -> {"notify_methods"}."` AS `m`,
                                                      `".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `a`
@@ -120,8 +124,9 @@ sub get_pending_notifications {
                                                          AND `a`.`release_time` <= UNIX_TIMESTAMP()
                                                         )
                                                     )
-                                                ORDER BY `a`.`release_time`");
-    $pendingh -> execute()
+                                                AND `a`.`release_time` < ?
+                                                ORDER BY `a`.`release_time`, `m`.`name`");
+    $pendingh -> execute($time_delay)
         or return $self -> self_error("Unable to perform pending notification lookup: ".$self -> {"dbh"} -> errstr);
 
     return $pendingh -> fetchall_arrayref({});

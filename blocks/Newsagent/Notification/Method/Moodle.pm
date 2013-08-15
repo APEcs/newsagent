@@ -35,14 +35,18 @@ use base qw(Newsagent::Notification::Method); # This class is a Method module
 ################################################################################
 
 
-## @method void set_config($args)
+## @method $ set_config($args)
 # Set the current configuration to the module to the values in the provided
 # args string.
 #
 # @param args A string containing the new configuration.
+# @return true on success, undef on error
 sub set_config {
     my $self = shift;
     my $args = shift;
+
+    $self -> clear_error();
+    return $self -> self_error("No settings provided") if(!$args);
 
     $self -> {"args"} = $args;
 
@@ -60,6 +64,8 @@ sub set_config {
 
         push(@{$self -> {"args"}}, $arghash);
     }
+
+    return 1;
 }
 
 
@@ -97,10 +103,11 @@ sub store_article {
 #  Article send functions
 
 ## @method $ send($article)
-# Attempt to send the specified article as a moodle forum post.
+# Attempt to send the specified article as a moodle forum post. Note that set_config()
+# must be called before this can be used correctly!
 #
 # @param article A reference to a hash containing the article to send.
-# @return undef on success, an error article on failure.
+# @return true on success, undef on error.
 sub send {
     my $self    = shift;
     my $article = shift;
@@ -178,6 +185,8 @@ sub send {
 
     # Done talking to moodle now.
     $self -> {"moodle"} -> disconnect();
+
+    return 1;
 }
 
 

@@ -1,13 +1,15 @@
 <div class="shadowbox core">
-    <h2>{L_CRONJOB_SUMMARY}</h2>
+    <h2>{L_CRONJOB_STATUS}</h2>
     <div class="sbcontent">
 <table>
 <tr>
+    <th>{L_CRONJOB_STATE}</th>
     <th>{L_CRONJOB_ID}</th>
     <th>{L_CRONJOB_METHOD}</th>
     <th>{L_CRONJOB_ARTICLE}</th>
     <th>{L_CRONJOB_YEAR}</th>
-    <th>{L_CRONJOB_RELEASED}</th>
+    <th>{L_CRONJOB_NAME}</th>
+    <th>{L_CRONJOB_MESSAGE}</th>
 </tr>
 ***items***
 </table>

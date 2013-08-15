@@ -83,16 +83,20 @@ sub get_method_config {
 }
 
 
-## @method void set_config($args)
+## @method $ set_config($args)
 # Set the current configuration to the module to the values in the provided
 # args string.
 #
 # @param args A string containing the new configuration.
+# @return true on success, undef on error
 sub set_config {
     my $self = shift;
     my $args = shift;
 
-    # default does nothing
+    $self -> clear_error();
+    return $self -> self_error("No settings provided") if(!$args);
+
+    return 1;
 }
 
 
@@ -171,15 +175,17 @@ sub get_article {
 
 
 ## @method $ send($article)
-# Attempt to send the specified article to the method system.
+# Attempt to send the specified article through the current method.
 #
 # @param article A reference to a hash containing the article to send.
-# @return undef on success, an error article on failure.
+# @return true on success, undef on error.
 sub send {
     my $self    = shift;
     my $article = shift;
 
-    return undef;
+    $self -> clear_error();
+
+    return $self -> self_error("No implementation of send() for this method");
 }
 
 
@@ -231,6 +237,63 @@ sub set_notification_status {
 
     return 1;
 }
+
+
+## @method $ get_notification_status($nid)
+# Obtain the status of the specified article notification header.
+#
+# @param nid     The ID of the article notification header.
+# @return true on success, undef on error
+sub get_notification_status {
+    my $self    = shift;
+    my $nid     = shift;
+
+    $self -> clear_error();
+
+    my $stateh = $self -> {"dbh"} -> prepare("SELECT status, message, updated
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."`
+                                              WHERE id = ?");
+    $stateh -> execute($nid)
+        or return $self -> self_error("Unable to execute notification lookup: ".$self -> {"dbh"} -> errstr());
+
+    my $staterow = $stateh -> fetchrow_arrayref();
+    return ("", "", 0) if(!$staterow);
+
+    return @{$staterow};
+}
+
+
+## @method $ get_notification_targets($nid, $yid)
+# Obtain a list of the targets this notification should be sent to.
+#
+# @param nid The ID of the article notification header.
+# @param yid The ID of the year to fetch any year-specific data for.
+# @return A reference to an array of target hashes on success, undef on error
+sub get_notification_targets {
+    my $self = shift;
+    my $nid  = shift;
+    my $yid  = shift;
+
+    $self -> clear_error();
+
+    # First, get the list of recipients 'as-is'
+    my $reciph = $self -> {"dbh"} -> prepare("SELECT `rm`.`id`, `r`.`name`, `r`.`shortname`, `rm`.`settings`
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {"article_notify_rms"}."` AS `a`,
+                                                   `".$self -> {"settings"} -> {"database"} -> {"notify_matrix"}."` AS `rm`,
+                                                   `".$self -> {"settings"} -> {"database"} -> {"notify_recipients"}."` AS `r`
+                                              WHERE `r`.`id` = `rm`.`recipient_id`
+                                              AND `rm`.`id` = `a`.`recip_meth_id`
+                                              AND `a`.`article_notify_id` = ?");
+    $reciph -> execute($nid)
+        or return $self -> self_error("Unable to perform recipient method lookup: ".$self -> {"dbh"} -> errstr);
+
+    my $targets = $reciph -> fetchall_arrayref({});
+
+    # Fetch any year data if needed
+
+    return $targets;
+}
+
 
 
 ## @method $ get_notification_dataid($articleid)
