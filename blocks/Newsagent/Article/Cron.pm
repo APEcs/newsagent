@@ -25,8 +25,16 @@ use base qw(Newsagent::Article); # This class extends the Article block class
 use v5.12;
 
 use Newsagent::System::Matrix;
-use Data::Dumper;
 
+
+## @method private $ _send_article_to_recipients($notify)
+# Send the specified notification to its recipients. This traverses the list
+# of recipients for the notification, updating the appropriate method with the
+# settings needed to send to that recipient, and then invoking the dispatcher.
+#
+# @param notify The notification to send
+# @return A reference to an array containing send status information for each
+#         recipient, or undef if a serious error occurred.
 sub _send_article_to_recipients {
     my $self   = shift;
     my $notify = shift;
@@ -54,6 +62,7 @@ sub _send_article_to_recipients {
             }
         }
 
+        # Store the send status.
         push(@results, {"name"    => $recipient -> {"shortname"},
                         "state"   => $result,
                         "message" => $result eq "error" ? $self -> {"notify_methods"} -> {$notify -> {"name"}} -> errstr() : ""});
@@ -64,7 +73,8 @@ sub _send_article_to_recipients {
 
 
 ## @method private $ _send_pending_notifications($pending)
-# Send the notifications in the pending queue.
+# Send the notifications in the pending queue. This processes all the currently
+# pending messages
 #
 # @param pending A reference to an array of pending article notifications
 # @return A string containing information about the send process, undef on error.
@@ -74,15 +84,19 @@ sub _send_pending_notifications {
     my $status  = "";
 
     foreach my $notify (@{$pending}) {
+
         # If the notification is still marked as pending, start it sending
         my ($state, $message, $time) = $self -> {"notify_methods"} -> {$notify -> {"name"}} -> get_notification_status($notify -> {"id"});
-
         if($state eq "pending") {
+            # Mark as sending ASAP to prevent grabbing by another cron job on long jobs
             $self -> {"notify_methods"} -> {$notify -> {"name"}} -> set_notification_status($notify -> {"id"}, "sending");
 
+            # Invoke the sender to do the actual work of dispatching the messages
             my $result = $self -> _send_article_to_recipients($notify)
                 or last;
 
+            # Go through the results from the send code, converting to something usable
+            # in the page.
             my $failmsg = "";
             foreach my $row (@{$result}) {
                 $status .= $self -> {"template"} -> load_template("cron/status_item.tem", {"***article***" => $notify -> {"article_id"},
@@ -97,11 +111,20 @@ sub _send_pending_notifications {
                     if($row -> {"state"} eq "error");
             }
 
+            # Update the message status depending on whether errors were encountered
             $self -> {"notify_methods"} -> {$notify -> {"name"}} -> set_notification_status($notify -> {"id"}, $failmsg ? "failed" : "sent", $failmsg);
 
         } else {
             # notification grabed by other cron job
             $self -> log("cron", "Status if notification ".$notify -> {"id"}." changed since get_pending_notifications() called");
+            $status .= $self -> {"template"} -> load_template("cron/status_item.tem", {"***article***" => $notify -> {"article_id"},
+                                                                                       "***id***"      => $notify -> {"id"},
+                                                                                       "***year***"    => $notify -> {"year_id"},
+                                                                                       "***method***"  => $notify -> {"name"},
+                                                                                       "***name***"    => "",
+                                                                                       "***state***"   => "",
+                                                                                       "***message***" => "Status changed during cron run, unable to process",
+                                                                  });
         }
     }
 
@@ -145,6 +168,7 @@ sub _process_pending {
 
     return $self -> _send_pending_notifications($pending);
 }
+
 
 # ============================================================================
 #  Interface functions
