@@ -103,4 +103,25 @@ sub get_valid_years {
 }
 
 
+## @method $ get_user_addresses($settings)
+# Fetch an array of all user addresses that match the query controlled by the
+# specified settings. The settings hash provided may contain:
+#
+# - `level`: academic level, supported values are:
+#       0 = PGR, 1 = UG Year 1, 2 = UG Year 2, 3 = UG Year 3, 4 = UG Year 4, 6 = PGT, 255 = staff
+# - `yearid`: the academic year to fetch students for (this should always be
+#       specified if level is not 255!
+# - `programme`: A comma separated list of programme names to include (if
+#                set, and a student is not on a listed programme, they are
+#                not included in the list). This may include wildcards.
+# - `exlprog`: A comma seperated list of programme names to exclude (if set,
+#              students are included as long as they are not on the specified
+#              programme(s))
+sub get_user_addresses {
+    my $self     = shift;
+    my $settings = shift;
+
+
+}
+
 1;
