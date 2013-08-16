@@ -281,9 +281,9 @@ sub _parse_recipients_addrlist {
 
     # Simple split & merge
     my @addrlist = split(/,/, $addresses);
-    foreach my $addr (@addrlist) {
+    foreach my $address (@addrlist) {
         # This will ensure that the recipient appears only once in the hash
-        $reciphash -> {$addr} = 1;
+        $reciphash -> {$address} = 1;
     }
 
     return 1;
@@ -310,7 +310,7 @@ sub _parse_recipients_database {
 
     foreach my $address (@{$addresses}) {
         # This will ensure that the recipient appears only once in the hash
-        $reciphash -> {$addr} = 1;
+        $reciphash -> {$address} = 1;
     }
 
     return 1;
