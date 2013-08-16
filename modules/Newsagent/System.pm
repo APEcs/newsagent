@@ -77,7 +77,7 @@ sub init {
                                                                      logger   => $self -> {"logger"},
                                                                      metadata => $self -> {"metadata"},
                                                                      roles    => $self -> {"roles"})
-        or return $self -> self_error("Roles system init failed: ".$Roles::errstr);
+        or return $self -> self_error("UserData system init failed: ".$Roles::errstr);
 
     return 1;
 }
