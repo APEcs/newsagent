@@ -28,45 +28,11 @@ package Newsagent::Notification::Method::Moodle;
 
 use strict;
 use base qw(Newsagent::Notification::Method); # This class is a Method module
-
+use Data::Dumper;
 
 ################################################################################
 # Model/support functions
 ################################################################################
-
-
-## @method $ set_config($args)
-# Set the current configuration to the module to the values in the provided
-# args string.
-#
-# @param args A string containing the new configuration.
-# @return true on success, undef on error
-sub set_config {
-    my $self = shift;
-    my $args = shift;
-
-    $self -> clear_error();
-    return $self -> self_error("No settings provided") if(!$args);
-
-    $self -> {"args"} = $args;
-
-    my @args = split(/;/, $self -> {"args"});
-
-    $self -> {"args"} = [];
-    foreach my $arg (@args) {
-        my @argbits = split(/,/, $arg);
-
-        my $arghash = {};
-        foreach my $argbit (@argbits) {
-            my ($name, $value) = $argbit =~ /^(\w+)=(.*)$/;
-            $arghash -> {$name} = $value;
-        }
-
-        push(@{$self -> {"args"}}, $arghash);
-    }
-
-    return 1;
-}
 
 
 ## @method $ store_article($args, $userid, $articleid, $is_draft, $recip_methods)

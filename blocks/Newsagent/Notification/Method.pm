@@ -96,6 +96,23 @@ sub set_config {
     $self -> clear_error();
     return $self -> self_error("No settings provided") if(!$args);
 
+    $self -> {"args"} = $args;
+
+    my @args = split(/;/, $self -> {"args"});
+
+    $self -> {"args"} = [];
+    foreach my $arg (@args) {
+        my @argbits = split(/,/, $arg);
+
+        my $arghash = {};
+        foreach my $argbit (@argbits) {
+            my ($name, $value) = $argbit =~ /^(\w+)=(.*)$/;
+            $arghash -> {$name} = $value;
+        }
+
+        push(@{$self -> {"args"}}, $arghash);
+    }
+
     return 1;
 }
 
@@ -301,11 +318,26 @@ sub get_notification_targets {
 
     my $targets = $reciph -> fetchall_arrayref({});
 
-    # Fetch any year data if needed
+    # Query to fetch any year data if needed
+    my $yearh = $self -> {"dbh"} -> prepare("SELECT `settings`
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"notify_matrix_cfg"}."`
+                                             WHERE `rm_id` = ?
+                                             AND `year_id` = ?");
+    foreach my $target (@{$targets}) {
+        $yearh -> execute($target -> {"id"}, $yid)
+            or return $self -> self_error("Unable to perform recipient method year data lookup: ".$self -> {"dbh"} -> errstr);
+
+        # If there are year-specific settings, override the basic ones
+        my $settings = $yearh -> fetchrow_arrayref();
+        $target -> {"settings"} = $settings -> [0]
+            if($settings && $settings -> [0]);
+
+        # Do any year id substitutions needed
+        $target -> {"settings"} =~ s/\{V_\[year_id\]\}/$yid/g;
+    }
 
     return $targets;
 }
-
 
 
 ## @method $ get_notification_dataid($articleid)
