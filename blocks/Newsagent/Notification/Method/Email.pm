@@ -25,26 +25,6 @@ use base qw(Newsagent::Notification::Method); # This class is a Method module
 use Email::Valid;
 use HTML::Entities;
 
-### FIXME FIXME FIXME ======================================================
-#
-# _send_article_to_recipients() WILL NOT WORK PROPERLY! This will *only* work
-# safely for delivery methods that do not have per*notification* data - things
-# like email will not work here.
-#
-# To fix it: remove foreach loop from _send_article_to_recipients(), invoke
-#            the method send() function directly passing it the article and
-#            list of recipients. send() needs to return an array of status
-#            messages.
-#
-#            method send functions need to handle the array themselves, based
-#            on their requirements: Moodle can simply replicate the functionality
-#            in _send_article_to_recipients(). Email needs to collect recipient
-#            addresses from all recipient rows, and then send one batch of
-#            emails.
-#
-### FIXME FIXME FIXME ======================================================
-
-
 
 ################################################################################
 # Model/support functions
@@ -100,9 +80,9 @@ sub store_article {
 
 
 ## @method $ get_article($articleid)
-# Populate the specified article hash with data specific to this method.
-# This will pull any data appropriate for the current method out of
-# the database and shove it into the article hash.
+# Fetch the method-specific data for the current method for the specified
+# article. This generates a hash that contains the method's article-specific
+# data and returns a reference to it.
 #
 # @param articleid The ID of the article to fetch the data for.
 # @return A reference to a hash containing the data on success, undef on error
@@ -121,7 +101,67 @@ sub get_article {
     $datah -> execute($dataid)
         or return $self -> self_error("Unable to perform data lookup: ".$self -> {"dbh"} -> errstr);
 
-    return $datah -> fetchrow_hashref();
+    return $datah -> fetchrow_hashref()
+        or return $self -> self_error("No email-specific settings for article $articleid");
+}
+
+
+## @method $ send($article, $recipients)
+# Attempt to send the specified article through the current method to the
+# specified recipients.
+#
+# @param article A reference to a hash containing the article to send.
+# @param recipients A reference to an array of recipient/emthod hashes.
+# @return A reference to an array of {name, state, message} hashes on success,
+#         on entry for each recipient, undef on error.
+sub send {
+    my $self       = shift;
+    my $article    = shift;
+    my $recipients = shift;
+
+    $self -> clear_error();
+
+    # First, need the email-specific data for the article
+    $article -> {"methods"} -> {"Email"} = $self -> get_article($article -> {"id"})
+        or return undef;
+
+    # Start building the recipient lists
+    my $addresses = { "reply_to" => $article -> {"methods"} -> {"Email"} -> {"reply_to"},
+                      "cc"       => {},
+                      "bcc"      => {}};
+
+    # Pull the addresses out of address lists, if specified.
+    $self -> _parse_recipients_addrlist($addresses -> {"cc"} , $article -> {"methods"} -> {"Email"} -> {"cc"});
+    $self -> _parse_recipients_addrlist($addresses -> {"bcc"}, $article -> {"methods"} -> {"Email"} -> {"bcc"});
+
+    # Process each of the recipients, parsing the configuration and then merging recipient addresses
+    foreach my $recipient (@{$recipients}) {
+        # Let the standard config handler deal with this one
+        if($self -> set_config($recipient -> {"settings"})) {
+
+            # the settings will contain a series of recipients, which may be bcc, cc, or one of the database queries
+            foreach my $arghash (@{$self -> {"args"}}) {
+                if($arghash -> {"cc"}) {
+                    $self -> _parse_recipients_addrlist($addresses -> {"cc"} , $arghash -> {"cc"});
+
+                } elsif($arghash -> {"bcc"}) {
+                    $self -> _parse_recipients_addrlist($addresses -> {"bcc"} , $arghash -> {"bcc"});
+
+                } elsif($arghash -> {"destlist"} && $arghash -> {"destlist"} =~ /^b?cc$/)  {
+                    $self -> _parse_recipients_database($addresses -> {$arghash -> {"destlist"}}, $arghash);
+
+                } else {
+                    $self -> _parse_recipients_database($addresses -> {"bcc"}, $arghash);
+                }
+            }
+
+        } else {
+            $self -> log("email:error", "No settings for recipient ".$recipient -> {"name"}.", ignoring\n");
+        }
+    }
+
+    # At this point, the addresses should have been accumulated into the appropriate hashes
+
 }
 
 
@@ -221,6 +261,59 @@ sub _get_prefixes {
     }
 
     return \@options;
+}
+
+
+## @method private $ _parse_recipients_addrlist($reciphash, $addresses)
+# Parse the comma separated list of recipients in the specified addresses into
+# the provided recipient hash.
+#
+# @param reciphash A reference to a hash of recipient addresses
+# @param addresses A string containing the comma separated addresses to parse
+# @return true on success, undef on error.
+sub _parse_recipients_addrlist {
+    my $self      = shift;
+    my $reciphash = shift;
+    my $addresses = shift;
+
+    # Nothing to do if there are no addresses
+    return 1 if(!$addresses);
+
+    # Simple split & merge
+    my @addrlist = split(/,/, $addresses);
+    foreach my $addr (@addrlist) {
+        # This will ensure that the recipient appears only once in the hash
+        $reciphash -> {$addr} = 1;
+    }
+
+    return 1;
+}
+
+
+## @method private $ _parse_recipients_addrlist($reciphash, $settings)
+# Fetch user email addresses, using the specified settings to control the query,
+# and store the list of recipients in the provided recipient hash.
+#
+# @param reciphash A reference to a hash of recipient addresses
+# @param settings  A reference to a hash of query settings supported by
+#                  Newsagent::System::UserDataBridge::fetch_user_addresses()
+# @return true on success, undef on error.
+sub _parse_recipients_database {
+    my $self      = shift;
+    my $reciphash = shift;
+    my $settings  = shift;
+
+    $self -> clear_error();
+
+    my $addresses = $self -> {"system"} -> {"userdata"} -> get_user_addresses($settings)
+        or return $self -> self_error($self -> {"system"} -> {"userdata"} -> errstr());
+
+    foreach my $address (@{$addresses}) {
+        # This will ensure that the recipient appears only once in the hash
+        $reciphash -> {$addr} = 1;
+    }
+
+    return 1;
 }
 
 
