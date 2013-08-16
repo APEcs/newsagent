@@ -131,7 +131,7 @@ sub send {
         # Store the send status.
         push(@results, {"name"    => $recipient -> {"shortname"},
                         "state"   => $result,
-                        "message" => $result eq "error" ? $self -> {"notify_methods"} -> {$notify -> {"name"}} -> errstr() : ""});
+                        "message" => $result eq "error" ? $self -> errstr() : ""});
     }
 
     return \@results;
