@@ -446,9 +446,13 @@ sub get_feed_articles {
             $imageh -> execute($article -> {"id"})
                 or return $self -> self_error("Unable to execute article image query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
 
-            $article -> {"images"} = $imageh -> fetchall_arrayref({});
+            $article -> {"images"} = [];
+            # Place the images into the images array based using the order as the array position
+            while(my $image = $imageh -> fetchrow_hashref()) {
+                $article -> {"images"} -> [$image -> {"order"}] = $image;
+            }
         }
-    }                           # if(scalar(@{$articles})) {
+    } # if(scalar(@{$articles})) {
 
     return $articles;
 }
