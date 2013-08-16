@@ -159,9 +159,9 @@ sub store_article {
 
 
 ## @method $ get_article($articleid)
-# Populate the specified article hash with data specific to this method.
-# This will pull any data appropriate for the current method out of
-# the database and shove it into the article hash.
+# Fetch the method-specific data for the current method for the specified
+# article. This generates a hash that contains the method's article-specific
+# data and returns a reference to it.
 #
 # @param articleid The ID of the article to fetch the data for.
 # @return A reference to a hash containing the data on success, undef on error
