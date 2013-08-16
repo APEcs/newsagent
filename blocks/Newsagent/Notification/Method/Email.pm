@@ -25,6 +25,26 @@ use base qw(Newsagent::Notification::Method); # This class is a Method module
 use Email::Valid;
 use HTML::Entities;
 
+### FIXME FIXME FIXME ======================================================
+#
+# _send_article_to_recipients() WILL NOT WORK PROPERLY! This will *only* work
+# safely for delivery methods that do not have per*notification* data - things
+# like email will not work here.
+#
+# To fix it: remove foreach loop from _send_article_to_recipients(), invoke
+#            the method send() function directly passing it the article and
+#            list of recipients. send() needs to return an array of status
+#            messages.
+#
+#            method send functions need to handle the array themselves, based
+#            on their requirements: Moodle can simply replicate the functionality
+#            in _send_article_to_recipients(). Email needs to collect recipient
+#            addresses from all recipient rows, and then send one batch of
+#            emails.
+#
+### FIXME FIXME FIXME ======================================================
+
+
 
 ################################################################################
 # Model/support functions
