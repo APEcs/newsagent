@@ -102,13 +102,76 @@ sub store_article {
 # ============================================================================
 #  Article send functions
 
-## @method $ send($article)
-# Attempt to send the specified article as a moodle forum post. Note that set_config()
-# must be called before this can be used correctly!
+## @method $ send($article, $recipients)
+# Attempt to send the specified article as moodle forum posts.
 #
-# @param article A reference to a hash containing the article to send.
-# @return true on success, undef on error.
+# @param article    A reference to a hash containing the article to send.
+# @param recipients A reference to an array of recipient/emthod hashes.
+# @return A reference to an array of {name, state, message} hashes on success,
+#         on entry for each recipient, undef on error.
 sub send {
+    my $self       = shift;
+    my $article    = shift;
+    my $recipients = shift;
+
+    my @results = ();
+
+    # For each recipient, invoke the send
+    foreach my $recipient (@{$recipients}) {
+        my $result = "error";
+
+        # Settings setup must work first...
+        if($self -> set_config($recipient -> {"settings"})) {
+
+            # now do the send
+            $result = "sent"
+                if($self -> _post_article($article));
+        }
+
+        # Store the send status.
+        push(@results, {"name"    => $recipient -> {"shortname"},
+                        "state"   => $result,
+                        "message" => $result eq "error" ? $self -> {"notify_methods"} -> {$notify -> {"name"}} -> errstr() : ""});
+    }
+
+    return \@results;
+}
+
+
+# ============================================================================
+#  Private functions
+
+## @method private $ _get_moodle_userid($username)
+# Obtain the moodle record for the user with the specified username.
+#
+# @param username The username of the user to find in moodle's database.
+# @return The requested user's userid, or undef if the user does not exist.
+sub _get_moodle_userid {
+    my $self     = shift;
+    my $username = shift;
+
+    $self -> clear_error();
+
+    # Pretty simple query, really...
+    my $userh = $self -> {"moodle"} -> prepare("SELECT id FROM ".$self -> get_method_config("users")."
+                                                WHERE username LIKE ?");
+    $userh -> execute($username)
+        or return $self -> self_error("Method::Moodle: Unable to execute user query: ".$self -> {"moodle"} -> errstr);
+
+    my $user = $userh -> fetchrow_arrayref();
+
+    return $user ? $user -> [0] : undef;
+}
+
+
+## @method private $ _post_article($article)
+# Attempt to post the article specified to moodle. Note that set_config() must
+# be called before calling this to ensure that the forum and course information
+# has been set up correctly.
+#
+# @param article A reference to the article to post to moodle.
+# @return true on success, undef on error.
+sub _post_article {
     my $self    = shift;
     my $article = shift;
 
@@ -188,33 +251,5 @@ sub send {
 
     return 1;
 }
-
-
-# ============================================================================
-#  Private functions
-
-## @method private $ _get_moodle_userid($username)
-# Obtain the moodle record for the user with the specified username.
-#
-# @param username The username of the user to find in moodle's database.
-# @return The requested user's userid, or undef if the user does not exist.
-sub _get_moodle_userid {
-    my $self     = shift;
-    my $username = shift;
-
-    $self -> clear_error();
-
-    # Pretty simple query, really...
-    my $userh = $self -> {"moodle"} -> prepare("SELECT id FROM ".$self -> get_method_config("users")."
-                                                WHERE username LIKE ?");
-    $userh -> execute($username)
-        or return $self -> self_error("Method::Moodle: Unable to execute user query: ".$self -> {"moodle"} -> errstr);
-
-    my $user = $userh -> fetchrow_arrayref();
-
-    return $user ? $user -> [0] : undef;
-}
-
-
 
 1;

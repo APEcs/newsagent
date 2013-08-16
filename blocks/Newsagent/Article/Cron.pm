@@ -47,28 +47,7 @@ sub _send_article_to_recipients {
     my $recipmeths = $self -> {"notify_methods"} -> {$notify -> {"name"}} -> get_notification_targets($notify -> {"id"})
         or return $self -> self_error($self -> {"notify_methods"} -> {$notify -> {"name"}} -> errstr());
 
-    my @results = ();
-
-    # For each recipient, invoke the send
-    foreach my $recipient (@{$recipmeths}) {
-        my $result = "error";
-
-        # Settings setup must work first...
-        if($self -> {"notify_methods"} -> {$notify -> {"name"}} -> set_config($recipient -> {"settings"})) {
-
-            # now do the send
-            if($self -> {"notify_methods"} -> {$notify -> {"name"}} -> send($article)) {
-                $result = "sent";
-            }
-        }
-
-        # Store the send status.
-        push(@results, {"name"    => $recipient -> {"shortname"},
-                        "state"   => $result,
-                        "message" => $result eq "error" ? $self -> {"notify_methods"} -> {$notify -> {"name"}} -> errstr() : ""});
-    }
-
-    return \@results;
+    return $self -> {"notify_methods"} -> {$notify -> {"name"}} -> send($article, $recipmeths);
 }
 
 

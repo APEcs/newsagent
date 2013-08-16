@@ -174,18 +174,30 @@ sub get_article {
 }
 
 
-## @method $ send($article)
-# Attempt to send the specified article through the current method.
+## @method $ send($article, $recipients)
+# Attempt to send the specified article through the current method to the
+# specified recipients.
 #
 # @param article A reference to a hash containing the article to send.
-# @return true on success, undef on error.
+# @param recipients A reference to an array of recipient/emthod hashes.
+# @return A reference to an array of {name, state, message} hashes on success,
+#         on entry for each recipient, undef on error.
 sub send {
-    my $self    = shift;
-    my $article = shift;
+    my $self       = shift;
+    my $article    = shift;
+    my $recipients = shift;
 
     $self -> clear_error();
 
-    return $self -> self_error("No implementation of send() for this method");
+    my @results = ();
+    foreach my $recipient (@{$recipients}) {
+        # Store the send status.
+        push(@results, {"name"    => $recipient -> {"shortname"},
+                        "state"   => "error",
+                        "message" => "No implementation of send() for this method"});
+    }
+
+    return \@results;
 }
 
 
