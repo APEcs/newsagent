@@ -47,7 +47,8 @@ sub _send_article_to_recipients {
     my $recipmeths = $self -> {"notify_methods"} -> {$notify -> {"name"}} -> get_notification_targets($notify -> {"id"})
         or return $self -> self_error($self -> {"notify_methods"} -> {$notify -> {"name"}} -> errstr());
 
-    return $self -> {"notify_methods"} -> {$notify -> {"name"}} -> send($article, $recipmeths);
+    return $self -> {"notify_methods"} -> {$notify -> {"name"}} -> send($article, $recipmeths)
+        or return $self -> self_error($self -> {"notify_methods"} -> {$notify -> {"name"}} -> errstr());
 }
 
 
@@ -71,8 +72,18 @@ sub _send_pending_notifications {
             $self -> {"notify_methods"} -> {$notify -> {"name"}} -> set_notification_status($notify -> {"id"}, "sending");
 
             # Invoke the sender to do the actual work of dispatching the messages
-            my $result = $self -> _send_article_to_recipients($notify)
-                or last;
+            my $result = $self -> _send_article_to_recipients($notify);
+            if(!$result) {
+                $status .= $self -> {"template"} -> load_template("cron/status_item.tem", {"***article***" => $notify -> {"article_id"},
+                                                                                           "***id***"      => $notify -> {"id"},
+                                                                                           "***year***"    => $notify -> {"year_id"},
+                                                                                           "***method***"  => $notify -> {"name"},
+                                                                                           "***name***"    => "",
+                                                                                           "***state***"   => "error",
+                                                                                           "***message***" => $self -> errstr(),
+                                                                  });
+                last;
+            }
 
             # Go through the results from the send code, converting to something usable
             # in the page.
