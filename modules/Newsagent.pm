@@ -88,15 +88,15 @@ sub generate_errorbox {
 
     $self -> log("error:fatal", $message);
 
-    my $message = $self -> {"template"} -> message_box($title,
-                                                       "error",
-                                                       "{L_FATAL_ERROR_SUMMARY}",
-                                                       $message,
-                                                       undef,
-                                                       "errorcore",
-                                                       [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
-                                                          "colour"  => "blue",
-                                                          "action"  => "location.href='{V_[scriptpath]}'"} ]);
+    $message = $self -> {"template"} -> message_box($title,
+                                                    "error",
+                                                    "{L_FATAL_ERROR_SUMMARY}",
+                                                    $message,
+                                                    undef,
+                                                    "errorcore",
+                                                    [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
+                                                       "colour"  => "blue",
+                                                       "action"  => "location.href='{V_[scriptpath]}'"} ]);
     my $userbar = $self -> {"module"} -> load_module("Newsagent::Userbar");
 
     # Build the error page...
