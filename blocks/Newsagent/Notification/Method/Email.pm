@@ -25,6 +25,8 @@ use base qw(Newsagent::Notification::Method); # This class is a Method module
 use Email::Valid;
 use HTML::Entities;
 
+use Data::Dumper;
+
 
 ################################################################################
 # Model/support functions
@@ -136,6 +138,8 @@ sub send {
 
     # Process each of the recipients, parsing the configuration and then merging recipient addresses
     foreach my $recipient (@{$recipients}) {
+        print STDERR "checking recipient with settings ".$recipient -> {"settings"};
+
         # Let the standard config handler deal with this one
         if($self -> set_config($recipient -> {"settings"})) {
 
@@ -162,6 +166,8 @@ sub send {
 
     # At this point, the addresses should have been accumulated into the appropriate hashes
 
+    print STDERR Dumper($addresses);
+    return undef;
 }
 
 

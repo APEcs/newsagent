@@ -23,6 +23,7 @@ use strict;
 use base qw(Webperl::SystemModule); # This class extends the system module
 use v5.12;
 
+use Data::Dumper;
 
 # ============================================================================
 #  Constructor
@@ -103,25 +104,125 @@ sub get_valid_years {
 }
 
 
+## @method private $ _add_multiparam($settings, $params, $table, $field, $type, $mode)
+# Construct a potentially multi-parameter where clause based on the spcified settings.
+# This creates a where clause that compares the specified table and field to each
+# of the comma separated values in the settings.
+#
+# @param settings A comma separated string of values to use in the where clause.
+# @param params   A reference to an array to store bind variable parameters in.
+# @param table    The name of the table to apply there where clauses in.
+# @param field    The name of the field in the table to perform the where on.
+# @param type     The type of comparison to use, defaults to "=".
+# @param mode     The where mode, defaults to "AND" (all values in the settings must
+#                 match), or "OR" (at least one of the settings must match).
+# @return A string containing the where clause text.
+sub _add_multiparam {
+    my $self      = shift;
+    my $settings  = shift;
+    my $params    = shift;
+    my $table     = shift;
+    my $field     = shift;
+    my $type      = shift || "=";
+    my $mode      = shift || "AND";
+
+    my @entries = split(/,/, $settings);
+    my @wheres = ();
+    foreach my $entry (@entries) {
+        push(@wheres, "`$table`.`$field` $type ?");
+        push(@{$params}, $entry);
+    }
+
+    my $where = join(" $mode ", @wheres);
+
+    return "AND ($where) ";
+}
+
+
 ## @method $ get_user_addresses($settings)
 # Fetch an array of all user addresses that match the query controlled by the
 # specified settings. The settings hash provided may contain:
 #
-# - `level`: academic level, supported values are:
-#       0 = PGR, 1 = UG Year 1, 2 = UG Year 2, 3 = UG Year 3, 4 = UG Year 4, 6 = PGT, 255 = staff
 # - `yearid`: the academic year to fetch students for (this should always be
-#       specified if level is not 255!
-# - `programme`: A comma separated list of programme names to include (if
-#                set, and a student is not on a listed programme, they are
-#                not included in the list). This may include wildcards.
-# - `exlprog`: A comma seperated list of programme names to exclude (if set,
+#       specified.
+# - `level`: academic level, seperate multiple levels with commas, supported values are:
+#       0 = PGR, 1 = UG Year 1, 2 = UG Year 2, 3 = UG Year 3, 4 = UG Year 4, 6 = PGT
+# - `plan`: A comma separated list of plan names to include (if
+#           set, and a student is not on a listed programme, they are
+#           not included in the list). This may include wildcards.
+# - `exlplan`: A comma seperated list of plan names to exclude (if set,
 #              students are included as long as they are not on the specified
-#              programme(s))
+#              plan(s))
+# - `course`: A comma separated list of courses the student must be in. Note that
+#             the student must be in all of the courses.
 sub get_user_addresses {
     my $self     = shift;
     my $settings = shift;
 
+    my $tables  = '`'.$self -> {"settings"} -> {"userdata"} -> {"users"}.'` AS `u`';
+    my @params = ();
+    my $where  = "";
 
+    # All students at a given level in a given year
+    if(defined($settings -> {"level"}) && defined($settings -> {"yearid"})) {
+        $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"user_years"}."` AS l";
+        $where  .= "`u`.`id` = `l`.`student_id` AND `l`.`year_id` = ? ";
+        push(@params, $settings -> {"yearid"});
+
+        $where .= $self -> _add_multiparam($settings -> {"level"}, \@params, "l", "level")
+
+    # All students in a given year
+    } elsif(defined($settings -> {"yearid"})) {
+        $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"user_years"}."` AS l";
+        $where  .= "`u`.`id` = `l`.`student_id` AND `l`.`year_id` = ? ";
+        push(@params, $settings -> {"yearid"});
+    }
+
+    # plan filtering, inclusive
+    if(defined($settings -> {"plan"})) {
+        $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"acplans"}."` AS `pl`";
+        $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"user_plans"}."` AS `p`";
+        $where  .= "AND" if($where);
+        $where  .= " `p`.`student_id` = `u`.`id` AND `pl`.`id` = `p`.`plan_id` ";
+
+        $where .= $self -> _add_multiparam($settings -> {"plan"}, \@params, "pl", "name", "LIKE");
+
+        # Allow for exclusion at the same time as inclusion.
+        $where .= $self -> _add_multiparam($settings -> {"exlplan"}, \@params, "pl", "name", "NOT LIKE")
+            if(defined($settings -> {"exlplan"}));
+
+    } elsif(defined($settings -> {"exlplan"})) {
+        $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"acplans"}."` AS `pl`";
+        $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"user_plans"}."` AS `p`";
+        $where  .= "AND" if($where);
+        $where  .= " `p`.`student_id` = `u`.`id` AND `pl`.`id` = `p`.`plan_id` ";
+
+        $where .= $self -> _add_multiparam($settings -> {"exlplan"}, \@params, "pl", "name", "NOT LIKE");
+    }
+
+    if(defined($settings -> {"course"}) && defined($settings -> {"yearid"})) {
+        $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"courses"}."` AS `c`";
+        $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"user_course"}."` AS `uc`";
+        $where  .= "AND `uc`.`student_id` = `u`.`id` AND `c`.`id` = `uc`.`course_id` AND `uc`.`year_id` = ? ";
+        push(@params, $settings -> {"yearid"});
+
+        $where .= $self -> _add_multiparam($settings -> {"course"}, \@params, "c", "course_id", "LIKE", "OR");
+    }
+
+    my $query = "SELECT `u`.`email`
+                 FROM $tables
+                 WHERE $where";
+    print STDERR $query."\n".Dumper(\@params);
+    my $queryh = $self -> {"udata_dbh"} -> prepare($query);
+    $queryh -> execute(@params)
+        or return $self -> self_error("Unable to execute student lookup: ".$self -> {"udata_dbh"} -> errstr);
+
+    my @emails = ();
+    while(my $row = $queryh -> fetchrow_arrayref()) {
+        push(@emails, $row -> [0]);
+    }
+
+    return \@emails;
 }
 
 1;

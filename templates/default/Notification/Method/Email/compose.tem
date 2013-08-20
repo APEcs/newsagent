@@ -11,7 +11,7 @@
             </dl>
             <dl class="input iblock">
                 <dt><label for="email-replyto">{L_METHOD_EMAIL_REPLYTO}</label> {L_FORM_OPTIONAL}</dt>
-                <dd><input class="twocol" type="text" name="email-replyto" id="email-replyto" size="100" title="{L_METHOD_EMAIL_REPLYTO}" value="***email-replyto***" /></dd>
+                <dd><input class="twocol" type="text" name="email-reply_to" id="email-replyto" size="100" title="{L_METHOD_EMAIL_REPLYTO}" value="***email-replyto***" /></dd>
             </dl>
             <dl class="input iblock">
                 <dt><label for="email-prefix">{L_METHOD_EMAIL_PREFIX}</label></dt>

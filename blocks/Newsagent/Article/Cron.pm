@@ -26,7 +26,6 @@ use v5.12;
 
 use Newsagent::System::Matrix;
 
-
 ## @method private $ _send_article_to_recipients($notify)
 # Send the specified notification to its recipients. This traverses the list
 # of recipients for the notification, updating the appropriate method with the
@@ -44,7 +43,7 @@ sub _send_article_to_recipients {
         or return $self -> self_error($self -> {"article"} -> errstr());
 
     # Now fetch the list of recipient/method rows this notification is going to
-    my $recipmeths = $self -> {"notify_methods"} -> {$notify -> {"name"}} -> get_notification_targets($notify -> {"id"})
+    my $recipmeths = $self -> {"notify_methods"} -> {$notify -> {"name"}} -> get_notification_targets($notify -> {"id"}, $notify -> {"year_id"})
         or return $self -> self_error($self -> {"notify_methods"} -> {$notify -> {"name"}} -> errstr());
 
     return $self -> {"notify_methods"} -> {$notify -> {"name"}} -> send($article, $recipmeths)

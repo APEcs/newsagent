@@ -98,11 +98,11 @@ sub set_config {
 
     $self -> {"args"} = $args;
 
-    my @args = split(/;/, $self -> {"args"});
+    my @args = split(/\|/, $self -> {"args"});
 
     $self -> {"args"} = [];
     foreach my $arg (@args) {
-        my @argbits = split(/,/, $arg);
+        my @argbits = split(/\;/, $arg);
 
         my $arghash = {};
         foreach my $argbit (@argbits) {
@@ -333,7 +333,7 @@ sub get_notification_targets {
             if($settings && $settings -> [0]);
 
         # Do any year id substitutions needed
-        $target -> {"settings"} =~ s/\{V_\[year_id\]\}/$yid/g;
+        $target -> {"settings"} =~ s/\{V_\[yearid\]\}/$yid/g;
     }
 
     return $targets;
