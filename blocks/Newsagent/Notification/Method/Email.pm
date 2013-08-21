@@ -24,8 +24,67 @@ use strict;
 use base qw(Newsagent::Notification::Method); # This class is a Method module
 use Email::Valid;
 use HTML::Entities;
+use HTML::WikiConverter;
+use Encode;
+use Email::MIME;
+use Email::MIME::CreateHTML;
+use Email::Sender::Simple qw(sendmail);
+use Email::Sender::Transport::SMTP;
+use Email::Sender::Transport::SMTP::Persistent;
+use Try::Tiny;
 
 use Data::Dumper;
+
+
+## @cmethod Newsagent::Notification::Method::Email new(%args)
+# Create a new Email object. This will create an object
+# that may be used to send messages to recipients over SMTP.
+#
+# @param args A hash of arguments to initialise the Email
+#             object with.
+# @return A new Email object.
+sub new {
+    my $invocant = shift;
+    my $class    = ref($invocant) || $invocant;
+    my $self     = $class -> SUPER::new(@_)
+        or return undef;
+
+    # Make local copies of the config for readability
+    # Arguments for Email::Sender::Transport::SMTP(::Persistent)
+    $self -> {"host"}     = $self -> get_method_config("smtp_host");
+    $self -> {"port"}     = $self -> get_method_config("smtp_port");
+    $self -> {"ssl"}      = $self -> get_method_config("smtp_secure");
+    $self -> {"username"} = $self -> get_method_config("username");
+    $self -> {"password"} = $self -> get_method_config("password");
+
+    # Should persistent SMTP be used?
+    $self -> {"persist"}  = $self -> get_method_config("persist");
+
+    # Should the sender be forced (ie: always use the system-specified sender, even if the message has
+    # an explicit sender. This should be the address to set as the sender.
+    $self -> {"force_sender"} = $self -> get_method_config("force_sender");
+
+    # The address to use as the envelope sender.
+    $self -> {"env_sender"}   = $self -> {"settings"} -> {"config"} -> {"Core:envelope_address"};
+
+    # set up persistent STMP if needed
+    if($self -> {"persist"}) {
+        eval { $self -> {"smtp"} = Email::Sender::Transport::SMTP::Persistent -> new($self -> _build_smtp_args()); };
+        return SystemModule::set_error("SMTP Initialisation failed: $@") if($@);
+    }
+
+    return $self;
+}
+
+
+## @method void DESTROY()
+# Destructor method to clean up persistent SMTP if it is in use.
+sub DESTROY {
+    my $self = shift;
+
+    $self -> {"smtp"} -> disconnect()
+        if($self -> {"persist"} && $self -> {"smtp"});
+}
 
 
 ################################################################################
@@ -129,33 +188,36 @@ sub send {
 
     # Start building the recipient lists
     my $addresses = { "reply_to" => $article -> {"methods"} -> {"Email"} -> {"reply_to"},
-                      "cc"       => {},
-                      "bcc"      => {}};
+                      "outgoing" => { "cc"       => {},
+                                      "bcc"      => {} },
+                      "debug"    => { "cc"       => {},
+                                      "bcc"      => {} },
+    };
 
     # Pull the addresses out of address lists, if specified.
-    $self -> _parse_recipients_addrlist($addresses -> {"cc"} , $article -> {"methods"} -> {"Email"} -> {"cc"});
-    $self -> _parse_recipients_addrlist($addresses -> {"bcc"}, $article -> {"methods"} -> {"Email"} -> {"bcc"});
+    $self -> _parse_recipients_addrlist($addresses -> {"outgoing"} -> {"cc"} , $article -> {"methods"} -> {"Email"} -> {"cc"});
+    $self -> _parse_recipients_addrlist($addresses -> {"outgoing"} -> {"bcc"}, $article -> {"methods"} -> {"Email"} -> {"bcc"});
 
     # Process each of the recipients, parsing the configuration and then merging recipient addresses
     foreach my $recipient (@{$recipients}) {
-        print STDERR "checking recipient with settings ".$recipient -> {"settings"};
-
         # Let the standard config handler deal with this one
         if($self -> set_config($recipient -> {"settings"})) {
 
             # the settings will contain a series of recipients, which may be bcc, cc, or one of the database queries
             foreach my $arghash (@{$self -> {"args"}}) {
+                my $addrmode = $arghash -> {"debug"} ? "debug" : "outgoing";
+
                 if($arghash -> {"cc"}) {
-                    $self -> _parse_recipients_addrlist($addresses -> {"cc"} , $arghash -> {"cc"});
+                    $self -> _parse_recipients_addrlist($addresses -> {$addrmode} -> {"cc"} , $arghash -> {"cc"});
 
                 } elsif($arghash -> {"bcc"}) {
-                    $self -> _parse_recipients_addrlist($addresses -> {"bcc"} , $arghash -> {"bcc"});
+                    $self -> _parse_recipients_addrlist($addresses -> {$addrmode} -> {"bcc"} , $arghash -> {"bcc"});
 
                 } elsif($arghash -> {"destlist"} && $arghash -> {"destlist"} =~ /^b?cc$/)  {
-                    $self -> _parse_recipients_database($addresses -> {$arghash -> {"destlist"}}, $arghash);
+                    $self -> _parse_recipients_database($addresses -> {$addrmode} -> {$arghash -> {"destlist"}}, $arghash);
 
                 } else {
-                    $self -> _parse_recipients_database($addresses -> {"bcc"}, $arghash);
+                    $self -> _parse_recipients_database($addresses -> {$addrmode} -> {"bcc"}, $arghash);
                 }
             }
 
@@ -164,10 +226,38 @@ sub send {
         }
     }
 
-    # At this point, the addresses should have been accumulated into the appropriate hashes
+    # If any debug addresses have been set, force debugging mode
+    $addresses -> {"use_debugmode"} = (scalar(keys(%{$addresses -> {"debug"} -> {"cc"}})) || scalar(keys(%{$addresses -> {"debug"} -> {"bcc"}})));
+    $self -> _move_outgoing_to_debug($addresses)
+        if($addresses -> {"use_debugmode"});
 
-    print STDERR Dumper($addresses);
-    return undef;
+    # At this point, the addresses should have been accumulated into the appropriate hashes
+    # Convert the article into something nicer to throw around
+    my $author = $self -> {"session"} -> get_user_byid($article -> {"creator_id"})
+        or return $self -> self_error("Unable to obtain author information for message ".$article -> {"id"});
+
+    my $email_data = { "addresses" => $addresses,
+                       "debug"     => $addresses -> {"use_debugmode"},
+                       "subject"   => $article -> {"title"},
+                       "html_body" => $article -> {"article"},
+                       "text_body" => $self -> _make_markdown_body($article -> {"article"}),
+                       "from"      => $author -> {"email"},
+                       "id"        => $article -> {"id"}
+    };
+
+    print STDERR Dumper($email_data);
+
+    my $status = $self -> _send_emails($email_data);
+    my @results = ();
+    foreach my $recipient (@{$recipients}) {
+
+        # Store the send status.
+        push(@results, {"name"    => $recipient -> {"shortname"},
+                        "state"   => $status,
+                        "message" => $status eq "error" ? $self -> errstr() : ""});
+    }
+
+    return \@results;
 }
 
 
@@ -323,6 +413,46 @@ sub _parse_recipients_database {
 }
 
 
+## @method private void _move_outgoing_to_debug($addresses)
+# Move any outgoing addresses into the corresponding debug addresses.
+#
+# @param addresses A reference to the addresses hash
+sub _move_outgoing_to_debug {
+    my $self      = shift;
+    my $addresses = shift;
+
+    foreach my $mode ("cc", "bcc") {
+        # Copy the addresses
+        foreach my $addr (keys(%{$addresses -> {"outgoing"} -> {$mode}})) {
+            $addresses -> {"debug"} -> {$mode} -> {$addr} = 1;
+        }
+
+        # nuke the outgoing
+        $addresses -> {"outgoing"} -> {$mode} = {};
+    }
+}
+
+
+## @method private % _build_smtp_args()
+# Build the argument hash to pass to the SMTP constructor.
+#
+# @return A hash of arguments to pass to the Email::Sender::Transport::SMTP constructor
+sub _build_smtp_args {
+    my $self = shift;
+
+    my %args = (host => $self -> {"host"},
+                port => $self -> {"port"},
+                ssl  => $self -> {"ssl"} || 0);
+
+    if($self -> {"username"} && $self -> {"password"}) {
+        $args{"sasl_username"} = $self -> {"username"};
+        $args{"sasl_password"} = $self -> {"password"};
+    }
+
+    return %args;
+}
+
+
 ################################################################################
 #  Private view/controller functions
 ################################################################################
@@ -372,6 +502,103 @@ sub _validate_emails {
         # return the modified email string
         return (join(',', @addresses), undef);
     }
+}
+
+
+## @method private $ _make_markdown_body($html)
+# Convert the specified html into markdown text.
+#
+# @param html The HTML to convert to markdown.
+# @return The markdown version of the text.
+sub _make_markdown_body {
+    my $self = shift;
+    my $html = shift;
+
+    my $converter = new HTML::WikiConverter(dialect => 'Markdown',
+                                            link_style => 'inline',
+                                            image_tag_fallback => 0);
+    return $converter -> html2wiki($html);
+
+}
+
+
+##
+sub _send_email_message {
+    my $self  = shift;
+    my $email = shift;
+
+    # Eeech, HTML email ;.;
+    my $outgoing = Email::MIME -> create_html(header    => $email -> {"header"},
+                                              body      => $email -> {"html_body"},
+                                              embed     => 0,
+                                              text_body => $email -> {"text_body"});
+
+    # Fly! Fly, my pretties!
+    try {
+        sendmail($outgoing, { from      => $self -> {"env_sender"},
+                              transport => $self -> {"smtp"}});
+    } catch {
+        # ... ooor, crash into the ground painfully.
+        return $self -> self_error("Delivery of email failed: $_");
+    };
+
+    return 1;
+}
+
+
+## @method private $ _send_emails($email)
+#
+sub _send_emails {
+    my $self  = shift;
+    my $email = shift;
+
+    my $outmode = $email -> {"debug"} ? "debug" : "outgoing";
+
+    # Go through cc/bcc, chunking the sends if needed. This is slightly wasteful if there are only a few
+    # stray ccs or bccs, but it makes like a lot easier
+    foreach my $mode ("cc", "bcc") {
+        my @addresses = keys(%{$email -> {"addresses"} -> {$outmode} -> {$mode}});
+        my $limit = $self -> get_method_config("recipient_limit") || 25;
+
+        # while there are still addresses left to process in this mode...
+        while(scalar(@addresses)) {
+            # grab the first "limit" chunk of them, and convert to a comma separated string to
+            # pass to the email sender
+            my @recipients = splice(@addresses, 0, $limit);
+            my $recipstr   = join(",", @recipients);
+
+            my $text_body = $email -> {"text_body"};
+            $text_body .= "DEBUG: Email would be ".$mode."d to ".scalar(@recipients)." addresses. Address data is: $recipstr"
+                if($email -> {"debug"});
+
+            my $header;
+            if($email -> {"debug"}) {
+                $header = [ "To"      => $email -> {"from"},
+                            "From"    => $email -> {"from"},
+                            "Subject" => $email -> {"subject"},
+                          ];
+            } else {
+                $self -> self_error("No real sending yet!");
+                return "error";
+
+                $header = [ ucfirst($mode) => $recipstr,
+                            "From"         => $email -> {"from"},
+                            "Subject"      => $email -> {"subject"},
+                          ];
+                push(@{$header}, "To", $email -> {"from"})
+                    if($self -> get_method_config("require_to"));
+            }
+
+            $self -> _send_email_message({"header"    => $header,
+                                          "html_body" => $email -> {"html_body"},
+                                          "text_body" => $text_body,
+                                          "id"        => $email -> {"id"},
+                                         })
+                or return "error";
+        }
+    }
+
+    return "sent";
 }
 
 1;

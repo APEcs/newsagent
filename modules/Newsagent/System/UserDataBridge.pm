@@ -23,8 +23,6 @@ use strict;
 use base qw(Webperl::SystemModule); # This class extends the system module
 use v5.12;
 
-use Data::Dumper;
-
 # ============================================================================
 #  Constructor
 
@@ -212,7 +210,6 @@ sub get_user_addresses {
     my $query = "SELECT `u`.`email`
                  FROM $tables
                  WHERE $where";
-    print STDERR $query."\n".Dumper(\@params);
     my $queryh = $self -> {"udata_dbh"} -> prepare($query);
     $queryh -> execute(@params)
         or return $self -> self_error("Unable to execute student lookup: ".$self -> {"udata_dbh"} -> errstr);
