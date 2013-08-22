@@ -522,10 +522,23 @@ sub _make_markdown_body {
 }
 
 
-##
+## @method private $ _send_email_message($email)
+# Send the specified email to its recipients. This constructs the email from the
+# header, html body, and text body provided and sends it.
+#
+# @param email A reference to a hash containing the email to send. Must contain
+#              `header` (a reference to an array of header fields to set),
+#              `html_body` (the html version of the text to send), and `text_body`
+#              containing the text version.
+# @return true on success, undef on error.
 sub _send_email_message {
     my $self  = shift;
     my $email = shift;
+
+    if(!$self -> {"persist"}) {
+        eval { $self -> {"smtp"} = Email::Sender::Transport::SMTP -> new($self -> _build_smtp_args()); };
+        return $self -> self_error("SMTP Initialisation failed: $@") if($@);
+    }
 
     # Eeech, HTML email ;.;
     my $outgoing = Email::MIME -> create_html(header    => $email -> {"header"},
@@ -547,7 +560,14 @@ sub _send_email_message {
 
 
 ## @method private $ _send_emails($email)
+# Send the message to the recipients, chunking the dispatch into multiple emails if
+# too many recipients have been specified to send in a single message.
 #
+# @param email A reference to a hash containing the email text body, html body,
+#              and recipients. If 'debug' is set, the emails are sent to the
+#              user that composed the email, along with debugging information,
+#              rather than to the real recipients.
+# @return "sent" on success, "error" on error.
 sub _send_emails {
     my $self  = shift;
     my $email = shift;
@@ -578,8 +598,8 @@ sub _send_emails {
                             "Subject" => $email -> {"subject"},
                           ];
             } else {
-                $self -> self_error("No real sending yet!");
-                return "error";
+#                $self -> self_error("No real sending yet!");
+#                return "error";
 
                 $header = [ ucfirst($mode) => $recipstr,
                             "From"         => $email -> {"from"},

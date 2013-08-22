@@ -26,6 +26,46 @@ use v5.12;
 
 use Newsagent::System::Matrix;
 
+
+## @method private $ _notify_author($notify, $result)
+# Send an email to the author of the article telling them that the status of
+# their message.
+#
+# @param notify A reference to the notification
+# @param result A reference to an array of results.
+# @return true on success, undef on error
+sub _notify_author {
+    my $self   = shift;
+    my $notify = shift;
+    my $result = shift;
+
+    $self -> clear_error();
+
+    my $article = $self -> {"article"} -> get_article($notify -> {"article_id"})
+        or return $self -> self_error($self -> {"article"} -> errstr());
+
+    my $author = $self -> {"session"} -> get_user_byid($article -> {"creator_id"})
+        or return $self -> self_error("Unable to obtain author information for message ".$article -> {"id"});
+
+    my $status = "";
+    foreach my $row (@{$result}) {
+        $status .= $self -> {"template"} -> load_template("cron/notify_email_row.tem", {"***name***"    => $row -> {"name"},
+                                                                                        "***state***"   => $row -> {"state"},
+                                                                                        "***message***" => $row -> {"message"} || "No errors reported",
+                                                          });
+    }
+
+    my $status =  $self -> {"messages"} -> queue_message(subject => $self -> {"template"} -> replace_langvar("CRON_NOTIFY_STATUS", {"***article***" => $article -> {"title"}}),
+                                                         message => $self -> {"template"} -> load_template("cron/notify_email.tem",
+                                                                                                           {"***article***" => $article -> {"title"},
+                                                                                                            "***status***"  => $status,
+                                                                                                           }),
+                                                         recipients       => [ $author -> {"user_id"} ],
+                                                         send_immediately => 1);
+    return ($status ? undef : $self -> {"messages"} -> errstr());
+}
+
+
 ## @method private $ _send_article_to_recipients($notify)
 # Send the specified notification to its recipients. This traverses the list
 # of recipients for the notification, updating the appropriate method with the
@@ -70,6 +110,8 @@ sub _send_pending_notifications {
             # Mark as sending ASAP to prevent grabbing by another cron job on long jobs
             $self -> {"notify_methods"} -> {$notify -> {"name"}} -> set_notification_status($notify -> {"id"}, "sending");
 
+            $self -> log("cron", "Starting delivery of notification ".$notify -> {"id"});
+
             # Invoke the sender to do the actual work of dispatching the messages
             my $result = $self -> _send_article_to_recipients($notify);
             if(!$result) {
@@ -98,14 +140,20 @@ sub _send_pending_notifications {
                                                                   });
                 $failmsg .= $row -> {"name"}.": ".$row -> {"message"}."\n"
                     if($row -> {"state"} eq "error");
+
+                $self -> log("cron", "Status of notification ".$notify -> {"id"}.", ".$row -> {"name"}." = ".$row -> {"state"}." (".($row -> {"message"} || "").")");
             }
+
+            # notify the author
+            $self -> _notify_author($notify, $result);
 
             # Update the message status depending on whether errors were encountered
             $self -> {"notify_methods"} -> {$notify -> {"name"}} -> set_notification_status($notify -> {"id"}, $failmsg ? "failed" : "sent", $failmsg);
+            $self -> log("cron", "Finished delivery of notification ".$notify -> {"id"});
 
         } else {
             # notification grabed by other cron job
-            $self -> log("cron", "Status if notification ".$notify -> {"id"}." changed since get_pending_notifications() called");
+            $self -> log("cron", "Status of notification ".$notify -> {"id"}." changed since get_pending_notifications() called");
             $status .= $self -> {"template"} -> load_template("cron/status_item.tem", {"***article***" => $notify -> {"article_id"},
                                                                                        "***id***"      => $notify -> {"id"},
                                                                                        "***year***"    => $notify -> {"year_id"},

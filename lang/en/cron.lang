@@ -45,3 +45,10 @@ CRONJOB_STATUS    = Notification delivery status
 CRONJOB_STATE     = Status
 CRONJOB_NAME      = Recipient
 CRONJOB_MESSAGE   = Message
+
+
+CRON_NOTIFY_STATUS  = Notifications for '***article***'
+CRON_NOTIFY_INTRO   = Dear ***realname***,
+CRON_NOTIFY_ABOUT   = This email contains information about the notifications sent by Newsagent for your recent article
+CRON_NOTIFY_STATES  = The statuses of the notifications are:
+CRON_NOTIFY_HELPME  = If you need help with this message, please contact
