@@ -57,8 +57,10 @@ sub _notify_author {
 
     my $status =  $self -> {"messages"} -> queue_message(subject => $self -> {"template"} -> replace_langvar("CRON_NOTIFY_STATUS", {"***article***" => $article -> {"title"}}),
                                                          message => $self -> {"template"} -> load_template("cron/notify_email.tem",
-                                                                                                           {"***article***" => $article -> {"title"},
-                                                                                                            "***status***"  => $status,
+                                                                                                           {"***article***"  => $article -> {"title"},
+                                                                                                            "***status***"   => $status,
+                                                                                                            "***realname***" => $author -> {"fullname"},
+                                                                                                            "***method***"   => $notify -> {"name"},
                                                                                                            }),
                                                          recipients       => [ $author -> {"user_id"} ],
                                                          send_immediately => 1);
