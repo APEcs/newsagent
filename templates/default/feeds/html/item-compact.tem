@@ -1,4 +1,4 @@
-<li class="newsagent-compact">
+<li class="newsagent-compact" onclick="location.href='***link***'">
     <dl>
         <dt><a href="***link***">***date***</a></dt>
         <dd>***title***</dd>
