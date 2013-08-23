@@ -71,6 +71,9 @@ sub get_user_matrix {
 
     $self -> self_error();
 
+    $self -> log("debug", "In get_user_matrix")
+        if($self -> {"settings"} -> {"config"} -> {"debug"});
+
     return $self -> _build_matrix($userid);
 }
 
@@ -235,8 +238,13 @@ sub _build_matrix {
 
             # Does the user have permission to access the method for the recipient?
             if($self -> {"roles"} -> user_has_capability($row -> {"metadata_id"}, $userid, "notify")) {
+                $self -> log("debug", "User $userid has notify permission for ".$row -> {"id"})
+                    if($self -> {"settings"} -> {"config"} -> {"debug"});
+
                 # If the user has permission, store it
                 push(@{$methods}, $row);
+            } elsif($self -> {"settings"} -> {"config"} -> {"debug"}) {
+                $self -> log("debug", "User $userid noes not have notify permission for ".$row -> {"id"});
             }
         }
 
