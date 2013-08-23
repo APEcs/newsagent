@@ -98,6 +98,7 @@ sub send {
         push(@results, {"name"    => $recipient -> {"shortname"},
                         "state"   => $result,
                         "message" => $result eq "error" ? $self -> errstr() : ""});
+        $self -> log("Method::Moodle", "Send of article ".$article -> {"id"}." to ".$recipient -> {"shortname"}.": $result (".($result eq "error" ? $self -> errstr() : "").")");
     }
 
     return \@results;
@@ -154,9 +155,13 @@ sub _post_article {
                                        { RaiseError => 0, AutoCommit => 1, mysql_enable_utf8 => 1 })
         or return $self -> self_error("Method::Moodle: Unable to connect to database: ".$DBI::errstr);
 
+    $self -> log("Method::Moodle", "Establised database connection");
+
     # Look up the user in moodle's user table
     my $moodleuser = $self -> _get_moodle_userid($user -> {"username"})
         or return undef;
+
+    $self -> log("Method::Moodle", "Got moodle user $moodleuser");
 
     # If we have no user, fall back on the, um, fallback...
     my $fallback = 0;
@@ -185,6 +190,8 @@ sub _post_article {
     foreach my $arghash (@{$self -> {"args"}}) {
         # Timestamp for posting is now
         my $now = time();
+
+        $self -> log("Method::Moodle", "posting article ".$article -> {"id"}." to forum ".$arghash -> {"forum_id"});
 
         # Make the discussion
         $discussh -> execute($arghash -> {"course_id"},
