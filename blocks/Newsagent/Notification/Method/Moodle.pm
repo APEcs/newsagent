@@ -158,10 +158,7 @@ sub _post_article {
     $self -> log("Method::Moodle", "Establised database connection");
 
     # Look up the user in moodle's user table
-    my $moodleuser = $self -> _get_moodle_userid($user -> {"username"})
-        or return undef;
-
-    $self -> log("Method::Moodle", "Got moodle user $moodleuser");
+    my $moodleuser = $self -> _get_moodle_userid($user -> {"username"});
 
     # If we have no user, fall back on the, um, fallback...
     my $fallback = 0;
