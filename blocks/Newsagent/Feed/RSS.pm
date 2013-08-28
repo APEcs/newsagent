@@ -23,6 +23,7 @@ use strict;
 use base qw(Newsagent::Feed); # This class extends the Newsagent Feed class
 use Newsagent::System::Article;
 use Digest::MD5 qw(md5_hex);
+use CGI::Util qw(escape);
 use Webperl::Utils qw(trimspace path_join);
 use v5.12;
 
