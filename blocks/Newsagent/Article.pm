@@ -452,15 +452,15 @@ sub _validate_article {
                     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "***error***" => $error });
                 }
             }
-        }
 
-        # Get the year here, too - technically it's part of the notificiation matrix, but
-        # shoving this in get_used_methods() is a bit manky
-        my $years = $self -> {"system"} -> {"userdata"} -> get_valid_years(1);
-        ($args -> {"notify_matrix"} -> {"year"}, $error) = $self -> validate_options("acyear", {"required" => 1,
-                                                                                                "source"   => $years,
-                                                                                                "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_ACYEAR")});
-        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+            # Get the year here, too - technically it's part of the notificiation matrix, but
+            # shoving this in get_used_methods() is a bit manky
+            my $years = $self -> {"system"} -> {"userdata"} -> get_valid_years(1);
+            ($args -> {"notify_matrix"} -> {"year"}, $error) = $self -> validate_options("acyear", {"required" => 1,
+                                                                                                    "source"   => $years,
+                                                                                                    "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_ACYEAR")});
+            $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+        }
     }
 
     # Give up here if there are any errors
