@@ -53,6 +53,8 @@ sub generate_feed {
 
         # Build the image list
         foreach my $image (@{$result -> {"images"}}) {
+            next if(!$image -> {"location"});
+
             # Work out where the image is
             my $url = $image -> {"location"};
             $url = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},

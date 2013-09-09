@@ -94,6 +94,8 @@ sub generate_feed {
 
         if($settings -> {"images"}) {
             for(my $img = 0; $img < 2; ++$img) {
+                next if(!$result -> {"images"} -> [$img] || !$result -> {"images"} -> [$img] -> {"location"});
+
                 $images[$img] = $result -> {"images"} -> [$img] -> {"location"}
                     if($result -> {"images"} -> [$img] -> {"location"});
 

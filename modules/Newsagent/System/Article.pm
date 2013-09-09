@@ -596,7 +596,10 @@ sub get_article {
     $imageh -> execute($article -> {"id"})
         or return $self -> self_error("Unable to execute article image query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
 
-    $article -> {"images"} = $imageh -> fetchall_arrayref({});
+    my $images = $imageh -> fetchall_arrayref({});
+    foreach my $image (@{$images}) {
+        $article -> {"images"} -> [$image -> {"order"}] = $image;
+    }
 
     return $article;
 }

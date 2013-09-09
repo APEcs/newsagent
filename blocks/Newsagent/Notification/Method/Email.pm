@@ -22,6 +22,7 @@ package Newsagent::Notification::Method::Email;
 
 use strict;
 use base qw(Newsagent::Notification::Method); # This class is a Method module
+use Digest::MD5 qw(md5_hex);
 use Email::Valid;
 use HTML::Entities;
 use HTML::WikiConverter;
@@ -32,6 +33,7 @@ use Email::Sender::Simple qw(sendmail);
 use Email::Sender::Transport::SMTP;
 use Email::Sender::Transport::SMTP::Persistent;
 use Try::Tiny;
+use Webperl::Utils qw(trimspace path_join);
 
 use Data::Dumper;
 
@@ -236,10 +238,45 @@ sub send {
     my $author = $self -> {"session"} -> get_user_byid($article -> {"creator_id"})
         or return $self -> self_error("Unable to obtain author information for message ".$article -> {"id"});
 
+    my @images;
+    for(my $img = 0; $img < 2; ++$img) {
+        next if(!$article -> {"images"} -> [$img] || !$article -> {"images"} -> [$img] -> {"location"});
+        $images[$img] = $article -> {"images"} -> [$img] -> {"location"};
+
+        $images[$img] = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
+                                  $images[$img])
+            if($images[$img] && $images[$img] !~ /^http/);
+    }
+
+    $images[0] = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
+                           $self -> {"settings"} -> {"config"} -> {"HTML:default_image"})
+            if(!$images[0] && $self -> {"settings"} -> {"config"} -> {"HTML:default_image"});
+
+    $images[0] = $self -> {"template"} -> load_template("Notification/Method/Email/image_sized.tem", {"***class***"  => "leader",
+                                                                                                      "***url***"    => $images[0],
+                                                                                                      "***alt***"    => "lead image",
+                                                                                                      "***width***"  => 130,
+                                                                                                      "***height***" => 63});
+
+    $images[1] = $self -> {"template"} -> load_template("Notification/Method/Email/image.tem", {"***class***"  => "article",
+                                                                                                "***url***"    => $images[1],
+                                                                                                "***alt***"    => "article image"})
+        if($article -> {"images"} -> [1] -> {"location"});
+
+    my $pubdate = $self -> {"template"} -> format_time($article -> {"release_time"}, "%a, %d %b %Y %H:%M:%S %z");
+    my $htmlbody = $self -> {"template"} -> load_template("Notification/Method/Email/email.tem", {"***body***"     => $article -> {"article"},
+                                                                                                  "***title***"    => $article -> {"title"} || $pubdate,
+                                                                                                  "***date***"     => $pubdate,
+                                                                                                  "***summary***"  => $article -> {"summary"},
+                                                                                                  "***img1***"     => $images[0],
+                                                                                                  "***img2***"     => $images[1],
+                                                                                                  "***logo_url***" => $self -> {"settings"} -> {"config"} -> {"Article:logo_img_url"},
+                                                                                                  "***name***"     => $article -> {"realname"} || $article -> {"username"},
+                                                                                                  "***gravhash***" => md5_hex(lc(trimspace($article -> {"email"} || ""))) });
     my $email_data = { "addresses" => $addresses,
                        "debug"     => $addresses -> {"use_debugmode"},
                        "subject"   => $article -> {"title"},
-                       "html_body" => $article -> {"article"},
+                       "html_body" => $htmlbody,
                        "text_body" => $self -> _make_markdown_body($article -> {"article"}),
                        "from"      => $author -> {"email"},
                        "id"        => $article -> {"id"}
@@ -505,20 +542,33 @@ sub _validate_emails {
 }
 
 
-## @method private $ _make_markdown_body($html)
+## @method private $ _make_markdown_body($html, $images)
 # Convert the specified html into markdown text.
 #
-# @param html The HTML to convert to markdown.
+# @param html   The HTML to convert to markdown.
+# @param images An optional reference to an array of images.
 # @return The markdown version of the text.
 sub _make_markdown_body {
-    my $self = shift;
-    my $html = shift;
+    my $self   = shift;
+    my $html   = shift;
+    my $images = shift || [];
 
     my $converter = new HTML::WikiConverter(dialect => 'Markdown',
                                             link_style => 'inline',
                                             image_tag_fallback => 0);
-    return $converter -> html2wiki($html);
+    my $body = $converter -> html2wiki($html);
 
+    my $imglist = "";
+    for(my $i = 0; $i < 3; ++$i) {
+        next unless($images -> [$i] -> {"location"});
+
+        $imglist .= $self -> {"template"} -> load_template("Notification/Method/Email/md_image.tem", {"***url***" => $images -> [$i] -> {"location"}});
+    }
+
+    my $imageblock = $self -> {"template"} -> load_template("Notification/Method/Email/md_images.tem", {"***images***" => $imglist});
+
+    return $self -> {"template"} -> load_template("Notification/Method/Email/markdown.tem", {"***text***" => $body,
+                                                                                             "***images***" => $imageblock});
 }
 
 
