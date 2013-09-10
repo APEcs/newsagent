@@ -217,6 +217,7 @@ sub _build_matrix {
                                                           `".$self -> {"settings"} -> {"database"} -> {"notify_matrix"}."` AS mr
                                                      WHERE mr.recipient_id = ?
                                                      AND m.id = mr.method_id
+                                                     AND mr.settings IS NOT NULL
                                                      ORDER BY m.name");
 
     # Fetch all the matched recipients, to avoid problems with reentrance
