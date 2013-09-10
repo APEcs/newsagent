@@ -69,9 +69,15 @@ sub _validate_settings {
     my $settings = {};
     my $error;
 
-    # Fulltext flag is simple to handle
-    $settings -> {"fulltext"} = 1
-        if(defined($self -> {"cgi"} -> param("fulltext")));
+    # Fulltext flag
+    given($self -> {"cgi"} -> param("fulltext")) {
+        when ("enabled")  { $settings -> {"fulltext_mode"} = "enabled"; }
+        when ("markdown") { $settings -> {"fulltext_mode"} = "markdown"; }
+        when ("plain")    { $settings -> {"fulltext_mode"} = "plain"; }
+        default {
+            $settings -> {"fulltext_mode"} = "";
+        }
+    }
 
     # Image control is only used by some feeds
     $settings -> {"images"} = 1

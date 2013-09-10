@@ -24,6 +24,7 @@ use strict;
 use base qw(Webperl::Block); # Features are just a specific form of Block
 use CGI::Util qw(escape);
 use Webperl::Utils qw(join_complex path_join);
+use HTML::WikiConverter;
 use XML::Simple;
 
 # ============================================================================
@@ -512,5 +513,38 @@ sub build_pagination {
                                                                              "***pages***"   => ""});
     }
 }
+
+
+## @method $ make_markdown_body($html, $images)
+# Convert the specified html into markdown text.
+#
+# @param html   The HTML to convert to markdown.
+# @param images An optional reference to an array of images.
+# @return The markdown version of the text.
+sub make_markdown_body {
+    my $self   = shift;
+    my $html   = shift;
+    my $images = shift || [];
+
+    my $converter = new HTML::WikiConverter(dialect => 'Markdown',
+                                            link_style => 'inline',
+                                            image_tag_fallback => 0);
+    my $body = $converter -> html2wiki($html);
+
+    $body =~ s|<br\s*/>|\n|g;
+
+    my $imglist = "";
+    for(my $i = 0; $i < 3; ++$i) {
+        next unless($images -> [$i] -> {"location"});
+
+        $imglist .= $self -> {"template"} -> load_template("Notification/Method/Email/md_image.tem", {"***url***" => $images -> [$i] -> {"location"}});
+    }
+
+    my $imageblock = $self -> {"template"} -> load_template("Notification/Method/Email/md_images.tem", {"***images***" => $imglist});
+
+    return $self -> {"template"} -> load_template("Notification/Method/Email/markdown.tem", {"***text***" => $body,
+                                                                                             "***images***" => $imageblock});
+}
+
 
 1;

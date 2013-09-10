@@ -309,7 +309,7 @@ sub get_image_info {
 # - `count`: how many articles to return. If not specified, this defaults to the
 #   system-wide setting defined in `Feed:count` in the settings table.
 # - `offset`: article offset, first returned article is at offset 0.
-# - `fulltext`: if specified, the full article text will be included in the result,
+# - `fulltext_mode`: if specified, the full article text will be included in the result,
 #   otherwise only the title and summary will be included.
 #
 # @note This function will never return articles stored as `draft`, articles set
@@ -350,7 +350,7 @@ sub get_feed_articles {
     # needed regardless of the settings provided by the caller.
     # All the fields the query is interested in, normally fulltext is omitted unless explicitly requested
     my $fields = "`article`.`id`, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `user`.`email`, `article`.`created`, `feed`.`name` AS `feedname`, `feed`.`default_url` AS `defaulturl`, `article`.`title`, `article`.`summary`, `article`.`release_time`, `urls`.`url` AS `feedurl`";
-    $fields   .= ", `article`.`article` AS `fulltext`" if($settings -> {"fulltext"});
+    $fields   .= ", `article`.`article` AS `fulltext`" if($settings -> {"fulltext_mode"});
 
     my $from  = "`".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `article`
                  LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `user`
@@ -440,6 +440,9 @@ sub get_feed_articles {
         foreach my $article (@{$articles}) {
             $levelh -> execute($article -> {"id"})
                 or return $self -> self_error("Unable to execute article level query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
+
+            # Need to copy the mode to each article.
+            $article -> {"fulltext_mode"} = $settings -> {"fulltext_mode"};
 
             $article -> {"levels"} = $levelh -> fetchall_arrayref({});
 

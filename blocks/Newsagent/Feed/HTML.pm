@@ -69,7 +69,7 @@ sub generate_feed {
     $mode = "feed" unless($pathinfo[0] eq "compact" || $pathinfo[0] eq "full");
 
     # Any mode other than full forces no fulltext, full forces it on
-    $settings -> {"fulltext"} = ($mode eq "full");
+    $settings -> {"fulltext_mode"} = ($mode eq "full");
 
     # Compact format disables all images
     $settings -> {"images"}   = ($mode ne "compact");

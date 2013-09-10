@@ -68,11 +68,17 @@ sub generate_feed {
         $images = $self -> {"template"} -> load_template("feeds/rss/images.tem", {"***images***" => $images})
             if($images);
 
+        # Handle fulltext transform
+        given($result -> {"fulltext_mode"}) {
+            when("markdown") { $result -> {"fulltext"} = $self -> make_markdown_body($result -> {"fulltext"}); }
+            when("plain")    { $result -> {"fulltext"} = $self -> {"template"} -> html_strip($result -> {"fulltext"}); }
+        }
+
         # If fulltext is activated, include the text in the item
         $extra .= $self -> {"template"} -> load_template("feeds/rss/newsagent.tem", {"***elem***"    => "fulltext",
                                                                                      "***attrs***"   => "",
                                                                                      "***content***" => "<![CDATA[\n".$result -> {"fulltext"}."\n]]>" })
-            if($result -> {"fulltext"});
+            if($result -> {"fulltext_mode"});
 
         # The date can be needed in both the title and date fields.
         my $pubdate = $self -> {"template"} -> format_time($result -> {"release_time"}, $self -> {"timefmt"});
