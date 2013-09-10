@@ -25,6 +25,7 @@ use Newsagent::System::Article;
 use Digest::MD5 qw(md5_hex);
 use CGI::Util qw(escape);
 use Webperl::Utils qw(trimspace path_join);
+use HTML::FormatText;
 use v5.12;
 
 # ============================================================================
@@ -71,7 +72,7 @@ sub generate_feed {
         # Handle fulltext transform
         given($result -> {"fulltext_mode"}) {
             when("markdown") { $result -> {"fulltext"} = $self -> make_markdown_body($result -> {"fulltext"}); }
-            when("plain")    { $result -> {"fulltext"} = $self -> {"template"} -> html_strip($result -> {"fulltext"}); }
+            when("plain")    { $result -> {"fulltext"} = $self -> html_strip($result -> {"fulltext"}); }
         }
 
         # If fulltext is activated, include the text in the item
@@ -144,6 +145,17 @@ sub generate_feed {
     $self -> {"logger"} -> end_log();
 
     exit;
+}
+
+
+sub html_strip {
+    my $self = shift;
+    my $text = shift;
+
+    my $tree = HTML::TreeBuilder -> new -> parse($text);
+
+    my $formatter = HTML::FormatText -> new(leftmargin => 0, rightmargin => 50000);
+    return $formatter -> format($tree);
 }
 
 1;
