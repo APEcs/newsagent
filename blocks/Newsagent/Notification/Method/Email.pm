@@ -566,8 +566,25 @@ sub _send_email_message {
 
     # Fly! Fly, my pretties!
     try {
-        sendmail($outgoing, { from      => $self -> {"env_sender"},
-                              transport => $self -> {"smtp"}});
+        # Email::Sender will silently drop Bcc addresses - they need to be handled
+        # separately.
+        my $bcc = $outgoing -> header("Bcc");
+        if($bcc) {
+            # Clear the bcc header
+            $outgoing -> header_set("Bcc");
+
+            # Send the message with an explicit envelope recipient list
+            my @bccaddrs = split(/,/, $bcc);
+            sendmail($outgoing, { to        => \@bccaddrs,
+                                  from      => $self -> {"env_sender"},
+                                  transport => $self -> {"smtp"}});
+        }
+
+        # No point sending more messages than needed if there is no to or cc set...
+        if($outgoing -> header("To") || $outgoing -> header("cc")) {
+            sendmail($outgoing, { from      => $self -> {"env_sender"},
+                                  transport => $self -> {"smtp"}});
+        }
     } catch {
         # ... ooor, crash into the ground painfully.
         return $self -> self_error("Delivery of email failed: $_");
