@@ -623,9 +623,11 @@ sub _send_emails {
                             "From"         => $email -> {"from"},
                             "Subject"      => $email -> {"subject"},
                           ];
-                push(@{$header}, "To", $email -> {"from"})
+                push(@{$header}, "To", $self -> get_method_config("require_to"))
                     if($self -> get_method_config("require_to"));
             }
+
+            push(@{$header}, "X-Mailer", "Newsagent");
 
             $self -> _send_email_message({"header"    => $header,
                                           "html_body" => $email -> {"html_body"},
