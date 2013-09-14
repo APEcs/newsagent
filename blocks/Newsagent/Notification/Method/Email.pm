@@ -275,9 +275,9 @@ sub send {
                                                                                                   "***gravhash***" => md5_hex(lc(trimspace($article -> {"email"} || ""))) });
     my $email_data = { "addresses" => $addresses,
                        "debug"     => $addresses -> {"use_debugmode"},
-                       "subject"   => $article -> {"title"},
-                       "html_body" => $htmlbody,
-                       "text_body" => $self -> make_markdown_body($article -> {"article"}),
+                       "subject"   => Encode::encode("iso-8859-1", $article -> {"title"}),
+                       "html_body" => Encode::encode("iso-8859-1", $htmlbody),
+                       "text_body" => $self -> make_markdown_body(Encode::encode("iso-8859-1", $article -> {"article"})),
                        "from"      => $author -> {"email"},
                        "id"        => $article -> {"id"}
     };

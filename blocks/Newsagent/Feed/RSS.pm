@@ -71,7 +71,7 @@ sub generate_feed {
 
         # Handle fulltext transform
         given($result -> {"fulltext_mode"}) {
-            when("markdown") { $result -> {"fulltext"} = $self -> make_markdown_body($result -> {"fulltext"}); }
+            when("markdown") { $result -> {"fulltext"} = $self -> make_markdown_body(Encode::encode("iso-8859-1", $result -> {"fulltext"})); }
             when("plain")    { $result -> {"fulltext"} = $self -> html_strip($result -> {"fulltext"}); }
         }
 
