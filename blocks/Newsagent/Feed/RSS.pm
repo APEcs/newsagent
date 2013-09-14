@@ -26,6 +26,7 @@ use Digest::MD5 qw(md5_hex);
 use CGI::Util qw(escape);
 use Webperl::Utils qw(trimspace path_join);
 use HTML::FormatText;
+use HTML::Entities;
 use v5.12;
 
 # ============================================================================
@@ -152,6 +153,8 @@ sub html_strip {
     my $self = shift;
     my $text = shift;
 
+    $text = encode_entities($text);
+    $text = Encode::encode("iso-8859-1", $text);
     my $tree = HTML::TreeBuilder -> new -> parse($text);
 
     my $formatter = HTML::FormatText -> new(leftmargin => 0, rightmargin => 50000);

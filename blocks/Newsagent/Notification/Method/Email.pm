@@ -263,6 +263,8 @@ sub send {
                                                                                                 "***alt***"    => "article image"})
         if($article -> {"images"} -> [1] -> {"location"});
 
+    $article -> {"article"} = encode_entities($article -> {"article"});
+
     my $pubdate = $self -> {"template"} -> format_time($article -> {"release_time"}, "%a, %d %b %Y %H:%M:%S %z");
     my $htmlbody = $self -> {"template"} -> load_template("Notification/Method/Email/email.tem", {"***body***"     => $article -> {"article"},
                                                                                                   "***title***"    => $article -> {"title"} || $pubdate,
@@ -273,6 +275,7 @@ sub send {
                                                                                                   "***logo_url***" => $self -> {"settings"} -> {"config"} -> {"Article:logo_img_url"},
                                                                                                   "***name***"     => $article -> {"realname"} || $article -> {"username"},
                                                                                                   "***gravhash***" => md5_hex(lc(trimspace($article -> {"email"} || ""))) });
+
     my $email_data = { "addresses" => $addresses,
                        "debug"     => $addresses -> {"use_debugmode"},
                        "subject"   => Encode::encode("iso-8859-1", $article -> {"title"}),
