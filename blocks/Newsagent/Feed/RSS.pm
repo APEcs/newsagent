@@ -153,7 +153,7 @@ sub html_strip {
     my $self = shift;
     my $text = shift;
 
-    $text = encode_entities($text);
+    $text = encode_entities($text, '^\n\x20-\x25\x27-\x7e');
     $text = Encode::encode("iso-8859-1", $text);
     my $tree = HTML::TreeBuilder -> new -> parse($text);
 

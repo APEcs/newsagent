@@ -263,7 +263,7 @@ sub send {
                                                                                                 "***alt***"    => "article image"})
         if($article -> {"images"} -> [1] -> {"location"});
 
-    $article -> {"article"} = encode_entities($article -> {"article"});
+    $article -> {"article"} = encode_entities($article -> {"article"}, '^\n\x20-\x25\x27-\x7e');
 
     my $pubdate = $self -> {"template"} -> format_time($article -> {"release_time"}, "%a, %d %b %Y %H:%M:%S %z");
     my $htmlbody = $self -> {"template"} -> load_template("Notification/Method/Email/email.tem", {"***body***"     => $article -> {"article"},
