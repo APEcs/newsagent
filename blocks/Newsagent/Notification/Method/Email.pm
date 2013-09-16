@@ -287,6 +287,7 @@ sub send {
                        "subject"   => Encode::encode("iso-8859-1", $subject),
                        "html_body" => Encode::encode("iso-8859-1", $htmlbody),
                        "text_body" => $self -> make_markdown_body(Encode::encode("iso-8859-1", $article -> {"article"})),
+                       "reply_to"  => $article -> {"methods"} -> {"Email"} -> {"reply_to"} || $author -> {"email"},
                        "from"      => $author -> {"email"},
                        "id"        => $article -> {"id"}
     };
@@ -662,9 +663,10 @@ sub _send_emails {
 
             my $header;
             if($email -> {"debug"}) {
-                $header = [ "To"      => $email -> {"from"},
-                            "From"    => $email -> {"from"},
-                            "Subject" => $email -> {"subject"},
+                $header = [ "To"       => $email -> {"from"},
+                            "From"     => $email -> {"from"},
+                            "Subject"  => $email -> {"subject"},
+                            "Reply-To" => $email -> {"reply_to"},
                           ];
             } else {
 #                $self -> self_error("No real sending yet!");
@@ -673,6 +675,7 @@ sub _send_emails {
                 $header = [ ucfirst($mode) => $recipstr,
                             "From"         => $email -> {"from"},
                             "Subject"      => $email -> {"subject"},
+                            "Reply-To"     => $email -> {"reply_to"},
                           ];
                 push(@{$header}, "To", $self -> get_method_config("require_to"))
                     if($self -> get_method_config("require_to"));
