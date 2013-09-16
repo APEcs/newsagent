@@ -188,6 +188,9 @@ sub send {
     $article -> {"methods"} -> {"Email"} = $self -> get_article($article -> {"id"})
         or return undef;
 
+    my $prefix = $self -> _get_prefix($article -> {"methods"} -> {"Email"} -> {"prefix_id"})
+        or return undef;
+
     # Start building the recipient lists
     my $addresses = { "reply_to" => $article -> {"methods"} -> {"Email"} -> {"reply_to"},
                       "outgoing" => { "cc"       => {},
@@ -265,9 +268,12 @@ sub send {
 
     $article -> {"article"} = encode_entities($article -> {"article"}, '^\n\x20-\x7e');
 
+    my $subject = $article -> {"title"} || $pubdate;
+    $subject = $prefix." ".$subject if($prefix);
+
     my $pubdate = $self -> {"template"} -> format_time($article -> {"release_time"}, "%a, %d %b %Y %H:%M:%S %z");
     my $htmlbody = $self -> {"template"} -> load_template("Notification/Method/Email/email.tem", {"***body***"     => $article -> {"article"},
-                                                                                                  "***title***"    => $article -> {"title"} || $pubdate,
+                                                                                                  "***title***"    => $subject
                                                                                                   "***date***"     => $pubdate,
                                                                                                   "***summary***"  => $article -> {"summary"},
                                                                                                   "***img1***"     => $images[0],
@@ -278,7 +284,7 @@ sub send {
 
     my $email_data = { "addresses" => $addresses,
                        "debug"     => $addresses -> {"use_debugmode"},
-                       "subject"   => Encode::encode("iso-8859-1", $article -> {"title"}),
+                       "subject"   => Encode::encode("iso-8859-1", $subject),
                        "html_body" => Encode::encode("iso-8859-1", $htmlbody),
                        "text_body" => $self -> make_markdown_body(Encode::encode("iso-8859-1", $article -> {"article"})),
                        "from"      => $author -> {"email"},
@@ -395,6 +401,31 @@ sub _get_prefixes {
     }
 
     return \@options;
+}
+
+
+## @method private $ _get_prefix(prefixid)
+# Get the prefix selected
+#
+# @praram prefixid  The ID of the prefix to use
+# @return A reference to an array containing the prefixes on succes, undef on
+#         error.
+sub _get_prefixe {
+    my $self     = shift;
+    my $prefixid = shift;
+
+    $self -> clear_error();
+
+    my $prefixh = $self -> {"dbh"} -> prepare("SELECT prefix
+                                               FROM `".$self -> {"settings"} -> {"method:email"} -> {"prefixes"}."`
+                                               WHERE `id` = ?");
+    $prefixh -> execute($prefixid)
+        or return $self -> self_error("Unable to execute prefix lookup: ".$self -> {"dbh"} -> errstr);
+
+    my $prefix = $prefixh -> fetchrow_arrayref()
+        or return $self -> self_error("Unknown prefix selected: ".$self -> {"dbh"} -> errstr);
+
+    return $prefix -> [0];
 }
 
 
