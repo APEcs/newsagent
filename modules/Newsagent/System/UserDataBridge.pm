@@ -167,7 +167,7 @@ sub get_user_addresses {
         $where  .= "`u`.`id` = `l`.`student_id` AND `l`.`year_id` = ? ";
         push(@params, $settings -> {"yearid"});
 
-        $where .= $self -> _add_multiparam($settings -> {"level"}, \@params, "l", "level", "OR")
+        $where .= $self -> _add_multiparam($settings -> {"level"}, \@params, "l", "level", '=', "OR")
 
     # All students in a given year
     } elsif(defined($settings -> {"yearid"})) {
@@ -210,14 +210,16 @@ sub get_user_addresses {
     my $query = "SELECT `u`.`email`
                  FROM $tables
                  WHERE $where";
-    my $queryh = $self -> {"udata_dbh"} -> prepare($query);
-    $queryh -> execute(@params)
-        or return $self -> self_error("Unable to execute student lookup: ".$self -> {"udata_dbh"} -> errstr);
+
+    print STDERR "Query: $query";
+#    my $queryh = $self -> {"udata_dbh"} -> prepare($query);
+#    $queryh -> execute(@params)
+#        or return $self -> self_error("Unable to execute student lookup: ".$self -> {"udata_dbh"} -> errstr);
 
     my @emails = ();
-    while(my $row = $queryh -> fetchrow_arrayref()) {
-        push(@emails, $row -> [0]);
-    }
+#    while(my $row = $queryh -> fetchrow_arrayref()) {
+#        push(@emails, $row -> [0]);
+#    }
 
     return \@emails;
 }
