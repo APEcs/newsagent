@@ -208,7 +208,7 @@ sub get_user_addresses {
         $where .= $self -> _add_multiparam($settings -> {"course"}, \@params, "c", "course_id", "LIKE", "OR");
     }
 
-    my $query = "SELECT `u`.`email`
+    my $query = "SELECT DISTINCT(`u`.`email`)
                  FROM $tables
                  WHERE $where";
 
