@@ -268,12 +268,12 @@ sub send {
 
     $article -> {"article"} = encode_entities($article -> {"article"}, '^\n\x20-\x7e');
 
+    my $pubdate = $self -> {"template"} -> format_time($article -> {"release_time"}, "%a, %d %b %Y %H:%M:%S %z");
     my $subject = $article -> {"title"} || $pubdate;
     $subject = $prefix." ".$subject if($prefix);
 
-    my $pubdate = $self -> {"template"} -> format_time($article -> {"release_time"}, "%a, %d %b %Y %H:%M:%S %z");
     my $htmlbody = $self -> {"template"} -> load_template("Notification/Method/Email/email.tem", {"***body***"     => $article -> {"article"},
-                                                                                                  "***title***"    => $subject
+                                                                                                  "***title***"    => $article -> {"title"} || $pubdate,
                                                                                                   "***date***"     => $pubdate,
                                                                                                   "***summary***"  => $article -> {"summary"},
                                                                                                   "***img1***"     => $images[0],
