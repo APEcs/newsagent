@@ -211,7 +211,6 @@ sub get_user_addresses {
                  FROM $tables
                  WHERE $where";
 
-    print STDERR "Query: $query";
     my $queryh = $self -> {"udata_dbh"} -> prepare($query);
     $queryh -> execute(@params)
         or return $self -> self_error("Unable to execute student lookup: ".$self -> {"udata_dbh"} -> errstr);
