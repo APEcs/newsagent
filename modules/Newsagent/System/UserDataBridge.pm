@@ -167,7 +167,7 @@ sub get_user_addresses {
         $where  .= "`u`.`id` = `l`.`student_id` AND `l`.`year_id` = ? ";
         push(@params, $settings -> {"yearid"});
 
-        $where .= $self -> _add_multiparam($settings -> {"level"}, \@params, "l", "level")
+        $where .= $self -> _add_multiparam($settings -> {"level"}, \@params, "l", "level", "OR")
 
     # All students in a given year
     } elsif(defined($settings -> {"yearid"})) {
