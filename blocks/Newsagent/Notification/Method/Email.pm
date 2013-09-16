@@ -410,7 +410,7 @@ sub _get_prefixes {
 # @praram prefixid  The ID of the prefix to use
 # @return A reference to an array containing the prefixes on succes, undef on
 #         error.
-sub _get_prefixe {
+sub _get_prefix {
     my $self     = shift;
     my $prefixid = shift;
 
