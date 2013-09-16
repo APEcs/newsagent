@@ -212,14 +212,14 @@ sub get_user_addresses {
                  WHERE $where";
 
     print STDERR "Query: $query";
-#    my $queryh = $self -> {"udata_dbh"} -> prepare($query);
-#    $queryh -> execute(@params)
-#        or return $self -> self_error("Unable to execute student lookup: ".$self -> {"udata_dbh"} -> errstr);
+    my $queryh = $self -> {"udata_dbh"} -> prepare($query);
+    $queryh -> execute(@params)
+        or return $self -> self_error("Unable to execute student lookup: ".$self -> {"udata_dbh"} -> errstr);
 
     my @emails = ();
-#    while(my $row = $queryh -> fetchrow_arrayref()) {
-#        push(@emails, $row -> [0]);
-#    }
+    while(my $row = $queryh -> fetchrow_arrayref()) {
+        push(@emails, $row -> [0]);
+    }
 
     return \@emails;
 }
