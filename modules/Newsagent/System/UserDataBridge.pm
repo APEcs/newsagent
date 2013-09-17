@@ -187,7 +187,7 @@ sub get_user_addresses {
         $where .= $self -> _add_multiparam($settings -> {"plan"}, \@params, "pl", "name", "LIKE", "OR");
 
         # Allow for exclusion at the same time as inclusion.
-        $where .= $self -> _add_multiparam($settings -> {"exlplan"}, \@params, "pl", "name", "NOT LIKE", "OR")
+        $where .= $self -> _add_multiparam($settings -> {"exlplan"}, \@params, "pl", "name", "NOT LIKE", "AND")
             if(defined($settings -> {"exlplan"}));
 
     } elsif(defined($settings -> {"exlplan"})) {
@@ -196,7 +196,7 @@ sub get_user_addresses {
         $where  .= "AND" if($where);
         $where  .= " `p`.`student_id` = `u`.`id` AND `pl`.`id` = `p`.`plan_id` ";
 
-        $where .= $self -> _add_multiparam($settings -> {"exlplan"}, \@params, "pl", "name", "NOT LIKE", "OR");
+        $where .= $self -> _add_multiparam($settings -> {"exlplan"}, \@params, "pl", "name", "NOT LIKE", "AND");
     }
 
     if(defined($settings -> {"course"}) && defined($settings -> {"yearid"})) {
