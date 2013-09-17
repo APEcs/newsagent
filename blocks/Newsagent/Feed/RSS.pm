@@ -155,7 +155,7 @@ sub html_strip {
 
     $text = encode_entities($text, '^\n\x20-\x7e');
     $text = Encode::encode("iso-8859-1", $text);
-    my $tree = HTML::TreeBuilder -> new -> parse($text);
+    my $tree = HTML::TreeBuilder -> new_from_content($text);
 
     my $formatter = HTML::FormatText -> new(leftmargin => 0, rightmargin => 50000);
     return $formatter -> format($tree);
