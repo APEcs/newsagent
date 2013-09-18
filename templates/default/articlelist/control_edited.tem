@@ -1,4 +1,3 @@
 <ul class="controls">
     <li><div class="control edit"    id="editbtn-a***id***"   onclick="edit_article('***id***');"   title="{L_ALIST_CTRLEDIT}"></div></li>
-    <li><div class="control delete"  id="deletebtn-a***id***" onclick="delete_article('***id***');" title="{L_ALIST_CTRLDELETE}"></div></li>
 </ul>
