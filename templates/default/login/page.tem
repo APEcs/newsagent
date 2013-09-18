@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>{V_[siitename]}: {L_LOGIN_TITLE}</title>
+    <title>{V_[sitename]}: {L_LOGIN_TITLE}</title>
 
     <!-- mootools for effects and javascript sanity -->
     <script type='text/javascript' src="{V_[templatepath]}js/mootools-core.js"></script>
