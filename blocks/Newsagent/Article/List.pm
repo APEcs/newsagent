@@ -84,10 +84,11 @@ sub _generate_articlelist {
 
     my $now      = time();
     my $userid   = $self -> {"session"} -> get_session_userid();
-    my $settings = {"count"     => $self -> {"settings"} -> {"config"} -> {"Article::List:count"},
-                    "pagenum"   => 1,
-                    "sortfield" => "",
-                    "sortdir"   => ""};
+    my $settings = {"count"       => $self -> {"settings"} -> {"config"} -> {"Article::List:count"},
+                    "pagenum"     => 1,
+                    "hidedeleted" => 1,
+                    "sortfield"   => "",
+                    "sortdir"     => ""};
 
     $settings -> {"pagenum"} = $pagenum if(defined($pagenum) && $pagenum =~ /^\d+$/ && $pagenum > 0);
     $settings -> {"offset"}  = ($settings -> {"pagenum"} - 1) * $settings -> {"count"};
