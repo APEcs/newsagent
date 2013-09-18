@@ -1,7 +1,7 @@
 <div id="userbar">
     <div class="bar-container">
         <ul class="site-options top-menu">
-            <li id="site-name"><div class="empty-item">***pagename***</div></li>
+            <li id="site-name"><div class="empty-item">{V_[sitename]}: ***pagename***</div></li>
 ***site-admin***
         </ul>
         <ul class="user-options top-menu">
