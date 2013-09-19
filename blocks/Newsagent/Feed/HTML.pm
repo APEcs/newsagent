@@ -124,6 +124,9 @@ sub generate_feed {
         # work out the URL
         my $feedurl = $result -> {"feedurl"} || $result -> {"defaulturl"};
 
+        $result -> {"fulltext"} = encode_entities($result -> {"fulltext"}, '^\n\x20-\x7e')
+            if($result -> {"fulltext"});
+
         # Put the item together!
         $items .= $self -> {"template"} -> load_template("feeds/html/item-$mode.tem", {"***title***"       => $result -> {"title"} || $pubdate,
                                                                                        "***summary***"     => $result -> {"summary"},

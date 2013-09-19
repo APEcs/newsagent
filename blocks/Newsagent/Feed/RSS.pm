@@ -71,6 +71,9 @@ sub generate_feed {
             if($images);
 
         # Handle fulltext transform
+        $result -> {"fulltext"} = encode_entities($result -> {"fulltext"}, '^\n\x20-\x7e')
+            if($result -> {"fulltext"});
+
         given($result -> {"fulltext_mode"}) {
             when("markdown") { $result -> {"fulltext"} = $self -> make_markdown_body(Encode::encode("iso-8859-1", $result -> {"fulltext"})); }
             when("plain")    { $result -> {"fulltext"} = $self -> html_strip($result -> {"fulltext"}); }
@@ -153,7 +156,6 @@ sub html_strip {
     my $self = shift;
     my $text = shift;
 
-    $text = encode_entities($text, '^\n\x20-\x7e');
     $text = Encode::encode("iso-8859-1", $text);
     my $tree = HTML::TreeBuilder -> new_from_content($text);
 
