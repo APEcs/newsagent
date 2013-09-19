@@ -23,6 +23,7 @@ package Newsagent;
 use strict;
 use base qw(Webperl::Block); # Features are just a specific form of Block
 use CGI::Util qw(escape);
+use HTML::Entities;
 use Webperl::Utils qw(join_complex path_join);
 use HTML::WikiConverter;
 use XML::Simple;
@@ -40,7 +41,19 @@ use XML::Simple;
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    my $self     = $class -> SUPER::new(@_)
+    my $self     = $class -> SUPER::new(entitymap => { '&ndash;'  => '-',
+                                                       '&mdash;'  => '-',
+                                                       '&rsquo;'  => "'",
+                                                       '&lsquo;'  => "'",
+                                                       '&ldquo;'  => '"',
+                                                       '&rdquo;'  => '"',
+                                                       '&hellip;' => '...',
+                                                       '&gt;'     => '>',
+                                                       '&lt;'     => '<',
+                                                       '&amp;'    => '&',
+                                                       '&nbsp;'   => ' ',
+                                        },
+                                        @_)
         or return undef;
 
     return $self;
@@ -515,6 +528,21 @@ sub build_pagination {
 }
 
 
+## @method $ cleanup_entities($html)
+# Wrangle the specified HTML into something that won't produce an unholy mess when
+# passed to something that doesn't handle UTF-8 properly.
+#
+# @param html The HTML to process
+# @return A somewhat cleaned-up string of HTML
+sub cleanup_entities {
+    my $self = shift;
+    my $html = shift;
+
+    $html =~ s/\r//g;
+    return encode_entities($html, '^\n\x20-\x7e');
+}
+
+
 ## @method $ make_markdown_body($html, $images)
 # Convert the specified html into markdown text.
 #
@@ -526,12 +554,19 @@ sub make_markdown_body {
     my $html   = shift;
     my $images = shift || [];
 
+    # Handle html entities that are going to break...
+    foreach my $entity (keys(%{$self -> {"entitymap"}})) {
+        $html =~ s/$entity/$self->{entitymap}->{$entity}/g;
+    }
+
     my $converter = new HTML::WikiConverter(dialect => 'Markdown',
                                             link_style => 'inline',
                                             image_tag_fallback => 0);
     my $body = $converter -> html2wiki($html);
 
+    # Clean up html the converter misses consistently
     $body =~ s|<br\s*/>|\n|g;
+    $body =~ s|&gt;|>|g;
 
     my $imglist = "";
     for(my $i = 0; $i < 3; ++$i) {
@@ -540,7 +575,8 @@ sub make_markdown_body {
         $imglist .= $self -> {"template"} -> load_template("Notification/Method/Email/md_image.tem", {"***url***" => $images -> [$i] -> {"location"}});
     }
 
-    my $imageblock = $self -> {"template"} -> load_template("Notification/Method/Email/md_images.tem", {"***images***" => $imglist});
+    my $imageblock = $self -> {"template"} -> load_template("Notification/Method/Email/md_images.tem", {"***images***" => $imglist})
+        if($imglist);
 
     return $self -> {"template"} -> load_template("Notification/Method/Email/markdown.tem", {"***text***" => $body,
                                                                                              "***images***" => $imageblock});
