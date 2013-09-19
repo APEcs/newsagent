@@ -34,6 +34,7 @@ use Email::Sender::Transport::SMTP;
 use Email::Sender::Transport::SMTP::Persistent;
 use Try::Tiny;
 use Webperl::Utils qw(trimspace path_join);
+use v5.12;
 
 use Data::Dumper;
 
@@ -241,6 +242,10 @@ sub send {
     my $author = $self -> {"session"} -> get_user_byid($article -> {"creator_id"})
         or return $self -> self_error("Unable to obtain author information for message ".$article -> {"id"});
 
+    $article -> {"images"} -> [0] -> {"location"} = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
+                                                                 $self -> {"settings"} -> {"config"} -> {"HTML:default_image"})
+            if(!$article -> {"images"} -> [0] -> {"location"} && $self -> {"settings"} -> {"config"} -> {"HTML:default_image"});
+
     my @images;
     for(my $img = 0; $img < 2; ++$img) {
         next if(!$article -> {"images"} -> [$img] || !$article -> {"images"} -> [$img] -> {"location"});
@@ -250,10 +255,6 @@ sub send {
                                   $images[$img])
             if($images[$img] && $images[$img] !~ /^http/);
     }
-
-    $images[0] = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
-                           $self -> {"settings"} -> {"config"} -> {"HTML:default_image"})
-            if(!$images[0] && $self -> {"settings"} -> {"config"} -> {"HTML:default_image"});
 
     $images[0] = $self -> {"template"} -> load_template("Notification/Method/Email/image_sized.tem", {"***class***"  => "leader",
                                                                                                       "***url***"    => $images[0],
@@ -266,7 +267,7 @@ sub send {
                                                                                                 "***alt***"    => "article image"})
         if($article -> {"images"} -> [1] -> {"location"});
 
-    $article -> {"article"} = encode_entities($article -> {"article"}, '^\n\x20-\x7e');
+    $article -> {"article"} = $self -> cleanup_entities($article -> {"article"});
 
     my $pubdate = $self -> {"template"} -> format_time($article -> {"release_time"}, "%a, %d %b %Y %H:%M:%S %z");
     my $subject = $article -> {"title"} || $pubdate;
@@ -286,7 +287,7 @@ sub send {
                        "debug"     => $addresses -> {"use_debugmode"},
                        "subject"   => Encode::encode("iso-8859-1", $subject),
                        "html_body" => Encode::encode("iso-8859-1", $htmlbody),
-                       "text_body" => $self -> make_markdown_body(Encode::encode("iso-8859-1", $article -> {"article"})),
+                       "text_body" => $self -> make_markdown_body(Encode::encode("iso-8859-1", $article -> {"article"}), $article -> {"images"}),
                        "reply_to"  => $article -> {"methods"} -> {"Email"} -> {"reply_to"} || $author -> {"email"},
                        "from"      => $author -> {"email"},
                        "id"        => $article -> {"id"}
@@ -601,6 +602,10 @@ sub _send_email_message {
 
     # Fly! Fly, my pretties!
     try {
+        # Preserve the existing To/CC
+        my $to = $outgoing -> header("To");
+        my $cc = $outgoing -> header("Cc");
+
         # Email::Sender will silently drop Bcc addresses - they need to be handled
         # separately.
         my $bcc = $outgoing -> header("Bcc");
@@ -610,13 +615,33 @@ sub _send_email_message {
 
             # Send the message with an explicit envelope recipient list
             my @bccaddrs = split(/,/, $bcc);
-            sendmail($outgoing, { to        => \@bccaddrs,
-                                  from      => $self -> {"env_sender"},
-                                  transport => $self -> {"smtp"}});
+
+            # Remove the explicit recipients
+            $outgoing -> header_set("To");
+            $outgoing -> header_set("Cc");
+
+            given($self -> get_method_config("bcc_mode")) {
+                when('promote') {
+                    foreach my $addr (@bccaddrs) {
+
+                        $outgoing -> header_set("To", $addr);
+                        sendmail($outgoing, { from      => $self -> {"env_sender"},
+                                              transport => $self -> {"smtp"}});
+                    }
+                }
+                default {
+                    sendmail($outgoing, { to        => \@bccaddrs,
+                                          from      => $self -> {"env_sender"},
+                                          transport => $self -> {"smtp"}});
+                }
+            }
         }
 
         # No point sending more messages than needed if there is no to or cc set...
-        if($outgoing -> header("To") || $outgoing -> header("cc")) {
+        if($to || $cc) {
+            $outgoing -> header_set("To", $to) if($to);
+            $outgoing -> header_set("Cc", $cc) if($cc);
+
             sendmail($outgoing, { from      => $self -> {"env_sender"},
                                   transport => $self -> {"smtp"}});
         }
