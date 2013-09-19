@@ -126,7 +126,7 @@ sub generate_feed {
         # work out the URL
         my $feedurl = $result -> {"feedurl"} || $result -> {"defaulturl"};
 
-        $result -> {"fulltext"} = encode_entities($result -> {"fulltext"}, '^\n\x20-\x7e')
+        $result -> {"fulltext"} = $self -> cleanup_entities($result -> {"fulltext"})
             if($result -> {"fulltext"});
 
         # Put the item together!

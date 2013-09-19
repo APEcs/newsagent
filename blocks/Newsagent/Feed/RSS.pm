@@ -22,7 +22,6 @@ package Newsagent::Feed::RSS;
 use strict;
 use base qw(Newsagent::Feed); # This class extends the Newsagent Feed class
 use Newsagent::System::Article;
-use HTML::Entities;
 use Encode;
 use Digest::MD5 qw(md5_hex);
 use CGI::Util qw(escape);
@@ -73,7 +72,7 @@ sub generate_feed {
             if($images);
 
         # Handle fulltext transform
-        $result -> {"fulltext"} = encode_entities($result -> {"fulltext"}, '^\n\x20-\x7e')
+        $result -> {"fulltext"} = $self -> cleanup_entities($result -> {"fulltext"})
             if($result -> {"fulltext"});
 
         given($result -> {"fulltext_mode"}) {
