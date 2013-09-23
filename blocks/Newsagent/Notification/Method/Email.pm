@@ -119,12 +119,13 @@ sub store_article {
         or return undef;
 
     my $emailh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"method:email"} -> {"data"}."`
-                                              (prefix_id, cc, bcc, reply_to)
-                                              VALUES(?, ?, ?, ?)");
+                                              (prefix_id, cc, bcc, reply_to, bcc_sender)
+                                              VALUES(?, ?, ?, ?, ?)");
     my $rows = $emailh -> execute($args -> {"methods"} -> {"Email"} -> {"prefix_id"},
                                   $args -> {"methods"} -> {"Email"} -> {"cc"},
                                   $args -> {"methods"} -> {"Email"} -> {"bcc"},
-                                  $args -> {"methods"} -> {"Email"} -> {"reply_to"});
+                                  $args -> {"methods"} -> {"Email"} -> {"reply_to"},
+                                  $args -> {"methods"} -> {"Email"} -> {"bcc_sender"});
     return $self -> self_error("Unable to perform article email notification data insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Article email notification data insert failed, no rows inserted") if($rows eq "0E0");
     my $dataid = $self -> {"dbh"} -> {"mysql_insertid"};
@@ -187,10 +188,16 @@ sub send {
 
     # First, need the email-specific data for the article
     $article -> {"methods"} -> {"Email"} = $self -> get_article($article -> {"id"})
-        or return undef;
+        or return $self -> _finish_send("error", $recipients);
 
     my $prefix = $self -> _get_prefix($article -> {"methods"} -> {"Email"} -> {"prefix_id"});
-    return $self -> self_error("Unable to locate prefix: " .$self -> errstr()) if(!defined($prefix));
+    return $self -> _finish_send("error", $recipients) if(!defined($prefix));
+
+    my $author = $self -> {"session"} -> get_user_byid($article -> {"creator_id"});
+    if(!$author) {
+        $self -> self_error("Unable to obtain author information for message ".$article -> {"id"});
+        return $self -> _finish_send("error", $recipients);
+    }
 
     # Start building the recipient lists
     my $addresses = { "reply_to" => $article -> {"methods"} -> {"Email"} -> {"reply_to"},
@@ -203,6 +210,10 @@ sub send {
     # Pull the addresses out of address lists, if specified.
     $self -> _parse_recipients_addrlist($addresses -> {"outgoing"} -> {"cc"} , $article -> {"methods"} -> {"Email"} -> {"cc"});
     $self -> _parse_recipients_addrlist($addresses -> {"outgoing"} -> {"bcc"}, $article -> {"methods"} -> {"Email"} -> {"bcc"});
+
+    # Add the author if bcc-me is enabled
+    $self -> _parse_recipients_addrlist($addresses -> {"outgoing"} -> {"bcc"}, $author -> {"email"})
+        if($article -> {"methods"} -> {"Email"} -> {"bcc_sender"});
 
     # Process each of the recipients, parsing the configuration and then merging recipient addresses
     foreach my $recipient (@{$recipients}) {
@@ -239,9 +250,6 @@ sub send {
 
     # At this point, the addresses should have been accumulated into the appropriate hashes
     # Convert the article into something nicer to throw around
-    my $author = $self -> {"session"} -> get_user_byid($article -> {"creator_id"})
-        or return $self -> self_error("Unable to obtain author information for message ".$article -> {"id"});
-
     $article -> {"images"} -> [0] -> {"location"} = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
                                                                  $self -> {"settings"} -> {"config"} -> {"HTML:default_image"})
             if(!$article -> {"images"} -> [0] -> {"location"} && $self -> {"settings"} -> {"config"} -> {"HTML:default_image"});
@@ -294,16 +302,7 @@ sub send {
     };
 
     my $status = $self -> _send_emails($email_data);
-    my @results = ();
-    foreach my $recipient (@{$recipients}) {
-
-        # Store the send status.
-        push(@results, {"name"    => $recipient -> {"shortname"},
-                        "state"   => $status,
-                        "message" => $status eq "error" ? $self -> errstr() : ""});
-    }
-
-    return \@results;
+    return $self -> _finish_send($status, $recipients);
 }
 
 
@@ -322,10 +321,13 @@ sub generate_compose {
     my $args = shift;
     my $user = shift;
 
+    $args -> {"bcc_sender"} = 1 if(!defined($args -> {"bcc_sender"}));
+
     return $self -> {"template"} -> load_template("Notification/Method/Email/compose.tem", {"***email-cc***"      => $self -> {"template"} -> html_clean($args -> {"methods"} -> {"Email"} -> {"cc"}),
                                                                                             "***email-bcc***"     => $self -> {"template"} -> html_clean($args -> {"methods"} -> {"Email"} -> {"bcc"}),
                                                                                             "***email-replyto***" => $self -> {"template"} -> html_clean($args -> {"methods"} -> {"Email"} -> {"reply_to"} || $user -> {"email"}),
                                                                                             "***email-prefix***"  => $self -> {"template"} -> build_optionlist($self -> _get_prefixes(), $args -> {"methods"} -> {"Email"} -> {"prefix_id"}),
+                                                                                            "***email-bccme***"   => $args -> {"bcc_sender"} ? 'checked="checked"' : '',
                                                   });
 }
 
@@ -371,6 +373,8 @@ sub validate_article {
                                                                                                               "source"   => $self -> _get_prefixes(),
                                                                                                               "nicename" => $self -> {"template"} -> replace_langvar("METHOD_EMAIL_PREFIX")});
     push(@errors, $error) if($error);
+
+    $args -> {"methods"} -> {"Email"} -> {"bcc_sender"} = $self -> {"cgi"} -> param("email-bccme") ? 1 : 0;
 
     return \@errors;
 }
@@ -527,6 +531,31 @@ sub _build_smtp_args {
 ################################################################################
 #  Private view/controller functions
 ################################################################################
+
+## @method private $ _finish_send($status, $recipients)
+# Generate an array of status messages for each recipient
+#
+# @param status     The status to set. If this is 'error' then $self -> errstr() is used
+#                   as the message.
+# @param recipients A reference to the recipients array
+# @return A reference to an array of status messages, one for each recipient
+sub _finish_send {
+    my $self       = shift;
+    my $status     = shift;
+    my $recipients = shift;
+
+    my @results = ();
+    foreach my $recipient (@{$recipients}) {
+
+        # Store the send status.
+        push(@results, {"name"    => $recipient -> {"shortname"},
+                        "state"   => $status,
+                        "message" => $status eq "error" ? $self -> errstr() : ""});
+    }
+
+    return \@results;
+}
+
 
 ## @method private @ _validate_emails($emails, $field, $single)
 # Validate a string of email addresses. This attempts to determine whether the

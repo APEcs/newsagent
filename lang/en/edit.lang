@@ -12,4 +12,4 @@ EDIT_FAILED              = Article editing failed
 
 EDIT_EDITED_TITLE       = Article Edited
 EDIT_EDITED_SUMMARY     = Article edited successfully.
-EDIT_EDITED_DESC        = Your article has been updated successfully. If you set it for immediate publication, it should be visible on feeds now; timed articles will be released when the selected time has passed. .
+EDIT_EDITED_DESC        = Your article has been updated successfully. If you set it for immediate publication, it should be visible on feeds now; timed articles will be released when the selected time has passed. Click 'Continue' to return to your message list.

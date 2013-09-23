@@ -4,6 +4,7 @@ METHOD_EMAIL_MULTIPLE = <span class="helptext">(optional, separate multiple reci
 METHOD_EMAIL_BCC      = BCC recipients
 METHOD_EMAIL_REPLYTO  = Reply To
 METHOD_EMAIL_PREFIX   = Subject prefix
+METHOD_EMAIL_BCCME    = Send me a copy of this article
 
 
 METHOD_EMAIL_ERR_SINGLEADDR = ***field*** contains more than one email address; it should contain a single address.
