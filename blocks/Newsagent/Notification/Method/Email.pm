@@ -189,8 +189,8 @@ sub send {
     $article -> {"methods"} -> {"Email"} = $self -> get_article($article -> {"id"})
         or return undef;
 
-    my $prefix = $self -> _get_prefix($article -> {"methods"} -> {"Email"} -> {"prefix_id"})
-        or return undef;
+    my $prefix = $self -> _get_prefix($article -> {"methods"} -> {"Email"} -> {"prefix_id"});
+    return $self -> self_error("Unable to locate prefix: " .$self -> errstr()) if(!defined($prefix);
 
     # Start building the recipient lists
     my $addresses = { "reply_to" => $article -> {"methods"} -> {"Email"} -> {"reply_to"},
