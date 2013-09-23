@@ -354,7 +354,7 @@ sub _generate_success {
                                                  [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
                                                     "colour"  => "blue",
                                                     "action"  => "location.href='".$self -> build_url(block => "articles", pathinfo => [])."'"} ]),
-            $self -> {"template"} -> load_template("refreshmeta.tem", {"***url***" => $self -> build_url(block => "articles", pathinfo => []) } )
+            ""
         );
 }
 
