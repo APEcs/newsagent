@@ -72,7 +72,7 @@ COMPOSE_ERR_NOSUMMARYARTICLE = No text has been entered for the summary or artic
 
 COMPOSE_ADDED_TITLE       = Article Added
 COMPOSE_ADDED_SUMMARY     = Article created and added to the system successfully.
-COMPOSE_ADDED_DESC        = Your article has been added to the system. If you set it for immediate publication, it should be visible on feeds now; timed articles will be released when the selected time has passed. You will be redirected to the compose form shortly, or you can click 'continue' to return to it now.
+COMPOSE_ADDED_DESC        = Your article has been added to the system. If you set it for immediate publication, it should be visible on feeds now; timed articles will be released when the selected time has passed. Click 'Continue' to go to your message list.
 
 COMPOSE_NOTIFICATION = Notifications
 COMPOSE_ACYEAR       = Academic Year
