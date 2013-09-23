@@ -15,6 +15,7 @@ COMPOSE_NORMAL     = Normal Article
 COMPOSE_IMAGEA     = Lead Image
 COMPOSE_IMAGEB     = Article Image
 
+COMPOSE_PUBLICATION = Publication options
 COMPOSE_FEED   = Show in feed
 COMPOSE_LEVEL  = Visibility levels
 
@@ -74,7 +75,7 @@ COMPOSE_ADDED_TITLE       = Article Added
 COMPOSE_ADDED_SUMMARY     = Article created and added to the system successfully.
 COMPOSE_ADDED_DESC        = Your article has been added to the system. If you set it for immediate publication, it should be visible on feeds now; timed articles will be released when the selected time has passed. Click 'Continue' to go to your message list.
 
-COMPOSE_NOTIFICATION = Notifications
+COMPOSE_NOTIFICATION = Notification options
 COMPOSE_ACYEAR       = Academic Year
 COMPOSE_RECIPIENTS   = Recipients
 

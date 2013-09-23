@@ -176,7 +176,8 @@ div.content h3 {
     font-size: 13px;
     font-weight: bold;
     border-bottom: 1px dotted #666;
-    margin: 5px 0px 2px 0px;
+    margin: 10px 0px 2px 0px;
+    color: #005678;
 }
 
 span.helptext {

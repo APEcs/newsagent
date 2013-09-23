@@ -360,10 +360,6 @@ sub _validate_article_fields {
     $args -> {"minor_edit"} = $self -> {"cgi"} -> param("minor_edit") ? 1 : 0;
 
     my $sys_levels = $self -> {"article"} -> get_all_levels();
-    ($args -> {"feed"}, $error) = $self -> validate_options("feed", {"required" => 1,
-                                                                     "source"   => $self -> {"article"} -> get_user_feeds($userid, $sys_levels),
-                                                                     "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_FEED")});
-    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
     # Which release mode is the user using? 0 is default, 1 is batch
     ($args -> {"relmode"}, $error) = $self -> validate_numeric("relmode", {"required" => 1,
@@ -375,6 +371,11 @@ sub _validate_article_fields {
 
     # Release mode 0 is "standard" release - potentially with timed delay.
     if($args -> {"relmode"} == 0) {
+        ($args -> {"feed"}, $error) = $self -> validate_options("feed", {"required" => 1,
+                                                                         "source"   => $self -> {"article"} -> get_user_feeds($userid, $sys_levels),
+                                                                         "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_FEED")});
+        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+
         # This will check that the user has access to the level and feed
         $error = $self -> _validate_levels($args, $userid);
 
