@@ -48,11 +48,11 @@ ul.fancy-select {
 	padding: 0;
 
 	/* Use the folliwing if you want to set a fixed height
-	 * on the dropdown and let user "scroll" options...
+	 * on the dropdown and let user "scroll" options... */
 	width: 150px;
 	height: 200px;
 	overflow: auto;
-	*overflow-x: hidden;
+	/*overflow-x: hidden;
 	*overflow-y: auto; */
 
 }
