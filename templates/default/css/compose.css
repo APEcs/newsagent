@@ -160,6 +160,15 @@ ul.reciplist li.haschild.open > div.recipient {
     background-image: url("../images/tree_open.png");
 }
 
+ul.reciplist li.haschild > div.recipient:hover {
+    background-image: url("../images/tree_closed-hover.png");
+}
+
+ul.reciplist li.haschild.open > div.recipient:hover {
+    background-image: url("../images/tree_open-hover.png");
+}
+
+
 ul.reciplist li div.MultiSelect {
     display: inline-block;
     width: 160px;
@@ -170,6 +179,9 @@ div.recip-meths {
 }
 div.recipient {
     float: left;
+}
+li.haschild > div.recipient {
+	cursor: pointer;
 }
 
 div.content h3 {
