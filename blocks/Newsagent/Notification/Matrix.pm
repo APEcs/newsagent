@@ -213,7 +213,7 @@ sub _build_matrix_level {
                                                                                "***title***"    => $entry -> {"name"},
                                                                                "***id***"       => $entry -> {"id"},
                                                                                "***children***" => $children,
-                                                                               "***methods***"  => $methods,
+                                                                               "***methods***"  => $methods || "&nbsp;", # nbsp required to prevent optionless rows squashing together
                                                                                "***haschild***" => $children ? "haschild" : "",
                                                           });
     }
