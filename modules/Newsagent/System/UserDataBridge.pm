@@ -152,6 +152,12 @@ sub _add_multiparam {
 # - `exlplan`: A comma seperated list of plan names to exclude (if set,
 #              students are included as long as they are not on the specified
 #              plan(s))
+# - `prog`: A comma separated list of programme names to include (if
+#           set, and a student is not on a listed programme, they are
+#           not included in the list). This may include wildcards.
+# - `exlprog`: A comma seperated list of programme names to exclude (if set,
+#              students are included as long as they are not on the specified
+#              programmes(s))
 # - `course`: A comma separated list of courses the student must be in. Note that
 #             the student must be in all of the courses.
 sub get_user_addresses {
@@ -197,6 +203,27 @@ sub get_user_addresses {
         $where  .= " `p`.`student_id` = `u`.`id` AND `pl`.`id` = `p`.`plan_id` ";
 
         $where .= $self -> _add_multiparam($settings -> {"exlplan"}, \@params, "pl", "name", "NOT LIKE", "AND");
+    }
+
+    if(defined($settings -> {"prog"})) {
+        $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"acprogs"}."` AS `pg`";
+        $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"user_progs"}."` AS `sp`";
+        $where  .= "AND" if($where);
+        $where  .= " `sp`.`student_id` = `u`.`id` AND `pg`.`id` = `sp`.`prog_id` ";
+
+        $where .= $self -> _add_multiparam($settings -> {"prog"}, \@params, "pg", "name", "LIKE", "OR");
+
+        # Allow for exclusion at the same time as inclusion.
+        $where .= $self -> _add_multiparam($settings -> {"exlprog"}, \@params, "pg", "name", "NOT LIKE", "AND")
+            if(defined($settings -> {"exlprog"}));
+
+    } elsif(defined($settings -> {"exlprog"})) {
+        $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"acprogs"}."` AS `pg`";
+        $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"user_progs"}."` AS `sp`";
+        $where  .= "AND" if($where);
+        $where  .= " `sp`.`student_id` = `u`.`id` AND `pg`.`id` = `sp`.`prog_id` ";
+
+        $where .= $self -> _add_multiparam($settings -> {"exlprog"}, \@params, "pg", "name", "NOT LIKE", "AND");
     }
 
     if(defined($settings -> {"course"}) && defined($settings -> {"yearid"})) {
