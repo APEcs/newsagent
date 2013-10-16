@@ -4,5 +4,5 @@
     ***articleimg***
     <h3>***summary***</h3>
     <div class="newsagent-article">***fulltext***</div>
-    <div class="newsagent-author"><img src="https://www.gravatar.com/avatar/***gravhash***?s=16&amp;d=mm&amp;r=g" alt="gravatar" class="newsagent-avatar" width="16" height="16" /> ***name***</div>
+    <div class="newsagent-author"><img src="https://gravatar.com/avatar/***gravhash***?s=16&amp;d=mm&amp;r=g" alt="gravatar" class="newsagent-avatar" width="16" height="16" /> ***name***</div>
 </li>

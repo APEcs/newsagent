@@ -6,5 +6,5 @@
     <div style="color: #7496AF; font-size: 11px; margin-bottom: 10px; padding: 10px 0px">Published: ***date***</div>
     ***img2***
     <div style="border-bottom: 1px solid #aaa; padding: 0px 4px 5px 4px" >***body***</div>
-    <div style="font-size: 14px; line-height: 32px; vertical-align: center;"><img src="https://www.gravatar.com/avatar/***gravhash***?s=32&amp;d=mm&amp;r=g" alt="gravatar" class="newsagent-avatar" width="32" height="32" /> ***name***</div>
+    <div style="font-size: 14px; line-height: 32px; vertical-align: center;"><img src="https://gravatar.com/avatar/***gravhash***?s=32&amp;d=mm&amp;r=g" alt="gravatar" class="newsagent-avatar" width="32" height="32" /> ***name***</div>
 </div>

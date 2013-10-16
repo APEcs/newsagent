@@ -5,6 +5,6 @@
       <pubDate>***date***</pubDate>
       <guid>***guid***</guid>
       <author>***email*** (***name***)</author>
-      <newsagent:gravatar>https://www.gravatar.com/avatar/***gravhash***</newsagent:gravatar>
+      <newsagent:gravatar>https://gravatar.com/avatar/***gravhash***</newsagent:gravatar>
       <newsagent:feed>***feed***</newsagent:feed>
 ***images******extra***    </item>
