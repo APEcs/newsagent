@@ -46,6 +46,7 @@ sub _generate_compose {
     # Get a list of available posting levels in the system (which may be more than the
     # user has access to - we don't care about that at this point)
     my $sys_levels = $self -> {"article"} -> get_all_levels();
+    my $jslevels   = $self -> _build_levels_jsdata($sys_levels);
     my $levels     = $self -> _build_level_options($sys_levels, $args -> {"levels"});
 
     # Work out where the user is allowed to post from
@@ -136,6 +137,7 @@ sub _generate_compose {
                                                                            "***imagebimgs***"       => $imageb_img,
                                                                            "***relmode***"          => $args -> {"relmode"} || 0,
                                                                            "***userlevels***"       => $feed_levels,
+                                                                           "***levellist***"        => $jslevels,
                                                                            "***sticky_mode***"      => $self -> {"template"} -> build_optionlist($self -> {"stickyops"}, $args -> {"sticky"}),
                                                                            "***batchstuff***"       => $schedblock,
                                                                            "***notifystuff***"      => $notifyblock,

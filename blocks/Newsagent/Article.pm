@@ -602,6 +602,26 @@ sub _build_feed_levels {
 }
 
 
+## @method private $ _build_levels_jsdata($levels)
+# Given an array of level descriptions hashrefs, create an array of level names that
+# the level autoselector javascript can use.
+#
+# @param levels A reference to an array of level hashrefs.
+# @return A string to use in the page as the level array.
+sub _build_levels_jsdata {
+    my $self   = shift;
+    my $levels = shift;
+    my @names;
+
+    foreach my $level (@{$levels}) {
+        push(@names, '"'.$level -> {"value"}.'"');
+    }
+
+    my $array = "level_list = new Array(".join(",", @names).");";
+}
+
+
+
 # ============================================================================
 #  Things of which Man was Not Meant To Know (also support code)
 

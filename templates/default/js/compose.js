@@ -70,11 +70,25 @@ function set_visible_levels()
                              $('forlevel-'+key).removeClass("disabled");
                          } else {
                              $('level-'+key).disabled = 1;
-                             $('level-'+key).checked = 0; /* force no check when disabled */
+                             $('level-'+key).set('checked', false); /* force no check when disabled */
                              $('forlevel-'+key).addClass("disabled");
                          }
                      }
                  });
+}
+
+
+function cascade_levels(element)
+{
+    if(!element.get('checked')) return 0;
+
+    var position = level_list.indexOf(element.value);
+
+    for(var i = position + 1; i < level_list.length; ++i) {
+        if($('level-'+level_list[i])) {
+            $('level-'+level_list[i]).set('checked', true);
+        }
+    }
 }
 
 
@@ -138,4 +152,6 @@ window.addEvent('domready', function() {
         $('comp-srelease').addEvent('change', function() { date_control('schedule_date', 'stimestamp', 'comp-srelease'); });
         date_control('schedule_date', 'stimestamp', 'comp-srelease');
     }
+
+    $$('input[name=level]').addEvent('change', function(event) { cascade_levels(event.target); });
 });

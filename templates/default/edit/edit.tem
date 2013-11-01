@@ -134,6 +134,7 @@ window.addEvent('domready', function() {
     $$('select.fancyselect').fancySelect({showText: false, autoHide: true});
 
     ***userlevels***
+    ***levellist***
     set_visible_levels();
 });
 </script>
