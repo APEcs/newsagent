@@ -306,7 +306,8 @@ sub send {
                        "text_body" => $self -> make_markdown_body(Encode::encode("iso-8859-1", $articlebody), $article -> {"images"}),
                        "reply_to"  => $article -> {"methods"} -> {"Email"} -> {"reply_to"} || $author -> {"email"},
                        "from"      => $author -> {"email"},
-                       "id"        => $article -> {"id"}
+                       "id"        => $article -> {"id"},
+                       "recips"    => $self -> _build_header_recipients($allrecips),
     };
 
     my $status = $self -> _send_emails($email_data);
@@ -564,6 +565,28 @@ sub _build_recipients {
 }
 
 
+## @method private $ _build_header_recipients($allrecips)
+# Build a list of recipients and the methods used to contact them to include in
+# the email header.
+#
+# @param allrecips A reference to a hash containing the methods being used to
+#                  send notifications for this article as keys, and arrays of
+#                  recipient names for each method as values.
+# @return A string containing the recipient list
+sub _build_header_recipients {
+    my $self      = shift;
+    my $allrecips = shift;
+
+    my @recips = ();
+
+    foreach my $method (sort keys(%{$allrecips})) {
+        push(@recips, "$method:".join(",", @{$allrecips -> {$method}}));
+    }
+
+    return '"'.join(";", @recips).'"';
+}
+
+
 ## @method private $ _finish_send($status, $recipients)
 # Generate an array of status messages for each recipient
 #
@@ -768,6 +791,7 @@ sub _send_emails {
             }
 
             push(@{$header}, "X-Mailer", "Newsagent");
+            push(@{$header}, "X-Newsagent-Recipients", $email -> {"recips"});
 
             $self -> _send_email_message({"header"    => $header,
                                           "html_body" => $email -> {"html_body"},
