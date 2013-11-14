@@ -191,18 +191,22 @@ sub get_article {
 }
 
 
-## @method $ send($article, $recipients)
+## @method $ send($article, $recipients, $allrecips)
 # Attempt to send the specified article through the current method to the
 # specified recipients.
 #
 # @param article A reference to a hash containing the article to send.
 # @param recipients A reference to an array of recipient/emthod hashes.
+# @param allrecips A reference to a hash containing the methods being used to
+#                  send notifications for this article as keys, and arrays of
+#                  recipient names for each method as values.
 # @return A reference to an array of {name, state, message} hashes on success,
 #         on entry for each recipient, undef on error.
 sub send {
     my $self       = shift;
     my $article    = shift;
     my $recipients = shift;
+    my $allrecips  = shift;
 
     $self -> clear_error();
 

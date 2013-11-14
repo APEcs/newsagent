@@ -171,18 +171,22 @@ sub get_article {
 }
 
 
-## @method $ send($article, $recipients)
+## @method $ send($article, $recipients, $allrecips)
 # Attempt to send the specified article through the current method to the
 # specified recipients.
 #
 # @param article A reference to a hash containing the article to send.
 # @param recipients A reference to an array of recipient/emthod hashes.
+# @param allrecips A reference to a hash containing the methods being used to
+#                  send notifications for this article as keys, and arrays of
+#                  recipient names for each method as values.
 # @return A reference to an array of {name, state, message} hashes on success,
 #         on entry for each recipient, undef on error.
 sub send {
     my $self       = shift;
     my $article    = shift;
     my $recipients = shift;
+    my $allrecips  = shift;
 
     $self -> clear_error();
 
@@ -289,13 +293,17 @@ sub send {
                                                                                                   "***img2***"     => $images[1],
                                                                                                   "***logo_url***" => $self -> {"settings"} -> {"config"} -> {"Article:logo_img_url"},
                                                                                                   "***name***"     => $article -> {"realname"} || $article -> {"username"},
+                                                                                                  "***recips***"   => $self -> _build_recipients($allrecips),
                                                                                                   "***gravhash***" => md5_hex(lc(trimspace($article -> {"email"} || ""))) });
-
+    my $articlebody = $self -> {"template"} -> load_template("Notification/Method/Email/body.tem", {"***body***"   => $article -> {"article"},
+                                                                                                    "***name***"   => $article -> {"realname"} || $article -> {"username"},
+                                                                                                    "***recips***" => $self -> _build_recipients($allrecips),
+                                                             });
     my $email_data = { "addresses" => $addresses,
                        "debug"     => $addresses -> {"use_debugmode"},
                        "subject"   => Encode::encode("iso-8859-1", $subject),
                        "html_body" => Encode::encode("iso-8859-1", $htmlbody),
-                       "text_body" => $self -> make_markdown_body(Encode::encode("iso-8859-1", $article -> {"article"}), $article -> {"images"}),
+                       "text_body" => $self -> make_markdown_body(Encode::encode("iso-8859-1", $articlebody), $article -> {"images"}),
                        "reply_to"  => $article -> {"methods"} -> {"Email"} -> {"reply_to"} || $author -> {"email"},
                        "from"      => $author -> {"email"},
                        "id"        => $article -> {"id"}
@@ -531,6 +539,30 @@ sub _build_smtp_args {
 ################################################################################
 #  Private view/controller functions
 ################################################################################
+
+## @method private $ _build_recipients($allrecips)
+# Build a list of recipients and the methods used to contact them to include in
+# the email footer.
+#
+# @param allrecips A reference to a hash containing the methods being used to
+#                  send notifications for this article as keys, and arrays of
+#                  recipient names for each method as values.
+# @return A string containing the recipient list
+sub _build_recipients {
+    my $self      = shift;
+    my $allrecips = shift;
+    my @recips = ();
+
+    foreach my $method (sort keys(%{$allrecips})) {
+        push(@recips, $self -> {"template"} -> load_template("Notification/Method/Email/reciplist.tem", {"***method***"     => $method,
+                                                                                                         "***recipients***" => join(", ", @{$allrecips -> {$method}})
+                                                             })
+            );
+    }
+
+    return join(" ", @recips);
+}
+
 
 ## @method private $ _finish_send($status, $recipients)
 # Generate an array of status messages for each recipient

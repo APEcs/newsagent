@@ -25,7 +25,7 @@ use base qw(Newsagent::Article); # This class extends the Article block class
 use v5.12;
 
 use Newsagent::System::Matrix;
-
+use Data::Dumper;
 
 ## @method private $ _notify_author($notify, $result)
 # Send an email to the author of the article telling them that the status of
@@ -68,17 +68,51 @@ sub _notify_author {
 }
 
 
-## @method private $ _send_article_to_recipients($notify)
+## @method private $ _build_all_recipients($pending)
+# Go through the provided list of pending notifications, and build a list of all
+# methods and recipients they will be sent to (for inclusion in messages as a
+# "sent to: ..." list).
+#
+# @param pending A reference to an array of pending article notifications.
+# @return A reference to a hash keyed off methods, containing arrays of recipients.
+sub _build_all_recipients {
+    my $self       = shift;
+    my $pending    = shift;
+    my $recipients = {};
+
+    $self -> clear_error();
+
+    # Quickly go through the list of pending notifications building the recipients.
+    # At this point it doesn't matter if we're actually going to send them here, or if
+    # another cron job will grab them: we need to know where they are going regardless.
+    foreach my $notify (@{$pending}) {
+        my $recipmeths = $self -> {"notify_methods"} -> {$notify -> {"name"}} -> get_notification_targets($notify -> {"id"}, $notify -> {"year_id"})
+            or return $self -> self_error($self -> {"notify_methods"} -> {$notify -> {"name"}} -> errstr());
+
+        foreach my $dest (@{$recipmeths}) {
+            push(@{$recipients -> {$notify -> {"name"}}}, $dest -> {"shortname"});
+        }
+    }
+
+    return $recipients;
+}
+
+
+## @method private $ _send_article_to_recipients($notify, $allrecips)
 # Send the specified notification to its recipients. This traverses the list
 # of recipients for the notification, updating the appropriate method with the
 # settings needed to send to that recipient, and then invoking the dispatcher.
 #
-# @param notify The notification to send
+# @param notify    The notification to send
+# @param allrecips A reference to a hash containing the methods being used to
+#                  send notifications for this article as keys, and arrays of
+#                  recipient names for each method as values.
 # @return A reference to an array containing send status information for each
 #         recipient, or undef if a serious error occurred.
 sub _send_article_to_recipients {
-    my $self   = shift;
-    my $notify = shift;
+    my $self      = shift;
+    my $notify    = shift;
+    my $allrecips = shift;
 
     # Fetch the article core data
     my $article = $self -> {"article"} -> get_article($notify -> {"article_id"})
@@ -88,7 +122,7 @@ sub _send_article_to_recipients {
     my $recipmeths = $self -> {"notify_methods"} -> {$notify -> {"name"}} -> get_notification_targets($notify -> {"id"}, $notify -> {"year_id"})
         or return $self -> self_error($self -> {"notify_methods"} -> {$notify -> {"name"}} -> errstr());
 
-    return $self -> {"notify_methods"} -> {$notify -> {"name"}} -> send($article, $recipmeths)
+    return $self -> {"notify_methods"} -> {$notify -> {"name"}} -> send($article, $recipmeths, $allrecips)
         or return $self -> self_error($self -> {"notify_methods"} -> {$notify -> {"name"}} -> errstr());
 }
 
@@ -104,6 +138,11 @@ sub _send_pending_notifications {
     my $pending = shift;
     my $status  = "";
 
+    $self -> clear_error();
+
+    my $allrecipients = $self -> _build_all_recipients($pending)
+        or return undef;
+
     foreach my $notify (@{$pending}) {
 
         # If the notification is still marked as pending, start it sending
@@ -115,7 +154,7 @@ sub _send_pending_notifications {
             $self -> log("cron", "Starting delivery of notification ".$notify -> {"id"});
 
             # Invoke the sender to do the actual work of dispatching the messages
-            my $result = $self -> _send_article_to_recipients($notify);
+            my $result = $self -> _send_article_to_recipients($notify, $allrecipients);
             if(!$result) {
                 $status .= $self -> {"template"} -> load_template("cron/status_item.tem", {"***article***" => $notify -> {"article_id"},
                                                                                            "***id***"      => $notify -> {"id"},
