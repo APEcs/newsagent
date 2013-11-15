@@ -95,6 +95,67 @@ sub get_user_byemail {
 }
 
 
+## @method $ set_user_setting($uid, $name, $value)
+# Set the specified configuration setting for the user to the provided value.
+# If value is undef, the setting is removed for this user.
+#
+# @param uid   The ID of the user to set the setting for.
+# @param name  The name of the setting to set for the user.
+# @param value The value to set for the setting. If this is undef, the
+#              setting for the user is removed.
+# @return true on success, undef on error.
+sub set_user_setting {
+    my $self  = shift;
+    my $uid   = shift;
+    my $name  = shift;
+    my $value = shift;
+
+    $self -> clear_error();
+
+    # If no value has been specified, just go ahead and delete the setting
+    return $self -> _delete_user_setting($uid, $name)
+        if(!defined($value));
+
+    # Otherwise, determine whether a setting is already present
+    my $current = $self -> get_user_setting($uid, $name)
+        or return undef;
+
+    # Setting is present, update the old value
+    if($current -> {"id"}) {
+        return $self -> _update_user_setting($current -> {"id"}, $value);
+
+    # Otherwise insert a new row
+    } else {
+        return $self -> _add_user_setting($uid, $name, $value);
+    }
+}
+
+
+## @method $ get_user_setting($uid, $name)
+# Obtain the setting information for the specified user.
+#
+# @param uid  The ID of the user to fetch the configuation setting for.
+# @param name The name of the setting to fetch.
+# @return A reference to a hash containing the setting information if it is
+#         set for the user, a reference to an empty hash if it is not, or
+#         undef on error.
+sub get_user_setting {
+    my $self = shift;
+    my $uid  = shift;
+    my $name = shift;
+
+    $self -> clear_error();
+
+    my $geth = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"user_settings"}."`
+                                            WHERE `user_id` = ?
+                                            AND `name` LIKE ?");
+    $geth -> execute($uid, $name)
+        or return $self -> self_error("Unable to fetch user setting: ".$self -> {"dbh"} -> errstr);
+
+    return $geth -> fetchrow_hashref() || {};
+}
+
+
 ## @method $ post_authenticate($username, $password, $auth)
 # After the user has logged in, ensure that they have an in-system record.
 # This is essentially a wrapper around the standard AppUser::post_authenticate()
@@ -193,6 +254,81 @@ sub _make_user_extradata {
     $user -> {"gravatar_hash"} = md5_hex(lc(trimspace($user -> {"email"} || "")));
 
     return $user;
+}
+
+
+## @method private $ _add_user_setting($uid, $name, $value)
+# Add a setting for the specified user to the database. This will add a new
+# setting for the user, it does not check if the setting is already present.
+#
+# @param uid   The ID of the user to set the setting for.
+# @param name  The name of the setting to set for the user.
+# @param value The value to set for the setting. If this is undef, the
+#              setting for the user is removed.
+# @return true on success, undef on error.
+sub _add_user_setting {
+    my $self  = shift;
+    my $uid   = shift;
+    my $name  = shift;
+    my $value = shift;
+
+    $self -> clear_error();
+
+    my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"user_settings"}."`
+                                            (`user_id`, `name`, `value`)
+                                            VALUES(?, ?, ?)");
+    my $rows = $newh -> execute($uid, $name, $value);
+    return $self -> self_error("Unable to perform user setting insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("User setting insert failed, no rows inserted") if($rows eq "0E0");
+
+    return 1;
+}
+
+
+## @method private $ _update_user_setting($id, $value)
+# Update a setting for a user. This updates the value associated with the
+# specified user setting
+#
+# @param id    The ID of the user setting row to update the value in
+# @param value The value to set in the setting row.
+# @return true on success, undef on error
+sub _update_user_setting {
+    my $self  = shift;
+    my $id    = shift;
+    my $value = shift;
+
+    my $seth = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"user_settings"}."`
+                                            SET `value` = ?
+                                            WHERE `id` = ?");
+    my $rows = $seth -> execute($value, $id);
+    return $self -> self_error("Unable to perform user setting update: ". $self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("User setting update failed, no rows inserted") if($rows eq "0E0");
+
+    return 1;
+}
+
+
+## @method private $ _delete_user_setting($uid, $name)
+# Remove a setting for the specified user from the database. This will remove
+# the setting if it exists; non-existence is not considered an error.
+#
+# @param uid  The ID of the user to delete the setting for.
+# @param name The name of the setting to delete.
+# @return true on success, undef on error.
+sub _delete_user_setting {
+    my $self = shift;
+    my $uid  = shift;
+    my $name = shift;
+
+    $self -> clear_error();
+
+    my $nukeh = $self -> {"dbh"} -> prepare("DELETE FROM `".$self -> {"settings"} -> {"database"} -> {"user_settings"}."`
+                                             WHERE `user_id` = ?
+                                             AND `name` LIKE ?");
+    $nukeh -> execute($uid, $name)
+        or return $self -> self_error("Unable to delete user setting: ".$self -> {"dbh"} -> errstr);
+
+    return 1;
 }
 
 1;
