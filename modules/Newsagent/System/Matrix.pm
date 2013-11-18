@@ -136,6 +136,26 @@ sub get_pending_notifications {
 }
 
 
+## @method $ get_available_methods()
+# Obtain a list of the methods defined in the system. This does not filter based on
+# the methods available to the user.
+#
+# @return A reference to an array of method hashes on success, undef on error
+sub get_available_methods {
+    my $self = shift;
+
+    $self -> clear_error();
+
+    my $methods = $self -> {"dbh"} -> prepare("SELECT id, name
+                                               FROM  `".$self -> {"settings"} -> {"database"} -> {"notify_methods"}."`
+                                               ORDER BY name");
+    $methods -> execute()
+        or return $self -> self_error("Unable to look up available methods: ".$self -> {"dbh"} -> errstr);
+
+    return $methods -> fetchall_arrayref({});
+}
+
+
 # ============================================================================
 #  Private incantations
 

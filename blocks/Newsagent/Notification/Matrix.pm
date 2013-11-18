@@ -152,7 +152,16 @@ sub build_matrix {
         # default the year
         $acyear = $years -> [0] -> {"value"} if(!$acyear);
 
+        my $methods = $self -> {"matrix"} -> get_available_methods()
+            or return $self -> self_error("Unable to generate matrix: ".$self -> {"matrix"} -> errstr());
+
+        my @methlist = ();
+        foreach my $method (@{$methods}) {
+            push(@methlist, "'".$method -> {"id"}."': '".$method -> {"name"}."'");
+        }
+
         return $self -> {"template"} -> load_template("matrix/container.tem", {"***matrix***"   => $html,
+                                                                               "***methods***"  => join(", ", @methlist),
                                                                                "***acyears***"  => $self -> {"template"} -> build_optionlist($years, $acyear),
                                                                                "***multisel***" => $multisel});
     }

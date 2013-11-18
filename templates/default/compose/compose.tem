@@ -23,7 +23,7 @@
             </div>
             <hr />
             <div class="submitbox">
-                <input type="hidden" name="stopconfirm" id="stopconfirm" value="0" />
+                <input type="hidden" name="stopconfirm" id="stopconfirm" value="***disable_confirm***" />
                 <input type="button" class="button blue" name="newarticle" id="submitarticle" value="{L_COMPOSE_SUBMIT}" />
             </div>
         </div>
@@ -124,7 +124,21 @@ Not here yet.
 </div>
 <script type="text/javascript">
 
-suppress_confirm = ***disable_confirm***;
+confirm_messages = {   errors: "{L_COMPOSE_ERRORS}",
+                     nolevels: "{L_COMPOSE_LEVEL_ERRNONE}",
+                       notext: "{L_COMPOSE_ERR_NOSUMMARYARTICLE}",
+                        title: "{L_COMPOSE_CONFIRM}",
+                        intro: "{L_COMPOSE_CONFIRM_INTRO}",
+                      confirm: "{L_COMPOSE_SUBMIT}",
+                       cancel: "{L_COMPOSE_CANCEL}",
+                         stop: "{L_COMPOSE_CONFIRM_STOP}",
+                      levshow: "{L_COMPOSE_CONFIRM_SHOWN}",
+                       levels: {   home: "{L_COMPOSE_CONFIRM_HOME}",
+                                 leader: "{L_COMPOSE_CONFIRM_LEADER}",
+                                  group: "{L_COMPOSE_CONFIRM_GROUP}",
+                               },
+                       notify: "{L_COMPOSE_CONFIRM_NOTIFY}",
+                   };
 
 window.addEvent('domready', function() {
     CKEDITOR.replace('comp-desc', { customConfig: '{V_[commonpath]}cke_configs/basic_open.js' });

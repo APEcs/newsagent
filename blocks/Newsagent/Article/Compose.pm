@@ -120,7 +120,7 @@ sub _generate_compose {
 
     # Determine whether the user expects to be prompted for confirmation
     my $noconfirm = $self -> {"session"} -> {"auth"} -> {"app"} -> get_user_setting($userid, "disable_confirm");
-    $noconfirm = $noconfirm -> {"value"} || "false";
+    $noconfirm = $noconfirm -> {"value"} || "0";
 
     # And generate the page title and content.
     return ($self -> {"template"} -> replace_langvar("COMPOSE_FORM_TITLE"),

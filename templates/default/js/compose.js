@@ -112,16 +112,145 @@ function set_schedule_sections()
 }
 
 
+function confirm_errors(summary, fulltext, levels)
+{
+    var errlist = new Element('ul');
+    var errelem = new Element('div').adopt(
+        new Element('p', { html: confirm_messages['errors'] }),
+        errlist
+    );
+
+    if(!levels) {
+        errlist.adopt(new Element('li', { html: confirm_messages['nolevels'] }));
+    }
+
+    if(!summary.length && !fulltext.length) {
+        errlist.adopt(new Element('li', { html: confirm_messages['notext'] }));
+    }
+
+    return errelem;
+}
+
+
+function confirm_levels()
+{
+    var levellist = new Element('ul');
+    var levelelem = new Element('div').adopt(
+        new Element('p', { html: confirm_messages['levshow'] }),
+        levellist
+    );
+
+    $$('input[name=level]:checked').each(
+        function(element) {
+            levellist.adopt(new Element('li', { html: confirm_messages['levels'][element.get('value')] }));
+        }
+    );
+
+    return levelelem;
+}
+
+
+function enabled_notify()
+{
+    var enabled = { };
+    var format = /^(\d+)-(\d+)$/;
+
+    $$('input[name=matrix]:checked').each(
+        function(element) {
+            var value = element.get('value');
+            var match = format.exec(value);
+
+            if(match) {
+                var titleElem = $$('li#recip-'+match[1]+' > div.recipient')[0];
+                if(titleElem) {
+                    var method = notify_methods[match[2]];
+                    var name   = titleElem.get('title');
+
+                    if(!enabled[method]) enabled[method] = new Array();
+                    enabled[method].push(name);
+                }
+            }
+        }
+    );
+
+    return enabled;
+}
+
+
+function confirm_notify()
+{
+    var notifyelem;
+    var enabled = enabled_notify();
+
+    if(enabled && Object.keys(enabled).length) {
+        notifyelem = new Element('div');
+
+        Object.each(enabled, function(value, key) {
+                        notifyelem.adopt(new Element('dl').adopt(
+                                             new Element('dt', { html: confirm_messages['notify']+" "+key+":" }),
+                                             new Element('dd', { html: value.join(", ") })
+                                         )
+                                        );
+                    });
+
+    }
+    return notifyelem;
+}
+
+
 function confirm_submit()
 {
-    if(suppress_confirm) {
+    if($('stopconfirm').get('value') == '1') {
         $('fullform').submit();
     } else {
+        var summary  = $('comp-summ').get('value');
+        var fulltext = CKEDITOR.instances['comp-desc'].getData();
+        var levels   = $$('input[name=level]:checked').length;
+        var buttons  = [ { title: confirm_messages['cancel'] , color: 'blue', event: function() { popbox.close(); }} ];
 
-        $('poptitle').set('text', "Confirmation requested");
-        $('popbody').set('html', "Please confirm. <b>CONFIRM!</b>");
-        popbox.setButtons([{ title: "Confirm", color: 'blue', event: function() { $('fullform').submit(); } },
-                           { title: "Cancel" , color: 'blue', event: function() { popbox.close(); }}]);
+        // The start of the body text is the same regardless of whether there are are any errors.
+        var bodytext = new Element('div').adopt(
+            // Side image for the confirm dialog
+            new Element('img', { src: 'templates/default/images/confirm.png',
+                                 styles: {  'width': 48,
+                                           'height': 48,
+                                            'float': 'right',
+                                           'margin': '0em 0em 0.5em 1em'
+                                         }
+                               }),
+            // Introduction message.
+            new Element('p', { html: confirm_messages['intro'] }));
+
+        // If at least one level has been specified, and either the summary or full text have been set,
+        // the article is almost certainly going to be accepted by the system so show the "this is where
+        // the message will appear" stuff and the confirm button.
+        if(levels && (summary.length || fulltext.length)) {
+            bodytext.adopt(
+                confirm_levels(),
+                confirm_notify(),
+                new Element('label', { 'for': 'conf-suppress-cb'
+                                     }).adopt(
+                                         new Element('input', { type: 'checkbox',
+                                                                id: 'conf-suppress-cb'
+                                                              }),
+                                         new Element('span', {   html: confirm_messages['stop'],
+                                                               styles: { 'font-weight': 'normal'}
+                                                             })
+                                     )
+            );
+
+            buttons = [ { title: confirm_messages['confirm'], color: 'blue', event: function() { $('fullform').submit(); } },
+                        buttons[0] ];
+
+        // Otherwise, the system will reject the article - produce errors to show to the user, and keep
+        // the single 'cancel' button.
+        } else {
+            bodytext.adopt(confirm_errors(summary, fulltext, levels));
+        }
+
+        $('poptitle').set('text', confirm_messages['title']);
+        $('popbody').empty().adopt(bodytext);
+        popbox.setButtons(buttons);
         popbox.open();
     }
 }
