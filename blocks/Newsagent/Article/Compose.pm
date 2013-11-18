@@ -107,6 +107,7 @@ sub _generate_compose {
     $error = $self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $error})
         if($error);
 
+    # Build the notification optios and their settings boxes
     my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix");
     my $notifyblock = $matrix -> build_matrix($userid, $args -> {"notify_matrix"} -> {"enabled"}, $args -> {"notify_matrix"} -> {"year"});
 
@@ -116,6 +117,10 @@ sub _generate_compose {
     foreach my $method (keys(%{$self -> {"notify_methods"}})) {
         $notify_settings .= $self -> {"notify_methods"} -> {$method} -> generate_compose($args, $userdata);
     }
+
+    # Determine whether the user expects to be prompted for confirmation
+    my $noconfirm = $self -> {"session"} -> {"auth"} -> {"app"} -> get_user_setting($userid, "disable_confirm");
+    $noconfirm = $noconfirm -> {"value"} || "false";
 
     # And generate the page title and content.
     return ($self -> {"template"} -> replace_langvar("COMPOSE_FORM_TITLE"),
@@ -142,6 +147,7 @@ sub _generate_compose {
                                                                            "***batchstuff***"       => $schedblock,
                                                                            "***notifystuff***"      => $notifyblock,
                                                                            "***notifysettings***"   => $notify_settings,
+                                                                           "***disable_confirm***"  => $noconfirm,
                                                                           }));
 }
 
@@ -185,10 +191,7 @@ sub _add_article {
     my $error = "";
     my $args  = {};
 
-    if($self -> {"cgi"} -> param("newarticle")) {
-        ($error, $args) = $self -> _validate_article();
-    }
-
+    ($error, $args) = $self -> _validate_article();
     return $self -> _generate_compose($args, $error);
 }
 

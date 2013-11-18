@@ -1,6 +1,6 @@
 <div id="composeform">
     ***errorbox***
-    <form action="***form_url***" method="post" enctype="multipart/form-data">
+    <form id="fullform" action="***form_url***" method="post" enctype="multipart/form-data">
     <ul id="leftcol">
     <li id="article" class="shadowbox">
         <h2>{L_COMPOSE_ARTICLE}</h2>
@@ -23,7 +23,8 @@
             </div>
             <hr />
             <div class="submitbox">
-                <input type="submit" class="button blue" value="{L_COMPOSE_SUBMIT}" name="newarticle" />
+                <input type="hidden" name="stopconfirm" id="stopconfirm" value="0" />
+                <input type="button" class="button blue" name="newarticle" id="submitarticle" value="{L_COMPOSE_SUBMIT}" />
             </div>
         </div>
     </li>
@@ -122,6 +123,9 @@ Not here yet.
     </form>
 </div>
 <script type="text/javascript">
+
+suppress_confirm = ***disable_confirm***;
+
 window.addEvent('domready', function() {
     CKEDITOR.replace('comp-desc', { customConfig: '{V_[commonpath]}cke_configs/basic_open.js' });
 

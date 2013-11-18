@@ -112,6 +112,21 @@ function set_schedule_sections()
 }
 
 
+function confirm_submit()
+{
+    if(suppress_confirm) {
+        $('fullform').submit();
+    } else {
+
+        $('poptitle').set('text', "Confirmation requested");
+        $('popbody').set('html', "Please confirm. <b>CONFIRM!</b>");
+        popbox.setButtons([{ title: "Confirm", color: 'blue', event: function() { $('fullform').submit(); } },
+                           { title: "Cancel" , color: 'blue', event: function() { popbox.close(); }}]);
+        popbox.open();
+    }
+}
+
+
 window.addEvent('domready', function() {
     Locale.use('en-GB');
     rdate_picker = new Picker.Date($('release_date'), { timePicker: true,
@@ -154,4 +169,7 @@ window.addEvent('domready', function() {
     }
 
     $$('input[name=level]').addEvent('change', function(event) { cascade_levels(event.target); });
+
+    $('submitarticle').addEvent('click', function() { confirm_submit(); });
+
 });

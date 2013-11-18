@@ -279,6 +279,10 @@ sub _generate_edit {
         $notify_settings .= $self -> {"notify_methods"} -> {$method} -> generate_compose($args, $userdata);
     }
 
+    # Determine whether the user expects to be prompted for confirmation
+    my $noconfirm = $self -> {"session"} -> {"auth"} -> {"app"} -> get_user_setting($userid, "disable_confirm");
+    $noconfirm = $noconfirm -> {"value"} || "false";
+
     # And generate the page title and content.
     return ($self -> {"template"} -> replace_langvar("EDIT_FORM_TITLE"),
             $self -> {"template"} -> load_template("edit/edit.tem", {"***errorbox***"         => $error,
@@ -305,6 +309,7 @@ sub _generate_edit {
                                                                      "***batchstuff***"       => $schedblock,
                                                                      "***notifystuff***"      => $notifyblock,
                                                                      "***notifysettings***"   => $notify_settings,
+                                                                     "***disable_confirm***"  => $noconfirm,
                                                    }));
 }
 
