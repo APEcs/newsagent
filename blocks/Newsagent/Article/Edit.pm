@@ -333,9 +333,7 @@ sub _edit_article {
     my ($article, $message) = $self -> _check_articleid($articleid);
     return ($article, $message) unless(ref($article) eq "HASH");
 
-    if($self -> {"cgi"} -> param("editarticle")) {
-        ($error, $args) = $self -> _validate_article($articleid);
-    }
+    ($error, $args) = $self -> _validate_article($articleid);
 
     return $self -> _generate_edit($articleid, $args, $error);
 }
