@@ -90,6 +90,6 @@ COMPOSE_ERRORS        = Your article can not be added to the system at this time
 
 COMPOSE_CONFIRM_SHOWN  = Once published, this article will be syndicated in the following places. Note that this list is not exhaustive, and your article may be syndicated elsewhere if clients request the feed your article is in at the appropriate visibility level.
 COMPOSE_CONFIRM_HOME   = <b>This article will appear on the School of CS home page!</b>
-COMPOSE_CONFIRM_LEADER = This article <i>may</i> appear on a leader page on the School of CS website.
+COMPOSE_CONFIRM_LEADER = This article <i>may</i> appear on a leader page on the School of CS website. See <a href='https://wiki.cs.manchester.ac.uk/index.php/Newsagent/Feeds#Current_feeds_and_syndication' target='_blank'>this wiki page</a> for more information.
 COMPOSE_CONFIRM_GROUP  = This article will be visible on internal pages that request the feed set for the article.
 COMPOSE_CONFIRM_NOTIFY = Copies of the article will be sent to the following recipients via
