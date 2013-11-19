@@ -211,7 +211,7 @@ function confirm_submit()
         // The start of the body text is the same regardless of whether there are are any errors.
         var bodytext = new Element('div').adopt(
             // Side image for the confirm dialog
-            new Element('img', { src: 'templates/default/images/confirm.png',
+            new Element('img', { src: confirm_imgurl,
                                  styles: {  'width': 48,
                                            'height': 48,
                                             'float': 'right',

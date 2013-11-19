@@ -124,6 +124,7 @@ Not here yet.
 </div>
 <script type="text/javascript">
 
+confirm_imgurl   = '{V_[templatepath]}images/confirm.png';
 confirm_messages = {   errors: "{L_COMPOSE_ERRORS}",
                      nolevels: "{L_COMPOSE_LEVEL_ERRNONE}",
                        notext: "{L_COMPOSE_ERR_NOSUMMARYARTICLE}",
