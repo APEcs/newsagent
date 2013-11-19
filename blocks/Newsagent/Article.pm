@@ -404,6 +404,10 @@ sub _validate_article_fields {
         # FIXME: validate batch fields
     }
 
+    # Handle confirmation suppression
+    $args -> {"noconfirm"} = 1
+        if($self -> {"cgi"} -> param('stopconfirm'));
+
     # Handle images
     $errors .= $self -> _validate_article_image($args, "a");
     $errors .= $self -> _validate_article_image($args, "b");
@@ -522,6 +526,10 @@ sub _validate_article {
 
         }
     }
+
+    # If the user has stopped confirmations, set the flag here
+    $self -> {"session"} -> {"auth"} -> {"app"} -> set_user_setting($userid, "disable_confirm", 1)
+        if($args -> {"noconfirm"});
 
     # redirect to a success page
     # Doing this prevents page reloads adding multiple article copies!

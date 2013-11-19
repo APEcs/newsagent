@@ -206,7 +206,7 @@ function confirm_submit()
         var summary  = $('comp-summ').get('value');
         var fulltext = CKEDITOR.instances['comp-desc'].getData();
         var levels   = $$('input[name=level]:checked').length;
-        var buttons  = [ { title: confirm_messages['cancel'] , color: 'blue', event: function() { popbox.close(); }} ];
+        var buttons  = [ { title: confirm_messages['cancel'] , color: 'blue', event: function() { popbox.close(); popbox.footer.empty(); }} ];
 
         // The start of the body text is the same regardless of whether there are are any errors.
         var bodytext = new Element('div').adopt(
@@ -228,18 +228,25 @@ function confirm_submit()
             bodytext.adopt(
                 confirm_levels(),
                 confirm_notify(),
-                new Element('label', { 'for': 'conf-suppress-cb'
-                                     }).adopt(
-                                         new Element('input', { type: 'checkbox',
-                                                                id: 'conf-suppress-cb'
-                                                              }),
-                                         new Element('span', {   html: confirm_messages['stop'],
-                                                               styles: { 'font-weight': 'normal'}
-                                                             })
-                                     )
-            );
+                new Element('hr')
 
-            buttons = [ { title: confirm_messages['confirm'], color: 'blue', event: function() { $('fullform').submit(); } },
+            );
+            // Inject a confirmation disable checkbox into the footer, it looks better there than in the body
+            popbox.footer.adopt(new Element('label', { 'for': 'conf-suppress-cb',
+                                                       'styles': { 'float': 'left' }
+                                                     }).adopt(
+                                                         new Element('input', { type: 'checkbox',
+                                                                                id: 'conf-suppress-cb'
+                                                                              }),
+                                                         new Element('span', { html: confirm_messages['stop'] })
+                                                     ));
+
+            buttons = [ { title: confirm_messages['confirm'], color: 'blue', event: function() { if($('conf-suppress-cb').get('checked')) {
+                                                                                                     $('stopconfirm').set('value', 1);
+                                                                                                 }
+                                                                                                 $('fullform').submit();
+                                                                                               }
+                        },
                         buttons[0] ];
 
         // Otherwise, the system will reject the article - produce errors to show to the user, and keep
