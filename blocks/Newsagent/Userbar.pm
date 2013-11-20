@@ -25,6 +25,53 @@ use strict;
 use base qw(Newsagent);
 use v5.12;
 
+sub new {
+    my $invocant = shift;
+    my $class    = ref($invocant) || $invocant;
+    my $self     = $class -> SUPER::new(@_)
+        or return undef;
+
+    $self -> {"article"} = Newsagent::System::Article -> new(dbh      => $self -> {"dbh"},
+                                                             settings => $self -> {"settings"},
+                                                             logger   => $self -> {"logger"},
+                                                             roles    => $self -> {"system"} -> {"roles"},
+                                                             metadata => $self -> {"system"} -> {"metadata"})
+        or return Webperl::SystemModule::set_error("Compose initialisation failed: ".$SystemModule::errstr);
+
+    return $self;
+}
+
+
+# ==============================================================================
+#  Preset listing
+
+## @method private $ _build_preset_list($userid)
+# Geneerate a list of presets the user has access to use as article templates.
+#
+# @param userid The ID of the user generating the userbar.
+# @return A string containing the preset list
+sub _build_preset_list {
+    my $self   = shift;
+    my $userid = shift;
+
+    my $presets = $self -> {"article"} -> get_user_presets($userid)
+        or return "<!-- ".$self -> {"article"} -> errstr()." -->";
+
+    my $temlist = "";
+    foreach my $tem (@{$presets}) {
+        $temlist .= $self -> {"template"} -> load_template("userbar/presets_item.tem", {"***url***"  => $self -> build_url(block => "edit", pathinfo => [$tem -> {"id"}], params => { usetem => 1 }),
+                                                                                        "***name***" => $tem -> {"preset"}
+                                                           });
+    }
+
+    if($temlist) {
+        return $self -> {"template"} -> load_template("userbar/presets_enabled.tem", {"***templates***" => $temlist});
+    }
+
+    return $self -> {"template"} -> load_template("userbar/presets_disabled.tem");
+}
+
+
 # ==============================================================================
 #  Bar generation
 
@@ -43,11 +90,12 @@ sub block_display {
     $self -> clear_error();
 
     # Initialise fragments to sane "logged out" defaults.
-    my ($siteadmin, $msglist, $compose, $userprofile) =
+    my ($siteadmin, $msglist, $compose, $userprofile, $presets) =
         ($self -> {"template"} -> load_template("userbar/siteadmin_disabled.tem"),
          $self -> {"template"} -> load_template("userbar/msglist_disabled.tem"),
          $self -> {"template"} -> load_template("userbar/compose_disabled.tem"),
          $self -> {"template"} -> load_template("userbar/profile_loggedout.tem", {"***url-login***" => $self -> build_url(block => "login")}),
+         $self -> {"template"} -> load_template("userbar/presets_disabled.tem"),
         );
 
     # Is the user logged in?
@@ -64,6 +112,8 @@ sub block_display {
         $siteadmin = $self -> {"template"} -> load_template("userbar/siteadmin_enabled.tem", {"***url-admin***"   => $self -> build_url(block => "admin"   , pathinfo => [])})
             if($self -> check_permission("siteadmin"));
 
+        $presets = $self -> _build_preset_list($user -> {"user_id"});
+
         # User is logged in, so actually reflect their current options and state
         $userprofile = $self -> {"template"} -> load_template("userbar/profile_loggedin.tem", {"***realname***"    => $user -> {"fullname"},
                                                                                                "***username***"    => $user -> {"username"},
@@ -73,6 +123,7 @@ sub block_display {
 
     return $self -> {"template"} -> load_template("userbar/userbar.tem", {"***pagename***"   => $title,
                                                                           "***site-admin***" => $siteadmin,
+                                                                          "***presets***"    => $presets,
                                                                           "***compose***"    => $compose,
                                                                           "***msglist***"    => $msglist,
                                                                           "***profile***"    => $userprofile});

@@ -102,11 +102,15 @@ Not here yet.
                             </select>
                         </dd>
                     </dl>
-                    <dl class="input">
+                    <dl class="input" id="comp-reldate">
                         <dt><label for="release_date">{L_COMPOSE_RELDATE}</label></dt>
                         <dd><input class="fillwide datepick" type="text" name="release_date" id="release_date" size="16" maxlength="16" value="***release_date_fmt***" /></dd>
                     </dl>
                     <input type="hidden" name="rtimestamp" id="rtimestamp" value="***rtimestamp***" />
+                    <dl class="input" id="comp-relpreset">
+                        <dt><label for="preset">{L_COMPOSE_PRESETNAME}</label></dt>
+                        <dd><input class="fillwide" type="text" name="preset" id="preset" size="16" maxlength="80" value="***preset***" /></dd>
+                    </dl>
                     <dl class="input">
                         <dt><label for="comp-sticky">{L_COMPOSE_STICKY}</label></dt>
                         <dd><select class="fillwide" id="comp-sticky" name="sticky">

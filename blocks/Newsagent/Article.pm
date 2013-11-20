@@ -502,13 +502,16 @@ sub _validate_article {
                                                                   }), $args);
         }
 
-        foreach my $method (keys(%{$self -> {"notify_methods"}})) {
-            $self -> {"notify_methods"} -> {$method} -> cancel_notifications($articleid)
-                or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
-                                                                                           "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
-                                                                                                                                                     {"***error***" => $self -> {"notify_methods"} -> {$method} -> errstr()
-                                                                                                                                                     })
-                                                                  }), $args);
+        # Do not bother cancelling notifications for draft or preset
+        if($article -> {"release_mode"} ne "draft" && $article -> {"release_mode"} ne "preset") {
+            foreach my $method (keys(%{$self -> {"notify_methods"}})) {
+                $self -> {"notify_methods"} -> {$method} -> cancel_notifications($articleid)
+                    or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
+                                                                                               "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
+                                                                                                                                                         {"***error***" => $self -> {"notify_methods"} -> {$method} -> errstr()
+                                                                                                                                                         })
+                                                                      }), $args);
+            }
         }
 
         if($args -> {"minor_edit"}) {

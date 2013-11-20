@@ -197,6 +197,12 @@ sub _generate_edit {
     # Convert the sticky data into something the dropdown can use
     $self -> _fixup_sticky($article);
 
+    # If the article is a preset, and the 'usetem' flag is set, change the release mode to immediate
+    if($article -> {"preset"} && defined($self -> {"cgi"} -> param('usetem'))) {
+        $article -> {"preset"} = '';
+        $article -> {"release_mode"} = 'visible';
+    }
+
     # copy the article into the args hash, skipping anything already set in the args.
     foreach my $key (keys %{$article}) {
         $args -> {$key} = $article -> {$key} unless($args -> {$key});
@@ -281,7 +287,7 @@ sub _generate_edit {
 
     # Determine whether the user expects to be prompted for confirmation
     my $noconfirm = $self -> {"session"} -> {"auth"} -> {"app"} -> get_user_setting($userid, "disable_confirm");
-    $noconfirm = $noconfirm -> {"value"} || "false";
+    $noconfirm = $noconfirm -> {"value"} || "0";
 
     # And generate the page title and content.
     return ($self -> {"template"} -> replace_langvar("EDIT_FORM_TITLE"),
@@ -310,6 +316,7 @@ sub _generate_edit {
                                                                      "***notifystuff***"      => $notifyblock,
                                                                      "***notifysettings***"   => $notify_settings,
                                                                      "***disable_confirm***"  => $noconfirm,
+                                                                     "***preset***"           => $args -> {"preset"},
                                                    }));
 }
 

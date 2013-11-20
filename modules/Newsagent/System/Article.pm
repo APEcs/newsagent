@@ -549,6 +549,43 @@ sub get_user_articles {
 }
 
 
+## @method @ get_user_presets($userid)
+# Fetch the list of presets the user has editor access to. This will go through
+# the articles in the database, looking for presets the user can access, and
+# returns an array of hashes describing them
+#
+# @param userid    The ID of the user requesting the article list.
+# @return A reference to an array of preset information hashes on success, undef
+#         on error.
+sub get_user_presets {
+    my $self   = shift;
+    my $userid = shift;
+
+    $self -> clear_error();
+
+    # It's not possible to determine as part of an SQL query whether the user has access to any given article,
+    # so fetch all the presets and then the system can check access
+    my $articleh = $self -> {"dbh"} -> prepare("SELECT `id`, `metadata_id`, `preset`
+                                                FROM `".$self -> {"settings"} -> {"database"} -> {"articles"}."`
+                                                WHERE `release_mode` = 'preset'
+                                                AND `preset` IS NOT NULL
+                                                ORDER BY `preset`");
+    $articleh -> execute()
+        or return $self -> self_error("Unable to execute preset query: ".$self -> {"dbh"} -> errstr);
+
+    my @presets = ();
+    while(my $article = $articleh -> fetchrow_hashref()) {
+        # Does the user have edit access to this article?
+        if($self -> {"roles"} -> user_has_capability($article -> {"metadata_id"}, $userid, "edit")) {
+            # Yes, record the preset
+            push(@presets, $article);
+        }
+    }
+
+    return \@presets;
+}
+
+
 ## @method $ get_article($articleid)
 # Obtain the data for the specified article.
 #

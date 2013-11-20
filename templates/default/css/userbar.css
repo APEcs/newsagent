@@ -76,7 +76,7 @@
     border-right: 1px solid #555;
 }
 
-#userbar .bar-container > ul > li > a, #userbar .bar-container > ul > li > .empty-item {
+#userbar .bar-container > ul > li > a, #userbar .bar-container > ul > li > div.menu-title, #userbar .bar-container > ul > li > .empty-item {
     border-right: 1px solid #333;
 }
 
@@ -91,7 +91,7 @@
     border-right: 0;
 }
 
-#userbar .bar-container a, #userbar .bar-container .empty-item {
+#userbar .bar-container a, #userbar .bar-container div.menu-title, #userbar .bar-container .empty-item {
     height: 28px;
     display: block;
     padding: 0 12px;
