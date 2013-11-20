@@ -24,7 +24,7 @@ COMPOSE_RELNOW    = Immediately
 COMPOSE_RELTIME   = At the specified time
 COMPOSE_RELNONE   = Never (save as draft)
 COMPOSE_RELDATE   = Publish time
-COMPOSE_RELPRESET = Create template (not published)
+COMPOSE_RELPRESET = Template (not published)
 
 COMPOSE_PRESETNAME  = Template name
 
