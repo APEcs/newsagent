@@ -151,7 +151,7 @@ function set_schedule_sections()
 }
 
 
-function confirm_errors(summary, fulltext, levels)
+function confirm_errors(summary, fulltext, levels, publish, pubname)
 {
     var errlist = new Element('ul');
     var errelem = new Element('div').adopt(
@@ -166,6 +166,11 @@ function confirm_errors(summary, fulltext, levels)
     if(!summary.length && !fulltext.length) {
         errlist.adopt(new Element('li', { html: confirm_messages['notext'] }));
     }
+
+    if(publish == 'preset' && !pubname.length) {
+        errlist.adopt(new Element('li', { html: confirm_messages['nopreset'] }));
+    }
+
 
     return errelem;
 }
@@ -216,6 +221,18 @@ function enabled_notify()
 }
 
 
+function confirm_preset(isPreset)
+{
+    var presetelem;
+
+    if(isPreset) {
+        presetelem = new Element('p', { html: confirm_messages['ispreset'] });
+    }
+
+    return presetelem;
+}
+
+
 function confirm_notify()
 {
     var notifyelem;
@@ -245,6 +262,9 @@ function confirm_submit()
         var summary  = $('comp-summ').get('value');
         var fulltext = CKEDITOR.instances['comp-desc'].getData();
         var levels   = $$('input[name=level]:checked').length;
+        var publish  = $('comp-release').getSelected().get("value");
+        var pubname  = $('preset').get('value');
+
         var buttons  = [ { title: confirm_messages['cancel'] , color: 'blue', event: function() { popbox.close(); popbox.footer.empty(); }} ];
 
         // The start of the body text is the same regardless of whether there are are any errors.
@@ -263,8 +283,9 @@ function confirm_submit()
         // If at least one level has been specified, and either the summary or full text have been set,
         // the article is almost certainly going to be accepted by the system so show the "this is where
         // the message will appear" stuff and the confirm button.
-        if(levels && (summary.length || fulltext.length)) {
+        if(levels && (summary.length || fulltext.length) && (publish != 'preset' || pubname.length)) {
             bodytext.adopt(
+                confirm_preset(publish == 'preset'),
                 confirm_levels(),
                 confirm_notify(),
                 new Element('hr')
@@ -291,7 +312,7 @@ function confirm_submit()
         // Otherwise, the system will reject the article - produce errors to show to the user, and keep
         // the single 'cancel' button.
         } else {
-            bodytext.adopt(confirm_errors(summary, fulltext, levels));
+            bodytext.adopt(confirm_errors(summary, fulltext, levels, publish, pubname));
         }
 
         $('poptitle').set('text', confirm_messages['title']);

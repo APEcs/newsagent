@@ -135,6 +135,8 @@ confirm_imgurl   = '{V_[templatepath]}images/confirm.png';
 confirm_messages = {   errors: "{L_EDIT_ERRORS}",
                      nolevels: "{L_COMPOSE_LEVEL_ERRNONE}",
                        notext: "{L_COMPOSE_ERR_NOSUMMARYARTICLE}",
+                     ispreset: "{L_COMPOSE_ISPRESET}",
+                     nopreset: "{L_COMPOSE_ERR_NOPRESET}",
                         title: "{L_COMPOSE_CONFIRM}",
                         intro: "{L_EDIT_CONFIRM_INTRO}",
                       confirm: "{L_EDIT_SUBMIT}",

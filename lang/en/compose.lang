@@ -96,3 +96,6 @@ COMPOSE_CONFIRM_HOME   = <b>This article will appear on the School of CS home pa
 COMPOSE_CONFIRM_LEADER = This article <i>may</i> appear on a leader page on the School of CS website. See <a href='https://wiki.cs.manchester.ac.uk/index.php/Newsagent/Feeds#Current_feeds_and_syndication' target='_blank'>this wiki page</a> for more information.
 COMPOSE_CONFIRM_GROUP  = This article will be visible on internal pages that request the feed set for the article.
 COMPOSE_CONFIRM_NOTIFY = Copies of the article will be sent to the following recipients via
+
+COMPOSE_ERR_NOPRESET   = This article has been set to be published as a template, but no template name has been entered.
+COMPOSE_ISPRESET       = <b>This article has been set to be published as a template</b>. It will never be published, and is only visible to you (and admins) within the system. The following publication information only applies to articles created from this template.
