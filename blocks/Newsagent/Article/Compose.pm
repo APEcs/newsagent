@@ -148,6 +148,7 @@ sub _generate_compose {
                                                                            "***notifystuff***"      => $notifyblock,
                                                                            "***notifysettings***"   => $notify_settings,
                                                                            "***disable_confirm***"  => $noconfirm,
+                                                                           "***preset***"           => $args -> {"preset"},
                                                                           }));
 }
 

@@ -19,11 +19,14 @@ COMPOSE_PUBLICATION = Publication options
 COMPOSE_FEED   = Show in feed
 COMPOSE_LEVEL  = Visibility levels
 
-COMPOSE_RELEASE = Publish
-COMPOSE_RELNOW  = Immediately
-COMPOSE_RELTIME = At the specified time
-COMPOSE_RELNONE = Never (save as draft)
-COMPOSE_RELDATE = Publish time
+COMPOSE_RELEASE   = Publish
+COMPOSE_RELNOW    = Immediately
+COMPOSE_RELTIME   = At the specified time
+COMPOSE_RELNONE   = Never (save as draft)
+COMPOSE_RELDATE   = Publish time
+COMPOSE_RELPRESET = Create template (not published)
+
+COMPOSE_PRESETNAME  = Template name
 
 COMPOSE_STICKY      = Sticky
 COMPOSE_NOTSTICKY   = Article is not sticky

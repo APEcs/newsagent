@@ -742,9 +742,9 @@ sub add_article {
 
     # Add the article itself
     my $addh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"articles"}."`
-                                            (previous_id, metadata_id, creator_id, created, feed_id, title, summary, article, release_mode, release_time, updated, updated_id, sticky_until, is_sticky)
-                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    my $rows = $addh -> execute($previd, $metadataid, $userid, $now, $feed -> {"id"}, $article -> {"title"}, $article -> {"summary"}, $article -> {"article"}, $article -> {"mode"}, $article -> {"rtimestamp"}, $now, $userid, $sticky_until, $is_sticky);
+                                            (previous_id, metadata_id, creator_id, created, feed_id, title, summary, article, preset, release_mode, release_time, updated, updated_id, sticky_until, is_sticky)
+                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    my $rows = $addh -> execute($previd, $metadataid, $userid, $now, $feed -> {"id"}, $article -> {"title"}, $article -> {"summary"}, $article -> {"article"}, $article -> {"preset"}, $article -> {"mode"}, $article -> {"rtimestamp"}, $now, $userid, $sticky_until, $is_sticky);
     return $self -> self_error("Unable to perform article insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Article insert failed, no rows inserted") if($rows eq "0E0");
 

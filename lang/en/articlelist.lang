@@ -9,6 +9,7 @@ ALIST_RELTIME_PASSED = Released after timed release
 ALIST_RELNONE        = Draft article (never released)
 ALIST_RELEDIT        = Edited (not publicly visible)
 ALIST_RELDELETED     = Deleted
+ALIST_RELTEMPLATE    = Template: ***preset***
 
 ALIST_CTRLEDIT       = Edit this article
 ALIST_CTRLHIDE       = Unpublish (hide) this article

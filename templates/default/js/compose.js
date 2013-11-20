@@ -27,6 +27,45 @@ function date_control(datefield, tsfield, control) {
 }
 
 
+function release_control(datefield, tsfield, dateopt, presetfield, presetopt, control) {
+    var selVal = $(control).getSelected().get("value");
+
+    var datedisabled   = (selVal != 'timed' && selVal != 'after');
+    var presetdisabled = (selVal != 'preset');
+
+    $(datefield).set("disabled", datedisabled);
+    $(presetfield).set("disabled", presetdisabled);
+
+    // clear the contents if the field is disabled
+    if(datedisabled) {
+        $(datefield).set('value', '');
+        $(tsfield).set('value', '');
+        $(dateopt).dissolve();
+    } else {
+        if(!$(tsfield).get('value')) {
+            // Create a default date one day from now
+            var defdate = new Date();
+            defdate.setTime(defdate.getTime() + 86400000);
+
+            $(tsfield).set('value', defdate.getTime() / 1000);
+            rdate_picker.select(defdate);
+        } else {
+            var defdate = new Date($(tsfield).get('value') * 1000);
+            rdate_picker.select(defdate);
+        }
+
+        $(dateopt).reveal();
+    }
+
+    if(presetdisabled) {
+        $(presetfield).set('value', '');
+        $(presetopt).dissolve();
+    } else {
+        $(presetopt).reveal();
+    }
+}
+
+
 function limit_textfield(fieldid, counterid, charlimit) {
     var curlength = $(fieldid).get("value").length;
 
@@ -274,8 +313,8 @@ window.addEvent('domready', function() {
                                                             $('rtimestamp').set('value', date.format('%s'));
                                                         }
                                                       });
-    $('comp-release').addEvent('change', function() { date_control('release_date', 'rtimestamp', 'comp-release'); });
-    date_control('release_date', 'rtimestamp', 'comp-release');
+    $('comp-release').addEvent('change', function() { release_control('release_date', 'rtimestamp', 'comp-reldate', 'preset', 'comp-relpreset', 'comp-release'); });
+    release_control('release_date', 'rtimestamp', 'comp-reldate', 'preset', 'comp-relpreset', 'comp-release');
 
     $('comp-summ').addEvent('keyup', function() { limit_textfield('comp-summ', 'sumchars', 240); });
     limit_textfield('comp-summ', 'sumchars', 240);

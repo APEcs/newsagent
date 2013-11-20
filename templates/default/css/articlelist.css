@@ -62,6 +62,10 @@ table.listtable tr td.mode div.deleted {
     background-position: -96px 0px;
 }
 
+table.listtable tr td.mode div.preset {
+    background-position: -112px 0px;
+}
+
 table.listtable tr td.date.timed {
     color: #777;
 }

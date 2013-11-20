@@ -65,6 +65,7 @@ sub _build_article_row {
                                                                           "***actdate***"   => $actdate,
                                                                           "***actuser***"   => $actuser,
                                                                           "***status***"    => $states,
+                                                                          "***preset***"    => $article -> {"preset"},
                                                                           "***controls***"  => $self -> {"template"} -> load_template("articlelist/control_".$article -> {"release_mode"}.".tem"),
                                                                           "***id***"        => $article -> {"id"},
                                                                           "***editurl***"   => $self -> build_url(block => "edit", pathinfo => [$article -> {"id"}]),
@@ -140,10 +141,6 @@ sub _build_api_setmode_response {
     # check that the user has edit permission
     return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_PERMISSION_EDIT_DESC}"}))
         unless($self -> check_permission("edit", $article -> {"metadata_id"}, $userid));
-
-    # handle special cases for deletion: edited and draft articles can not be deleted
-    $newmode = $article -> {"release_mode"}
-        if($newmode eq "deleted" && ($article -> {"release_mode"} eq "edited" || $article -> {"release_mode"} eq "draft"));
 
     # Handle the situation where updating the mode will make the item visible,
     # but its release time is in the future (ie: it needs to be timed)

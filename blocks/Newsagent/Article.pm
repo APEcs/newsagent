@@ -68,7 +68,9 @@ sub new {
                              "name"  => "{L_COMPOSE_RELTIME}" },
                             {"value" => "draft",
                              "name"  => "{L_COMPOSE_RELNONE}" },
-                          ];
+                            {"value" => "preset",
+                             "name"  => "{L_COMPOSE_RELPRESET}" },
+        ];
 
     $self -> {"stickyops"} = [ {"value" => "0",
                                 "name"  => "{L_COMPOSE_NOTSTICKY}" },
@@ -95,6 +97,7 @@ sub new {
                               "draft"    => "{L_ALIST_RELNONE}",
                               "edited"   => "{L_ALIST_RELEDIT}",
                               "deleted"  => "{L_ALIST_RELDELETED}",
+                              "preset"   => "{L_ALIST_RELTEMPLATE}",
                             };
 
     $self -> {"imgops"} = [ {"value" => "none",
@@ -392,6 +395,12 @@ sub _validate_article_fields {
                                                                                          "default"  => 0,
                                                                                          "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_RELDATE")});
             $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+        } elsif($args -> {"mode"} eq "preset") {
+            ($args -> {"preset"}, $error) = $self -> validate_string("preset", {"required" => 1,
+                                                                                "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_PRESETNAME"),
+                                                                                "minlen"   => 8,
+                                                                                "maxlen"   => 80});
+            $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
         }
 
         ($args -> {"sticky"}, $error) = $self -> validate_options("sticky", {"required" => 0,
@@ -473,7 +482,7 @@ sub _validate_article {
                                                                             "***errors***"  => $errors}), $args)
         if($errors);
 
-    # If an articleid has been specified, this is an edit - update the status of the article
+    # If an articleid has been specified, this is an edit - update the status of the previous article
     if($articleid) {
         my $article = $self -> {"article"} -> get_article($articleid)
             or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
@@ -482,12 +491,16 @@ sub _validate_article {
                                                                                                                                                  })
                                                               }), $args);
 
-        $self -> {"article"} -> set_article_status($articleid, $userid, "edited", $article -> {"release_mode"} eq "timed")
-            or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
-                                                                                       "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
-                                                                                                                                                 {"***error***" => $self -> {"article"} -> errstr()
-                                                                                                                                                 })
-                                                              }), $args);
+        # Do not update the preset status, unless the new and old preset names match
+        if($article -> {"release_mode"} ne "preset" ||
+           ($article -> {"preset"} && $args -> {"preset"} && lc($article -> {"preset"}) eq lc($args -> {"preset"}))) {
+            $self -> {"article"} -> set_article_status($articleid, $userid, "edited", $article -> {"release_mode"} eq "timed")
+                or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
+                                                                                           "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
+                                                                                                                                                     {"***error***" => $self -> {"article"} -> errstr()
+                                                                                                                                                     })
+                                                                  }), $args);
+        }
 
         foreach my $method (keys(%{$self -> {"notify_methods"}})) {
             $self -> {"notify_methods"} -> {$method} -> cancel_notifications($articleid)
@@ -514,7 +527,7 @@ sub _validate_article {
 
     # Let notification modules store any data they need
     if($args -> {"relmode"} == 0) {
-        my $isdraft = $args -> {"mode"} eq "draft";
+        my $isdraft = ($args -> {"mode"} eq "draft" || $args -> {"mode"} eq "preset");
 
         foreach my $method (keys(%{$args -> {"notify_matrix"} -> {"used_methods"}})) {
             $self -> {"notify_methods"} -> {$method} -> store_article($args, $userid, $aid, $isdraft, $args -> {"notify_matrix"} -> {"used_methods"} -> {$method})
