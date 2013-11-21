@@ -222,6 +222,23 @@ sub send {
 }
 
 
+## @method $ get_recipient_count($settings)
+# Obtain the number of recipients for the notification with the specified settings.
+# This should be overridded by any methods that provide meaningful numbers for
+# recipient counts (like email).
+#
+# @param settings The recipient settings to use when determining the count.
+# @return -1 for unknown number of recipients, undef on error, otherwise the
+#         number of unique recipients.
+sub get_recipient_count {
+    my $self     = shift;
+    my $settings = shift;
+
+    # Base method knows not of these recipient counts.
+    return -1;
+}
+
+
 ## @method $ set_notification_data($nid, $dataid)
 # Update the data id contained in the specified notification header.
 #

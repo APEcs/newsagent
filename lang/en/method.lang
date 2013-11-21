@@ -17,3 +17,5 @@ METHOD_STATE_SENDING   = Sending
 METHOD_STATE_SENT      = Sent
 METHOD_STATE_CANCELLED = Aborted
 METHOD_STATE_FAILED    = Failed
+
+METHOD_RECIP_COUNT     = ***count*** recipients

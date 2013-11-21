@@ -315,6 +315,44 @@ sub send {
 }
 
 
+## @method $ get_recipient_count($settings)
+# Obtain the number of recipients for the notification with the specified settings.
+# This should be overridded by any methods that provide meaningful numbers for
+# recipient counts (like email).
+#
+# @param settings The recipient settings to use when determining the count.
+# @return -1 for unknown number of recipients, undef on error, otherwise the
+#         number of unique recipients.
+sub get_recipient_count {
+    my $self     = shift;
+    my $settings = shift;
+    my $recips = { "bcc" => { },
+                   "cc"  => { }
+    };
+
+    if($self -> set_config($settings)) {
+        foreach my $arghash (@{$self -> {"args"}}) {
+            if($arghash -> {"cc"}) {
+                $self -> _parse_recipients_addrlist($recips -> {"cc"} , $arghash -> {"cc"});
+
+            } elsif($arghash -> {"bcc"}) {
+                $self -> _parse_recipients_addrlist($recips -> {"bcc"} , $arghash -> {"bcc"});
+
+            } elsif($arghash -> {"destlist"} && $arghash -> {"destlist"} =~ /^b?cc$/)  {
+                $self -> _parse_recipients_database($recips -> {$arghash -> {"destlist"}}, $arghash);
+
+            } else {
+                $self -> _parse_recipients_database($recips -> {"bcc"}, $arghash);
+            }
+        }
+
+        return (scalar(keys(%{$recips -> {"cc"}})) + scalar(keys(%{$recips -> {"bcc"}})));
+    }
+
+    return -1;
+}
+
+
 ################################################################################
 #  View and controller functions
 ################################################################################

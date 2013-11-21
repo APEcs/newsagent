@@ -262,6 +262,8 @@ sub _build_matrix {
                 $self -> {"logger"} -> log("debug", $userid, undef, "User $userid has notify permission for ".$row -> {"id"})
                     if($self -> {"settings"} -> {"config"} -> {"debug"});
 
+                $row -> {"recipient_count"} = $self -> {"notify_methods"} -> {$row -> {"name"}} -> get_recipient_count($row -> {"settings"});
+
                 # If the user has permission, store it
                 push(@{$methods}, $row);
             } elsif($self -> {"settings"} -> {"config"} -> {"debug"}) {

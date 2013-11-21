@@ -23,7 +23,7 @@ use strict;
 use base qw(Newsagent); # This class extends the Newsagent block class
 use Newsagent::System::Matrix;
 use v5.12;
-
+use Data::Dumper;
 # ============================================================================
 #  Constructor
 
@@ -40,11 +40,12 @@ sub new {
     my $self     = $class -> SUPER::new(@_)
         or return undef;
 
-    $self -> {"matrix"} = Newsagent::System::Matrix -> new(dbh      => $self -> {"dbh"},
-                                                           settings => $self -> {"settings"},
-                                                           logger   => $self -> {"logger"},
-                                                           roles    => $self -> {"system"} -> {"roles"},
-                                                           metadata => $self -> {"system"} -> {"metadata"})
+    $self -> {"matrix"} = Newsagent::System::Matrix -> new(dbh            => $self -> {"dbh"},
+                                                           settings       => $self -> {"settings"},
+                                                           logger         => $self -> {"logger"},
+                                                           roles          => $self -> {"system"} -> {"roles"},
+                                                           metadata       => $self -> {"system"} -> {"metadata"},
+                                                           notify_methods => $self -> {"notify_methods"})
         or return SystemModule::set_error("Matrix initialisation failed: ".$SystemModule::errstr);
 
     return $self;
@@ -208,9 +209,15 @@ sub _build_matrix_level {
         # Build the supported methods for this recipient (there may be none!)
         my $methods = "";
         foreach my $method (@{$entry -> {"methods"}}) {
+            my $recipients = "";
+
+            $recipients = $self -> {"template"} -> replace_langvar("METHOD_RECIP_COUNT", {"***count***" => $method -> {"recipient_count"}})
+                if(defined($method -> {"recipient_count"}) && $method -> {"recipient_count"} >= 0);
+
             $methods .= $self -> {"template"} -> load_template("matrix/method.tem", {"***recipient***" => $method -> {"recipient_id"},
                                                                                      "***method***"    => $method -> {"method_id"},
                                                                                      "***name***"      => $method -> {"name"},
+                                                                                     "***title***"     => $recipients,
                                                                                      "***checked***"   => $selected -> {$method -> {"recipient_id"}} -> {$method -> {"method_id"}} ? 'checked="checked"' : ''});
         }
 
