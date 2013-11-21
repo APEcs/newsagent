@@ -17,8 +17,6 @@
                 <dt><label for="email-prefix">{L_METHOD_EMAIL_PREFIX}</label></dt>
                 <dd><select id="email-prefix" name="email-prefix">***email-prefix***</select></dd>
             </dl>
-            <dl class="input">
-                <dd><label for="email-bccme"><input type="checkbox" name="email-bccme" id="email-bccme" title="{L_METHOD_EMAIL_BCCME}" ***email-bccme***/> {L_METHOD_EMAIL_BCCME}</dd>
-            </dl>
+            <div><label for="email-bccme"><input type="checkbox" name="email-bccme" id="email-bccme" title="{L_METHOD_EMAIL_BCCME}" ***email-bccme*** /> {L_METHOD_EMAIL_BCCME}</label></div>
         </div>
     </li>

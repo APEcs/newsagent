@@ -21,9 +21,7 @@
                     <dd><textarea name="article" id="comp-desc" rows="15" cols="80">***article***</textarea></dd>
                 </dl>
             </div>
-            <dl class="input">
-                <dd><label for="edit-minor" class="check"><input type="checkbox" name="minor_edit" id="edit-minor" ***isminor*** />{L_EDIT_ISMINOR}</label></dd>
-            </dl>
+            <p><label for="edit-minor" class="check"><input type="checkbox" name="minor_edit" id="edit-minor" ***isminor*** />{L_EDIT_ISMINOR}</label></p>
             <hr />
             <div class="submitbox">
                 <input type="hidden" name="stopconfirm" id="stopconfirm" value="***disable_confirm***" />
