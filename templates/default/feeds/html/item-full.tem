@@ -1,6 +1,6 @@
 <li class="newsagent-full">
     <h1>***title***</h1>
-    <div class="newsagent-fulldate">Published: ***date***</div>
+    <div class="newsagent-fulldate">{L_FEED_PUBLISHED}: ***date***</div>
     ***articleimg***
     <h3>***summary***</h3>
     <div class="newsagent-article">***fulltext***</div>
