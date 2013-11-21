@@ -209,15 +209,9 @@ sub _build_matrix_level {
         # Build the supported methods for this recipient (there may be none!)
         my $methods = "";
         foreach my $method (@{$entry -> {"methods"}}) {
-            my $recipients = "";
-
-            $recipients = $self -> {"template"} -> replace_langvar("METHOD_RECIP_COUNT", {"***count***" => $method -> {"recipient_count"}})
-                if(defined($method -> {"recipient_count"}) && $method -> {"recipient_count"} >= 0);
-
             $methods .= $self -> {"template"} -> load_template("matrix/method.tem", {"***recipient***" => $method -> {"recipient_id"},
                                                                                      "***method***"    => $method -> {"method_id"},
                                                                                      "***name***"      => $method -> {"name"},
-                                                                                     "***title***"     => $recipients,
                                                                                      "***checked***"   => $selected -> {$method -> {"recipient_id"}} -> {$method -> {"method_id"}} ? 'checked="checked"' : ''});
         }
 

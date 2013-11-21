@@ -332,6 +332,8 @@ sub get_recipient_count {
 
     if($self -> set_config($settings)) {
         foreach my $arghash (@{$self -> {"args"}}) {
+            print STDERR "Processing argument".Dumper($arghash);
+
             if($arghash -> {"cc"}) {
                 $self -> _parse_recipients_addrlist($recips -> {"cc"} , $arghash -> {"cc"});
 
