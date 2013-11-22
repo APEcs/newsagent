@@ -3,16 +3,21 @@
  *
  * @param block     The system block the API is provided by.
  * @param operation The API operation to perform.
+ * @param base      Optional base path to force for operations.
  * @return A string containing the request path to use.
  */
-function api_request_path(block, operation)
+function api_request_path(block, operation, base)
 {
     var reqpath = window.location.pathname;
 
-    // First, determine whether the path already contains the block, if so back up to it
-    var blockpos = reqpath.indexOf(block);
-    if(blockpos != -1) {
-        reqpath = reqpath.substring(0, blockpos + block.length);
+    if(!base) {
+        // First, determine whether the path already contains the block, if so back up to it
+        var blockpos = reqpath.indexOf(block);
+        if(blockpos != -1) {
+            reqpath = reqpath.substring(0, blockpos + block.length);
+        }
+    } else {
+        reqpath = base;
     }
 
     // Ensure the request path has a trailing slash

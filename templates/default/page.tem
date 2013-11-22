@@ -27,6 +27,12 @@
     <style type="text/css">
     </style>
     <![endif]-->
+    <script type="text/javascript">
+// <![CDATA[
+        basepath = "{V_[scriptpath]}";
+        tempath  = "{V_[templatepath]}";
+// ]]>
+    </script>
 </head>
 <body id="newsagent" class="newsagent">
 <div id="content" class="content clear">

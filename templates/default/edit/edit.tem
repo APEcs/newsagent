@@ -130,6 +130,7 @@ Not here yet.
 <script type="text/javascript">
 
 confirm_imgurl   = '{V_[templatepath]}images/confirm.png';
+spinner_imgurl   = '{V_[templatepath]}images/spinner.gif';
 confirm_messages = {   errors: "{L_EDIT_ERRORS}",
                      nolevels: "{L_COMPOSE_LEVEL_ERRNONE}",
                        notext: "{L_COMPOSE_ERR_NOSUMMARYARTICLE}",
@@ -146,6 +147,7 @@ confirm_messages = {   errors: "{L_EDIT_ERRORS}",
                                   group: "{L_COMPOSE_CONFIRM_GROUP}",
                                },
                        notify: "{L_COMPOSE_CONFIRM_NOTIFY}",
+                     counting: "{L_COMPOSE_CONFIRM_COUNTING}",
                    };
 window.addEvent('domready', function() {
     CKEDITOR.replace('comp-desc', { customConfig: '{V_[commonpath]}cke_configs/basic_open.js' });

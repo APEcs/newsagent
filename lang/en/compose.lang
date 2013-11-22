@@ -84,18 +84,18 @@ COMPOSE_RECIPIENTS   = Recipients
 
 MATRIX_DELAYNOTE     = <span class="helptext">Note: all notifications are held for at least 5 minutes before being sent in order to allow notifications to be cancelled or edited.</span>
 
-
 COMPOSE_CONFIRM       = Confirmation requested
 COMPOSE_CONFIRM_INTRO = Before your article is created, please check the information provided here.
 COMPOSE_CONFIRM_STOP  = Do not ask me for confirmation again.
 COMPOSE_CANCEL        = Cancel
 COMPOSE_ERRORS        = Your article can not be added to the system at this time because:
 
-COMPOSE_CONFIRM_SHOWN  = Once published, this article will be syndicated in the following places. Note that this list is not exhaustive, and your article may be syndicated elsewhere if clients request the feed your article is in at the appropriate visibility level.
-COMPOSE_CONFIRM_HOME   = <b>This article will appear on the School of CS home page!</b>
-COMPOSE_CONFIRM_LEADER = This article <i>may</i> appear on a leader page on the School of CS website. See <a href='https://wiki.cs.manchester.ac.uk/index.php/Newsagent/Feeds#Current_feeds_and_syndication' target='_blank'>this wiki page</a> for more information.
-COMPOSE_CONFIRM_GROUP  = This article will be visible on internal pages that request the feed set for the article.
-COMPOSE_CONFIRM_NOTIFY = Copies of the article will be sent to the following recipients via
+COMPOSE_CONFIRM_SHOWN    = Once published, this article will be syndicated in the following places. Note that this list is not exhaustive, and your article may be syndicated elsewhere if clients request the feed your article is in at the appropriate visibility level.
+COMPOSE_CONFIRM_HOME     = <b>This article will appear on the School of CS home page!</b>
+COMPOSE_CONFIRM_LEADER   = This article <i>may</i> appear on a leader page on the School of CS website. See <a href='https://wiki.cs.manchester.ac.uk/index.php/Newsagent/Feeds#Current_feeds_and_syndication' target='_blank'>this wiki page</a> for more information.
+COMPOSE_CONFIRM_GROUP    = This article will be visible on internal pages that request the feed set for the article.
+COMPOSE_CONFIRM_NOTIFY   = Copies of the article will be sent to the following recipients via
+COMPOSE_CONFIRM_COUNTING = Fetching recipient counts...
 
 COMPOSE_ERR_NOPRESET   = This article has been set to be published as a template, but no template name has been entered.
 COMPOSE_ISPRESET       = <b>This article has been set to be published as a template</b>. It will never be published, and is only visible to you (and admins) within the system. The following publication information only applies to articles created from this template.

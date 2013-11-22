@@ -23,7 +23,7 @@ use strict;
 use base qw(Newsagent::Article); # This class extends the Newsagent article class
 use Webperl::Utils qw(is_defined_numeric);
 use v5.12;
-use Data::Dumper;
+
 # ============================================================================
 #  Support functions
 
@@ -58,6 +58,12 @@ sub _explode_matrix {
 #  API functions
 
 
+## @method private $ _build_rcount_response()
+# Generate an API response to a recipient count query. This attempts to determine
+# how many individual addresses will be contacted for each recipient speicified
+# in the query.
+#
+# @return A hash containing the API response.
 sub _build_rcount_response {
     my $self = shift;
 
@@ -92,12 +98,12 @@ sub _build_rcount_response {
             $recip -> {"recipient_count"} = $self -> {"notify_methods"} -> {$method} -> get_recipient_count($recip -> {"settings"})
                 or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"notify_methods"} -> {$method} -> errstr()}));
 
-            push(@{$output -> {"response"} -> {"methods"} -> {$method} -> {"recipient"}}, { id           => $recip -> {"id"},
-                                                                                            method_id    => $recip -> {"method_id"},
-                                                                                            recipient_id => $recip -> {"recipient_id"},
-                                                                                            name         => $recip -> {"recipient_name"},
-                                                                                            shortname    => $recip -> {"recipient_short"},
-                                                                                            count        => $recip -> {"recipient_count"}});
+            push(@{$output -> {"response"} -> {"recipient"}}, { id           => $recip -> {"recipient_id"}."-".$recip -> {"method_id"},
+                                                                method_id    => $recip -> {"method_id"},
+                                                                recipient_id => $recip -> {"recipient_id"},
+                                                                name         => $recip -> {"recipient_name"},
+                                                                shortname    => $recip -> {"recipient_short"},
+                                                                count        => $recip -> {"recipient_count"}});
         }
     }
 
@@ -121,10 +127,11 @@ sub page_display {
     if(defined($apiop)) {
         # API call - dispatch to appropriate handler.
         given($apiop) {
+            # API operation rcount, requires query string parameters yearid=<id> and matrix=<rid>-<mid>,<rid>-<mid>,...
             when("rcount") { return $self -> api_response($self -> _build_rcount_response()); }
             default {
-                return $self -> api_html_response($self -> api_errorhash('bad_op',
-                                                                         $self -> {"template"} -> replace_langvar("API_BAD_OP")))
+                return $self -> api_response($self -> api_errorhash('bad_op',
+                                                                    $self -> {"template"} -> replace_langvar("API_BAD_OP")))
             }
         }
     } else {

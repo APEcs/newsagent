@@ -99,7 +99,7 @@ function show_image_subopt(selid)
 
 function set_visible_levels()
 {
-    var feed = $('comp-feed').getSelected().get("value");
+    var feed = $('comp-feed').getSelected()[0].get("value");
 
     Object.each(feed_levels[feed], function (value, key) {
                      var box = $('level-'+key);
@@ -211,7 +211,12 @@ function enabled_notify()
                     var name   = titleElem.get('title');
 
                     if(!enabled[method]) enabled[method] = new Array();
-                    enabled[method].push(name);
+                    enabled[method].push({name: name,
+                                          id: 'mcount-'+value,
+                                          mid: value,
+                                          // embedding a toString() here lets confirm_notify() just stringify the objects.
+                                          toString: function() { return '<span id="'+this.id+'">'+this.name+'</span>'; }
+                                         });
                 }
             }
         }
@@ -233,6 +238,46 @@ function confirm_preset(isPreset)
 }
 
 
+function notify_count_api(enabled)
+{
+    // First get the selected year id
+    var yearid = $('matrix-acyear').getSelected()[0].get("value");
+
+    // Build a list of ids to send to the api
+    var mlist = new Array();
+    Object.each(enabled, function(value, key) {
+                    value.each(function(targ) {
+                                   mlist.push(targ.mid);
+                               });
+                });
+
+    var req = new Request({ url: api_request_path("webapi", "rcount", basepath),
+                            onSuccess: function(respText, respXML) {
+                                $('notifycount-spinner').dissolve();
+
+                                var err = respXML.getElementsByTagName("error")[0];
+                                if(err) {
+                                    $('errboxmsg').set('html', '<p class="error">'+err.getAttribute('info')+'</p>');
+                                    errbox.open();
+
+                                    // No error, we have counts
+                                } else {
+                                    var recipients = respXML.getElementsByTagName('recipient');
+                                    Array.each(recipients, function(element) {
+                                                   if($('mcount-'+element.id) && element.get('count') >= 0) {
+                                                       $('mcount-'+element.id).set('html', element.get('name')+" ["+element.get('count')+"]");
+                                                   }
+                                               });
+                                }
+                            }
+                          });
+
+    req.post({ yearid: yearid,
+               matrix: mlist.join(',')});
+
+}
+
+
 function confirm_notify()
 {
     var notifyelem;
@@ -249,7 +294,19 @@ function confirm_notify()
                                         );
                     });
 
+        // Add a spinner to show work is in progress fetching the counts
+        notifyelem.adopt(new Element('div', {
+                                         id: 'notifycount-spinner'
+                                     }).adopt(new Element('img', { 'width': 16,
+                                                                   'height': 16,
+                                                                   'src': spinner_imgurl }),
+                                              new Element('span', { html: confirm_messages['counting'] })
+                                             ));
+
+        // And set off the count fetch code
+        notify_count_api(enabled);
     }
+
     return notifyelem;
 }
 
