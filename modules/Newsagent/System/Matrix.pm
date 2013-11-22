@@ -178,6 +178,32 @@ sub get_method_byid {
 }
 
 
+## @method $ get_recipmethod($recipientid, $methodid)
+# Given a recipient and a method id, obtain the corresponding recipmethod data if
+# possible.
+#
+# @param recipientid The ID of the recipient.
+# @param methodid    The ID of the method.
+# @return A reference to a hash containing the recipmethod data corresponding to
+#         the specified recipient and method on success, undef on error
+sub get_recipmethod {
+    my $self        = shift;
+    my $recipientid = shift;
+    my $methodid    = shift;
+
+    $self -> clear_error();
+
+    my $methods = $self -> {"dbh"} -> prepare("SELECT *
+                                               FROM  `".$self -> {"settings"} -> {"database"} -> {"notify_matrix"}."`
+                                               WHERE recipient_id = ? AND method_id = ?");
+    $methods -> execute($recipientid, $methodid)
+        or return $self -> self_error("Unable to look up recipmethod data: ".$self -> {"dbh"} -> errstr);
+
+    return $methods -> fetchrow_hashref()
+        or return $self -> self_error("No recipmethod data for recipient $recipientid via method $methodid");
+}
+
+
 # ============================================================================
 #  Private incantations
 

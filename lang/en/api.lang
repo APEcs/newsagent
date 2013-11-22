@@ -1,0 +1,13 @@
+API_BAD_OP   = Unknown API operation requested.
+API_BAD_CALL = Incorrect invocation of an API-only module.
+API_ERROR    = An internal API error has occurred: ***error***
+
+API_ERROR_NOAID    = No article ID was included in the API request.
+API_ERROR_NOYID    = No year ID was included in the API request.
+API_ERROR_NOMATRIX = No recipient and method information was included in the API request
+API_ERROR_EMPTYMATRIX    = The specified recipient and method information appears to be invalid
+API_ERROR_BADMETHOD      = Attempt to use an unknown delivery method.
+
+APIDIRECT_FAILED_TITLE   = Direct access error
+APIDIRECT_FAILED_SUMMARY = Unsupported attempt to directly access the API
+APIDIRECT_FAILED_DESC    = The Newsagent API does not support direct client access. Please refer to the API documentation for more information.

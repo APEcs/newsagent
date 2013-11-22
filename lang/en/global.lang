@@ -2,12 +2,6 @@ EMAIL_SIG  = The {V_[sitename]} Team
 
 SITE_CONTINUE = Continue
 
-API_BAD_OP   = Unknown API operation requested.
-API_BAD_CALL = Incorrect invocation of an API-only module.
-API_ERROR    = An internal API error has occurred: ***error***
-
-API_ERROR_NOAID = No article ID was included in the API request.
-
 # Times for Template::fancy_time
 TIMES_JUSTNOW = just now
 TIMES_SECONDS = %t seconds ago
