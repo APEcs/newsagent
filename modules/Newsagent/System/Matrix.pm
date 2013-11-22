@@ -156,6 +156,28 @@ sub get_available_methods {
 }
 
 
+## @method $ get_method_byid($methodid)
+# Given a method ID, fetch the data for the method.
+#
+# @param methodid The ID of the method to fetch the data for
+# @return A reference to the method data on succes, undef on error.
+sub get_method_byid {
+    my $self     = shift;
+    my $methodid = shift;
+
+    $self -> clear_error();
+
+    my $methods = $self -> {"dbh"} -> prepare("SELECT *
+                                               FROM  `".$self -> {"settings"} -> {"database"} -> {"notify_methods"}."`
+                                               WHERE id = ?");
+    $methods -> execute($methodid)
+        or return $self -> self_error("Unable to look up available methods: ".$self -> {"dbh"} -> errstr);
+
+    return $methods -> fetchrow_hashref()
+        or return $self -> self_error("Request for unknown method '$methodid'");
+}
+
+
 # ============================================================================
 #  Private incantations
 
