@@ -78,6 +78,8 @@ sub _build_rcount_response {
     # Now fetch the settings data for each recipient/method pair
     my $recipmeth = $matrix -> matrix_to_recipients($enabled, $yearid);
 
+    my $output = { 'response' => { 'status' => 'ok' }};
+
     # At this point, recipmeth contains the list of selected recipients, organised by the
     # method that will be used to contact them, and the settings that will be used by the
     # notification method to contact them. Now we need to go through these lists fetching
@@ -89,10 +91,17 @@ sub _build_rcount_response {
         foreach my $recip (@{$recipmeth -> {"methods"} -> {$method}}) {
             $recip -> {"recipient_count"} = $self -> {"notify_methods"} -> {$method} -> get_recipient_count($recip -> {"settings"})
                 or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"notify_methods"} -> {$method} -> errstr()}));
+
+            push(@{$output -> {"response"} -> {"methods"} -> {$method} -> {"recipient"}}, { id           => $recip -> {"id"},
+                                                                                            method_id    => $recip -> {"method_id"},
+                                                                                            recipient_id => $recip -> {"recipient_id"},
+                                                                                            name         => $recip -> {"recipient_name"},
+                                                                                            shortname    => $recip -> {"recipient_short"},
+                                                                                            count        => $recip -> {"recipient_count"}});
         }
     }
 
-    die "Results:\n".Dumper($recipmeth)."\n";
+    return $output;
 }
 
 

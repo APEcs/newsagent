@@ -178,6 +178,28 @@ sub get_method_byid {
 }
 
 
+## @method $ get_recipient_byid($recipientid)
+# Given a recipient ID, fetch the data for the recipient.
+#
+# @param recipientid The ID of the recipient to fetch the data for
+# @return A reference to the recipient data on succes, undef on error.
+sub get_recipient_byid {
+    my $self        = shift;
+    my $recipientid = shift;
+
+    $self -> clear_error();
+
+    my $recipients = $self -> {"dbh"} -> prepare("SELECT *
+                                                  FROM  `".$self -> {"settings"} -> {"database"} -> {"notify_recipients"}."`
+                                                  WHERE id = ?");
+    $recipients -> execute($recipientid)
+        or return $self -> self_error("Unable to look up available recipients: ".$self -> {"dbh"} -> errstr);
+
+    return $recipients -> fetchrow_hashref()
+        or return $self -> self_error("Request for unknown recipient '$recipientid'");
+}
+
+
 ## @method $ get_recipmethod($recipientid, $methodid)
 # Given a recipient and a method id, obtain the corresponding recipmethod data if
 # possible.

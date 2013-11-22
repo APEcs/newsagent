@@ -319,6 +319,13 @@ sub _build_recipient_lists {
             $result -> {"method_map"} -> {$method -> {"id"}} = $method -> {"name"};
         }
 
+        # Look up the recipient data so that the name can be stored in the output hash
+        my $recipient = $self -> {"matrix"} -> get_recipient_byid($recip -> {"recipient_id"})
+            or return $self -> self_error($self -> {"matrix"} -> errstr());
+
+        $recip -> {"recipient_name"}  = $recipient -> {"name"};
+        $recip -> {"recipient_short"} = $recipient -> {"shortname"};
+
         # store the recipient in the appropriate method hash
         push(@{$result -> {"methods"} -> {$result -> {"method_map"} -> {$recip -> {"method_id"}}}}, $recip);
     }
