@@ -268,6 +268,7 @@ function notify_count_api(enabled)
                                                        $('mcount-'+element.id).set('html', element.get('name')+" ["+element.get('count')+"]");
                                                    }
                                                });
+                                    $('notifycount-msg').reveal();
                                 }
                             }
                           });
@@ -302,6 +303,11 @@ function confirm_notify()
                                                                    'src': spinner_imgurl }),
                                               new Element('span', { html: confirm_messages['counting'] })
                                              ));
+
+        // And a message indicating approximation
+        notifyelem.adopt(new Element('div', { 'id': 'notifycount-msg',
+                                              'styles': { 'display': 'none' },
+                                              'html': confirm_messages['countwarn'] }));
 
         // And set off the count fetch code
         notify_count_api(enabled);
