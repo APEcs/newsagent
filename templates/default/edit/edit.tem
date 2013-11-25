@@ -148,6 +148,7 @@ confirm_messages = {   errors: "{L_EDIT_ERRORS}",
                                },
                        notify: "{L_COMPOSE_CONFIRM_NOTIFY}",
                      counting: "{L_COMPOSE_CONFIRM_COUNTING}",
+                    countwarn: "{L_COMPOSE_CONFIRM_COUNTWARN}",
                    };
 window.addEvent('domready', function() {
     CKEDITOR.replace('comp-desc', { customConfig: '{V_[commonpath]}cke_configs/basic_open.js' });
