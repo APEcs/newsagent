@@ -29,7 +29,6 @@ use File::Path qw(make_path);
 use File::Copy;
 use File::Type;
 use Digest;
-use Try::Tiny;
 use Webperl::Utils qw(path_join hash_or_hashref);
 
 # ============================================================================
@@ -1244,7 +1243,7 @@ sub _build_articlelist_timebounds {
 
     # The DateTime constructor will die if the parameters are invalid. While
     # the values should be fine, use fancy-wrapped eval to be sure.
-    try {
+    eval {
         given($mode) {
             when('year') {
                 $start = DateTime -> new(year => $year, time_zone => "UTC");
@@ -1265,8 +1264,10 @@ sub _build_articlelist_timebounds {
 
     # If the start/end creation dies for some reason, log it, but there's not
     # much else can be done that that
-    } catch {
-        $self -> self_error("Error in DateTime operation: $_");
+    };
+
+    if($@){
+        $self -> self_error("Error in DateTime operation: $@");
         return (undef, undef);
     }
 
