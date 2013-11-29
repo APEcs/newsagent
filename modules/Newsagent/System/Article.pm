@@ -23,11 +23,13 @@ use strict;
 use base qw(Webperl::SystemModule); # This class extends the Newsagent block class
 use v5.12;
 
+use DateTime;
 use DateTime::Event::Cron;
 use File::Path qw(make_path);
 use File::Copy;
 use File::Type;
 use Digest;
+use Try::Tiny;
 use Webperl::Utils qw(path_join hash_or_hashref);
 
 # ============================================================================
@@ -466,14 +468,20 @@ sub get_feed_articles {
 # the articles in the database, ordered by the specified field, recording which
 # articles the user can edit.
 #
-# @param userid    The ID of the user requesting the article list.
-# @param count     The number of articles to return.
-# @param offset    An offset to start returning articles from. The first article
-#                  is at offset = 0.
-# @param sortfield The field to sort the results on, if not specified defaults
+# Supported arguments in the settings are:
+# - count     The number of articles to return.
+# - offset    An offset to start returning articles from. The first article
+#             is at offset = 0.
+# - sortfield The field to sort the results on, if not specified defaults
 #                  to `release_time`
-# @param sortdir   The direction to sort in, if not specified defaults to `DESC`,
-#                  valid values are `ASC` and `DESC`.
+# - sortdir   The direction to sort in, if not specified defaults to `DESC`,
+#             valid values are `ASC` and `DESC`.
+# - month     The month to fetch articles for. If not set, all months are
+#             returned
+# - year      The year to fetch articles for. If not set, all years are returned.
+#
+#
+# @param userid    The ID of the user requesting the article list.
 # @return A reference to an array of articles the user can edit, and a count of the
 #         number of articles the user can edit (which may be larger than the size
 #         of the returned array, if `count` is specified.
@@ -504,6 +512,15 @@ sub get_user_articles {
                   LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"feeds"}."` AS `feed`
                       ON `feed`.`id` = `article`.`feed_id`";
     my $where  = $settings -> {"hidedeleted"} ? " WHERE `article`.`release_mode` != 'deleted'" : "";
+    my @params;
+
+    # Handle time bounding
+    my ($start, $end) = $self -> _build_articlelist_timebounds($settings -> {"year"}, $settings -> {"month"});
+    if($start && $end) {
+        $where .= ($where ? " AND " : "WHERE ");
+        $where .= "`article`.`release_time` >= ? AND `article`.`release_time` <= ?";
+        push(@params, $start, $end)
+    }
 
     # The actual query can't contain a limit directive: there's no way to determine at this point
     # whether the user has access to any particular article, so any limit may be being applied to
@@ -518,14 +535,17 @@ sub get_user_articles {
                                                    `".$self -> {"settings"} -> {"database"} -> {"articlelevels"}."` AS `artlevels`
                                               WHERE `level`.`id` = `artlevels`.`level_id`
                                               AND `artlevels`.`article_id` = ?");
-    $articleh -> execute()
+    $articleh -> execute(@params)
         or return $self -> self_error("Unable to execute article query: ".$self -> {"dbh"} -> errstr);
 
-    my ($added, $count) = (0, 0);
+    # FIXME: as more and more articles are added to the system, this process is going to become
+    #        slower and slower. There may need to be some form of hard time-based filtering done
+    #        on articles. For example, users may need to specify a month and year to fetch articles
+    #        for, and that will allow constraining of data.
+    my ($added, $count, $feeds) = (0, 0, {});
     while(my $article = $articleh -> fetchrow_hashref()) {
         # Does the user have edit access to this article?
         if($self -> {"roles"} -> user_has_capability($article -> {"metadata_id"}, $userid, "edit")) {
-
             # If an offset has been specified, have enough articles been skipped, and if
             # a count has been specified, is there still space for more entries?
             if((!$settings -> {"offset"} || $count >= $settings -> {"offset"}) &&
@@ -541,6 +561,13 @@ sub get_user_articles {
                 push(@articles, $article);
                 ++$added; # keep a separate 'added' counter, it may be faster than scalar()
             }
+
+            # Regardless of whether this article has been included in the list, we need
+            # to record its feed as a feed the user has access to
+            # FIXME: This will need modifying when multi-feed articles are supported
+            $feeds -> {$article -> {"feedname"}} = $article -> {"feeddesc"}
+                if(!$feeds -> {$article -> {"feedname"}});
+
             ++$count;
         }
     }
@@ -1170,6 +1197,80 @@ sub _clear_sticky {
         or return $self -> self_error("Unable to clear outdated sticky articles: ".$self -> {"dbh"} -> errstr);
 
     return 1;
+}
+
+
+## @method private @ _build_articlelist_timebounds($year, $month, $day)
+# Calculate the start and end timestamps to use when listing articles based
+# on the year, month, and day specified. Note that the arguments allow for
+# progressive levels of refinement and are optional from left to right: if
+# a month is specified, a year must be, if a day is specified a month must
+# be, but specifying a year does not require a month to be specified. The
+# parameters provided also determine the size of the window: if only a year
+# is provided, the start is the start of the year, and the end is the end of
+# the year; if a month is provided the period is just that month, and so on.
+#
+# @param year  The year to return articles for. Must be a 4 digit year number.
+# @param month The month in the year to fetch articles for, must be in the
+#              range 1 to 12.
+# @param day   The day to fetch articles for, should be in the range 1 to 31.
+# @return The start and end unix timestamps if the specified dates are valid,
+#         undefs otherwise.
+sub _build_articlelist_timebounds {
+    my $self = shift;
+    my ($year, $month, $day) = @_;
+    my $mode = "year";
+
+    # Can't calculate any range if there's no year
+    if(!$year) {
+        return (undef, undef);
+
+    # year but no month means a full year
+    } elsif(!$month) {
+        $month = $day = 1;
+
+    # year and month mean a full month
+    } elsif(!$day) {
+        $day = 1;
+        $mode = "month";
+
+    # year, month, and day - just one day of results
+    } else {
+        $mode = "day";
+    }
+
+    # And now build start and end dates from the available data
+    my ($start, $end);
+
+    # The DateTime constructor will die if the parameters are invalid. While
+    # the values should be fine, use fancy-wrapped eval to be sure.
+    try {
+        given($mode) {
+            when('year') {
+                $start = DateTime -> new(year => $year, time_zone => "UTC");
+                $end   = $start -> add(years => 1, seconds => -1);
+            }
+            when('month') {
+                $start = DateTime -> new(year => $year, month => $month, time_zone => "UTC");
+            $end   = $start -> add(months => 1, seconds => -1);
+            }
+            when('day') {
+                $start = DateTime -> new(year => $year, month => $month, day => $day, time_zone => "UTC");
+                $end   = $start -> add(months => 1, seconds => -1);
+            }
+            default {
+                return (undef, undef);
+            }
+        }
+
+    # If the start/end creation dies for some reason, log it, but there's not
+    # much else can be done that that
+    } catch {
+        $self -> self_error("Error in DateTime operation: $_");
+        return (undef, undef);
+    }
+
+    return ($start -> epoch(), $end -> epoch());
 }
 
 1;
