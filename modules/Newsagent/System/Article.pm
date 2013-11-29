@@ -1248,15 +1248,15 @@ sub _build_articlelist_timebounds {
         given($mode) {
             when('year') {
                 $start = DateTime -> new(year => $year, time_zone => "UTC");
-                $end   = $start -> add(years => 1, seconds => -1);
+                $end   = $start -> clone() -> add(years => 1, seconds => -1);
             }
             when('month') {
                 $start = DateTime -> new(year => $year, month => $month, time_zone => "UTC");
-            $end   = $start -> add(months => 1, seconds => -1);
+            $end   = $start -> clone() -> add(months => 1, seconds => -1);
             }
             when('day') {
                 $start = DateTime -> new(year => $year, month => $month, day => $day, time_zone => "UTC");
-                $end   = $start -> add(months => 1, seconds => -1);
+                $end   = $start -> clone() -> add(months => 1, seconds => -1);
             }
             default {
                 return (undef, undef);
