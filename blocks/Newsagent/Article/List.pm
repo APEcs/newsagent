@@ -94,7 +94,7 @@ sub _generate_articlelist {
     $settings -> {"pagenum"} = $pagenum if(defined($pagenum) && $pagenum =~ /^\d+$/ && $pagenum > 0);
     $settings -> {"offset"}  = ($settings -> {"pagenum"} - 1) * $settings -> {"count"};
 
-    my ($articles, $count) = $self -> {"article"} -> get_user_articles($userid, $settings);
+    my ($articles, $count, $feeds) = $self -> {"article"} -> get_user_articles($userid, $settings);
     if($articles) {
         my $list = "";
         foreach my $article (@{$articles}) {

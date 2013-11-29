@@ -572,7 +572,7 @@ sub get_user_articles {
         }
     }
 
-    return (\@articles, $count);
+    return (\@articles, $count, $feeds);
 }
 
 
