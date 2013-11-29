@@ -41,3 +41,16 @@ PAGE_ERROROK  = Okay
 
 FATAL_ERROR         = Fatal Error
 FATAL_ERROR_SUMMARY = The system has encountered a fatal error and can not continue. The error is shown below.
+
+MONTH_LONG1   = January
+MONTH_LONG2   = February
+MONTH_LONG3   = March
+MONTH_LONG4   = April
+MONTH_LONG5   = May
+MONTH_LONG6   = June
+MONTH_LONG7   = July
+MONTH_LONG8   = August
+MONTH_LONG9   = September
+MONTH_LONG10  = October
+MONTH_LONG11  = November
+MONTH_LONG12  = December

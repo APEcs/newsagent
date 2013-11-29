@@ -21,7 +21,41 @@ package Newsagent::Article::List;
 
 use strict;
 use base qw(Newsagent::Article); # This class extends the Newsagent block class
+use Webperl::Utils qw(is_defined_numeric);
 use v5.12;
+
+# ============================================================================
+#  Validation/input
+
+## @method private $ _get_articlelist_settings($pagenum)
+# Build the settings used to fetch the article list and build the article list
+# user interface.
+#
+# @param pagenum The page of results the user is looking at
+# @return A reference to a hash of settings to use for the article list
+sub _get_articlelist_settings {
+    my $self     = shift;
+    my $pagenum  = shift;
+    my $settings = {"count"       => $self -> {"settings"} -> {"config"} -> {"Article::List:count"},
+                    "pagenum"     => 1,
+                    "hidedeleted" => 1,
+                    "sortfield"   => "",
+                    "sortdir"     => ""};
+
+    # First up, handle pagination related operations
+    $settings -> {"pagenum"} = $pagenum if(defined($pagenum) && $pagenum =~ /^\d+$/ && $pagenum > 0);
+    $settings -> {"offset"}  = ($settings -> {"pagenum"} - 1) * $settings -> {"count"};
+
+    # Now handle month and year
+    my ($month, $year) = (localtime)[4, 5];
+    $year  += 1900; # Handle localtime output
+    $month += 1;
+
+    $settings -> {"month"} = $month;
+    $settings -> {"year"}  = $year;
+
+    return $settings;
+}
 
 
 # ============================================================================
@@ -85,14 +119,8 @@ sub _generate_articlelist {
 
     my $now      = time();
     my $userid   = $self -> {"session"} -> get_session_userid();
-    my $settings = {"count"       => $self -> {"settings"} -> {"config"} -> {"Article::List:count"},
-                    "pagenum"     => 1,
-                    "hidedeleted" => 1,
-                    "sortfield"   => "",
-                    "sortdir"     => ""};
 
-    $settings -> {"pagenum"} = $pagenum if(defined($pagenum) && $pagenum =~ /^\d+$/ && $pagenum > 0);
-    $settings -> {"offset"}  = ($settings -> {"pagenum"} - 1) * $settings -> {"count"};
+    my $settings = $self -> _get_articlelist_settings($pagenum);
 
     my ($articles, $count, $feeds) = $self -> {"article"} -> get_user_articles($userid, $settings);
     if($articles) {
@@ -105,6 +133,8 @@ sub _generate_articlelist {
 
         return ($self -> {"template"} -> replace_langvar("ALIST_TITLE"),
                 $self -> {"template"} -> load_template("articlelist/content.tem", {"***articles***" => $list,
+                                                                                   "***month***"    => "{L_MONTH_LONG".$settings -> {"month"}."}",
+                                                                                   "***year***"     => $settings -> {"year"},
                                                                                    "***paginate***" => $self -> build_pagination($maxpage, $settings -> {"pagenum"}, "page", 0, 0)}));
     } else {
         return $self -> build_error_box($self -> {"article"} -> errstr());
