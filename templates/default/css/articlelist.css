@@ -188,3 +188,24 @@ ul.info li .state.failed {
     color: #ff0000;
     font-weight: bold;
 }
+
+#prevdate {
+    float: left;
+    margin-top: 4px;
+}
+
+#nextdate {
+    float: right;
+    margin-top: 4px;
+}
+
+#list_month {
+    width: 150px;
+    margin: 2px 0px;
+}
+
+#datenav {
+    float: left;
+    width: 225px;
+    white-space: nowrap;
+}

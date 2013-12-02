@@ -1,7 +1,10 @@
 <div id="articlelist" class="shadowbox">
     <h2>{L_ALIST_TITLE}</h2>
     <div class="sbcontent">
-        <div><input class="datepick" type="text" name="month" id="list_month" size="16" maxlength="16" value="***month*** ***year***" /></div>
+        <div id="datenav"><a id="prevdate" href="***prevurl***"><img src="{V_[templatepath]}images/previous.png" width="22" height="22" alt="prev" /></a>
+                          <a id="nextdate" href="***nexturl***"><img src="{V_[templatepath]}images/next.png" width="22" height="22" alt="next" /></a>
+                          <input class="datepick" type="text" name="month" id="list_month" size="16" maxlength="16" value="***month*** ***year***" />
+        </div>
         <table class="listtable">
             <tbody>
 ***articles***
@@ -10,17 +13,3 @@
 ***paginate***
     </div>
 </div>
-<script type="text/javascript">
-window.addEvent('domready', function() {
-    Locale.use('en-GB');
-    month_picker = new Picker.Date($('list_month'), { timePicker: false,
-                                                      yearPicker: true,
-                                                      positionOffset: {x: 5, y: 0},
-                                                      pickerClass: 'datepicker_dashboard',
-                                                      useFadeInOut: !Browser.ie,
-                                                      pickOnly: 'months',
-                                                      format: '%B %Y',
-                                                      });
-});
-
-</script>

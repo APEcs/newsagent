@@ -118,3 +118,19 @@ function change_article_state(articleid, operation, control)
                                });
     req.send();
 }
+
+
+window.addEvent('domready', function() {
+    Locale.use('en-GB');
+    month_picker = new Picker.Date($('list_month'), { timePicker: false,
+                                                      yearPicker: true,
+                                                      positionOffset: {x: 5, y: 0},
+                                                      pickerClass: 'datepicker_dashboard',
+                                                      useFadeInOut: !Browser.ie,
+                                                      pickOnly: 'months',
+                                                      format: '%B %Y',
+                                                      onSelect: function(date) {
+                                                          location.href = basepath + "articles/" + date.format("%Y/%m");
+                                                      }
+                                                    });
+});

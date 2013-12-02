@@ -491,43 +491,6 @@ sub build_url {
 }
 
 
-## @method $ build_pagination($maxpage, $pagenum, $mode, $count)
-# Generate the navigation/pagination box for the message list. This will generate
-# a series of boxes and controls to allow users to move between pages of message
-# list.
-#
-# @param maxpage   The last page number (first is page 1).
-# @param pagenum   The selected page (first is page 1)
-# @param mode      The view mode
-# @return A string containing the navigation block.
-sub build_pagination {
-    my $self      = shift;
-    my $maxpage   = shift;
-    my $pagenum   = shift;
-    my $mode      = shift;
-
-    # If there is more than one page, generate a full set of page controls
-    if($maxpage > 1) {
-        my $pagelist = "";
-
-        my $active = ($pagenum > 1) ? "newer.tem" : "newer_disabled.tem";
-        $pagelist .= $self -> {"template"} -> load_template("paginate/$active", {"***prev***"  => $self -> build_url(pathinfo => [$mode, $pagenum - 1])});
-
-        $active = ($pagenum < $maxpage) ? "older.tem" : "older_disabled.tem";
-        $pagelist .= $self -> {"template"} -> load_template("paginate/$active", {"***next***" => $self -> build_url(pathinfo => [$mode, $pagenum + 1])});
-
-        return $self -> {"template"} -> load_template("paginate/block.tem", {"***pagenum***" => $pagenum,
-                                                                             "***maxpage***" => $maxpage,
-                                                                             "***pages***"   => $pagelist});
-    # If there's only one page, a simple "Page 1 of 1" will do the trick.
-    } else { # if($maxpage > 1)
-        return $self -> {"template"} -> load_template("paginate/block.tem", {"***pagenum***" => 1,
-                                                                             "***maxpage***" => 1,
-                                                                             "***pages***"   => ""});
-    }
-}
-
-
 ## @method $ cleanup_entities($html)
 # Wrangle the specified HTML into something that won't produce an unholy mess when
 # passed to something that doesn't handle UTF-8 properly.

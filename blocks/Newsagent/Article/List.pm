@@ -22,19 +22,24 @@ package Newsagent::Article::List;
 use strict;
 use base qw(Newsagent::Article); # This class extends the Newsagent block class
 use Webperl::Utils qw(is_defined_numeric);
+use POSIX qw(ceil);
 use v5.12;
 
 # ============================================================================
 #  Validation/input
 
-## @method private $ _get_articlelist_settings($pagenum)
+## @method private $ _get_articlelist_settings($year, $month, $pagenum)
 # Build the settings used to fetch the article list and build the article list
 # user interface.
 #
-# @param pagenum The page of results the user is looking at
+# @param year    The year to fetch articles for.
+# @param month   The month to fetch articles for.
+# @param pagenum The page of results the user is looking at.
 # @return A reference to a hash of settings to use for the article list
 sub _get_articlelist_settings {
     my $self     = shift;
+    my $year     = shift;
+    my $month    = shift;
     my $pagenum  = shift;
     my $settings = {"count"       => $self -> {"settings"} -> {"config"} -> {"Article::List:count"},
                     "pagenum"     => 1,
@@ -47,12 +52,38 @@ sub _get_articlelist_settings {
     $settings -> {"offset"}  = ($settings -> {"pagenum"} - 1) * $settings -> {"count"};
 
     # Now handle month and year
-    my ($month, $year) = (localtime)[4, 5];
-    $year  += 1900; # Handle localtime output
-    $month += 1;
+    my ($nowmonth, $nowyear) = (localtime)[4, 5];
+    $nowyear  += 1900; # Handle localtime output
+    $nowmonth += 1;
 
-    $settings -> {"month"} = $month;
-    $settings -> {"year"}  = $year;
+    my ($setmonth, $setyear);
+    ($setyear) = $year =~ /^0*(\d+)$/
+        if($year);
+
+    ($setmonth) = $month =~ /^0*(\d+)$/
+        if($month);
+
+    # record the user settings or the default
+    $settings -> {"month"} = $setmonth || $nowmonth;
+    $settings -> {"year"}  = $setyear  || $nowyear;
+
+    # And check and force ranges
+    $settings -> {"month"} = $nowmonth
+        if($settings -> {"month"} < 1 || $settings -> {"month"} > 12);
+
+    $settings -> {"year"} = $nowyear
+        if($settings -> {"year"} < 1900);
+
+    # Calculate next and previous
+    my $setdate  = DateTime -> new(year => $settings -> {"year"}, month => $settings -> {"month"});
+    my $prevdate = $setdate -> clone() -> add(months => -1);
+    my $nextdate = $setdate -> clone() -> add(months => 1);
+
+    $settings -> {"prev"} -> {"month"} = $prevdate -> month();
+    $settings -> {"prev"} -> {"year"}  = $prevdate -> year();
+    $settings -> {"next"} -> {"month"} = $nextdate -> month();
+    $settings -> {"next"} -> {"year"}  = $nextdate -> year();
+
 
     return $settings;
 }
@@ -60,6 +91,45 @@ sub _get_articlelist_settings {
 
 # ============================================================================
 #  Content generators
+
+## @method private $ _build_pagination($settings)
+# Generate the navigation/pagination box for the message list. This will generate
+# a series of boxes and controls to allow users to move between pages of message
+# list. Supported settings are:
+#
+# - maxpage   The last page number (first is page 1).
+# - pagenum   The selected page (first is page 1)
+# - mode      The view mode
+# - year      The year displayed articles are from (defaults to current year)
+# - month     The month displayed articles are from (defaults to current month)
+#
+# @param settings A reference to a hash containing settings
+# @return A string containing the navigation block.
+sub _build_pagination {
+    my $self     = shift;
+    my $settings = shift;
+
+    # If there is more than one page, generate a full set of page controls
+    if($settings -> {"maxpage"} > 1) {
+        my $controls = "";
+
+        my $active = ($settings -> {"pagenum"} > 1) ? "newer.tem" : "newer_disabled.tem";
+        $controls .= $self -> {"template"} -> load_template("paginate/$active", {"***prev***"  => $self -> build_url(pathinfo => [$settings -> {"year"}, $settings -> {"month"}, $settings -> {"mode"}, $settings -> {"pagenum"} - 1])});
+
+        $active = ($settings -> {"pagenum"} < $settings -> {"maxpage"}) ? "older.tem" : "older_disabled.tem";
+        $controls .= $self -> {"template"} -> load_template("paginate/$active", {"***next***" => $self -> build_url(pathinfo => [$settings -> {"year"}, $settings -> {"month"}, $settings -> {"mode"}, $settings -> {"pagenum"} + 1])});
+
+        return $self -> {"template"} -> load_template("paginate/block.tem", {"***pagenum***" => $settings -> {"pagenum"},
+                                                                             "***maxpage***" => $settings -> {"maxpage"},
+                                                                             "***pages***"   => $controls});
+    # If there's only one page, a simple "Page 1 of 1" will do the trick.
+    } else { # if($settings -> {"maxpage"} > 1)
+        return $self -> {"template"} -> load_template("paginate/block.tem", {"***pagenum***" => 1,
+                                                                             "***maxpage***" => 1,
+                                                                             "***pages***"   => ""});
+    }
+}
+
 
 ## @method private $ _build_article_row($article, $now)
 # Generate the article list row for the specified article.
@@ -115,27 +185,44 @@ sub _build_article_row {
 # @return Two strings: the page title, and the contents of the page.
 sub _generate_articlelist {
     my $self     = shift;
+    my $year     = shift;
+    my $month    = shift;
     my $pagenum  = shift || 1;
 
-    my $now      = time();
     my $userid   = $self -> {"session"} -> get_session_userid();
 
-    my $settings = $self -> _get_articlelist_settings($pagenum);
+    # Work out the settings that will be used to fetch the articles to show the user
+    my $settings = $self -> _get_articlelist_settings($year, $month, $pagenum);
 
+    # Fetch the list, which may be an empty array - if it's undef, there was an error.
     my ($articles, $count, $feeds) = $self -> {"article"} -> get_user_articles($userid, $settings);
     if($articles) {
         my $list = "";
+        my $now = time();
+
+        # Build the list of any articles present.
         foreach my $article (@{$articles}) {
             $list .= $self -> _build_article_row($article, $now);
         }
+        $list = $self -> {"template"} -> load_template("articlelist/empty_month.tem")
+            if(!$list);
 
-        my $maxpage = int($count / $settings -> {"count"}) + 1;
+        my $maxpage = ceil($count / $settings -> {"count"});
 
         return ($self -> {"template"} -> replace_langvar("ALIST_TITLE"),
                 $self -> {"template"} -> load_template("articlelist/content.tem", {"***articles***" => $list,
                                                                                    "***month***"    => "{L_MONTH_LONG".$settings -> {"month"}."}",
                                                                                    "***year***"     => $settings -> {"year"},
-                                                                                   "***paginate***" => $self -> build_pagination($maxpage, $settings -> {"pagenum"}, "page", 0, 0)}));
+                                                                                   "***prevurl***"  => $self -> build_url(pathinfo => [$settings -> {"prev"} -> {"year"}, $settings -> {"prev"} -> {"month"}]),
+                                                                                   "***nexturl***"  => $self -> build_url(pathinfo => [$settings -> {"next"} -> {"year"}, $settings -> {"next"} -> {"month"}]),
+                                                                                   "***paginate***" => $self -> _build_pagination({ maxpage => $maxpage,
+                                                                                                                                    pagenum => $settings -> {"pagenum"},
+                                                                                                                                    mode    => "page",
+                                                                                                                                    year    => $settings -> {"year"},
+                                                                                                                                    month   => $settings -> {"month"}
+                                                                                                                                  })
+                                                                                  })
+               );
     } else {
         return $self -> build_error_box($self -> {"article"} -> errstr());
     }
@@ -257,10 +344,10 @@ sub page_display {
     } else {
         my @pathinfo = $self -> {"cgi"} -> param('pathinfo');
 
-        given($pathinfo[0]) {
-            when("page") { ($title, $content) = $self -> _generate_articlelist($pathinfo[1]); }
+        given($pathinfo[2]) {
+            when("page") { ($title, $content) = $self -> _generate_articlelist($pathinfo[0], $pathinfo[1], $pathinfo[3]); }
             default {
-                ($title, $content) = $self -> _generate_articlelist();
+                ($title, $content) = $self -> _generate_articlelist($pathinfo[0], $pathinfo[1], 1);
             }
         }
 
