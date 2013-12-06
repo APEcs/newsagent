@@ -33,6 +33,36 @@ use v5.12;
 # ============================================================================
 #  Content generators
 
+## @method $ embed_fulltext_image($article)
+# Generate a div-wrapped version of the article to include in the fulltext that
+# includes the article image.
+#
+# @param article The article to generate the fulltext with embedded image for
+# @return A string containing the full text with embedded image
+sub embed_fulltext_image {
+    my $self    = shift;
+    my $article = shift;
+    my $image   = "";
+
+    foreach my $img (@{$article -> {"images"}}) {
+        # Skip images other than the article image
+        next unless($img -> {"location"} && $img -> {"order"} == 1);
+
+        my $url = $img -> {"location"};
+        $url = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
+                         $url)
+            if($img -> {"type"} eq "file");
+
+        $image = $self -> {"template"} -> load_template("feeds/rss/fulltext-image-img.tem", {"***class***" => "article",
+                                                                                             "***url***"   => $url,
+                                                                                             "***title***" => $article -> {"title"}});
+    }
+
+    return $self -> {"template"} -> load_template("feeds/rss/fulltext-image.tem", {"***image***" => $image,
+                                                                                   "***text***"  => $article -> {"fulltext"}});
+}
+
+
 ## @method void generate_feed()
 # Generate an RSS feed of articles based on the filters specified by the user on
 # the query string. Note that this does not return, and errors that occur inside
@@ -78,6 +108,7 @@ sub generate_feed {
         given($result -> {"fulltext_mode"}) {
             when("markdown") { $result -> {"fulltext"} = $self -> make_markdown_body(Encode::encode("iso-8859-1", $result -> {"fulltext"})); }
             when("plain")    { $result -> {"fulltext"} = $self -> html_strip($result -> {"fulltext"}); }
+            when("embedimg") { $result -> {"fulltext"} = $self -> embed_fulltext_image($result); }
         }
 
         # If fulltext is activated, include the text in the item

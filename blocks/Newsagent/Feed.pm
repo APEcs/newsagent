@@ -74,6 +74,7 @@ sub _validate_settings {
         when ("enabled")  { $settings -> {"fulltext_mode"} = "enabled"; }
         when ("markdown") { $settings -> {"fulltext_mode"} = "markdown"; }
         when ("plain")    { $settings -> {"fulltext_mode"} = "plain"; }
+        when ("embedimg") { $settings -> {"fulltext_mode"} = "embedimg"; }
         default {
             $settings -> {"fulltext_mode"} = "";
         }
