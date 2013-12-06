@@ -111,11 +111,11 @@ sub generate_feed {
             when("embedimg") { $result -> {"fulltext"} = $self -> embed_fulltext_image($result); }
         }
 
-        # If fulltext is activated, include the text in the item
+        # If fulltext is activated, and it isn't used in the description already, include the text in the item
         $extra .= $self -> {"template"} -> load_template("feeds/rss/newsagent.tem", {"***elem***"    => "fulltext",
                                                                                      "***attrs***"   => "",
                                                                                      "***content***" => "<![CDATA[\n".$result -> {"fulltext"}."\n]]>" })
-            if($result -> {"fulltext_mode"});
+            if($result -> {"fulltext_mode"} && !$result -> {"use_fulltext_desc"});
 
         # The date can be needed in both the title and date fields.
         my $pubdate = $self -> {"template"} -> format_time($result -> {"release_time"}, $self -> {"timefmt"});
@@ -125,7 +125,7 @@ sub generate_feed {
 
         # Put the item together!
         $items .= $self -> {"template"} -> load_template("feeds/rss/item.tem", {"***title***"       => $result -> {"title"} || $pubdate,
-                                                                                "***description***" => $result -> {"summary"},
+                                                                                "***description***" => $result -> {"use_fulltext_desc"} ? $result -> {"fulltext"} : $result -> {"summary"},
                                                                                 "***images***"      => $images,
                                                                                 "***feed***"        => $result -> {"feedname"},
                                                                                 "***extra***"       => $extra,

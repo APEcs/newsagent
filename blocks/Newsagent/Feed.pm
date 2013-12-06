@@ -80,6 +80,13 @@ sub _validate_settings {
         }
     }
 
+    given($self -> {"cgi"} -> param("desc")) {
+        when ("fulltext") { $settings -> {"use_fulltext_desc"} = 1; }
+        default {
+            $settings -> {"use_fulltext_desc"} = 0;
+        }
+    }
+
     # Image control is only used by some feeds
     $settings -> {"images"} = 1
         if(defined($self -> {"cgi"} -> param("images")));

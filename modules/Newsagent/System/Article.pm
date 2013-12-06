@@ -312,6 +312,8 @@ sub get_image_info {
 # - `offset`: article offset, first returned article is at offset 0.
 # - `fulltext_mode`: if specified, the full article text will be included in the result,
 #   otherwise only the title and summary will be included.
+# - `use_fulltext_desc`: if specfied, a flag with the same name will be set in each
+#   article indicating that the fulltext should be used as the description.
 #
 # @note This function will never return articles stored as `draft`, articles set
 #       for timed release before the release time, or old revisions of articles.
@@ -444,6 +446,7 @@ sub get_feed_articles {
 
             # Need to copy the mode to each article.
             $article -> {"fulltext_mode"} = $settings -> {"fulltext_mode"};
+            $article -> {"use_fulltext_desc"} = $settings -> {"use_fulltext_desc"};
 
             $article -> {"levels"} = $levelh -> fetchall_arrayref({});
 
