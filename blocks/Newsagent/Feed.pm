@@ -80,8 +80,13 @@ sub _validate_settings {
         }
     }
 
+    # description overriding
     given($self -> {"cgi"} -> param("desc")) {
-        when ("fulltext") { $settings -> {"use_fulltext_desc"} = 1; }
+        when ("fulltext") { $settings -> {"use_fulltext_desc"} = 1;
+
+                            # Default the fulltext mode if it has not already been set.
+                            $settings -> {"fulltext_mode"} = "embedimg" if(!$settings -> {"fulltext_mode"});
+        }
         default {
             $settings -> {"use_fulltext_desc"} = 0;
         }
