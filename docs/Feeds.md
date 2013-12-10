@@ -58,10 +58,26 @@ obtained by any of the feeds. Some examples are given after the documentation.
   specified feed(s). This is, again, either a single feed name, or a comma
   separated list of feeds, eg: `feed=acso` or `feed=acso,apecs`
 
-* `fulltext=enabled` turns on the inclusion of the full article text in
+* `fulltext=<mode>` turns on the inclusion of the full article text in
   each returned article. Note that this is ignored by the HTML feed - the
   full article text is always included when the `full` HTML feed is used,
-  and it is never included for `compact` or `feed`.
+  and it is never included for `compact` or `feed`. Supported modes are:
+    * `enabled` turns on fill text inclusion, the full article HTML is included.
+    * `markdown` turns on full text inclusion, the article text is converted
+      to markdown text as much as possible.
+    * `plain` turns on full text inclusion, with all html stripped from the
+      text.
+    * `embedimg` turns on inclusion of the full article HTML, the resulting
+      article text is templated to include the article image if one has been
+      set for the article.
+
+* `desc=fulltext` changes the normal behaviour of including the article summary
+  in the RSS <description> element so that the full article text is used
+  instead. This is the full text as processed according to the `fulltext`
+  argument: if the feed is requested wih `desc=fulltext&fulltext=markdown`
+  then the <description> will contain the full article text with markdown
+  formatting. If `desc=fulltext` is specified, but no `fulltext` is present,
+  `fulltext` will be silently set to `embedimg`.
 
 * `count=<number>` lets you control how many items are included in the feed.
   The default is 10, there is a 'hard' maximum of 100 enforced by the system.
