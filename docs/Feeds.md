@@ -72,10 +72,10 @@ obtained by any of the feeds. Some examples are given after the documentation.
       set for the article.
 
 * `desc=fulltext` changes the normal behaviour of including the article summary
-  in the RSS <description> element so that the full article text is used
+  in the RSS `description` element so that the full article text is used
   instead. This is the full text as processed according to the `fulltext`
   argument: if the feed is requested wih `desc=fulltext&fulltext=markdown`
-  then the <description> will contain the full article text with markdown
+  then the `description` will contain the full article text with markdown
   formatting. If `desc=fulltext` is specified, but no `fulltext` is present,
   `fulltext` will be silently set to `embedimg`.
 
