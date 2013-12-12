@@ -780,10 +780,6 @@ sub add_article {
 
     $self -> clear_error();
 
-    # resolve the feed
-    my $feed = $self -> _get_feed_byname($article -> {"feed"})
-        or return undef;
-
     # Add urls to the database
     foreach my $id (keys(%{$article -> {"images"}})) {
         if($article -> {"images"} -> {$id} -> {"mode"} eq "url") {
@@ -808,9 +804,9 @@ sub add_article {
 
     # Add the article itself
     my $addh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"articles"}."`
-                                            (previous_id, metadata_id, creator_id, created, feed_id, title, summary, article, preset, release_mode, release_time, updated, updated_id, sticky_until, is_sticky)
-                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    my $rows = $addh -> execute($previd, $metadataid, $userid, $now, $feed -> {"id"}, $article -> {"title"}, $article -> {"summary"}, $article -> {"article"}, $article -> {"preset"}, $article -> {"mode"}, $article -> {"rtimestamp"}, $now, $userid, $sticky_until, $is_sticky);
+                                            (previous_id, metadata_id, creator_id, created, title, summary, article, preset, release_mode, release_time, updated, updated_id, sticky_until, is_sticky)
+                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    my $rows = $addh -> execute($previd, $metadataid, $userid, $now, $article -> {"title"}, $article -> {"summary"}, $article -> {"article"}, $article -> {"preset"}, $article -> {"mode"}, $article -> {"rtimestamp"}, $now, $userid, $sticky_until, $is_sticky);
     return $self -> self_error("Unable to perform article insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Article insert failed, no rows inserted") if($rows eq "0E0");
 
@@ -825,12 +821,15 @@ sub add_article {
     return $self -> self_error("Unable to obtain id for new article row")
         if(!$newid);
 
-    # Now set up image and level associations
+    # Now set up image, feed, and level associations
     $self -> _add_image_relation($newid, $article -> {"images"} -> {"a"} -> {"img"}, 0) or return undef
         if($article -> {"images"} -> {"a"} -> {"img"});
 
     $self -> _add_image_relation($newid, $article -> {"images"} -> {"b"} -> {"img"}, 1) or return undef
         if($article -> {"images"} -> {"b"} -> {"img"});
+
+    $self -> add_feed_relations($newid, $article -> {"feeds"})
+        or return undef;
 
     foreach my $level (keys(%{$article -> {"levels"}})) {
         $self -> _add_level_relation($newid, $level)
@@ -1118,6 +1117,32 @@ sub _get_level_byname {
         or return $self -> self_error("Request for non-existent level '$level', giving up");
 
     return $levrow -> [0];
+}
+
+
+## @method private $ _add_feed_relations($articleid, $feeds)
+# Add a relation between an article and one or more feeds
+#
+# @param articleid The ID of the article to add the relation for.
+# @param feeds     A reference to an array of feed IDs to add relations to.
+# @return True on success, undef on error.
+sub _add_feed_relations {
+    my $self      = shift;
+    my $articleid = shift;
+    my $feeds     = shift;
+
+    $self -> clear_error();
+
+    my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"articlefeeds"}."`
+                                            (`article_id`, `feed_id`)
+                                            VALUES(?, ?)");
+    foreach my $feedid (@{$feeds}) {
+        my $rows = $newh -> execute($articleid, $feedid);
+        return $self -> self_error("Unable to perform feed relation insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
+        return $self -> self_error("Feed relation insert failed, no rows inserted") if($rows eq "0E0");
+    }
+
+    return 1;
 }
 
 
