@@ -831,10 +831,8 @@ sub add_article {
     $self -> add_feed_relations($newid, $article -> {"feeds"})
         or return undef;
 
-    foreach my $level (keys(%{$article -> {"levels"}})) {
-        $self -> _add_level_relation($newid, $level)
-            or return undef;
-    }
+    $self -> _add_level_relations($newid, $article -> {"levels"})
+        or return undef;
 
     # Attach to the metadata context
     $self -> {"metadata"} -> attach($metadataid)
@@ -1146,41 +1144,33 @@ sub _add_feed_relations {
 }
 
 
-## @method private $ _add_level_relation($articleid, $level)
-# Add a relation between an article and a level
+## @method private $ _add_level_relations($articleid, $levels)
+# Add a relation between an article and or or more levels
 #
 # @param articleid The ID of the article to add the relation for.
-# @param level     The title (NOT the ID!) of the level to add the relation to.
-# @return The id of the new level association row on success, undef on error.
-sub _add_level_relation {
+# @param levels    A reference to a hash of enabled levels, keys are level names
+#                  values are ignored.
+# @return True on success, undef on error.
+sub _add_level_relations {
     my $self      = shift;
     my $articleid = shift;
-    my $level     = shift;
+    my $levels    = shift;
 
     $self -> clear_error();
-
-    my $levelid = $self -> _get_level_byname($level)
-        or return undef;
 
     my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"articlelevels"}."`
                                             (`article_id`, `level_id`)
                                             VALUES(?, ?)");
-    my $rows = $newh -> execute($articleid, $levelid);
-    return $self -> self_error("Unable to perform level relation insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
-    return $self -> self_error("Level relation insert failed, no rows inserted") if($rows eq "0E0");
+    foreach my $level (keys(%{$levels})) {
+        my $levelid = $self -> _get_level_byname($level)
+            or return undef;
 
-    # FIXME: This ties to MySQL, but is more reliable that last_insert_id in general.
-    #        Try to find a decent solution for this mess...
-    # NOTE: the DBD::mysql documentation doesn't actually provide any useful information
-    #       about what this will contain if the insert fails. In fact, DBD::mysql calls
-    #       libmysql's mysql_insert_id(), which returns 0 on error (last insert failed).
-    #       There, why couldn't they bloody /say/ that?!
-    my $newid = $self -> {"dbh"} -> {"mysql_insertid"};
+        my $rows = $newh -> execute($articleid, $levelid);
+        return $self -> self_error("Unable to perform level relation insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
+        return $self -> self_error("Level relation insert failed, no rows inserted") if($rows eq "0E0");
+    }
 
-    return $self -> self_error("Unable to obtain id for new level relation row")
-        if(!$newid);
-
-    return $newid;
+    return 1;
 }
 
 
