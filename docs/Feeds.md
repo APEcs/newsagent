@@ -62,7 +62,7 @@ obtained by any of the feeds. Some examples are given after the documentation.
   each returned article. Note that this is ignored by the HTML feed - the
   full article text is always included when the `full` HTML feed is used,
   and it is never included for `compact` or `feed`. Supported modes are:
-    * `enabled` turns on fill text inclusion, the full article HTML is included.
+    * `enabled` turns on full text inclusion, the full article HTML is included.
     * `markdown` turns on full text inclusion, the article text is converted
       to markdown text as much as possible.
     * `plain` turns on full text inclusion, with all html stripped from the
