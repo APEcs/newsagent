@@ -217,6 +217,13 @@ sub get_pending_notifications {
 # ============================================================================
 #  Private code
 
+## @method private $ _build_matrix_level($level, $selected, $baseid)
+# Recursively generate the HTML representation of a level of the recipient matrix.
+#
+# @param level    A reference to an array of recipient entries at this level
+# @param selected A reference to a hash recording which methods are selected
+# @param baseid   The ID to use in the base level div.
+# @return A string containing the HTML for the level in the matrix.
 sub _build_matrix_level {
     my $self     = shift;
     my $level    = shift;
