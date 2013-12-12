@@ -1,0 +1,1 @@
+<input type="checkbox" class="feed ***name***" id="feed-***id***" name="feed" value="***id***" ***checked*** /> <label for="feed-***id***">***desc***</label>

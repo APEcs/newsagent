@@ -82,9 +82,9 @@ Not here yet.
                     <h3>{L_COMPOSE_PUBLICATION}</h3>
                     <dl class="input">
                         <dt><label for="comp-feed">{L_COMPOSE_FEED}</label></dt>
-                        <dd><select class="fillwide" id="comp-feed" name="feed">
+                        <dd><div id="comp-feed" class="chromelike">
                         ***allowed_feeds***
-                            </select>
+                            </div>
                         </dd>
                     </dl>
                     <dl class="input">
@@ -127,6 +127,7 @@ Not here yet.
     </form>
 </div>
 <script type="text/javascript">
+var multiselfeed = new MultiSelect('#comp-feed', { maxMonitorText: 0, emptyText: 'Select feeds...' });
 
 confirm_imgurl   = '{V_[templatepath]}images/confirm.png';
 spinner_imgurl   = '{V_[templatepath]}images/spinner.gif';

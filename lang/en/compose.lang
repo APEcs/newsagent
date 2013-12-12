@@ -71,7 +71,9 @@ COMPOSE_IMGURL_DESC = The image URL must be an absolute URL stating http:// or h
 COMPOSE_IMGFILE_ERRNOFILE = No file has been selected for ***field***
 COMPOSE_IMGFILE_ERRNOTMP  = An internal error (no upload temp file) occurred when processing ***field***
 
-COMPOSE_LEVEL_ERRNONE        = No visibility levels have been selected. You must select at least one visibility level.
+COMPOSE_LEVEL_ERRNONE        = No visibility levels have been selected, or all selected visibility levels have been excluded. You must select at least one visibility level.
+COMPOSE_LEVEL_ERRNOCOMMON    = After checking the visibility levels you are allowed to post articles at for all the selected feeds, all the visibility levels were excluded. You will not be able to continue unless you request increased permissions, or remove feeds from your selection.
+COMPOSE_FEED_ERRNONE         = No feeds have been selected, or all the selected feeds were excluded after checking your posting permissions.
 COMPOSE_ERR_NOSUMMARYARTICLE = No text has been entered for the summary or article.
 
 COMPOSE_ADDED_TITLE       = Article Added

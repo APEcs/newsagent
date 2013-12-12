@@ -24,7 +24,7 @@ use base qw(Newsagent::Article); # This class extends the Article block class
 use v5.12;
 
 use Newsagent::System::Matrix;
-
+use Data::Dumper;
 
 # ============================================================================
 #  Content generators
@@ -49,15 +49,15 @@ sub _generate_compose {
     my $jslevels   = $self -> _build_levels_jsdata($sys_levels);
     my $levels     = $self -> _build_level_options($sys_levels, $args -> {"levels"});
 
-    # Work out where the user is allowed to post from
+    # Work out where the user is allowed to post to
     my $user_feeds = $self -> {"article"} -> get_user_feeds($userid, $sys_levels);
-    my $feeds      = $self -> {"template"} -> build_optionlist($user_feeds, $args -> {"feed"});
+    my $feeds      = $self -> _build_feedlist($user_feeds, $args -> {"feeds"});
 
     # Work out which levels the user has access to for each feed. This generates a
     # chunk of javascript to stick into the page to hide/show options and default-tick
     # them as appropriate.
     my $user_levels = $self -> {"article"} -> get_user_levels($user_feeds, $sys_levels, $userid);
-    my $feed_levels = $self -> _build_feed_levels($user_levels, $args -> {"feed"}, $args -> {"levels"});
+    my $feed_levels = $self -> _build_feed_levels($user_levels, $args -> {"levels"});
 
     # Release timing options
     my $relops = $self -> {"template"} -> build_optionlist($self -> {"relops"}, $args -> {"mode"});

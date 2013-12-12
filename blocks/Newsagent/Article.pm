@@ -252,13 +252,16 @@ sub _validate_article_image {
 }
 
 
-## @method private $ _validate_levels($args, $userid)
-# Validate the posting levels submitted by the user.
+## @method private $ _validate_feeds_levels($args, $userid)
+# Validate the selected feeds and posting levels submitted by the user.
 #
-# @param args   A reference to a hash to store validated data in.
+# @param args   A reference to a hash to store validated data in. This will populate two
+#               entries in the hash: `levels` is a reference to a hash, one element per
+#               selected level, with the value set to the number of times the level was
+#               selected; `feeds` contains a reference to a list of feed IDs selected.
 # @param userid The ID of the user submitting the form.
 # @return empty string on success, otherwise an error string.
-sub _validate_levels {
+sub _validate_feeds_levels {
     my $self    = shift;
     my $args    = shift;
     my $userid  = shift;
@@ -269,25 +272,71 @@ sub _validate_levels {
     my $user_feeds  = $self -> {"article"} -> get_user_feeds($userid, $sys_levels);
     my $user_levels = $self -> {"article"} -> get_user_levels($user_feeds, $sys_levels, $userid);
 
-    my @selected = $self -> {"cgi"} -> param("level");
+    # Fetch the list of selected feeds and levels
+    my @set_feeds  = $self -> {"cgi"} -> param("feed");  # A list of selected feed IDs
+    my @set_levels = $self -> {"cgi"} -> param("level"); # A list of selected level names ("home", "leader", etc)
 
-    # Convert the selected array to a hash for faster/easier lookup
-    my $hashsel;
-    $hashsel -> {$_}++ for(@selected);
+    # Convert the arrays to a hash for faster/easier lookup
+    my %feed_hash  = map { $_ => $_ } @set_feeds;
+    my %level_hash = map { $_ => $_ } @set_levels;
 
-    # Check whether the user can post at the selected levels for the selected feed
-    if($user_levels -> {$args -> {"feed"}}) {
-        # for each available level, check whether the user has selected it, and if so record that
-        # this ensures that, provided $levels only contains levels the user has access to, they
-        # can never select a level they can't use.
-        foreach my $level (keys(%{$user_levels -> {$args -> {"feed"}}})) {
-            $userset -> {$level}++
-                if($user_levels -> {$args -> {"feed"}} -> {$level} && $hashsel -> {$level});
+    # First go through the feeds the user has turned on, and build a hash of levels
+    # that represent the *minimum* available set of permissions
+    my %avail_levels = map { $_ -> {"value"} => 1 } @{$sys_levels};
+    foreach my $user_feed (@{$user_feeds}) {
+
+        # Has the user enabled this feed?
+        if($feed_hash{$user_feed -> {"id"}}) {
+
+            # Yes, deactivate any levels the user does not have access to for this feed
+            foreach my $level (keys(%avail_levels)) {
+                $avail_levels{$level} = 0
+                    unless($user_levels -> {$user_feed -> {"value"}} -> {$level});
+            }
         }
     }
-    $args -> {"levels"} = $userset;
 
-    return scalar(keys(%{$userset})) ? undef : $self -> {"template"} -> replace_langvar("COMPOSE_LEVEL_ERRNONE");
+    # At this point $avail_levels contains 0 or 1 for each level defined in the system:
+    # - if the user can post to ALL selected feed at a given level, $avail_levels contains 1 for that level
+    # - if the user has selected ANY feed that they can not post to at a given level, $avail_levels contains 0 for that level.
+    # Essentially, $avail_levels is the intersection of available levels for the user for the selected feeds.
+
+    # How many levels are left? Is the user able to post the article at all?
+    my $count = 0;
+    foreach my $level (keys %avail_levels) {
+        $count += $avail_levels{$level};
+    }
+    # If there are no levels left, exit with an error
+    return $self -> {"template"} -> replace_langvar("COMPOSE_LEVEL_ERRNOCOMMON") unless($count);
+
+    # Now check the levels the user has selected against the available levels
+    $args -> {"levels"} = {};
+    foreach my $level (keys %avail_levels) {
+        # Skip levels that are not enabled, or selected by the user
+        next if(!$avail_levels{$level} || !$level_hash{$level});
+
+        $args -> {"levels"} -> {$level}++
+    }
+
+    # If the user has not selected any levels, or the selected ones have been rejected, error out.
+    return $self -> {"template"} -> replace_langvar("COMPOSE_LEVEL_ERRNONE") if(!scalar(keys(%{$args -> {"levels"}})));
+
+    # Go through the available feeds for the user, and if the user has enabled the feed
+    # make sure thay they can post the selected levels to that feed
+    $args -> {"feeds"}  = [];
+    foreach my $user_feed (@{$user_feeds}) {
+
+        # Has the user enabled this feed?
+        if($feed_hash{$user_feed -> {"id"}}) {
+
+            # Yes, store the feed ID. Note that this is safe at this point as the above code has already
+            # checked that the user has permission to post to this feed at a selected level.
+            push(@{$args -> {"feeds"}}, $user_feed -> {"id"});
+        }
+    }
+
+    # No levels selected?
+    return scalar(@{$args -> {"feeds"}}) ? undef : $self -> {"template"} -> replace_langvar("COMPOSE_FEED_ERRNONE");
 }
 
 
@@ -374,14 +423,9 @@ sub _validate_article_fields {
 
     # Release mode 0 is "standard" release - potentially with timed delay.
     if($args -> {"relmode"} == 0) {
-        ($args -> {"feed"}, $error) = $self -> validate_options("feed", {"required" => 1,
-                                                                         "source"   => $self -> {"article"} -> get_user_feeds($userid, $sys_levels),
-                                                                         "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_FEED")});
-        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
-        # This will check that the user has access to the level and feed
-        $error = $self -> _validate_levels($args, $userid);
-
+        # Get the list of feeds the user has selected and has access to
+        $error = $self -> _validate_feeds_levels($args, $userid);
         $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
         ($args -> {"mode"}, $error) = $self -> validate_options("mode", {"required" => 1,
@@ -596,6 +640,31 @@ sub _build_level_options {
     }
 
     return $options;
+}
+
+
+## @method private $ _build_feedlist($feeds, $selected)
+# Generate a series of checkboxes for each feed specified in the provided array
+#
+# @param feeds    A reference to an array of feed data hashrefs
+# @param selected A reference to a hash pf selected feeds
+# @return A string containing the checkboxes for the available feeds.
+sub _build_feedlist {
+    my $self     = shift;
+    my $feeds    = shift;
+    my $selected = shift;
+    my $result   = "";
+
+    my %active_feeds = map { $_ => $_} @{$selected};
+
+    foreach my $feed (@{$feeds}) {
+        $result .= $self -> {"template"} -> load_template("compose/feed-item.tem", {"***name***"    => $feed -> {"value"},
+                                                                                    "***id***"      => $feed -> {"id"},
+                                                                                    "***desc***"    => $feed -> {"name"},
+                                                                                    "***checked***" => $active_feeds{$feed -> {"id"}} ? 'checked="checked"' : ''});
+    }
+
+    return $result;
 }
 
 
