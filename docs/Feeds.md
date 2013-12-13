@@ -47,13 +47,6 @@ obtained by any of the feeds. Some examples are given after the documentation.
   level specified for this parameter is used. If this is not specified, it
   will default to selecting **all** levels.
 
-* `urllevel=<level>`: control the level for which any automatically generated
-  links are tailored to. This allows the same article to appear in a different
-  location depending on the level selected, to support different full article
-  viewing pages depending on the level provided. Normally you can omit this,
-  and it will default to the value set for `level`, if that is set, or an
-  internal default (usually `group` level).
-
 * `feed=<selected feed(s)>`: select articles that have been published in the
   specified feed(s). This is, again, either a single feed name, or a comma
   separated list of feeds, eg: `feed=acso` or `feed=acso,apecs`
