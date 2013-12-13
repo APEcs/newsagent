@@ -160,10 +160,15 @@ sub _build_article_row {
             if($user);
     }
 
+    my $feeds = "";
+    foreach my $feed (@{$article -> {"feeds"}}) {
+        $feeds .= $self -> {"template"} -> load_template("articlelist/feed.tem", {"***desc***" => $feed -> {"description"}});
+    }
+
     return $self -> {"template"} -> load_template("articlelist/row.tem", {"***modeclass***" => $article -> {"release_mode"},
                                                                           "***modeinfo***"  => $self -> {"relmodes"} -> {$article -> {"release_mode"}},
                                                                           "***date***"      => $self -> {"template"} -> fancy_time($article -> {"release_time"}, 0, 1),
-                                                                          "***feed***"      => $article -> {"feeddesc"},
+                                                                          "***feeds***"     => $feeds,
                                                                           "***title***"     => $article -> {"title"} || $self -> {"template"} -> format_time($article -> {"release_time"}),
                                                                           "***action***"    => $action,
                                                                           "***actdate***"   => $actdate,
