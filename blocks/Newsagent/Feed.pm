@@ -139,13 +139,12 @@ sub _validate_settings {
                                                                           "formattest" => '^\w+(?:,\w+)*$',
                                                                           "formatdesc" => "",
                                                                           "nicename"   => ""});
-    ($settings -> {"urllevel"}, $error) = $self -> validate_string("urllevel", {"required"   => 0,
-                                                                                "default"    => "",
-                                                                                "formattest" => '^\w+$',
-                                                                                "formatdesc" => "",
-                                                                                "nicename"   => ""});
-    ($settings -> {"urllevel"}) = $settings -> {"level"} =~ /^(\w+)/
-        if(!$settings -> {"urllevel"} && $settings -> {"level"});
+
+    ($settings -> {"viewer"}, $error) = $self -> validate_string("viewer", {"required"   => 0,
+                                                                            "default"    => "",
+                                                                            "formattest" => '^\w+$',
+                                                                            "formatdesc" => "",
+                                                                            "nicename"   => ""});
 
     # If a maximum age is specified, convert it to a unix timestamp to use for filtering
     ($settings -> {"maxage"}, $error) = $self -> validate_string("maxage", {"required"   => 0,
@@ -170,6 +169,54 @@ sub _validate_settings {
     }
 
     return $settings;
+}
+
+
+# ============================================================================
+#  Support
+
+## @method $ feed_url($viewer, $default, $articleid)
+# Generate a URL to use as the viewer URL for the feed. This will attempt to
+# create a URL based on the 'viewer' name specified, first checking for a
+# feed with the specified name in the feeds table and then using its default
+# viewer URL, then checking the feed_urls table for a match. If none are
+# found, the default URL is returned.
+#
+# @param viewer     The name of the feed to use the viewer URL from. If this is
+#                   'internal' the Newsagent built-in article viewer URL is
+#                   returned, otherwise if a matching feed or feed url entry is
+#                   found, its URL is used.
+# @param defaulturl If no match is found for the viewer URL, use this URL
+#                   instead. This should be an absolute URL to an article viewer.
+# @param articleid  The ID of the article to view.
+# @return A string containing the URL of an article viewer on success, undef
+#         on error.
+sub feed_url {
+    my $self       = shift;
+    my $viewer     = shift;
+    my $defaulturl = shift;
+    my $articleid  = shift;
+
+    $self -> clear_error();
+
+    # Fix up the default URL
+    $defaulturl .= "?articleid=$articleid";
+
+    if($viewer) {
+        # If the caller has requested an internal viewer, the URL is simple
+        return $self -> build_url(fullurl  => 1,
+                                  block    => "view",
+                                  pathinfo => [ "article", $articleid])
+            if($viewer eq "internal");
+
+        # Not an internal viewer, check for a matching feed
+        my $feedurl = $self -> {"article"} -> get_feed_url($viewer)
+            or return $defaulturl;
+
+        return $feedurl."?articleid=$articleid";
+    }
+
+    return $defaulturl;
 }
 
 

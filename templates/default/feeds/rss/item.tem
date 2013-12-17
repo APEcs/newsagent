@@ -6,5 +6,5 @@
       <guid>***guid***</guid>
       <author>***email*** (***name***)</author>
       <newsagent:gravatar>https://gravatar.com/avatar/***gravhash***</newsagent:gravatar>
-      <newsagent:feed>***feed***</newsagent:feed>
+      <newsagent:feeds>***feeds***</newsagent:feeds>
 ***images******extra***    </item>

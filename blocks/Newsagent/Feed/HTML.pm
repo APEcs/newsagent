@@ -124,7 +124,7 @@ sub generate_feed {
             if($images[1]);
 
         # work out the URL
-        my $feedurl = $result -> {"feedurl"} || $result -> {"defaulturl"};
+        my $feedurl = $self -> feed_url($settings -> {"viewer"}, $result -> {"feeds"} -> [0] -> {"default_url"}, $result -> {"id");
 
         $result -> {"fulltext"} = $self -> cleanup_entities($result -> {"fulltext"})
             if($result -> {"fulltext"});
@@ -136,8 +136,10 @@ sub generate_feed {
                                                                                        "***articleimg***"  => $images[1],
                                                                                        "***feed***"        => $result -> {"feedname"},
                                                                                        "***date***"        => $pubdate,
-                                                                                       "***guid***"        => $feedurl."?articleid=".$result -> {"id"},
-                                                                                       "***link***"        => $feedurl."?articleid=".$result -> {"id"},
+                                                                                       "***guid***"        => $self -> build_url(fullurl  => 1,
+                                                                                                                                 block    => "view",
+                                                                                                                                 pathinfo => [ "article", $result -> {"id"}]),
+                                                                                       "***link***"        => $feedurl,
                                                                                        "***email***"       => $result -> {"email"},
                                                                                        "***name***"        => $result -> {"realname"} || $result -> {"username"},
                                                                                        "***fulltext***"    => $result -> {"fulltext"},

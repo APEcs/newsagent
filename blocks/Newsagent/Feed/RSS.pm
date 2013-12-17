@@ -71,9 +71,9 @@ sub embed_fulltext_image {
 # to the aggregators is likely to be an undesirable state of affairs.
 sub generate_feed {
     my $self     = shift;
-    my $settings = {};
 
-    my $results = $self -> {"article"} -> get_feed_articles($self -> _validate_settings());
+    my $settings = $self -> _validate_settings();
+    my $results  = $self -> {"article"} -> get_feed_articles($settings);
 
     my $items   = "";
     my $maxdate = 0;
@@ -120,18 +120,28 @@ sub generate_feed {
         # The date can be needed in both the title and date fields.
         my $pubdate = $self -> {"template"} -> format_time($result -> {"release_time"}, $self -> {"timefmt"});
 
+        # Work out the feeds
+        my $feeds = "";
+        foreach my $feed (@{$result -> {"feeds"}}) {
+
+            $feeds .= $self -> {"template"} -> load_template("feeds/rss/feed.tem", {"***description***" => $feed -> {"description"},
+                                                                                    "***name***"        => $feed -> {"name"}});
+        }
+
         # work out the URL
-        my $feedurl = $result -> {"feedurl"} || $result -> {"defaulturl"};
+        my $feedurl = $self -> feed_url($settings -> {"viewer"}, $result -> {"feeds"} -> [0] -> {"default_url"}, $result -> {"id"});
 
         # Put the item together!
         $items .= $self -> {"template"} -> load_template("feeds/rss/item.tem", {"***title***"       => $result -> {"title"} || $pubdate,
                                                                                 "***description***" => $result -> {"use_fulltext_desc"} ? $result -> {"fulltext"} : $result -> {"summary"},
                                                                                 "***images***"      => $images,
-                                                                                "***feed***"        => $result -> {"feedname"},
+                                                                                "***feeds***"       => $feeds,
                                                                                 "***extra***"       => $extra,
                                                                                 "***date***"        => $pubdate,
-                                                                                "***guid***"        => $feedurl."?articleid=".$result -> {"id"},
-                                                                                "***link***"        => $feedurl."?articleid=".$result -> {"id"},
+                                                                                "***guid***"        => $self -> build_url(fullurl  => 1,
+                                                                                                                          block    => "view",
+                                                                                                                          pathinfo => [ "article", $result -> {"id"}]),
+                                                                                "***link***"        => $feedurl,
                                                                                 "***email***"       => $result -> {"email"},
                                                                                 "***name***"        => $result -> {"realname"} || $result -> {"username"},
                                                                                 "***gravhash***"    => md5_hex(lc(trimspace($result -> {"email"} || ""))),

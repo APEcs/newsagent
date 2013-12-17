@@ -336,15 +336,6 @@ sub get_feed_articles {
     $settings -> {"offset"} = 0
         if(!$settings -> {"offset"});
 
-    # And work out what the level for the feed url should be
-    my $urllevel = $settings -> {"urllevel"};
-    $urllevel = $self -> {"settings"} -> {"config"} -> {"Feed:default_level"}
-    if(!$urllevel);
-
-    # convert to a feed id for a simpler query
-    $urllevel = $self -> _get_level_byname($urllevel)
-        or return undef;
-
     # Clear outdated sticky values
     $self -> _clear_sticky()
         or return undef;
@@ -352,22 +343,17 @@ sub get_feed_articles {
     # Now start constructing the query. These are the tables and where clauses that are
     # needed regardless of the settings provided by the caller.
     # All the fields the query is interested in, normally fulltext is omitted unless explicitly requested
-    my $fields = "`article`.`id`, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `user`.`email`, `article`.`created`, `feed`.`name` AS `feedname`, `feed`.`default_url` AS `defaulturl`, `article`.`title`, `article`.`summary`, `article`.`release_time`, `urls`.`url` AS `feedurl`";
+    my $fields = "`article`.`id`, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `user`.`email`, `article`.`created`, `article`.`title`, `article`.`summary`, `article`.`release_time`";
     $fields   .= ", `article`.`article` AS `fulltext`" if($settings -> {"fulltext_mode"});
 
     my $from  = "`".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `article`
                  LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `user`
-                     ON `user`.`user_id` = `article`.`creator_id`
-                 LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"feeds"}."` AS `feed`
-                     ON `feed`.`id` = `article`.`feed_id`
-                 LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"feedurls"}."` AS `urls`
-                     ON (`urls`.`feed_id` = `article`.`feed_id` AND `urls`.`level_id` = ?)";
+                     ON `user`.`user_id` = `article`.`creator_id`";
     my $where = "(`article`.`release_mode` = 'visible'
                    OR (`article`.`release_mode` = 'timed'
                         AND `article`.`release_time` <= UNIX_TIMESTAMP()
                       )
                  )";
-    push(@params, $urllevel);   # argument for urls.level_id = ?
 
     # The next lot are extensions to the above to support filters requested by the caller.
     if($settings -> {"id"}) {
@@ -386,7 +372,12 @@ sub get_feed_articles {
             $feedfrag .= "`feed`.`name` LIKE ?";
             push(@params, $feed);
         }
-        $where .= " AND ($feedfrag)";
+
+        $from  .= ", `".$self -> {"settings"} -> {"database"} -> {"feeds"}."` AS `feed`,
+                     `".$self -> {"settings"} -> {"database"} -> {"articlefeeds"}."` AS `artfeeds`";
+        $where .= " AND ($feedfrag)
+                    AND `artfeeds`.`article_id` = `article`.`id`
+                    AND `artfeeds`.`feed_id` = `feed`.`id`";
     }
 
     # Level filtering is a bit trickier, as it needs to do more joining, and has to deal with
@@ -413,7 +404,7 @@ sub get_feed_articles {
         push(@params, $settings -> {"maxage"});
     }
 
-    my $sql = "SELECT $fields
+    my $sql = "SELECT DISTINCT $fields
                FROM $from
                WHERE $where
                ORDER BY `article`.`is_sticky` DESC, `article`.`release_time` DESC
@@ -433,6 +424,12 @@ sub get_feed_articles {
                                                   WHERE `level`.`id` = `artlevels`.`level_id`
                                                   AND `artlevels`.`article_id` = ?");
 
+        my $feedh = $self -> {"dbh"} -> prepare("SELECT `feed`.*
+                                                  FROM `".$self -> {"settings"} -> {"database"} -> {"feeds"}."` AS `feed`,
+                                                       `".$self -> {"settings"} -> {"database"} -> {"articlefeeds"}."` AS `artfeeds`
+                                                  WHERE `feed`.`id` = `artfeeds`.`feed_id`
+                                                  AND `artfeeds`.`article_id` = ?");
+
         my $imageh = $self -> {"dbh"} -> prepare("SELECT `image`.*, `artimgs`.`order`
                                                   FROM `".$self -> {"settings"} -> {"database"} -> {"images"}."` AS `image`,
                                                        `".$self -> {"settings"} -> {"database"} -> {"articleimages"}."` AS `artimgs`
@@ -444,11 +441,15 @@ sub get_feed_articles {
             $levelh -> execute($article -> {"id"})
                 or return $self -> self_error("Unable to execute article level query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
 
+            $feedh -> execute($article -> {"id"})
+                or return $self -> self_error("Unable to execute article feed query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
+
             # Need to copy the mode to each article.
             $article -> {"fulltext_mode"} = $settings -> {"fulltext_mode"};
             $article -> {"use_fulltext_desc"} = $settings -> {"use_fulltext_desc"};
 
             $article -> {"levels"} = $levelh -> fetchall_arrayref({});
+            $article -> {"feeds"}  = $feedh -> fetchall_arrayref({});
 
             $imageh -> execute($article -> {"id"})
                 or return $self -> self_error("Unable to execute article image query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
@@ -458,10 +459,34 @@ sub get_feed_articles {
             while(my $image = $imageh -> fetchrow_hashref()) {
                 $article -> {"images"} -> [$image -> {"order"}] = $image;
             }
+
         }
     } # if(scalar(@{$articles})) {
 
     return $articles;
+}
+
+
+## @method $ get_feed_url($feedname)
+# Attempt to obtain a viewer URL for the specified feed. This checks against the feed
+# table for a matching feed, and if one is not found there it checks the feedurls
+# table.
+#
+# @param feedname The name of the feed to fetch a viewer URL for
+# @return A string containing a viewer URL or undef on error/not found.
+sub get_feed_url {
+    my $self     = shift;
+    my $feedname = shift;
+
+    # Try getting a matching feed first, and if successful return its URL
+    my $feed = $self -> _get_feed_byname($feedname);
+    return $feed -> {"default_url"} if($feed);
+
+    # If that failed, try the feed_urls table
+    $feed = $self -> _get_feed_url_byname($feedname);
+    return $feed -> {"url"} if($feed);
+
+    return undef;
 }
 
 
@@ -507,12 +532,10 @@ sub get_user_articles {
     # And the sort direction too.
     $sortdir = $sortdir eq "DESC" ? "DESC" : "ASC";
 
-    my $fields = "`article`.*, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `user`.`email`, `feed`.`name` AS `feedname`, `feed`.`description` AS `feeddesc`";
+    my $fields = "`article`.*, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `user`.`email`";
     my $from   = "`".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `article`
                   LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `user`
-                      ON `user`.`user_id` = `article`.`creator_id`
-                  LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"feeds"}."` AS `feed`
-                      ON `feed`.`id` = `article`.`feed_id`";
+                      ON `user`.`user_id` = `article`.`creator_id`";
     my $where  = $settings -> {"hidedeleted"} ? " WHERE `article`.`release_mode` != 'deleted'" : "";
     my @params;
 
@@ -537,6 +560,13 @@ sub get_user_articles {
                                                    `".$self -> {"settings"} -> {"database"} -> {"articlelevels"}."` AS `artlevels`
                                               WHERE `level`.`id` = `artlevels`.`level_id`
                                               AND `artlevels`.`article_id` = ?");
+
+    my $feedh = $self -> {"dbh"} -> prepare("SELECT `feed`.*
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"feeds"}."` AS `feed`,
+                                                  `".$self -> {"settings"} -> {"database"} -> {"articlefeeds"}."` AS `artfeeds`
+                                             WHERE `feed`.`id` = `artfeeds`.`feed_id`
+                                             AND `artfeeds`.`article_id` = ?");
+
     $articleh -> execute(@params)
         or return $self -> self_error("Unable to execute article query: ".$self -> {"dbh"} -> errstr);
 
@@ -548,6 +578,12 @@ sub get_user_articles {
     while(my $article = $articleh -> fetchrow_hashref()) {
         # Does the user have edit access to this article?
         if($self -> {"roles"} -> user_has_capability($article -> {"metadata_id"}, $userid, "edit")) {
+            # Fetch the feed information
+            $feedh -> execute($article -> {"id"})
+                or return $self -> self_error("Unable to execute article feed query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
+
+            $article -> {"feeds"} = $feedh -> fetchall_arrayref({});
+
             # If an offset has been specified, have enough articles been skipped, and if
             # a count has been specified, is there still space for more entries?
             if((!$settings -> {"offset"} || $count >= $settings -> {"offset"}) &&
@@ -567,8 +603,10 @@ sub get_user_articles {
             # Regardless of whether this article has been included in the list, we need
             # to record its feed as a feed the user has access to
             # FIXME: This will need modifying when multi-feed articles are supported
-            $feeds -> {$article -> {"feedname"}} = $article -> {"feeddesc"}
-                if(!$feeds -> {$article -> {"feedname"}});
+            foreach my $feed (@{$article -> {"feeds"}}) {
+                $feeds -> {$feed -> {"name"}} = $feed -> {"description"}
+                    if(!$feeds -> {$feed -> {"name"}});
+            }
 
             ++$count;
         }
@@ -789,7 +827,7 @@ sub add_article {
     }
 
     # Make a new metadata context to attach to the article
-    my $metadataid = $self -> {"metadata"} -> create($feed -> {"metadata_id"})
+    my $metadataid = $self -> _create_article_metadata($article -> {"feeds"})
         or return $self -> self_error("Unable to create new metadata context: ".$self -> {"metadata"} -> errstr());
 
     # Fix up release time
@@ -1118,29 +1156,31 @@ sub _get_level_byname {
 }
 
 
-## @method private $ _add_feed_relations($articleid, $feeds)
-# Add a relation between an article and one or more feeds
+## @method private $ _create_article_metadata($feeds)
+# Create a metadata context to attach to the article specified. This will determine
+# whether the article can be attached to a single feed's metadata, or whether it
+# needs to be attached to the root.
 #
-# @param articleid The ID of the article to add the relation for.
-# @param feeds     A reference to an array of feed IDs to add relations to.
-# @return True on success, undef on error.
-sub _add_feed_relations {
-    my $self      = shift;
-    my $articleid = shift;
-    my $feeds     = shift;
+# @param feeds A reference to an array of IDs for feeds the article has been posted in.
+# @return The new metadata context ID on success, undef otherwise.
+sub _create_article_metadata {
+    my $self  = shift;
+    my $feeds = shift;
 
     $self -> clear_error();
 
-    my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"articlefeeds"}."`
-                                            (`article_id`, `feed_id`)
-                                            VALUES(?, ?)");
-    foreach my $feedid (@{$feeds}) {
-        my $rows = $newh -> execute($articleid, $feedid);
-        return $self -> self_error("Unable to perform feed relation insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
-        return $self -> self_error("Feed relation insert failed, no rows inserted") if($rows eq "0E0");
-    }
+    # A single feed allows the article to be added to that feed's tree.
+    if(scalar(@{$feeds}) == 1) {
+        my $feed = $self -> _get_feed_byid($feeds -> [0])
+            or return undef;
 
-    return 1;
+        return $self -> {"metadata"} -> create($feed -> {"metadata_id"});
+
+    # Multiple feeds mean that the article can not be attached to any single feed's metadata
+    # tree. Instead it has to descend from a defined context (probably the root).
+    } else {
+        return $self -> {"metadata"} -> create($self -> {"settings"} -> {"config"} -> {"Article:multifeed_context_parent"})
+    }
 }
 
 
@@ -1174,13 +1214,60 @@ sub _add_level_relations {
 }
 
 
+## @method private $ _add_feed_relations($articleid, $feeds)
+# Add a relation between an article and one or more feeds
+#
+# @param articleid The ID of the article to add the relation for.
+# @param feeds     A reference to an array of feed IDs to add relations to.
+# @return True on success, undef on error.
+sub _add_feed_relations {
+    my $self      = shift;
+    my $articleid = shift;
+    my $feeds     = shift;
+
+    $self -> clear_error();
+
+    my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"articlefeeds"}."`
+                                            (`article_id`, `feed_id`)
+                                            VALUES(?, ?)");
+    foreach my $feedid (@{$feeds}) {
+        my $rows = $newh -> execute($articleid, $feedid);
+        return $self -> self_error("Unable to perform feed relation insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
+        return $self -> self_error("Feed relation insert failed, no rows inserted") if($rows eq "0E0");
+    }
+
+    return 1;
+}
+
+
+## @method private $ _get_feed_byid($feedid)
+# Obtain the data for the feed with the specified name, if possible.
+#
+# @param feedid The ID of the feed to fetch the data for.
+# @return A reference to the feed data hash on success, undef on failure
+sub _get_feed_byname {
+    my $self   = shift;
+    my $feedid = shift;
+
+    my $feedh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"feeds"}."`
+                                              WHERE `id` = ?");
+    $feedh -> execute($feedid)
+        or return $self -> self_error("Unable to execute feed lookup query: ".$self -> {"dbh"} -> errstr);
+
+    my $feedrow = $feedh -> fetchrow_hashref()
+        or return $self -> self_error("Request for non-existent feed '$feedid', giving up");
+
+    return $feedrow;
+}
+
+
 ## @method private $ _get_feed_byname($name)
 # Obtain the data for the feed with the specified name, if possible.
 #
 # @param name The name of the feed to get the ID for
 # @return A reference to the feed data hash on success, undef on failure
 sub _get_feed_byname {
-    my $self  = shift;
+    my $self = shift;
     my $feed = shift;
 
     my $feedh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"feeds"}."`
@@ -1188,10 +1275,31 @@ sub _get_feed_byname {
     $feedh -> execute($feed)
         or return $self -> self_error("Unable to execute feed lookup query: ".$self -> {"dbh"} -> errstr);
 
-    my $levrow = $feedh -> fetchrow_hashref()
+    my $feedrow = $feedh -> fetchrow_hashref()
         or return $self -> self_error("Request for non-existent feed '$feed', giving up");
 
-    return $levrow;
+    return $feedrow;
+}
+
+
+## @method private $ _get_feed_url_byname($name)
+# Obtain the data for the feed_url with the specified name, if possible.
+#
+# @param name The name of the feed_url to get the ID for
+# @return A reference to the feed_url data hash on success, undef on failure
+sub _get_feed_url_byname {
+    my $self = shift;
+    my $name = shift;
+
+    my $feedh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"feedurls"}."`
+                                              WHERE `name` LIKE ?");
+    $feedh -> execute($name)
+        or return $self -> self_error("Unable to execute feed_url lookup query: ".$self -> {"dbh"} -> errstr);
+
+    my $feedrow = $feedh -> fetchrow_hashref()
+        or return $self -> self_error("Request for non-existent feed_url '$name', giving up");
+
+    return $feedrow;
 }
 
 

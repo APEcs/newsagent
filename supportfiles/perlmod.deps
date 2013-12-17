@@ -28,6 +28,7 @@ Required modules, usuallny not in repost, install from CPAN:
 DateTime::Event::Cron
 Email::MIME::CreateHTML
 MediaWiki::API
+HTML::FormatText
 HTML::Tidy (Requires tidyp from http://tidyp.com/ )
 HTML::WikiConverter::Markdown
 WebService::Validator::HTML::W3C
