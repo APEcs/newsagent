@@ -134,11 +134,16 @@ sub _validate_settings {
     $settings -> {"feed"} = $settings -> {"site"}
         if(!$settings -> {"feed"} && $settings -> {"site"});
 
+    my @feeds = split(/,/, $settings -> {"feed"} || "");
+    $settings -> {"feeds"} = \@feeds;
+
     ($settings -> {"level"}, $error) = $self -> validate_string("level", {"required"   => 0,
                                                                           "default"    => "",
                                                                           "formattest" => '^\w+(?:,\w+)*$',
                                                                           "formatdesc" => "",
                                                                           "nicename"   => ""});
+    my @levels = split(/,/, $settings -> {"level"} || "");
+    $settings -> {"levels"} = \@levels;
 
     ($settings -> {"viewer"}, $error) = $self -> validate_string("viewer", {"required"   => 0,
                                                                             "default"    => "",
@@ -175,7 +180,7 @@ sub _validate_settings {
 # ============================================================================
 #  Support
 
-## @method $ feed_url($viewer, $default, $articleid)
+## @method $ feed_url($viewer, $setfeeds, $artfeeds, $articleid)
 # Generate a URL to use as the viewer URL for the feed. This will attempt to
 # create a URL based on the 'viewer' name specified, first checking for a
 # feed with the specified name in the feeds table and then using its default
@@ -186,22 +191,23 @@ sub _validate_settings {
 #                   'internal' the Newsagent built-in article viewer URL is
 #                   returned, otherwise if a matching feed or feed url entry is
 #                   found, its URL is used.
-# @param defaulturl If no match is found for the viewer URL, use this URL
-#                   instead. This should be an absolute URL to an article viewer.
+# @param setfeeds   A reference to the list of feeds requested by the user.
+# @param artfeeds   A reference to a list of feeds set for the article.
 # @param articleid  The ID of the article to view.
 # @return A string containing the URL of an article viewer on success, undef
 #         on error.
 sub feed_url {
     my $self       = shift;
     my $viewer     = shift;
-    my $defaulturl = shift;
+    my $setfeeds   = shift;
+    my $artfeeds   = shift;
     my $articleid  = shift;
 
     $self -> clear_error();
 
-    # Fix up the default URL
-    $defaulturl .= "?articleid=$articleid";
+    my $viewerparam = "?articleid=$articleid";
 
+    # If a viewer has been set, try using it.
     if($viewer) {
         # If the caller has requested an internal viewer, the URL is simple
         return $self -> build_url(fullurl  => 1,
@@ -210,13 +216,22 @@ sub feed_url {
             if($viewer eq "internal");
 
         # Not an internal viewer, check for a matching feed
-        my $feedurl = $self -> {"article"} -> get_feed_url($viewer)
-            or return $defaulturl;
-
-        return $feedurl."?articleid=$articleid";
+        my $feedurl = $self -> {"article"} -> get_feed_url($viewer);
+        return $feedurl.$viewerparam
+            if($feedurl);
     }
 
-    return $defaulturl;
+    # No viewer was specified, or it is not valid; try using the first configured feed url if there is one
+    if($setfeeds && scalar(@{$setfeeds})) {
+        my $feedurl = $self -> {"article"} -> get_feed_url($setfeeds -> [0]);
+
+        return $feedurl.$viewerparam
+            if($feedurl);
+    }
+
+    # No valid viewer or feed specified, fall back on the first configured
+    # feed for the article
+    return $artfeeds -> [0] -> {"default_url"}.$viewerparam;
 }
 
 

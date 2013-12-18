@@ -124,7 +124,7 @@ sub generate_feed {
             if($images[1]);
 
         # work out the URL
-        my $feedurl = $self -> feed_url($settings -> {"viewer"}, $result -> {"feeds"} -> [0] -> {"default_url"}, $result -> {"id");
+        my $feedurl = $self -> feed_url($settings -> {"viewer"}, $settings -> {"feeds"}, $result -> {"feeds"}, $result -> {"id"});
 
         $result -> {"fulltext"} = $self -> cleanup_entities($result -> {"fulltext"})
             if($result -> {"fulltext"});

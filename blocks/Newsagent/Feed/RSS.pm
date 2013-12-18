@@ -129,7 +129,7 @@ sub generate_feed {
         }
 
         # work out the URL
-        my $feedurl = $self -> feed_url($settings -> {"viewer"}, $result -> {"feeds"} -> [0] -> {"default_url"}, $result -> {"id"});
+        my $feedurl = $self -> feed_url($settings -> {"viewer"}, $settings -> {"feeds"}, $result -> {"feeds"}, $result -> {"id"});
 
         # Put the item together!
         $items .= $self -> {"template"} -> load_template("feeds/rss/item.tem", {"***title***"       => $result -> {"title"} || $pubdate,

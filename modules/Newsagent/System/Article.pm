@@ -363,11 +363,10 @@ sub get_feed_articles {
 
     # There can be multiple, comma separated feeds specified in the settings, so split them
     # and create an OR clause for the lot
-    if($settings -> {"feed"}) {
-        my @feeds = split(/,/, $settings -> {"feed"});
+    if($settings -> {"feeds"} && scalar(@{$settings -> {"feeds"}})) {
         my $feedfrag = "";
 
-        foreach my $feed (@feeds) {
+        foreach my $feed (@{$settings -> {"feeds"}}) {
             $feedfrag .= " OR " if($feedfrag);
             $feedfrag .= "`feed`.`name` LIKE ?";
             push(@params, $feed);
@@ -382,11 +381,10 @@ sub get_feed_articles {
 
     # Level filtering is a bit trickier, as it needs to do more joining, and has to deal with
     # comma separated values, to
-    if($settings -> {"level"}) {
-        my @levels = split(/,/, $settings -> {"level"});
+    if($settings -> {"levels"} && scalar(@{$settings -> {"levels"}})) {
         my $levelfrag = "";
 
-        foreach my $level (@levels) {
+        foreach my $level (@{$settings -> {"levels"}}) {
             $levelfrag .= " OR " if($levelfrag);
             $levelfrag .= "`level`.`level` = ?";
             push(@params, $level);
@@ -866,7 +864,7 @@ sub add_article {
     $self -> _add_image_relation($newid, $article -> {"images"} -> {"b"} -> {"img"}, 1) or return undef
         if($article -> {"images"} -> {"b"} -> {"img"});
 
-    $self -> add_feed_relations($newid, $article -> {"feeds"})
+    $self -> _add_feed_relations($newid, $article -> {"feeds"})
         or return undef;
 
     $self -> _add_level_relations($newid, $article -> {"levels"})
