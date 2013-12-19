@@ -661,12 +661,10 @@ sub get_article {
     my $self      = shift;
     my $articleid = shift;
 
-    my $fields = "`article`.*, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `user`.`email`, `feed`.`name` AS `feedname`, `feed`.`description` AS `feeddesc`";
+    my $fields = "`article`.*, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `user`.`email`";
     my $from   = "`".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `article`
                   LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `user`
-                      ON `user`.`user_id` = `article`.`creator_id`
-                  LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"feeds"}."` AS `feed`
-                      ON `feed`.`id` = `article`.`feed_id`";
+                      ON `user`.`user_id` = `article`.`creator_id`";
 
     # The actual query can't contain a limit directive: there's no way to determine at this point
     # whether the user has access to any particular article, so any limit may be being applied to
@@ -681,6 +679,12 @@ sub get_article {
                                               WHERE `level`.`id` = `artlevels`.`level_id`
                                               AND `artlevels`.`article_id` = ?");
 
+    my $feedh = $self -> {"dbh"} -> prepare("SELECT `feed`.id
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"feeds"}."` AS `feed`,
+                                                  `".$self -> {"settings"} -> {"database"} -> {"articlefeeds"}."` AS `artfeeds`
+                                             WHERE `feed`.`id` = `artfeeds`.`feed_id`
+                                             AND `artfeeds`.`article_id` = ?");
+
     my $imageh = $self -> {"dbh"} -> prepare("SELECT `image`.*, `artimgs`.`order`
                                               FROM `".$self -> {"settings"} -> {"database"} -> {"images"}."` AS `image`,
                                                    `".$self -> {"settings"} -> {"database"} -> {"articleimages"}."` AS `artimgs`
@@ -692,6 +696,12 @@ sub get_article {
 
     my $article = $articleh -> fetchrow_hashref()
         or return $self -> self_error("Request for non-existent article with ID $articleid");
+
+    $feedh -> execute($article -> {"id"})
+        or return $self -> self_error("Unable to execute article feed query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
+    while(my $feed = $feedh -> fetchrow_arrayref()) {
+        push(@{$article -> {"feeds"}}, $feed -> [0]);
+    }
 
     $levelh -> execute($article -> {"id"})
         or return $self -> self_error("Unable to execute article level query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
