@@ -679,7 +679,7 @@ sub get_article {
                                               WHERE `level`.`id` = `artlevels`.`level_id`
                                               AND `artlevels`.`article_id` = ?");
 
-    my $feedh = $self -> {"dbh"} -> prepare("SELECT `feed`.id
+    my $feedh = $self -> {"dbh"} -> prepare("SELECT `feed`.*
                                              FROM `".$self -> {"settings"} -> {"database"} -> {"feeds"}."` AS `feed`,
                                                   `".$self -> {"settings"} -> {"database"} -> {"articlefeeds"}."` AS `artfeeds`
                                              WHERE `feed`.`id` = `artfeeds`.`feed_id`
@@ -697,20 +697,19 @@ sub get_article {
     my $article = $articleh -> fetchrow_hashref()
         or return $self -> self_error("Request for non-existent article with ID $articleid");
 
+    # Add the feed data to the article data
     $feedh -> execute($article -> {"id"})
         or return $self -> self_error("Unable to execute article feed query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
-    while(my $feed = $feedh -> fetchrow_arrayref()) {
-        push(@{$article -> {"feeds"}}, $feed -> [0]);
-    }
+    $article -> {"feeds"} = $feedh -> fetchall_arrayref({});
 
+    # Add the level data to the article data
     $levelh -> execute($article -> {"id"})
         or return $self -> self_error("Unable to execute article level query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
-
     $article -> {"levels"} = $levelh -> fetchall_arrayref({});
 
+    # And add the image data
     $imageh -> execute($article -> {"id"})
         or return $self -> self_error("Unable to execute article image query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
-
     my $images = $imageh -> fetchall_arrayref({});
     foreach my $image (@{$images}) {
         $article -> {"images"} -> [$image -> {"order"}] = $image;

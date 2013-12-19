@@ -654,8 +654,16 @@ sub _build_feedlist {
     my $feeds    = shift;
     my $selected = shift;
     my $result   = "";
+    my %active_feeds;
 
-    my %active_feeds = map { $_ => $_} @{$selected};
+    # During the edit process the selected list may be a list of feed data hashes
+    if(ref($selected -> [0]) eq "HASH") {
+        %active_feeds = map { $_ -> {"id"} => 1} @{$selected};
+
+    # during compose, and edit validation, selected will be a list of feed ids.
+    } else {
+        %active_feeds = map { $_ => 1} @{$selected};
+    }
 
     foreach my $feed (@{$feeds}) {
         $result .= $self -> {"template"} -> load_template("compose/feed-item.tem", {"***name***"    => $feed -> {"value"},
