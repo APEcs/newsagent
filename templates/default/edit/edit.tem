@@ -83,9 +83,9 @@ Not here yet.
                     <h3>{L_COMPOSE_PUBLICATION}</h3>
                     <dl class="input">
                         <dt><label for="comp-feed">{L_COMPOSE_FEED}</label></dt>
-                        <dd><select class="fillwide" id="comp-feed" name="feed">
-                                ***allowed_feeds***
-                            </select>
+                        <dd><div id="comp-feed" class="chromelike">
+                        ***allowed_feeds***
+                            </div>
                         </dd>
                     </dl>
                     <dl class="input">
@@ -132,6 +132,7 @@ Not here yet.
 confirm_imgurl   = '{V_[templatepath]}images/confirm.png';
 spinner_imgurl   = '{V_[templatepath]}images/spinner.gif';
 confirm_messages = {   errors: "{L_EDIT_ERRORS}",
+                      nofeeds: "{L_COMPOSE_FEED_ERRNONE}",
                      nolevels: "{L_COMPOSE_LEVEL_ERRNONE}",
                        notext: "{L_COMPOSE_ERR_NOSUMMARYARTICLE}",
                      ispreset: "{L_COMPOSE_ISPRESET}",
@@ -151,6 +152,11 @@ confirm_messages = {   errors: "{L_EDIT_ERRORS}",
                     countwarn: "{L_COMPOSE_CONFIRM_COUNTWARN}",
                    };
 window.addEvent('domready', function() {
+    var multiselfeed = new MultiSelect('#comp-feed', { maxMonitorText: 0,
+                                                            emptyText: 'Select feeds...',
+                                                        onItemChanged: function() { set_visible_levels(); }
+                                                     });
+
     CKEDITOR.replace('comp-desc', { customConfig: '{V_[commonpath]}cke_configs/basic_open.js' });
 
     var settingPane = new TabPane('relmode-tabs', {onChange: function(select) { $('relmode').set('value', select); } }, ***relmode***);

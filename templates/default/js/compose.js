@@ -99,21 +99,38 @@ function show_image_subopt(selid)
 
 function set_visible_levels()
 {
-    var feed = $('comp-feed').getSelected()[0].get("value");
+    var avail_levels = { };
+    var feeds = 0;
 
-    Object.each(feed_levels[feed], function (value, key) {
-                     var box = $('level-'+key);
-                     if(box) {
-                         if(value) {
-                             $('level-'+key).disabled = 0;
-                             $('forlevel-'+key).removeClass("disabled");
-                         } else {
-                             $('level-'+key).disabled = 1;
-                             $('level-'+key).set('checked', false); /* force no check when disabled */
-                             $('forlevel-'+key).addClass("disabled");
-                         }
-                     }
-                 });
+    level_list.each(function(level) {
+        avail_levels[level] = 0;
+    });
+
+    // first find out which levels the user can post to from the selected feeds.
+    // The level names are used as counters: if the user can post at the level
+    // in a given feed the count for that level is incremeneted.
+    $$('input[name=feed]:checked').each(function(element) {
+        ++feeds;
+        var id = element.get('value');
+
+        level_list.each(function(level) {
+            avail_levels[level] += feed_levels[id][level];
+        });
+    });
+
+    // now go through the levels, enabling or disabling them. The idea is that, for
+    // a given level, if the count of feeds the user can post at this level to matches
+    // the number of selected feeds, the option is available, otherwise it is not.
+    level_list.each(function(level) {
+        if(feeds && avail_levels[level] == feeds) {
+            $('level-'+level).disabled = 0;
+            $('forlevel-'+level).removeClass("disabled");
+        } else {
+            $('level-'+level).disabled = 1;
+            $('level-'+level).set('checked', false); /* force no check when disabled */
+            $('forlevel-'+level).addClass("disabled");
+        }
+    });
 }
 
 
@@ -151,13 +168,17 @@ function set_schedule_sections()
 }
 
 
-function confirm_errors(summary, fulltext, levels, publish, pubname)
+function confirm_errors(summary, fulltext, feeds, levels, publish, pubname)
 {
     var errlist = new Element('ul');
     var errelem = new Element('div').adopt(
         new Element('p', { html: confirm_messages['errors'] }),
         errlist
     );
+
+    if(!feeds) {
+        errlist.adopt(new Element('li', { html: confirm_messages['nofeeds'] }));
+    }
 
     if(!levels) {
         errlist.adopt(new Element('li', { html: confirm_messages['nolevels'] }));
@@ -324,6 +345,7 @@ function confirm_submit()
     } else {
         var summary  = $('comp-summ').get('value');
         var fulltext = CKEDITOR.instances['comp-desc'].getData();
+        var feeds    = $$('input[name=feed]:checked').length;
         var levels   = $$('input[name=level]:checked').length;
         var publish  = $('comp-release').getSelected().get("value");
         var pubname  = $('preset').get('value');
@@ -346,7 +368,7 @@ function confirm_submit()
         // If at least one level has been specified, and either the summary or full text have been set,
         // the article is almost certainly going to be accepted by the system so show the "this is where
         // the message will appear" stuff and the confirm button.
-        if(levels && (summary.length || fulltext.length) && (publish != 'preset' || pubname.length)) {
+        if(feeds && levels && (summary.length || fulltext.length) && (publish != 'preset' || pubname.length)) {
             bodytext.adopt(
                 confirm_preset(publish == 'preset'),
                 confirm_levels(),
@@ -375,7 +397,7 @@ function confirm_submit()
         // Otherwise, the system will reject the article - produce errors to show to the user, and keep
         // the single 'cancel' button.
         } else {
-            bodytext.adopt(confirm_errors(summary, fulltext, levels, publish, pubname));
+            bodytext.adopt(confirm_errors(summary, fulltext, feeds, levels, publish, pubname));
         }
 
         $('poptitle').set('text', confirm_messages['title']);
@@ -407,8 +429,6 @@ window.addEvent('domready', function() {
     show_image_subopt('imagea_mode');
     $('imageb_mode').addEvent('change', function() { show_image_subopt('imageb_mode'); });
     show_image_subopt('imageb_mode');
-
-    $('comp-feed').addEvent('change', function() { set_visible_levels(); });
 
     if($('comp-schedule')) {
         sdate_picker = new Picker.Date($('schedule_date'), { timePicker: true,

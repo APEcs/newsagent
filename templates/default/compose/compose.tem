@@ -127,11 +127,10 @@ Not here yet.
     </form>
 </div>
 <script type="text/javascript">
-var multiselfeed = new MultiSelect('#comp-feed', { maxMonitorText: 0, emptyText: 'Select feeds...' });
-
 confirm_imgurl   = '{V_[templatepath]}images/confirm.png';
 spinner_imgurl   = '{V_[templatepath]}images/spinner.gif';
 confirm_messages = {   errors: "{L_COMPOSE_ERRORS}",
+                      nofeeds: "{L_COMPOSE_FEED_ERRNONE}",
                      nolevels: "{L_COMPOSE_LEVEL_ERRNONE}",
                        notext: "{L_COMPOSE_ERR_NOSUMMARYARTICLE}",
                      ispreset: "{L_COMPOSE_ISPRESET}",
@@ -152,6 +151,11 @@ confirm_messages = {   errors: "{L_COMPOSE_ERRORS}",
                    };
 
 window.addEvent('domready', function() {
+    var multiselfeed = new MultiSelect('#comp-feed', { maxMonitorText: 0,
+                                                            emptyText: 'Select feeds...',
+                                                        onItemChanged: function() { set_visible_levels(); }
+                                                     });
+
     CKEDITOR.replace('comp-desc', { customConfig: '{V_[commonpath]}cke_configs/basic_open.js' });
 
     var settingPane = new TabPane('relmode-tabs', {onChange: function(select) { $('relmode').set('value', select); } }, ***relmode***);

@@ -291,7 +291,7 @@ sub _validate_feeds_levels {
             # Yes, deactivate any levels the user does not have access to for this feed
             foreach my $level (keys(%avail_levels)) {
                 $avail_levels{$level} = 0
-                    unless($user_levels -> {$user_feed -> {"value"}} -> {$level});
+                    unless($user_levels -> {$user_feed -> {"id"}} -> {$level});
             }
         }
     }

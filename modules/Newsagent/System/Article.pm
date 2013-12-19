@@ -128,7 +128,7 @@ sub get_user_levels {
 
         # And for each level, record whether they have the capability required to use the level
         foreach my $level (@{$levels}) {
-            $userlevels -> {$feed -> {"value"}} -> {$level -> {"value"}} = $capabilities -> {$level -> {"capability"}} || 0;
+            $userlevels -> {$feed -> {"id"}} -> {$level -> {"value"}} = $capabilities -> {$level -> {"capability"}} || 0;
         }
     }
 
@@ -1243,7 +1243,7 @@ sub _add_feed_relations {
 #
 # @param feedid The ID of the feed to fetch the data for.
 # @return A reference to the feed data hash on success, undef on failure
-sub _get_feed_byname {
+sub _get_feed_byid {
     my $self   = shift;
     my $feedid = shift;
 
