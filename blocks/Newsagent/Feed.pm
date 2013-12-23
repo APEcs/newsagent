@@ -113,6 +113,7 @@ sub _validate_settings {
                                                                             "max"      => $self -> {"settings"} -> {"config"} -> {"Feed:count_limit"},
                                                                             "nicename" => ""
                                                                   });
+
     ($settings -> {"offset"}, $error)  = $self -> validate_numeric("offset", {"required" => 0,
                                                                               "intonly"  => 1,
                                                                               "default"  => 0,
