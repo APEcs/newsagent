@@ -1,5 +1,5 @@
                 <li id="preset-sel" class="menu">
-                    <div class="menu-title">{L_USERBAR_TEMPLATES}</div>
+                    <div class="menu-title item">{L_USERBAR_TEMPLATES}</div>
                     <div class="menu-wrapper">
                         <ul class="menu-submenu">
 ***templates***
