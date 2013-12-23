@@ -426,7 +426,8 @@ sub get_feed_articles {
                                                   FROM `".$self -> {"settings"} -> {"database"} -> {"feeds"}."` AS `feed`,
                                                        `".$self -> {"settings"} -> {"database"} -> {"articlefeeds"}."` AS `artfeeds`
                                                   WHERE `feed`.`id` = `artfeeds`.`feed_id`
-                                                  AND `artfeeds`.`article_id` = ?");
+                                                  AND `artfeeds`.`article_id` = ?
+                                                  ORDER BY `feed`.`name`");
 
         my $imageh = $self -> {"dbh"} -> prepare("SELECT `image`.*, `artimgs`.`order`
                                                   FROM `".$self -> {"settings"} -> {"database"} -> {"images"}."` AS `image`,
@@ -563,7 +564,8 @@ sub get_user_articles {
                                              FROM `".$self -> {"settings"} -> {"database"} -> {"feeds"}."` AS `feed`,
                                                   `".$self -> {"settings"} -> {"database"} -> {"articlefeeds"}."` AS `artfeeds`
                                              WHERE `feed`.`id` = `artfeeds`.`feed_id`
-                                             AND `artfeeds`.`article_id` = ?");
+                                             AND `artfeeds`.`article_id` = ?
+                                             ORDER BY `feed`.`name`");
 
     $articleh -> execute(@params)
         or return $self -> self_error("Unable to execute article query: ".$self -> {"dbh"} -> errstr);
@@ -683,7 +685,8 @@ sub get_article {
                                              FROM `".$self -> {"settings"} -> {"database"} -> {"feeds"}."` AS `feed`,
                                                   `".$self -> {"settings"} -> {"database"} -> {"articlefeeds"}."` AS `artfeeds`
                                              WHERE `feed`.`id` = `artfeeds`.`feed_id`
-                                             AND `artfeeds`.`article_id` = ?");
+                                             AND `artfeeds`.`article_id` = ?
+                                             ORDER BY `feed`.`name`");
 
     my $imageh = $self -> {"dbh"} -> prepare("SELECT `image`.*, `artimgs`.`order`
                                               FROM `".$self -> {"settings"} -> {"database"} -> {"images"}."` AS `image`,
