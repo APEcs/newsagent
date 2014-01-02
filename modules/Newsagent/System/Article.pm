@@ -489,7 +489,7 @@ sub get_feed_url {
 }
 
 
-## @method @ get_user_articles($userid, $settings)
+## @method $ get_user_articles($userid, $settings)
 # Fetch the list of articles the user has editor access to. This will go through
 # the articles in the database, ordered by the specified field, recording which
 # articles the user can edit.
@@ -508,9 +508,13 @@ sub get_feed_url {
 #
 #
 # @param userid    The ID of the user requesting the article list.
-# @return A reference to an array of articles the user can edit, and a count of the
+# @param settings  The settings to use when fetching the article list.
+# @return A reference to a hash containing a reference to an array of articles
+#         the user can edit, and a metadata hash containing the count of the
 #         number of articles the user can edit (which may be larger than the size
-#         of the returned array, if `count` is specified.
+#         of the returned array, if `count` is specified), the feeds present in
+#         the list the user can see, and the users present in the list the user
+#         can see.
 sub get_user_articles {
     my $self      = shift;
     my $userid    = shift;
@@ -570,11 +574,7 @@ sub get_user_articles {
     $articleh -> execute(@params)
         or return $self -> self_error("Unable to execute article query: ".$self -> {"dbh"} -> errstr);
 
-    # FIXME: as more and more articles are added to the system, this process is going to become
-    #        slower and slower. There may need to be some form of hard time-based filtering done
-    #        on articles. For example, users may need to specify a month and year to fetch articles
-    #        for, and that will allow constraining of data.
-    my ($added, $count, $feeds) = (0, 0, {});
+    my ($added, $count, $feeds, $users) = (0, 0, {}, {});
     while(my $article = $articleh -> fetchrow_hashref()) {
         # Does the user have edit access to this article?
         if($self -> {"roles"} -> user_has_capability($article -> {"metadata_id"}, $userid, "edit")) {
@@ -602,17 +602,27 @@ sub get_user_articles {
 
             # Regardless of whether this article has been included in the list, we need
             # to record its feed as a feed the user has access to
-            # FIXME: This will need modifying when multi-feed articles are supported
             foreach my $feed (@{$article -> {"feeds"}}) {
-                $feeds -> {$feed -> {"name"}} = $feed -> {"description"}
+                $feeds -> {$feed -> {"name"}} = $feed
                     if(!$feeds -> {$feed -> {"name"}});
             }
+
+            # And store the user information if needed
+            $users -> {$article -> {"username"}} = { "user_id"  => $article -> {"userid"},
+                                                     "username" => $article -> {"username"},
+                                                     "realname" => $article -> {"realname"}}
+                if(!$users -> {$article -> {"username"}});
 
             ++$count;
         }
     }
 
-    return (\@articles, $count, $feeds);
+    return { "articles" => \@articles,
+             "metadata" => { "count" => $count,
+                             "feeds" => $feeds,
+                             "users" => $users
+                           }
+           };
 }
 
 

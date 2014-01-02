@@ -200,19 +200,19 @@ sub _generate_articlelist {
     my $settings = $self -> _get_articlelist_settings($year, $month, $pagenum);
 
     # Fetch the list, which may be an empty array - if it's undef, there was an error.
-    my ($articles, $count, $feeds) = $self -> {"article"} -> get_user_articles($userid, $settings);
+    my $articles = $self -> {"article"} -> get_user_articles($userid, $settings);
     if($articles) {
         my $list = "";
         my $now = time();
 
         # Build the list of any articles present.
-        foreach my $article (@{$articles}) {
+        foreach my $article (@{$articles -> {"articles"}}) {
             $list .= $self -> _build_article_row($article, $now);
         }
         $list = $self -> {"template"} -> load_template("articlelist/empty_month.tem")
             if(!$list);
 
-        my $maxpage = ceil($count / $settings -> {"count"});
+        my $maxpage = ceil($articles -> {"metadata"} -> {"count"} / $settings -> {"count"});
 
         return ($self -> {"template"} -> replace_langvar("ALIST_TITLE"),
                 $self -> {"template"} -> load_template("articlelist/content.tem", {"***articles***" => $list,
