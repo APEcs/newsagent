@@ -64,7 +64,7 @@ sub new {
 #  Page generation support
 
 
-## @method $ generate_newsagent_page($title, $content, $extrahead)
+## @method $ generate_newsagent_page($title, $content, $extrahead, $doclink)
 # A convenience function to wrap page content in the standard page template. This
 # function allows blocks to embed their content in a page without having to build
 # the whole page including "common" items themselves. It should be called to wrap
@@ -73,18 +73,21 @@ sub new {
 # @param title     The page title.
 # @param content   The content to show in the page.
 # @param extrahead Any extra directives to place in the header.
+# @param doclink   The name of a document link to include in the userbar. If not
+#                  supplied, no link is shown.
 # @return A string containing the page.
 sub generate_newsagent_page {
     my $self      = shift;
     my $title     = shift;
     my $content   = shift;
-    my $extrahead = shift || "";
+    my $extrahead = shift;
+    my $doclink   = shift;
 
     my $userbar = $self -> {"module"} -> load_module("Newsagent::Userbar");
 
-    return $self -> {"template"} -> load_template("page.tem", {"***extrahead***" => $extrahead,
-                                                               "***title***"     => $title,
-                                                               "***userbar***"   => ($userbar ? $userbar -> block_display($title, $self -> {"block"}) : "<!-- Userbar load failed: ".$self -> {"module"} -> errstr()." -->"),
+    return $self -> {"template"} -> load_template("page.tem", {"***extrahead***" => $extrahead || "",
+                                                               "***title***"     => $title || "",
+                                                               "***userbar***"   => ($userbar ? $userbar -> block_display($title, $self -> {"block"}, $doclink) : "<!-- Userbar load failed: ".$self -> {"module"} -> errstr()." -->"),
                                                                "***content***"   => $content});
 }
 
@@ -380,6 +383,61 @@ sub get_saved_state {
 }
 
 
+## @method $ cleanup_entities($html)
+# Wrangle the specified HTML into something that won't produce an unholy mess when
+# passed to something that doesn't handle UTF-8 properly.
+#
+# @param html The HTML to process
+# @return A somewhat cleaned-up string of HTML
+sub cleanup_entities {
+    my $self = shift;
+    my $html = shift;
+
+    $html =~ s/\r//g;
+    return encode_entities($html, '^\n\x20-\x7e');
+}
+
+
+## @method $ make_markdown_body($html, $images)
+# Convert the specified html into markdown text.
+#
+# @param html   The HTML to convert to markdown.
+# @param images An optional reference to an array of images.
+# @return The markdown version of the text.
+sub make_markdown_body {
+    my $self   = shift;
+    my $html   = shift;
+    my $images = shift || [];
+
+    # Handle html entities that are going to break...
+    foreach my $entity (keys(%{$self -> {"entitymap"}})) {
+        $html =~ s/$entity/$self->{entitymap}->{$entity}/g;
+    }
+
+    my $converter = new HTML::WikiConverter(dialect => 'Markdown',
+                                            link_style => 'inline',
+                                            image_tag_fallback => 0);
+    my $body = $converter -> html2wiki($html);
+
+    # Clean up html the converter misses consistently
+    $body =~ s|<br\s*/>|\n|g;
+    $body =~ s|&gt;|>|g;
+
+    my $imglist = "";
+    for(my $i = 0; $i < 3; ++$i) {
+        next unless($images -> [$i] -> {"location"});
+
+        $imglist .= $self -> {"template"} -> load_template("Notification/Method/Email/md_image.tem", {"***url***" => $images -> [$i] -> {"location"}});
+    }
+
+    my $imageblock = $self -> {"template"} -> load_template("Notification/Method/Email/md_images.tem", {"***images***" => $imglist})
+        if($imglist);
+
+    return $self -> {"template"} -> load_template("Notification/Method/Email/markdown.tem", {"***text***" => $body,
+                                                                                             "***images***" => $imageblock});
+}
+
+
 # ============================================================================
 #  URL building
 
@@ -491,58 +549,32 @@ sub build_url {
 }
 
 
-## @method $ cleanup_entities($html)
-# Wrangle the specified HTML into something that won't produce an unholy mess when
-# passed to something that doesn't handle UTF-8 properly.
+# ============================================================================
+#  Documentation support
+
+## @method $ get_documentation_url($doclink)
+# Given a documentation link name, obtain the URL associated with that name.
 #
-# @param html The HTML to process
-# @return A somewhat cleaned-up string of HTML
-sub cleanup_entities {
-    my $self = shift;
-    my $html = shift;
+# @param doclink The name of the documentation link to fetch.
+# @return The documentation URL if the doclink is valid, undef otherwise.
+sub get_documentation_url {
+    my $self    = shift;
+    my $doclink = shift;
 
-    $html =~ s/\r//g;
-    return encode_entities($html, '^\n\x20-\x7e');
-}
+    $self -> clear_error();
 
+    # No point trying anything if there is no link name set.
+    return undef if(!$doclink);
 
-## @method $ make_markdown_body($html, $images)
-# Convert the specified html into markdown text.
-#
-# @param html   The HTML to convert to markdown.
-# @param images An optional reference to an array of images.
-# @return The markdown version of the text.
-sub make_markdown_body {
-    my $self   = shift;
-    my $html   = shift;
-    my $images = shift || [];
+    my $urlh = $self -> {"dbh"} -> prepare("SELECT `url`
+                                            FROM `".$self -> {"settings"} -> {"database"} -> {"docs"}."`
+                                            WHERE `name` LIKE ?");
+    $urlh -> execute($doclink)
+        or return $self -> self_error("Unable to look up documentation link: ".$self -> {"dbh"} -> errstr);
 
-    # Handle html entities that are going to break...
-    foreach my $entity (keys(%{$self -> {"entitymap"}})) {
-        $html =~ s/$entity/$self->{entitymap}->{$entity}/g;
-    }
-
-    my $converter = new HTML::WikiConverter(dialect => 'Markdown',
-                                            link_style => 'inline',
-                                            image_tag_fallback => 0);
-    my $body = $converter -> html2wiki($html);
-
-    # Clean up html the converter misses consistently
-    $body =~ s|<br\s*/>|\n|g;
-    $body =~ s|&gt;|>|g;
-
-    my $imglist = "";
-    for(my $i = 0; $i < 3; ++$i) {
-        next unless($images -> [$i] -> {"location"});
-
-        $imglist .= $self -> {"template"} -> load_template("Notification/Method/Email/md_image.tem", {"***url***" => $images -> [$i] -> {"location"}});
-    }
-
-    my $imageblock = $self -> {"template"} -> load_template("Notification/Method/Email/md_images.tem", {"***images***" => $imglist})
-        if($imglist);
-
-    return $self -> {"template"} -> load_template("Notification/Method/Email/markdown.tem", {"***text***" => $body,
-                                                                                             "***images***" => $imageblock});
+    # Fetch the url row, and if one has been found return it.
+    my $url = $urlh -> fetchrow_arrayref();
+    return $url ? $url -> [0] : undef;
 }
 
 

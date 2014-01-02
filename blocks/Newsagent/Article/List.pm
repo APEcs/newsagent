@@ -357,7 +357,7 @@ sub page_display {
         }
 
         $extrahead .= $self -> {"template"} -> load_template("articlelist/extrahead.tem");
-        return $self -> generate_newsagent_page($title, $content, $extrahead);
+        return $self -> generate_newsagent_page($title, $content, $extrahead, "list");
     }
 }
 

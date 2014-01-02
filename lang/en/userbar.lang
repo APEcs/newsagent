@@ -12,3 +12,5 @@ USERBAR_LOGIN_PASS      = Password
 USERBAR_LOGIN           = Log in
 
 USERBAR_TEMPLATES       = Templates
+
+USERBAR_DOCLINK         = Documentation
