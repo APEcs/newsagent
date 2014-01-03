@@ -505,7 +505,15 @@ sub get_feed_url {
 # - month     The month to fetch articles for. If not set, all months are
 #             returned
 # - year      The year to fetch articles for. If not set, all years are returned.
-#
+# - users     A reference to an array of user IDs. Only articles created or edited
+#             by the specified users will be included in the generated list. If
+#             this is not specified, all users are included.
+# - feeds     A reference to an array of feed IDs. Only articles posted in feeds
+#             with at least one of these IDs will be included. If not specified,
+#             articles in any feed will be included in the output.
+# - levels    A reference to an array of level IDs. Only articles posted with
+#             at least one of these levels will be included. If not specified,
+#             articles at all levels are included.
 #
 # @param userid    The ID of the user requesting the article list.
 # @param settings  The settings to use when fetching the article list.
@@ -574,15 +582,38 @@ sub get_user_articles {
     $articleh -> execute(@params)
         or return $self -> self_error("Unable to execute article query: ".$self -> {"dbh"} -> errstr);
 
+    # Build some hashes of settings for faster lookup. Map should handle being
+    # passed undef so if one of the settings lists is not specified, the generated
+    # hash will be empty.
+    my %userhash  = map { $_ => $_ } @{$settings -> {"users"}};
+    my %feedhash  = map { $_ => $_ } @{$settings -> {"feeds"}};
+    my %levelhash = map { $_ => $_ } @{$settings -> {"levels"}};
+
+    # Now process all the articles
     my ($added, $count, $feeds, $users) = (0, 0, {}, {});
     while(my $article = $articleh -> fetchrow_hashref()) {
         # Does the user have edit access to this article?
         if($self -> {"roles"} -> user_has_capability($article -> {"metadata_id"}, $userid, "edit")) {
-            # Fetch the feed information
+
+            # Fetch the feed information. This has to happen even if the article will not actually
+            # be stored, because the feeds available needs to be recorded
             $feedh -> execute($article -> {"id"})
                 or return $self -> self_error("Unable to execute article feed query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
 
             $article -> {"feeds"} = $feedh -> fetchall_arrayref({});
+
+            # Regardless of whether this article will be included in the list, we need
+            # to record its feeds as feeds the user has access to
+            foreach my $feed (@{$article -> {"feeds"}}) {
+                $feeds -> {$feed -> {"id"}} = $feed
+                    if(!$feeds -> {$feed -> {"id"}});
+            }
+
+            # And store the user information if needed
+            $users -> {$article -> {"userid"}} = { "user_id"  => $article -> {"userid"},
+                                                   "username" => $article -> {"username"},
+                                                   "realname" => $article -> {"realname"}}
+                if(!$users -> {$article -> {"userid"}});
 
             # If an offset has been specified, have enough articles been skipped, and if
             # a count has been specified, is there still space for more entries?
@@ -595,23 +626,16 @@ sub get_user_articles {
 
                 $article -> {"levels"} = $levelh -> fetchall_arrayref({});
 
-                # And store it
-                push(@articles, $article);
-                ++$added; # keep a separate 'added' counter, it may be faster than scalar()
-            }
+                # Does the article match the filters specified?
+                if($self -> _article_user_match($article, \%userhash) &&
+                   $self -> _article_feed_match($article, \%feedhash) &&
+                   $self -> _article_level_match($article, \%levelhash)) {
 
-            # Regardless of whether this article has been included in the list, we need
-            # to record its feed as a feed the user has access to
-            foreach my $feed (@{$article -> {"feeds"}}) {
-                $feeds -> {$feed -> {"name"}} = $feed
-                    if(!$feeds -> {$feed -> {"name"}});
+                    # Yes, store it
+                    push(@articles, $article);
+                    ++$added; # keep a separate 'added' counter, it may be faster than scalar()
+                }
             }
-
-            # And store the user information if needed
-            $users -> {$article -> {"username"}} = { "user_id"  => $article -> {"userid"},
-                                                     "username" => $article -> {"username"},
-                                                     "realname" => $article -> {"realname"}}
-                if(!$users -> {$article -> {"username"}});
 
             ++$count;
         }
@@ -1419,5 +1443,81 @@ sub _build_articlelist_timebounds {
 
     return ($start -> epoch(), $end -> epoch());
 }
+
+
+## @method private $ _article_user_match($article, $userhash)
+# Given a hash of user IDs, return true if the specified article was created or
+# updated by a user in the hash. If the specified hash is undef or empty,
+# this will always return true.
+#
+# @param article  The article to check the users against.
+# @param userhash A reference to a hash of user IDs to accept.
+# @return true if the article was created/edited by one of the users in the
+#              hash, false otherwise.
+sub _article_user_match {
+    my $self     = shift;
+    my $article  = shift;
+    my $userhash = shift;
+
+            # If the hash is empty, always return true
+    return (!$userhash || !keys(%{$userhash}) ||
+
+            # If the creator or editor is in the userhash, return true
+            $userhash -> {$article -> {"creator_id"}} ||
+            $userhash -> {$article -> {"updated_id"}});
+}
+
+
+## @method private $ _article_feed_match($article, $feedhash)
+# Given a hash of feed IDs, return true if the specified article has been
+# added to one or more of those feeds. If the specified feed hash is undef
+# or empty, this will always return true.
+#
+# @param article  The article to check feeds against.
+# @param feedhash A reference to a hash of feed IDs to accept.
+# @return true if the article is in one of the specified feeds, false
+#         otherwise.
+sub _article_feed_match {
+    my $self     = shift;
+    my $article  = shift;
+    my $feedhash = shift;
+
+    # Get the simple check out of the way first
+    return 1 if(!$feedhash || !keys(%{$feedhash}));
+
+    # Now check through the list of feeds
+    foreach my $feed (@{$article -> {"feeds"}}) {
+        return 1 if($feedhash -> {$feed -> {"id"}});
+    }
+
+    return 0;
+}
+
+
+## @method private $ _article_level_match($article, $levelhash)
+# Given a hash of level IDs, return true if the specified article has been
+# posted at one or more of those levels. If the specified level hash is undef
+# or empty, this will always return true.
+#
+# @param article  The article to check levels against.
+# @param levelhash A reference to a hash of level IDs to accept.
+# @return true if the article has been posted at one of the specified levels,
+#         false otherwise.
+sub _article_level_match {
+    my $self      = shift;
+    my $article   = shift;
+    my $levelhash = shift;
+
+    # Get the simple check out of the way first
+    return 1 if(!$levelhash || !keys(%{$levelhash}));
+
+    # Now check through the list of levels
+    foreach my $level (@{$article -> {"levels"}}) {
+        return 1 if($levelhash -> {$level -> {"id"}});
+    }
+
+    return 0;
+}
+
 
 1;

@@ -28,6 +28,46 @@ use v5.12;
 # ============================================================================
 #  Validation/input
 
+## @method private void _set_multiid_sessvar($param, $varname)
+# Determines whether a query string parameter with the specified name has been
+# provided, and if it has store the list of IDs set by that query string in
+# the session variable with the given name. If the parameter has not been set,
+# this will do nothing.
+#
+# @param param   The name of the query string parameter to check.
+# @param varname The name of the session variable to store the value in.
+sub _set_multiid_sessvar {
+    my $self    = shift;
+    my $param   = shift;
+    my $varname = shift;
+
+    # Only bother attempting anything if one or more values have been set for the parameter
+    my $setval = $self -> {"cgi"} -> param($param);
+    if(defined($setval)) {
+        # Fetch the parameter in list context, filter out anything that isn't digits or
+        # comma separated digits, and then squash into a comma separated string.
+        my $value = join(",", grep(/^((\d+),?)+$/, ($self -> {"cgi"} -> param($param))));
+
+        # Value may potentially contain repeat commas or a trailing comma at this point
+        $value =~ s/,+/,/g;
+        $value =~ s/,$//;
+
+        $self -> {"session"} -> set_variable($varname, $value);
+    }
+}
+
+
+
+## @method private void _validate_filter_settings()
+# Check whether any filter settings have been changed, and if they have store
+# the settings in the session.
+sub _validate_filter_settings {
+    my $self = shift;
+
+    $self -> _set_multiid_sessvar("feeds", "articlelist_feeds");
+}
+
+
 ## @method private $ _get_articlelist_settings($year, $month, $pagenum)
 # Build the settings used to fetch the article list and build the article list
 # user interface.
@@ -84,6 +124,8 @@ sub _get_articlelist_settings {
     $settings -> {"next"} -> {"month"} = $nextdate -> month();
     $settings -> {"next"} -> {"year"}  = $nextdate -> year();
 
+    # Pull filtering settings out of the session
+    $settings -> {"feeds"} = [ split(/,/, $self -> {"session"} -> get_variable("articlelist_feeds")) ];
 
     return $settings;
 }
@@ -185,8 +227,6 @@ sub _build_article_row {
 ## @method private @ _generate_articlelist($pagenum)
 # Generate the contents of a page listing the articles the user has permission to edit.
 #
-# @todo pagination control
-#
 # @return Two strings: the page title, and the contents of the page.
 sub _generate_articlelist {
     my $self     = shift;
@@ -194,13 +234,14 @@ sub _generate_articlelist {
     my $month    = shift;
     my $pagenum  = shift || 1;
 
-    my $userid   = $self -> {"session"} -> get_session_userid();
+    # Pull any specified filter settings out of the query string into the session
+    $self -> _validate_filter_settings();
 
     # Work out the settings that will be used to fetch the articles to show the user
     my $settings = $self -> _get_articlelist_settings($year, $month, $pagenum);
 
     # Fetch the list, which may be an empty array - if it's undef, there was an error.
-    my $articles = $self -> {"article"} -> get_user_articles($userid, $settings);
+    my $articles = $self -> {"article"} -> get_user_articles($self -> {"session"} -> get_session_userid(), $settings);
     if($articles) {
         my $list = "";
         my $now = time();
