@@ -608,29 +608,28 @@ sub get_user_articles {
                                                    "realname" => $article -> {"realname"}}
                 if(!$users -> {$article -> {"userid"}});
 
-            # If an offset has been specified, have enough articles been skipped, and if
-            # a count has been specified, is there still space for more entries?
-            if((!$settings -> {"offset"} || $count >= $settings -> {"offset"}) &&
-               (!$settings -> {"count"}  || $added < $settings -> {"count"})) {
+            # Does the article match the filters specified?
+            if($self -> _article_user_match($article, $settings -> {"users"}) &&
+               $self -> _article_feed_match($article, $settings -> {"feeds"}) &&
+               $self -> _article_level_match($article, $settings -> {"levels"})) {
 
-                # Yes, fetch the level information for the article
-                $levelh -> execute($article -> {"id"})
-                    or return $self -> self_error("Unable to execute article level query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
+                # If an offset has been specified, have enough articles been skipped, and if
+                # a count has been specified, is there still space for more entries?
+                if((!$settings -> {"offset"} || $count >= $settings -> {"offset"}) &&
+                   (!$settings -> {"count"}  || $added < $settings -> {"count"})) {
 
-                $article -> {"levels"} = $levelh -> fetchall_arrayref({});
+                    # Yes, fetch the level information for the article
+                    $levelh -> execute($article -> {"id"})
+                        or return $self -> self_error("Unable to execute article level query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
 
-                # Does the article match the filters specified?
-                if($self -> _article_user_match($article, $settings -> {"users"}) &&
-                   $self -> _article_feed_match($article, $settings -> {"feeds"}) &&
-                   $self -> _article_level_match($article, $settings -> {"levels"})) {
+                    $article -> {"levels"} = $levelh -> fetchall_arrayref({});
 
                     # Yes, store it
                     push(@articles, $article);
                     ++$added; # keep a separate 'added' counter, it may be faster than scalar()
                 }
+                ++$count;
             }
-
-            ++$count;
         }
     }
 
