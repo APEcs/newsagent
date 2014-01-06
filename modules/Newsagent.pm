@@ -493,6 +493,7 @@ sub build_login_url {
     $self -> {"session"} -> set_variable("savestate", $self -> {"cgi"} -> query_string());
 
     return $self -> build_url(block    => "login",
+                              fullurl  => 1,
                               forcessl => 1);
 }
 
