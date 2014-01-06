@@ -57,7 +57,6 @@ sub _set_multiid_sessvar {
 }
 
 
-
 ## @method private void _validate_filter_settings()
 # Check whether any filter settings have been changed, and if they have store
 # the settings in the session.
@@ -65,6 +64,27 @@ sub _validate_filter_settings {
     my $self = shift;
 
     $self -> _set_multiid_sessvar("feeds", "articlelist_feeds");
+}
+
+
+sub _get_feed_selection {
+    my $self     = shift;
+    my $articles = shift;
+    my $settings = shift;
+
+    my $feedlist = [];
+    my $selids   = [];
+    foreach my $feedid (sort { $articles -> {"metadata"} -> {$a} -> {"description"} <=> $articles -> {"metadata"} -> {$b} -> {"description"} } keys(%{$articles -> {"metadata"} -> {"feeds"}})) {
+        push(@{$feedlist}, {"desc" => $articles -> {"metadata"} -> {"feeds"} -> {$feedid} -> {"description"},
+                            "name" => $articles -> {"metadata"} -> {"feeds"} -> {$feedid} -> {"name"},
+                            "id"   => $articles -> {"metadata"} -> {"feeds"} -> {$feedid} -> {"id"}});
+        push(@{$selids}, $articles -> {"metadata"} -> {"feeds"} -> {$feedid} -> {"id"});
+    }
+
+    $selids = $settings -> {"feeds"}
+        if($settings -> {"feeds"});
+
+    return ($feedlist, $selids);
 }
 
 
@@ -125,7 +145,8 @@ sub _get_articlelist_settings {
     $settings -> {"next"} -> {"year"}  = $nextdate -> year();
 
     # Pull filtering settings out of the session
-    $settings -> {"feeds"} = [ split(/,/, $self -> {"session"} -> get_variable("articlelist_feeds")) ];
+    $settings -> {"feeds"} = [ split(/,/, $self -> {"session"} -> get_variable("articlelist_feeds")) ]
+        if($self -> {"session"} -> is_variable_set("articlelist_feeds"));
 
     return $settings;
 }
@@ -255,10 +276,14 @@ sub _generate_articlelist {
 
         my $maxpage = ceil($articles -> {"metadata"} -> {"count"} / $settings -> {"count"});
 
+        # Build the list of feeds for the multiselect
+        my ($feeds, $selfeeds) = $self -> _get_feed_selection($articles, $settings);
+
         return ($self -> {"template"} -> replace_langvar("ALIST_TITLE"),
                 $self -> {"template"} -> load_template("articlelist/content.tem", {"***articles***" => $list,
                                                                                    "***month***"    => "{L_MONTH_LONG".$settings -> {"month"}."}",
                                                                                    "***year***"     => $settings -> {"year"},
+                                                                                   "***feeds***"    => $self -> generate_multiselect("feeds", "feed", "feed", $feeds, $selfeeds),
                                                                                    "***prevurl***"  => $self -> build_url(pathinfo => [$settings -> {"prev"} -> {"year"}, $settings -> {"prev"} -> {"month"}]),
                                                                                    "***nexturl***"  => $self -> build_url(pathinfo => [$settings -> {"next"} -> {"year"}, $settings -> {"next"} -> {"month"}]),
                                                                                    "***paginate***" => $self -> _build_pagination({ maxpage => $maxpage,

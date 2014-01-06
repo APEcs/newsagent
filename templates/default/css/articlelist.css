@@ -215,3 +215,23 @@ ul.info li .state.failed {
     width: 225px;
     white-space: nowrap;
 }
+
+#filters {
+    float: right;
+}
+
+#filters > form > ul {
+    margin: 0px;
+    padding: 0px;
+}
+
+#filters > form > ul > li {
+    padding: 0px;
+    list-style-type: none;
+    display: inline-block;
+    vertical-align: top;
+}
+
+#filter-feed {
+    width: 16em;
+}

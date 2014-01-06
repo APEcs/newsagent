@@ -5,6 +5,14 @@
                           <a id="nextdate" href="***nexturl***"><img src="{V_[templatepath]}images/next.png" width="22" height="22" alt="next" /></a>
                           <input class="datepick" type="text" name="month" id="list_month" size="16" maxlength="16" value="***month*** ***year***" />
         </div>
+        <div id="filters">
+            <form id="filtercontrol" method="post" action="">
+            <ul>
+                <li>{L_ALIST_SHOWFEED}</li>
+                <li><div id="filter-feed" class="chromelike">***feeds***</div></li>
+            </ul>
+            </form>
+        </div>
         <table class="listtable">
             <tbody>
 ***articles***
@@ -13,3 +21,11 @@
 ***paginate***
     </div>
 </div>
+<script type="text/javascript">
+window.addEvent('domready', function() {
+    var multiselfeed = new MultiSelect('#filter-feed', { maxMonitorText: 0,
+                                                              emptyText: 'Select feeds...',
+                                                          onItemChanged: function() { $('filtercontrol').submit(); }
+                                                       });
+});
+</script>
