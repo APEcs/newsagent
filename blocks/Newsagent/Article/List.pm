@@ -74,7 +74,7 @@ sub _get_feed_selection {
 
     my $feedlist = [];
     my $selids   = [];
-    foreach my $feedid (sort { $articles -> {"metadata"} -> {$a} -> {"description"} <=> $articles -> {"metadata"} -> {$b} -> {"description"} } keys(%{$articles -> {"metadata"} -> {"feeds"}})) {
+    foreach my $feedid (sort { $articles -> {"metadata"} -> {"feeds"} -> {$a} -> {"description"} cmp $articles -> {"metadata"} -> {"feeds"} -> {$b} -> {"description"} } keys(%{$articles -> {"metadata"} -> {"feeds"}})) {
         push(@{$feedlist}, {"desc" => $articles -> {"metadata"} -> {"feeds"} -> {$feedid} -> {"description"},
                             "name" => $articles -> {"metadata"} -> {"feeds"} -> {$feedid} -> {"name"},
                             "id"   => $articles -> {"metadata"} -> {"feeds"} -> {$feedid} -> {"id"}});
