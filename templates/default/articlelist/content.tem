@@ -9,7 +9,10 @@
             <form id="filtercontrol" method="post" action="">
             <ul>
                 <li>{L_ALIST_SHOWFEED}</li>
-                <li><div id="filter-feed" class="chromelike">***feeds***</div></li>
+                <li><div id="filter-feed" class="chromelike">
+***feeds***
+</div></li>
+***remove-feed***
             </ul>
             </form>
         </div>

@@ -41,18 +41,23 @@ sub _set_multiid_sessvar {
     my $param   = shift;
     my $varname = shift;
 
-    # Only bother attempting anything if one or more values have been set for the parameter
-    my $setval = $self -> {"cgi"} -> param($param);
-    if(defined($setval)) {
-        # Fetch the parameter in list context, filter out anything that isn't digits or
-        # comma separated digits, and then squash into a comma separated string.
-        my $value = join(",", grep(/^((\d+),?)+$/, ($self -> {"cgi"} -> param($param))));
+    # Has a remove been requested?
+    if($self -> {"cgi"} -> param("remove-$param")) {
+        $self -> {"session"} -> set_variable($varname, undef);
+    } else {
+        # Only bother attempting anything if one or more values have been set for the parameter
+        my $setval = $self -> {"cgi"} -> param($param);
+        if(defined($setval)) {
+            # Fetch the parameter in list context, filter out anything that isn't digits or
+            # comma separated digits, and then squash into a comma separated string.
+            my $value = join(",", grep(/^((\d+),?)+$/, ($self -> {"cgi"} -> param($param))));
 
-        # Value may potentially contain repeat commas or a trailing comma at this point
-        $value =~ s/,+/,/g;
-        $value =~ s/,$//;
+            # Value may potentially contain repeat commas or a trailing comma at this point
+            $value =~ s/,+/,/g;
+            $value =~ s/,$//;
 
-        $self -> {"session"} -> set_variable($varname, $value);
+            $self -> {"session"} -> set_variable($varname, $value);
+        }
     }
 }
 
@@ -71,6 +76,7 @@ sub _get_feed_selection {
     my $self     = shift;
     my $articles = shift;
     my $settings = shift;
+    my $active   = 0;
 
     my $feedlist = [];
     my $selids   = [];
@@ -81,10 +87,12 @@ sub _get_feed_selection {
         push(@{$selids}, $articles -> {"metadata"} -> {"feeds"} -> {$feedid} -> {"id"});
     }
 
-    $selids = $settings -> {"feeds"}
-        if($settings -> {"feeds"});
+    if($settings -> {"feeds"}) {
+        $active = 1;
+        $selids = $settings -> {"feeds"};
+    }
 
-    return ($feedlist, $selids);
+    return ($feedlist, $selids, $active);
 }
 
 
@@ -277,16 +285,17 @@ sub _generate_articlelist {
         my $maxpage = ceil($articles -> {"metadata"} -> {"count"} / $settings -> {"count"});
 
         # Build the list of feeds for the multiselect
-        my ($feeds, $selfeeds) = $self -> _get_feed_selection($articles, $settings);
+        my ($feeds, $selfeeds, $showremfeed) = $self -> _get_feed_selection($articles, $settings);
 
         return ($self -> {"template"} -> replace_langvar("ALIST_TITLE"),
-                $self -> {"template"} -> load_template("articlelist/content.tem", {"***articles***" => $list,
-                                                                                   "***month***"    => "{L_MONTH_LONG".$settings -> {"month"}."}",
-                                                                                   "***year***"     => $settings -> {"year"},
-                                                                                   "***feeds***"    => $self -> generate_multiselect("feeds", "feed", "feed", $feeds, $selfeeds),
-                                                                                   "***prevurl***"  => $self -> build_url(pathinfo => [$settings -> {"prev"} -> {"year"}, $settings -> {"prev"} -> {"month"}]),
-                                                                                   "***nexturl***"  => $self -> build_url(pathinfo => [$settings -> {"next"} -> {"year"}, $settings -> {"next"} -> {"month"}]),
-                                                                                   "***paginate***" => $self -> _build_pagination({ maxpage => $maxpage,
+                $self -> {"template"} -> load_template("articlelist/content.tem", {"***articles***"    => $list,
+                                                                                   "***month***"       => "{L_MONTH_LONG".$settings -> {"month"}."}",
+                                                                                   "***year***"        => $settings -> {"year"},
+                                                                                   "***feeds***"       => $self -> generate_multiselect("feeds", "feed", "feed", $feeds, $selfeeds),
+                                                                                   "***remove-feed***" => $showremfeed ? $self -> {"template"} -> load_template("articlelist/remove-feed.tem") : "",
+                                                                                   "***prevurl***"     => $self -> build_url(pathinfo => [$settings -> {"prev"} -> {"year"}, $settings -> {"prev"} -> {"month"}]),
+                                                                                   "***nexturl***"     => $self -> build_url(pathinfo => [$settings -> {"next"} -> {"year"}, $settings -> {"next"} -> {"month"}]),
+                                                                                   "***paginate***"    => $self -> _build_pagination({ maxpage => $maxpage,
                                                                                                                                     pagenum => $settings -> {"pagenum"},
                                                                                                                                     mode    => "page",
                                                                                                                                     year    => $settings -> {"year"},

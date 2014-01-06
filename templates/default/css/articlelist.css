@@ -235,3 +235,9 @@ ul.info li .state.failed {
 #filter-feed {
     width: 16em;
 }
+
+button.remover {
+    border: none;
+    padding: 0p;
+    cursor: pointer;
+}
