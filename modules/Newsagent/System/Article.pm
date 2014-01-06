@@ -582,13 +582,6 @@ sub get_user_articles {
     $articleh -> execute(@params)
         or return $self -> self_error("Unable to execute article query: ".$self -> {"dbh"} -> errstr);
 
-    # Build some hashes of settings for faster lookup. Map should handle being
-    # passed undef so if one of the settings lists is not specified, the generated
-    # hash will be empty.
-    my %userhash  = map { $_ => $_ } @{$settings -> {"users"}};
-    my %feedhash  = map { $_ => $_ } @{$settings -> {"feeds"}};
-    my %levelhash = map { $_ => $_ } @{$settings -> {"levels"}};
-
     # Now process all the articles
     my ($added, $count, $feeds, $users) = (0, 0, {}, {});
     while(my $article = $articleh -> fetchrow_hashref()) {
@@ -627,9 +620,9 @@ sub get_user_articles {
                 $article -> {"levels"} = $levelh -> fetchall_arrayref({});
 
                 # Does the article match the filters specified?
-                if($self -> _article_user_match($article, \%userhash) &&
-                   $self -> _article_feed_match($article, \%feedhash) &&
-                   $self -> _article_level_match($article, \%levelhash)) {
+                if($self -> _article_user_match($article, $settings -> {"users"}) &&
+                   $self -> _article_feed_match($article, $settings -> {"feeds"}) &&
+                   $self -> _article_level_match($article, $settings -> {"levels"})) {
 
                     # Yes, store it
                     push(@articles, $article);
@@ -1445,75 +1438,84 @@ sub _build_articlelist_timebounds {
 }
 
 
-## @method private $ _article_user_match($article, $userhash)
-# Given a hash of user IDs, return true if the specified article was created or
-# updated by a user in the hash. If the specified hash is undef or empty,
-# this will always return true.
+## @method private $ _article_user_match($article, $userlist)
+# Given a list of user IDs, return true if the specified article was created or
+# updated by a user in the list. If the specified list is list is undef, this
+# always returns true.
 #
 # @param article  The article to check the users against.
-# @param userhash A reference to a hash of user IDs to accept.
+# @param userlist A reference to a list of user IDs to accept.
 # @return true if the article was created/edited by one of the users in the
-#              hash, false otherwise.
+#              list, false otherwise.
 sub _article_user_match {
     my $self     = shift;
     my $article  = shift;
-    my $userhash = shift;
+    my $userlist = shift;
 
-            # If the hash is empty, always return true
-    return (!$userhash || !keys(%{$userhash}) ||
+    # Empty list is always a true
+    return 1 if(!$userlist);
 
-            # If the creator or editor is in the userhash, return true
-            $userhash -> {$article -> {"creator_id"}} ||
-            $userhash -> {$article -> {"updated_id"}});
+    # Convert to a hash for faster lookup
+    my %userhash = map { $_ => $_ } @{$userlist};
+
+            # If the creator or editor is in the userlist, return true
+    return ($userhash{$article -> {"creator_id"}} ||
+            $userhash{$article -> {"updated_id"}});
 }
 
 
-## @method private $ _article_feed_match($article, $feedhash)
-# Given a hash of feed IDs, return true if the specified article has been
-# added to one or more of those feeds. If the specified feed hash is undef
+## @method private $ _article_feed_match($article, $feedlist)
+# Given a list of feed IDs, return true if the specified article has been
+# added to one or more of those feeds. If the specified feed list is undef
 # or empty, this will always return true.
 #
 # @param article  The article to check feeds against.
-# @param feedhash A reference to a hash of feed IDs to accept.
+# @param feedlist A reference to a list of feed IDs to accept.
 # @return true if the article is in one of the specified feeds, false
 #         otherwise.
 sub _article_feed_match {
     my $self     = shift;
     my $article  = shift;
-    my $feedhash = shift;
+    my $feedlist = shift;
 
     # Get the simple check out of the way first
-    return 1 if(!$feedhash || !keys(%{$feedhash}));
+    return 1 if(!$feedlist);
+
+    # Convert to a hash for faster lookup
+    my %feedhash = map { $_ => $_ } @{$feedlist};
 
     # Now check through the list of feeds
     foreach my $feed (@{$article -> {"feeds"}}) {
-        return 1 if($feedhash -> {$feed -> {"id"}});
+        return 1 if($feedhash{$feed -> {"id"}});
     }
 
     return 0;
 }
 
 
-## @method private $ _article_level_match($article, $levelhash)
-# Given a hash of level IDs, return true if the specified article has been
-# posted at one or more of those levels. If the specified level hash is undef
+## @method private $ _article_level_match($article, $levellist)
+# Given a list of level IDs, return true if the specified article has been
+# posted at one or more of those levels. If the specified level list is undef
 # or empty, this will always return true.
 #
 # @param article  The article to check levels against.
-# @param levelhash A reference to a hash of level IDs to accept.
+# @param levellist A reference to a list of level IDs to accept.
 # @return true if the article has been posted at one of the specified levels,
 #         false otherwise.
 sub _article_level_match {
     my $self      = shift;
     my $article   = shift;
-    my $levelhash = shift;
+    my $levellist = shift;
 
     # Get the simple check out of the way first
-    return 1 if(!$levelhash || !keys(%{$levelhash}));
+    return 1 if(!$levellist);
+
+    # Convert to a hash for faster lookup
+    my %levelhash = map { $_ => $_ } @{$levellist};
 
     # Now check through the list of levels
     foreach my $level (@{$article -> {"levels"}}) {
-        return 1 if($levelhash -> {$level -> {"id"}});
+        return 1 if($levelhash{$level -> {"id"}});
     }
 
     return 0;
