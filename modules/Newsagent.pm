@@ -492,7 +492,8 @@ sub build_login_url {
     #       parameters added by the BlockSelector will be included!)
     $self -> {"session"} -> set_variable("savestate", $self -> {"cgi"} -> query_string());
 
-    return $self -> build_url(block => "login");
+    return $self -> build_url(block    => "login",
+                              forcessl => 1);
 }
 
 
@@ -537,6 +538,7 @@ sub build_return_url {
 #              Values in the hash may be references to arrays, in which case multiple
 #              copies of the parameter are added to the query string, one for each
 #              value in the array.
+# * forcessl - If true, the URL is forced to https: rather than http:
 #
 # @param args A hash of arguments to use when building the URL.
 # @return A string containing the URL.
@@ -581,6 +583,9 @@ sub build_url {
         while($querystring =~ s{((?:&(?:amp;))?)(?:api|block|pathinfo)=[^&]+(&?)}{$1 && $2 ? "&" : ""}e) {}
         $url .= "?$querystring";
     }
+
+    $url =~ s/^http:/https:/
+        if($args{"forcessl"} && $url =~ /^http:/);
 
     return $url;
 }
