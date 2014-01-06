@@ -647,32 +647,27 @@ sub _build_level_options {
 # Generate a series of checkboxes for each feed specified in the provided array
 #
 # @param feeds    A reference to an array of feed data hashrefs
-# @param selected A reference to a hash pf selected feeds
+# @param selected A reference to a hash of selected feeds
 # @return A string containing the checkboxes for the available feeds.
 sub _build_feedlist {
     my $self     = shift;
     my $feeds    = shift;
     my $selected = shift;
-    my $result   = "";
-    my %active_feeds;
+    my $realselect = [];
 
-    # During the edit process the selected list may be a list of feed data hashes
+    # During the edit process the selected list may be a list of feed data hashes, this
+    # can't be used directly and must be converted to a list of IDs
     if(ref($selected -> [0]) eq "HASH") {
-        %active_feeds = map { $_ -> {"id"} => 1} @{$selected};
+        foreach my $sel (@{$selected}) {
+            push(@{$realselect}, $sel -> {"id"});
+        }
 
     # during compose, and edit validation, selected will be a list of feed ids.
     } else {
-        %active_feeds = map { $_ => 1} @{$selected};
+        $realselect = $selected;
     }
 
-    foreach my $feed (@{$feeds}) {
-        $result .= $self -> {"template"} -> load_template("compose/feed-item.tem", {"***name***"    => $feed -> {"value"},
-                                                                                    "***id***"      => $feed -> {"id"},
-                                                                                    "***desc***"    => $feed -> {"name"},
-                                                                                    "***checked***" => $active_feeds{$feed -> {"id"}} ? 'checked="checked"' : ''});
-    }
-
-    return $result;
+    return $self -> generate_multiselect("feed", "feed", "feed", $feeds, $realselect)
 }
 
 

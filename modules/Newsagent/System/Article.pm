@@ -162,8 +162,8 @@ sub get_user_feeds {
     while(my $feed = $feedsh -> fetchrow_hashref()) {
         foreach my $level (@{$levels}) {
             if($self -> {"roles"} -> user_has_capability($feed -> {"metadata_id"}, $userid, $level -> {"capability"})) {
-                push(@feedlist, {"name"       => $feed -> {"description"},
-                                 "value"      => $feed -> {"name"},
+                push(@feedlist, {"desc"       => $feed -> {"description"},
+                                 "name"       => $feed -> {"name"},
                                  "id"         => $feed -> {"id"},
                                  "metadataid" => $feed -> {"metadata_id"}});
                 last;

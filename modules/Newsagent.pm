@@ -61,8 +61,7 @@ sub new {
 
 
 # ============================================================================
-#  Page generation support
-
+#  HTML generation support
 
 ## @method $ generate_newsagent_page($title, $content, $extrahead, $doclink)
 # A convenience function to wrap page content in the standard page template. This
@@ -123,6 +122,44 @@ sub generate_errorbox {
                                                    "***extrahead***" => "",
                                                    "***userbar***"   => ($userbar ? $userbar -> block_display($title) : "<!-- Userbar load failed: ".$self -> {"module"} -> errstr()." -->"),
                                                   });
+}
+
+
+## @method $ generate_multiselect($name, $class, $idbase, $options, $selected)
+# Generate a MultiSelect dropdown list (essentially a list of checkboxes that gets
+# converted to a dropdown using the MultiSelect javascript module).
+#
+# @param name     The name of the multiselect option list.
+# @param class    A class to add to the class attribute for the checkboxes in the list.
+# @param idbase   A unique base name for the ID of checkboxes in the list.
+# @param options  A reference to an array of option hashes. Each hash should contain
+#                 `name` a short name used in the class, `id` a numeric ID used in the
+#                 id and value attributes, and `desc` used in the label.
+# @param selected A reference to a list of selected option IDs.
+# @return A string containing the multiselect list checkboxes.
+sub generate_multiselect {
+    my $self     = shift;
+    my $name     = shift;
+    my $class    = shift;
+    my $idbase   = shift;
+    my $options  = shift;
+    my $selected = shift;
+
+    # Convert the selected list to a hash for faster lookup
+    my %active = map { $_ => 1} @{$selected};
+
+    my $result = "";
+    foreach my $option (@{$options}) {
+        $result .= $self -> {"template"} -> load_template("multisel-item.tem", {"***class***"   => $class,
+                                                                                "***idbase***"  => $idbase,
+                                                                                "***selname***" => $name,
+                                                                                "***name***"    => $option -> {"name"},
+                                                                                "***id***"      => $option -> {"id"},
+                                                                                "***desc***"    => $option -> {"desc"},
+                                                                                "***checked***" => $active{$option -> {"id"}} ? 'checked="checked"' : ''});
+    }
+
+    return $result;
 }
 
 
