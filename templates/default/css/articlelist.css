@@ -238,6 +238,6 @@ ul.info li .state.failed {
 
 button.remover {
     border: none;
-    padding: 0p;
+    padding: 0px;
     cursor: pointer;
 }
