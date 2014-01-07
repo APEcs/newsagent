@@ -50,7 +50,7 @@ sub _generate_compose {
     my $levels     = $self -> _build_level_options($sys_levels, $args -> {"levels"});
 
     # Work out where the user is allowed to post to
-    my $user_feeds = $self -> {"article"} -> get_user_feeds($userid, $sys_levels);
+    my $user_feeds = $self -> {"feed"} -> get_user_feeds($userid, $sys_levels);
     my $feeds      = $self -> _build_feedlist($user_feeds, $args -> {"feeds"});
 
     # Work out which levels the user has access to for each feed. This generates a

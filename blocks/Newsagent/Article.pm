@@ -21,6 +21,7 @@ package Newsagent::Article;
 
 use strict;
 use base qw(Newsagent); # This class extends the Newsagent block class
+use Newsagent::System::Feed;
 use Newsagent::System::Article;
 use File::Basename;
 use Lingua::EN::Sentence qw(get_sentences);
@@ -42,7 +43,15 @@ sub new {
     my $self     = $class -> SUPER::new(@_)
         or return undef;
 
-    $self -> {"article"} = Newsagent::System::Article -> new(dbh      => $self -> {"dbh"},
+    $self -> {"feed"} = Newsagent::System::Feed -> new(dbh      => $self -> {"dbh"},
+                                                       settings => $self -> {"settings"},
+                                                       logger   => $self -> {"logger"},
+                                                       roles    => $self -> {"system"} -> {"roles"},
+                                                       metadata => $self -> {"system"} -> {"metadata"})
+        or return Webperl::SystemModule::set_error("Article initialisation failed: ".$SystemModule::errstr);
+
+    $self -> {"article"} = Newsagent::System::Article -> new(feed     => $self -> {"feed"},
+                                                             dbh      => $self -> {"dbh"},
                                                              settings => $self -> {"settings"},
                                                              logger   => $self -> {"logger"},
                                                              roles    => $self -> {"system"} -> {"roles"},
@@ -269,7 +278,7 @@ sub _validate_feeds_levels {
 
     # Get the levels, feeds, and which levels the user has access to on each feed
     my $sys_levels  = $self -> {"article"} -> get_all_levels();
-    my $user_feeds  = $self -> {"article"} -> get_user_feeds($userid, $sys_levels);
+    my $user_feeds  = $self -> {"feed"} -> get_user_feeds($userid, $sys_levels);
     my $user_levels = $self -> {"article"} -> get_user_levels($user_feeds, $sys_levels, $userid);
 
     # Fetch the list of selected feeds and levels

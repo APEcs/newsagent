@@ -217,14 +217,14 @@ sub feed_url {
             if($viewer eq "internal");
 
         # Not an internal viewer, check for a matching feed
-        my $feedurl = $self -> {"article"} -> get_feed_url($viewer);
+        my $feedurl = $self -> {"feed"} -> get_feed_url($viewer);
         return $feedurl.$viewerparam
             if($feedurl);
     }
 
     # No viewer was specified, or it is not valid; try using the first configured feed url if there is one
     if($setfeeds && scalar(@{$setfeeds})) {
-        my $feedurl = $self -> {"article"} -> get_feed_url($setfeeds -> [0]);
+        my $feedurl = $self -> {"feed"} -> get_feed_url($setfeeds -> [0]);
 
         return $feedurl.$viewerparam
             if($feedurl);
