@@ -22,6 +22,7 @@ package Newsagent::Feed;
 use strict;
 use base qw(Newsagent); # This class extends the Newsagent block class
 use Newsagent::System::Article;
+use Newsagent::System::Feed;
 use Digest::MD5 qw(md5_hex);
 use Webperl::Utils qw(trimspace path_join);
 use Date::Calc qw(Add_Delta_YMD Localtime Date_to_Time);
@@ -45,12 +46,20 @@ sub new {
                                         @_)
         or return undef;
 
-    $self -> {"article"} = Newsagent::System::Article -> new(dbh      => $self -> {"dbh"},
+    $self -> {"feed"} = Newsagent::System::Feed -> new(dbh      => $self -> {"dbh"},
+                                                       settings => $self -> {"settings"},
+                                                       logger   => $self -> {"logger"},
+                                                       roles    => $self -> {"system"} -> {"roles"},
+                                                       metadata => $self -> {"system"} -> {"metadata"})
+        or return Webperl::SystemModule::set_error("Article initialisation failed: ".$SystemModule::errstr);
+
+    $self -> {"article"} = Newsagent::System::Article -> new(feed     => $self -> {"feed"},
+                                                             dbh      => $self -> {"dbh"},
                                                              settings => $self -> {"settings"},
                                                              logger   => $self -> {"logger"},
                                                              roles    => $self -> {"system"} -> {"roles"},
                                                              metadata => $self -> {"system"} -> {"metadata"})
-        or return SystemModule::set_error("Feed initialisation failed: ".$SystemModule::errstr);
+        or return Webperl::SystemModule::set_error("Article initialisation failed: ".$SystemModule::errstr);
 
     return $self;
 }
