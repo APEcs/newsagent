@@ -16,4 +16,5 @@
     <script type="text/javascript">
         spinner_url  = "{V_[templatepath]}images/spinner.gif";
         edit_url = "{V_[scriptpath]}edit/";
+        more_text = " {L_ALIST_MORE}";
     </script>

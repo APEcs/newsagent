@@ -22,3 +22,5 @@ ALIST_EMPTYMONTH     = There are no articles available in this month.
 
 ALIST_SHOWFEED       = Show feeds:
 ALIST_RESTORE        = Remove filtering
+
+ALIST_MORE           = More...

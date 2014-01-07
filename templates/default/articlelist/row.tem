@@ -1,7 +1,7 @@
 <tr id="artrow-***id***">
     <td class="mode ***modeclass***" title="***modeinfo***"><div class="***modeclass***">&nbsp;</div></td>
     <td class="date ***modeclass***">***date***</td>
-    <td class="feed"><ul>***feeds***</ul></td>
+    <td class="feed"><ul class="feedlist">***feeds***</ul></td>
     <td class="title"><div class="title"><a href="***editurl***">***title***</a></div>
                       <ul class="info"><li class="intro">***action*** ***actdate***, ***actuser***</li>
 ***status***</ul></td>

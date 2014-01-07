@@ -120,6 +120,33 @@ function change_article_state(articleid, operation, control)
 }
 
 
+function fold_feedlist(element)
+{
+    // Fold feed lists over this length
+    if(element.children.length > 3) {
+        var more      = new Element('li', { 'html': '<i>' + (element.children.length - 2) + more_text + '</i>'});
+        var showlist  = new Element("ul");
+        var hidelist  = new Element("ul", { 'styles': { 'display': 'none' }});
+        var container = new Element("div").adopt(showlist, hidelist);
+
+        for(var elem = 0; elem < element.children.length; ++elem) {
+            var dupe = element.children[elem].clone();
+
+            if(elem < 2) {
+                showlist.adopt(dupe);
+            } else {
+                hidelist.adopt(dupe);
+            }
+        }
+        showlist.adopt(more);
+
+        container.addEvent('mouseenter', function() { more.dissolve(); hidelist.reveal(); });
+        container.addEvent('mouseleave', function() { more.reveal(); hidelist.dissolve(); });
+
+        container.replaces(element);
+    }
+}
+
 window.addEvent('domready', function() {
     Locale.use('en-GB');
     month_picker = new Picker.Date($('list_month'), { timePicker: false,
@@ -133,4 +160,6 @@ window.addEvent('domready', function() {
                                                           location.href = basepath + "articles/" + date.format("%Y/%m");
                                                       }
                                                     });
+
+     $$('ul.feedlist').each(function (element) { fold_feedlist(element); });
 });
