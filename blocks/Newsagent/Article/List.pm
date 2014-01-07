@@ -84,7 +84,6 @@ sub _get_feed_selection {
         push(@{$feedlist}, {"desc" => $articles -> {"metadata"} -> {"feeds"} -> {$feedid} -> {"description"},
                             "name" => $articles -> {"metadata"} -> {"feeds"} -> {$feedid} -> {"name"},
                             "id"   => $articles -> {"metadata"} -> {"feeds"} -> {$feedid} -> {"id"}});
-        push(@{$selids}, $articles -> {"metadata"} -> {"feeds"} -> {$feedid} -> {"id"});
     }
 
     if($settings -> {"feeds"}) {
