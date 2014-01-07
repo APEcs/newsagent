@@ -27,7 +27,7 @@
 <script type="text/javascript">
 window.addEvent('domready', function() {
     var multiselfeed = new MultiSelect('#filter-feed', { maxMonitorText: 0,
-                                                              emptyText: 'Select feeds...',
+                                                              emptyText: '{L_ALIST_LEVSEL}',
                                                           onItemChanged: function() { $('filtercontrol').submit(); }
                                                        });
 });

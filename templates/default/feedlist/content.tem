@@ -1,0 +1,29 @@
+<ul id="feeds">
+    <li id="feedlist" class="shadowbox">
+        <h2>{L_FLIST_TITLE}</h2>
+        <div class="sbcontent">
+            <div>{L_FLIST_INTRO}</div>
+            <table class="listtable">
+                <tbody>
+***feeds***
+                </tbody>
+            </table>
+        </div>
+    </li>
+    <li id="feedgen" class="shadowbox">
+        <h2>{L_FLIST_MAKEBOX}</h2>
+        <div class="sbcontent">
+<div id="syslevels" class="chromelike">
+***levels***
+</div>
+        </div>
+    </li>
+</ul>
+<script type="text/javascript">
+window.addEvent('domready', function() {
+    var multiselfeed = new MultiSelect('#syslevels', { maxMonitorText: 0,
+                                                            emptyText: '{L_FLIST_LEVSEL}',
+                                                          onItemChanged: function() { }
+                                                       });
+});
+</script>

@@ -1,0 +1,6 @@
+    <script type="text/javascript" src="{V_[templatepath]}js/api.js"></script>
+    <script type="text/javascript" src="{V_[templatepath]}js/feedlist.js"></script>
+    <link href="{V_[templatepath]}css/feedlist.css" rel="stylesheet" />
+
+    <script src="{V_[templatepath]}MultiSelect/Source/MultiSelect.js" type="text/javascript"></script>
+    <link href="{V_[templatepath]}MultiSelect/css/MultiSelect.css" rel="stylesheet" />

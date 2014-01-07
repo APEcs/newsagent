@@ -72,6 +72,16 @@ sub _validate_filter_settings {
 }
 
 
+## @method private @ _get_feed_selection($articles, $settings)
+# Generate the list of feeds, and the selected feeds, to show in the feed
+# filter dropdown.
+#
+# @param articles A reference to a hash containing the article data.
+# @param settings A reference to a hash containing the settings that were
+#                 use when generating the article data.
+# @return A reference to an array of option hashes, a reference to an array
+#         of selected ids, and a flag indicating whether filtering is active
+#         or not.
 sub _get_feed_selection {
     my $self     = shift;
     my $articles = shift;

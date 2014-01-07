@@ -1,0 +1,30 @@
+#feeds {
+    margin: 0px auto;
+    margin-top: 40px;
+    width: 1130px;
+}
+
+#feeds li {
+    list-style-type: none;
+    margin: 0px 0px 10px 0px;
+    overflow: hidden;
+}
+
+table.listtable {
+    width: 100%;
+}
+
+table.listtable tr td {
+    border-bottom: 1px solid #ddd;
+    padding: 7px 3px;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+table.listtable tr:last-child td {
+    border-bottom: none;
+}
+
+table.listtable td.feed {
+    width: 100%;
+}

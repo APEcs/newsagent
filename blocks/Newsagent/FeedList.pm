@@ -22,6 +22,7 @@ package Newsagent::FeedList;
 use strict;
 use base qw(Newsagent); # This class extends the Newsagent block class
 use Newsagent::System::Article;
+use Newsagent::System::Feed;
 use v5.12;
 
 # ============================================================================
@@ -40,14 +41,130 @@ sub new {
     my $self     = $class -> SUPER::new(@_)
         or return undef;
 
-    $self -> {"article"} = Newsagent::System::Article -> new(dbh      => $self -> {"dbh"},
+    $self -> {"feed"} = Newsagent::System::Feed -> new(dbh      => $self -> {"dbh"},
+                                                       settings => $self -> {"settings"},
+                                                       logger   => $self -> {"logger"},
+                                                       roles    => $self -> {"system"} -> {"roles"},
+                                                       metadata => $self -> {"system"} -> {"metadata"})
+        or return Webperl::SystemModule::set_error("Article initialisation failed: ".$SystemModule::errstr);
+
+    $self -> {"article"} = Newsagent::System::Article -> new(feed     => $self -> {"feed"},
+                                                             dbh      => $self -> {"dbh"},
                                                              settings => $self -> {"settings"},
                                                              logger   => $self -> {"logger"},
                                                              roles    => $self -> {"system"} -> {"roles"},
                                                              metadata => $self -> {"system"} -> {"metadata"})
-        or return Webperl::SystemModule::set_error("FeedList initialisation failed: ".$SystemModule::errstr);
+        or return Webperl::SystemModule::set_error("Article initialisation failed: ".$SystemModule::errstr);
 
     return $self;
+}
+
+
+# ============================================================================
+#  Content generators
+
+
+sub _build_level_options {
+    my $self = shift;
+
+    my $levels  = $self -> {"article"} -> get_all_levels();
+    my $options = [];
+
+    # Convert the levels list to a format that generate_multiselect likes
+    foreach my $level (@{$levels}) {
+        push(@{$options}, {"id"   => $level -> {"value"},
+                           "name" => $level -> {"value"},
+                           "desc" => $level -> {"name"}});
+    }
+
+    return $self -> generate_multiselect("levels", "levels", "level", $options);
+}
+
+
+## @method pricate $ _build_feed_row($feed)
+# Generate a feed list row from the specified feed data.
+#
+# @param feed A reference to a hash containing the feed data to use in the row.
+# @return A string containing the feed data.
+sub _build_feed_row {
+    my $self = shift;
+    my $feed = shift;
+
+    my $rssurl = $self -> build_url(fullurl => 1,
+                                    block   => "rss",
+                                    params  => { "feed" => $feed -> {"name"} });
+
+    return $self -> {"template"} -> load_template("feedlist/row.tem", {"***id***" => $feed -> {"id"},
+                                                                       "***description***" => $feed -> {"description"},
+                                                                       "***name***"        => $feed -> {"name"},
+                                                                       "***rssurl***"      => $rssurl, });
+}
+
+
+## @method private @ _generate_feedlist()
+# Generate the contents of a page listing the feeds available in the system
+#
+# @return Two strings: the page title, and the contents of the page.
+sub _generate_feedlist {
+    my $self = shift;
+
+    my $feeds = $self -> {"feed"} -> get_feeds();
+    if($feeds) {
+        my $list = "";
+
+        foreach my $feed (@{$feeds}) {
+            $list .= $self -> _build_feed_row($feed);
+        }
+        $list = $self -> {"template"} -> load_template("feedlist/empty.tem")
+            if(!$list);
+
+        return ($self -> {"template"} -> replace_langvar("FLIST_PTITLE"),
+                $self -> {"template"} -> load_template("feedlist/content.tem", {"***feeds***"  => $list,
+                                                                                "***levels***" => $self -> _build_level_options(),
+                                                                               })
+               );
+    } else {
+        return $self -> build_error_box($self -> {"feed"} -> errstr());
+    }
+}
+
+
+# ============================================================================
+#  Interface functions
+
+## @method $ page_display()
+# Produce the string containing this block's full page content. This generates
+# the compose page, including any errors or user feedback.
+#
+# @return The string containing this block's page content.
+sub page_display {
+    my $self = shift;
+    my ($title, $content, $extrahead);
+
+    # NOTE: no need to check login here, this module can be used without logging in.
+
+    # Is this an API call, or a normal page operation?
+    my $apiop = $self -> is_api_operation();
+    if(defined($apiop)) {
+        # API call - dispatch to appropriate handler.
+        given($apiop) {
+            default {
+                return $self -> api_html_response($self -> api_errorhash('bad_op',
+                                                                         $self -> {"template"} -> replace_langvar("API_BAD_OP")))
+            }
+        }
+    } else {
+        my @pathinfo = $self -> {"cgi"} -> param('pathinfo');
+
+        given($pathinfo[2]) {
+            default {
+                ($title, $content) = $self -> _generate_feedlist();
+            }
+        }
+
+        $extrahead .= $self -> {"template"} -> load_template("feedlist/extrahead.tem");
+        return $self -> generate_newsagent_page($title, $content, $extrahead, "feedlist");
+    }
 }
 
 1;

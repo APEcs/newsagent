@@ -1,0 +1,5 @@
+<tr id="feedrow-***id***">
+    <td class="feed">***description***</td>
+    <td class="rss"><a href="***rssurl***" class="rel"><img src="{V_[templateurl]}images/feed-icon-14.png" width="14" height="14" alt="rss" /></a></td>
+    <td class="ticky"><input type="checkbox" name="feed-***id***"" id="feed-***name***" /></td>
+</tr>

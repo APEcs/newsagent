@@ -52,6 +52,28 @@ sub new {
 # ============================================================================
 #  Data access
 
+## @method $ get_feeds()
+# Fetch a list of all feeds defined in the system. This will generate an array
+# containing the data for all the feeds, whether the user has any author
+# access or not. This is intended to support listing pages like FeedList.
+#
+# @return A reference to an array of hashrefs, each hashref contains feed
+#         information, or undef on error.
+sub get_feeds {
+    my $self = shift;
+
+    $self -> clear_error();
+
+    my $feedsh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"feeds"}."`
+                                              ORDER BY `description`");
+    $feedsh -> execute()
+        or return $self -> self_error("Unable to execute user feeds query: ".$self -> {"dbh"} -> errstr);
+
+    return $feedsh -> fetchall_arrayref({})
+        or return $self -> self_error("No system defined feeds available");
+}
+
+
 ## @method $ get_user_feeds($userid)
 # Obtain the list of feeds the user has permission to post from. This
 # checks through the list of available feeds, and determines whether
@@ -159,6 +181,7 @@ sub get_feed_byid {
 
     return $feedrow;
 }
+
 
 ## @method $ get_feed_byname($name)
 # Obtain the data for the feed with the specified name, if possible.
