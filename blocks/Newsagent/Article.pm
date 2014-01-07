@@ -1,5 +1,5 @@
 ## @file
-# This file contains the implementation of the article composition facility.
+# This file contains the implementation of the article base class.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
 #
@@ -30,12 +30,12 @@ use v5.12;
 #  Constructor
 
 ## @cmethod $ new(%args)
-# Overloaded constructor for the Compose facility, loads the System::Article model
-# and other classes required to generate the compose pages.
+# Overloaded constructor for the Article, loads the System::Article model
+# and other classes required to generate article pages.
 #
 # @param args A hash of values to initialise the object with. See the Block docs
 #             for more information.
-# @return A reference to a new Newsagent::Compose object on success, undef on error.
+# @return A reference to a new Newsagent::Article object on success, undef on error.
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
