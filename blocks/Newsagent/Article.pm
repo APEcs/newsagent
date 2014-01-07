@@ -47,7 +47,7 @@ sub new {
                                                              logger   => $self -> {"logger"},
                                                              roles    => $self -> {"system"} -> {"roles"},
                                                              metadata => $self -> {"system"} -> {"metadata"})
-        or return Webperl::SystemModule::set_error("Compose initialisation failed: ".$SystemModule::errstr);
+        or return Webperl::SystemModule::set_error("Article initialisation failed: ".$SystemModule::errstr);
 
     # Load the notification method modules, as they may be needed for content generation,
     # validation, and miscellaneous other tasks of dubious import.
