@@ -3,6 +3,19 @@ FLIST_LEVSEL = Select levels...
 FLIST_TITLE  = Available Newsagent Feeds
 FLIST_PTITLE = Feeds
 FLIST_EMPTY  = No Newsagent feeds are currently available.
-FLIST_INTRO  = The following feeds are published by Newsagent. Click the RSS icon to get the feed URL, or select checkboxes to construct a compound feed in the Create Feed URL box below.
+FLIST_INTRO  = The following feeds are published by Newsagent. Click the RSS icon to get the feed URL, or select checkboxes to construct a compound feed in the Create Feed URL box to the right.
 
 FLIST_MAKEBOX = Create Feed URL
+
+FLIST_LEVELS  = Only include articles marked as
+
+FLIST_FTEXT       = Include full article text:
+FLIST_FTEXT_NONE  = Do not include
+FLIST_FTEXT_HTML  = As HTML
+FLIST_FTEXT_MD    = As Markdown
+FLIST_FTEXT_TEXT  = As plain text
+FLIST_FTEXT_ALL   = As HTML, with article image.
+
+FLIST_FULLDESC = Use full text in RSS &lt;description&gt;
+
+FLIST_COUNT       = Number of articles to include:

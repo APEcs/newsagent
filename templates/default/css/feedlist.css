@@ -1,13 +1,27 @@
-#feeds {
+@charset "utf-8";
+
+#feedpage {
+    padding-top: 40px;
     margin: 0px auto;
-    margin-top: 40px;
     width: 1130px;
+}
+
+#feeds {
+    float: left;
+    width: 800px;
+    margin: 0px;
+    padding: 0px;
 }
 
 #feeds li {
     list-style-type: none;
     margin: 0px 0px 10px 0px;
     overflow: hidden;
+}
+
+#feedgen {
+    float: right;
+    width: 300px;
 }
 
 table.listtable {
@@ -27,4 +41,25 @@ table.listtable tr:last-child td {
 
 table.listtable td.feed {
     width: 100%;
+}
+
+div.numeric {
+    border: 1px inset #ccc;
+    width: 100%;
+    text-align: right;
+    padding-right: 2px;
+}
+
+div.numeric > button {
+    border: none;
+    background: none;
+    padding: 0px;
+    margin: 0px;
+}
+
+div.numeric > input {
+    text-align: right;
+    border: none;
+    padding: 0px;
+    background: #fff;
 }

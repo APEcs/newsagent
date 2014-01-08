@@ -56,6 +56,18 @@ sub new {
                                                              metadata => $self -> {"system"} -> {"metadata"})
         or return Webperl::SystemModule::set_error("Article initialisation failed: ".$SystemModule::errstr);
 
+    $self -> {"fulltext"} = [ { "value" => "off",
+                                "name"  => "{L_FLIST_FTEXT_NONE}" },
+                              { "value" => "enabled",
+                                "name"  => "{L_FLIST_FTEXT_HTML}" },
+                              { "value" => "markdown",
+                                "name"  => "{L_FLIST_FTEXT_MD}" },
+                              { "value" => "plain",
+                                "name"  => "{L_FLIST_FTEXT_TEXT}" },
+                              { "value" => "embedimg",
+                                "name"  => "{L_FLIST_FTEXT_ALL}" },
+                            ];
+
     return $self;
 }
 
@@ -64,6 +76,10 @@ sub new {
 #  Content generators
 
 
+## @method private $ _build_level_options()
+# Build a list of level options the user can select from when building a feed URL.
+#
+# @return A string containing the level options.
 sub _build_level_options {
     my $self = shift;
 
@@ -119,8 +135,9 @@ sub _generate_feedlist {
             if(!$list);
 
         return ($self -> {"template"} -> replace_langvar("FLIST_PTITLE"),
-                $self -> {"template"} -> load_template("feedlist/content.tem", {"***feeds***"  => $list,
-                                                                                "***levels***" => $self -> _build_level_options(),
+                $self -> {"template"} -> load_template("feedlist/content.tem", {"***feeds***"    => $list,
+                                                                                "***levels***"   => $self -> _build_level_options(),
+                                                                                "***fulltext***" => $self -> {"template"} -> build_optionlist($self -> {"fulltext"}),
                                                                                })
                );
     } else {

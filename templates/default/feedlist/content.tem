@@ -1,24 +1,47 @@
-<ul id="feeds">
-    <li id="feedlist" class="shadowbox">
-        <h2>{L_FLIST_TITLE}</h2>
-        <div class="sbcontent">
-            <div>{L_FLIST_INTRO}</div>
-            <table class="listtable">
-                <tbody>
-***feeds***
-                </tbody>
-            </table>
-        </div>
-    </li>
-    <li id="feedgen" class="shadowbox">
+<div id="feedpage">
+    <ul id="feeds">
+        <li id="feedlist" class="shadowbox">
+            <h2>{L_FLIST_TITLE}</h2>
+            <div class="sbcontent">
+                <div>{L_FLIST_INTRO}</div>
+                <table class="listtable">
+                    <tbody>
+                        ***feeds***
+                    </tbody>
+                </table>
+            </div>
+        </li>
+    </ul>
+    <div id="feedgen" class="shadowbox">
         <h2>{L_FLIST_MAKEBOX}</h2>
         <div class="sbcontent">
-<div id="syslevels" class="chromelike">
-***levels***
-</div>
+            <dl class="input">
+                <dt><label for="syslevels">{L_FLIST_LEVELS}</label></dt>
+                <dd><div id="syslevels" class="chromelike">
+                        ***levels***
+                    </div>
+                </dd>
+            </dl>
+            <dl class="input">
+                <dt><label for="fulltext">{L_FLIST_FTEXT}</label></dt>
+                <dd><select class="fillwide" id="fulltext" name="fullext">
+                        ***fulltext***
+                    </select>
+                </dd>
+            </dl>
+            <div><label for="desc" class="check"><input type="checkbox" id="desc" name="desc" /> {L_FLIST_FULLDESC}</label></div>
+            <dl class="input">
+                <dt><label for="count">{L_FLIST_COUNT}</label></dt>
+                <dd><div class="numeric">
+                        <input type="text" id="count" name="count" value="10" />
+                        <button>-</button>
+                        <button>+</button>
+                    </div>
+                </dd>
+            </dl>
         </div>
-    </li>
-</ul>
+    </div>
+</div>
 <script type="text/javascript">
 window.addEvent('domready', function() {
     var multiselfeed = new MultiSelect('#syslevels', { maxMonitorText: 0,
