@@ -63,3 +63,8 @@ div.numeric > input {
     padding: 0px;
     background: #fff;
 }
+
+input[type=text].rss {
+    padding: 4px 4px 4px 23px;
+    background: url(../images/feed-icon-14.png) no-repeat 2px center;
+}

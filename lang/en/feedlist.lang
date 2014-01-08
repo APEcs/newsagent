@@ -19,3 +19,5 @@ FLIST_FTEXT_ALL   = As HTML, with article image.
 FLIST_FULLDESC = Use full text in RSS &lt;description&gt;
 
 FLIST_COUNT       = Number of articles to include:
+
+FLIST_RSSURL      = Feed URL:

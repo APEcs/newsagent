@@ -45,7 +45,8 @@ select.fillwide {
     width: 300px;
 }
 
-input.fillwide.datepick {
+input.fillwide.datepick,
+input.fillwide.rss {
     width: 267px;
 }
 
