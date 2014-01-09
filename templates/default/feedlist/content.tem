@@ -34,23 +34,26 @@
                 <dt><label for="count">{L_FLIST_COUNT}</label></dt>
                 <dd><div class="numeric">
                         <input type="text" id="count" name="count" value="10" />
-                        <button>-</button>
-                        <button>+</button>
+                        <button id="countdec" name="minus">-</button>
+                        <button id="countinc" name="plus">+</button>
                     </div>
                 </dd>
             </dl>
             <dl class="input">
                 <dt><label for="count">{L_FLIST_RSSURL}</label></dt>
-                <dd><input type="text" readonly="readonly" class="fillwide rss" id="urlbox" name="urlbox" /></dd>
+                <dd><input type="text" class="fillwide rss" id="urlbox" name="urlbox" /></dd>
             </dl>
         </div>
     </div>
 </div>
 <script type="text/javascript">
+var url_base  = '***rss_url***';
+var def_count = 10;
+
 window.addEvent('domready', function() {
     var multiselfeed = new MultiSelect('#syslevels', { maxMonitorText: 0,
                                                             emptyText: '{L_FLIST_LEVSEL}',
-                                                          onItemChanged: function() { }
+                                                        onItemChanged: function() { build_feedurl(); }
                                                        });
 });
 </script>

@@ -138,6 +138,10 @@ sub _generate_feedlist {
                 $self -> {"template"} -> load_template("feedlist/content.tem", {"***feeds***"    => $list,
                                                                                 "***levels***"   => $self -> _build_level_options(),
                                                                                 "***fulltext***" => $self -> {"template"} -> build_optionlist($self -> {"fulltext"}),
+                                                                                "***rss_url***"  => $self -> build_url(fullurl  => 1,
+                                                                                                                       block    => "rss",
+                                                                                                                       params   => { },
+                                                                                                                       pathinfo => [ ]),
                                                                                })
                );
     } else {
