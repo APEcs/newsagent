@@ -109,6 +109,7 @@ window.addEvent('domready', function() {
     $$('input.selfeed').addEvent('change', function() { build_feedurl(); });
     $('fulltext').addEvent('change', function() { build_feedurl(); });
     $('desc').addEvent('change', function() { build_feedurl(); });
+    $('count').addEvent('change', function() { build_feedurl(); });
 
     $('countdec').addEvent('click', function() { change_count(false); });
     $('countinc').addEvent('click', function() { change_count(true); });
