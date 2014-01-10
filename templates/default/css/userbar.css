@@ -25,7 +25,7 @@
     background-image: linear-gradient(bottom, #373737, #464646 5px); /* proposed W3C Markup */
 }
 
-#userbar * {
+#userbar :not(button) {
     margin: 0;
     padding: 0;
     position: static;
@@ -216,7 +216,8 @@
     top: 4px;
 }
 
-#userbar #profile-display {
+#userbar #profile-display,
+#userbar #login-fields {
     margin-top: 6px;
     margin-bottom: 15px;
     height: auto;
@@ -247,4 +248,22 @@
     color: #999;
     font-size: 11px;
     padding-left: 1.5em;
+}
+
+#userbar #login-fields div {
+    text-align: right;
+    margin: 0px 10px;
+}
+
+#userbar #login-fields label {
+    text-shadow: none;
+    color: #000;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+#userbar #login-fields input {
+    font: 13px sans-serif;
+    text-shadow: none;
+    color: #000;
 }
