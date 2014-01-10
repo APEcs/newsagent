@@ -304,7 +304,7 @@ sub get_feed_articles {
     # Now start constructing the query. These are the tables and where clauses that are
     # needed regardless of the settings provided by the caller.
     # All the fields the query is interested in, normally fulltext is omitted unless explicitly requested
-    my $fields = "`article`.`id`, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `user`.`email`, `article`.`created`, `article`.`title`, `article`.`summary`, `article`.`release_time`";
+    my $fields = "`article`.`id`, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `user`.`email`, `article`.`created`, `article`.`title`, `article`.`summary`, `article`.`release_time`, `article`.`is_sticky`, `article`.`sticky_until`";
     $fields   .= ", `article`.`article` AS `fulltext`" if($settings -> {"fulltext_mode"});
 
     my $from  = "`".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `article`

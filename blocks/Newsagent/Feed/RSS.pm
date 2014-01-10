@@ -74,6 +74,7 @@ sub generate_feed {
 
     my $settings = $self -> _validate_settings();
     my $results  = $self -> {"article"} -> get_feed_articles($settings);
+    my $now      = time();
 
     my $items   = "";
     my $maxdate = 0;
@@ -130,6 +131,14 @@ sub generate_feed {
 
         # work out the URL
         my $feedurl = $self -> feed_url($settings -> {"viewer"}, $settings -> {"feeds"}, $result -> {"feeds"}, $result -> {"id"});
+
+        # Is the item sticky? If so, until when?
+        if($result -> {"is_sticky"} && $result -> {"sticky_until"} > $now) {
+            $extra .= $self -> {"template"} -> load_template("feeds/rss/newsagent.tem", {"***elem***"    => "sticky",
+                                                                                         "***attrs***"   => "epoch=\"".$result -> {"sticky_until"}."\"",
+                                                                                         "***content***" => $self -> {"template"} -> format_time($result -> {"sticky_until"}, $self -> {"timefmt"})
+                                                             });
+        }
 
         # Put the item together!
         $items .= $self -> {"template"} -> load_template("feeds/rss/item.tem", {"***title***"       => $result -> {"title"} || $pubdate,
