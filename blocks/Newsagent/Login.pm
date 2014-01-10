@@ -1120,10 +1120,16 @@ sub page_display {
             # should the login be made persistent?
             my $persist = defined($self -> {"cgi"} -> param("persist")) && $self -> {"cgi"} -> param("persist");
 
+            # Get the session variables so they can be copied to the new session.
+            my ($block, $pathinfo, $api, $qstring) = $self -> get_saved_state();
+
             # create the new logged-in session, copying over the savestate session variable
             $self -> {"session"} -> create_session($user -> {"user_id"},
                                                    $persist,
-                                                   {"savestate" => $self -> get_saved_state()});
+                                                   {"saved_block"    => $block,
+                                                    "saved_pathinfo" => $pathinfo,
+                                                    "saved_api"      => $api,
+                                                    "saved_qstring"  => $qstring});
 
             $self -> log("login", $user -> {"username"});
 

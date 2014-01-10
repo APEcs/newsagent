@@ -413,10 +413,12 @@ sub set_saved_state {
 sub get_saved_state {
     my $self = shift;
 
-    return ($self -> {"session"} -> get_variable("saved_block"),
-            $self -> {"session"} -> get_variable("saved_pathinfo"),
-            $self -> {"session"} -> get_variable("saved_api"),
-            $self -> {"session"} -> get_variable("saved_qstring"));
+    # Yes, these use set_variable. set_variable will return the value in the
+    # variable, like get_variable, except that this will also delete the variable
+    return ($self -> {"session"} -> set_variable("saved_block"),
+            $self -> {"session"} -> set_variable("saved_pathinfo"),
+            $self -> {"session"} -> set_variable("saved_api"),
+            $self -> {"session"} -> set_variable("saved_qstring"));
 }
 
 
@@ -487,13 +489,14 @@ sub make_markdown_body {
 sub build_login_url {
     my $self = shift;
 
-    # Note: CGI::query_string() produces a properly escaped, joined query string based on the
-    #       **current parameters**, even ones added by the program (hence the pathinfo, api and block
-    #       parameters added by the BlockSelector will be included!)
-    $self -> {"session"} -> set_variable("savestate", $self -> {"cgi"} -> query_string());
+    # Store as much state as possible to restore after login (does not store POST
+    # data!)
+    $self -> set_saved_state();
 
     return $self -> build_url(block    => "login",
                               fullurl  => 1,
+                              pathinfo => [],
+                              params   => {},
                               forcessl => 1);
 }
 
