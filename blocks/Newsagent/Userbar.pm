@@ -92,12 +92,18 @@ sub block_display {
 
     $self -> clear_error();
 
+    my $loginurl = $self -> build_url(block => "login",
+                                      fullurl  => 1,
+                                      pathinfo => [],
+                                      params   => {},
+                                      forcessl => 1);
+
     # Initialise fragments to sane "logged out" defaults.
     my ($siteadmin, $msglist, $compose, $userprofile, $presets, $docs) =
         ($self -> {"template"} -> load_template("userbar/siteadmin_disabled.tem"),
          $self -> {"template"} -> load_template("userbar/msglist_disabled.tem"),
          $self -> {"template"} -> load_template("userbar/compose_disabled.tem"),
-         $self -> {"template"} -> load_template("userbar/profile_loggedout.tem", {"***url-login***" => $self -> build_url(block => "login")}),
+         $self -> {"template"} -> load_template("userbar/profile_loggedout_http".($ENV{"HTTPS"} eq "on" ? "s" : "").".tem", {"***url-login***" => $loginurl}),
          $self -> {"template"} -> load_template("userbar/presets_disabled.tem"),
          $self -> {"template"} -> load_template("userbar/doclink_disabled.tem"),
         );
