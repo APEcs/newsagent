@@ -267,3 +267,7 @@
     text-shadow: none;
     color: #000;
 }
+
+#userbar #login-fields label.persist {
+    font-size: 11px;
+}
