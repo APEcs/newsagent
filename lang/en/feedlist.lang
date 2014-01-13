@@ -7,7 +7,7 @@ FLIST_INTRO  = The following feeds are published by Newsagent. Click the RSS ico
 
 FLIST_MAKEBOX = Create Feed URL
 
-FLIST_LEVELS  = Only include articles marked as
+FLIST_LEVELS  = Only include articles marked as:
 
 FLIST_FTEXT       = Include full article text:
 FLIST_FTEXT_NONE  = Do not include
@@ -21,3 +21,7 @@ FLIST_FULLDESC = Use full text in RSS &lt;description&gt;
 FLIST_COUNT       = Number of articles to include:
 
 FLIST_RSSURL      = Feed URL:
+
+FLIST_VIEWER      = Full article viewer:
+FLIST_VIEW_DEF    = Choose viewer automatically
+FLIST_VIEW_INT    = Use Newsagent article viewer

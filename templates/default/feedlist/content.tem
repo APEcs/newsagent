@@ -40,6 +40,13 @@
                 </dd>
             </dl>
             <dl class="input">
+                <dt><strong>{L_FLIST_VIEWER}</strong></dt>
+                <dd><select class="fillwide" id="viewer" name="viewer" />
+                        ***viewops***
+                    </select>
+                </dd>
+            </dl>
+            <dl class="input">
                 <dt><label for="count">{L_FLIST_RSSURL}</label></dt>
                 <dd><input type="text" class="fillwide rss" id="urlbox" name="urlbox" /></dd>
             </dl>

@@ -67,6 +67,11 @@ sub new {
                               { "value" => "embedimg",
                                 "name"  => "{L_FLIST_FTEXT_ALL}" },
                             ];
+    $self -> {"viewer"} = [ {"value" => "",
+                             "name"  => "{L_FLIST_VIEW_DEF}" },
+                            {"value" => "internal",
+                             "name"  => "{L_FLIST_VIEW_INT}" },
+                          ];
 
     return $self;
 }
@@ -138,6 +143,7 @@ sub _generate_feedlist {
                 $self -> {"template"} -> load_template("feedlist/content.tem", {"***feeds***"    => $list,
                                                                                 "***levels***"   => $self -> _build_level_options(),
                                                                                 "***fulltext***" => $self -> {"template"} -> build_optionlist($self -> {"fulltext"}),
+                                                                                "***viewops***"  => $self -> {"template"} -> build_optionlist($self -> {"viewer"}),
                                                                                 "***rss_url***"  => $self -> build_url(fullurl  => 1,
                                                                                                                        block    => "rss",
                                                                                                                        params   => { },

@@ -40,6 +40,13 @@ function get_selected_fulltext()
 }
 
 
+function get_selected_viewer()
+{
+    var viewer = $('viewer');
+    return viewer.options[viewer.selectedIndex].get('value');
+}
+
+
 function get_descmode()
 {
     var enabled = $('desc').get('checked');
@@ -87,6 +94,7 @@ function build_feedurl() {
     var params = {     'feed': get_selected_feeds(),
                       'level': get_selected_levels(),
                    'fulltext': get_selected_fulltext(),
+                     'viewer': get_selected_viewer(),
                        'desc': get_descmode(),
                       'count': get_count()
                  };
@@ -109,6 +117,7 @@ window.addEvent('domready', function() {
     $$('input.selfeed').addEvent('change', function() { build_feedurl(); });
     $('fulltext').addEvent('change', function() { build_feedurl(); });
     $('desc').addEvent('change', function() { build_feedurl(); });
+    $('viewer').addEvent('change', function() { build_feedurl(); });
     $('count').addEvent('change', function() { build_feedurl(); });
 
     $('countdec').addEvent('click', function() { change_count(false); });
