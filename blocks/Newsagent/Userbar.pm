@@ -98,6 +98,11 @@ sub block_display {
                                       params   => {},
                                       forcessl => 1);
 
+    my $fronturl = $self -> build_url(block    => $self -> {"settings"} -> {"config"} -> {"default_block"},
+                                      fullurl  => 1,
+                                      pathinfo => [],
+                                      params   => {});
+
     # Initialise fragments to sane "logged out" defaults.
     my ($siteadmin, $msglist, $compose, $userprofile, $presets, $docs) =
         ($self -> {"template"} -> load_template("userbar/siteadmin_disabled.tem"),
@@ -137,6 +142,7 @@ sub block_display {
     } # if(!$self -> {"session"} -> anonymous_session())
 
     return $self -> {"template"} -> load_template("userbar/userbar.tem", {"***pagename***"   => $title,
+                                                                          "***front_url***"  => $fronturl,
                                                                           "***site-admin***" => $siteadmin,
                                                                           "***presets***"    => $presets,
                                                                           "***compose***"    => $compose,
