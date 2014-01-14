@@ -165,6 +165,9 @@ sub _get_articlelist_settings {
     $settings -> {"feeds"} = [ split(/,/, $self -> {"session"} -> get_variable("articlelist_feeds")) ]
         if($self -> {"session"} -> is_variable_set("articlelist_feeds"));
 
+    $settings -> {"modes"} = [ split(/,/, $self -> {"session"} -> get_variable("articlelist_modes")) ]
+        if($self -> {"session"} -> is_variable_set("articlelist_modes"));
+
     return $settings;
 }
 

@@ -443,6 +443,8 @@ sub get_feed_articles {
 # - month     The month to fetch articles for. If not set, all months are
 #             returned
 # - year      The year to fetch articles for. If not set, all years are returned.
+# - hidedeleted If this is set to true, deleted articles are not included,
+#             regardless of the setting of `modes`.
 # - users     A reference to an array of user IDs. Only articles created or edited
 #             by the specified users will be included in the generated list. If
 #             this is not specified, all users are included.
@@ -452,6 +454,9 @@ sub get_feed_articles {
 # - levels    A reference to an array of level IDs. Only articles posted with
 #             at least one of these levels will be included. If not specified,
 #             articles at all levels are included.
+# - modes     A reference to an array of modes to include in the list. If not
+#             specified, articles with every mode are included (except for
+#             'deleted' if `hidedeleted` is set)
 #
 # @param userid    The ID of the user requesting the article list.
 # @param settings  The settings to use when fetching the article list.
@@ -487,6 +492,11 @@ sub get_user_articles {
                       ON `user`.`user_id` = `article`.`creator_id`";
     my $where  = $settings -> {"hidedeleted"} ? " WHERE `article`.`release_mode` != 'deleted'" : "";
     my @params;
+
+    # handle mode limiting
+    my $modelimit = $self -> _article_mode_control($settings -> {"modes"}, \@params);
+    $where .= ($where ? " AND $modelimit" : "WHERE $modelimit")
+        if($modelimit);
 
     # Handle time bounding
     my ($start, $end) = $self -> _build_articlelist_timebounds($settings -> {"year"}, $settings -> {"month"});
@@ -1369,5 +1379,29 @@ sub _article_level_match {
     return 0;
 }
 
+
+## @method private $ _article_mode_control($modes, $params)
+# Generate a list of modes to match in the article list SQL query.
+#
+# @param modes  A reference to a list of selected mode names.
+# @param params A reference to the list of placeholder parameters.
+# @return An empty string if no modes have been selected, otherwise
+#         a string containing an SQL query fragment.
+sub _article_mode_control {
+    my $self   = shift;
+    my $modes  = shift;
+    my $params = shift;
+
+    # Do nothing if no modes are set
+    return "" if(!$modes || !scalar(@{$modes}));
+
+    my @markers = ();
+    foreach my $mode (@{$modes}) {
+        push(@markers, '?');
+        push(@{$params}, $mode);
+    }
+
+    return "`article`.`release_mode` IN (".join(",", @markers).")";
+}
 
 1;
