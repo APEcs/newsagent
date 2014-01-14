@@ -48,6 +48,7 @@ div.numeric {
     width: 100%;
     text-align: right;
     padding-right: 2px;
+    background: #fff;
 }
 
 div.numeric > button {
