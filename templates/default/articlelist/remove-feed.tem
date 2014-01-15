@@ -1,1 +1,1 @@
-<li><button class="remover" type="submit" name="remove-feeds" value="begone"><img src="{V_[templatepath]}images/remove.png" width="16" height="16" alt="remove" title="{L_ALIST_RESTORE}" /></button></li>
+<button class="remover" type="submit" name="remove-feeds" value="begone"><img src="{V_[templatepath]}images/remove.png" width="16" height="16" alt="remove" title="{L_ALIST_RESTORE}" /></button>

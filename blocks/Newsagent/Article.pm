@@ -109,6 +109,20 @@ sub new {
                               "preset"   => "{L_ALIST_RELTEMPLATE}",
                             };
 
+    $self -> {"filtermodes"} = [{"name"  => "hidden",
+                                 "desc"  => "{L_ALIST_FILTER_RELHIDDEN}"},
+                                {"name"  => "visible",
+                                 "desc"  => "{L_ALIST_FILTER_RELNOW}"},
+                                {"name"  => "timed",
+                                 "desc"  => "{L_ALIST_FILTER_RELTIME_WAIT}"},
+                                {"name"  => "draft" ,
+                                 "desc"  => "{L_ALIST_FILTER_RELNONE}"},
+                                {"name"  => "edited",
+                                 "desc"  => "{L_ALIST_FILTER_RELEDIT}"},
+                                {"name"  => "preset",
+                                 "desc"  => "{L_ALIST_FILTER_RELTEMPLATES}"},
+                               ];
+
     $self -> {"imgops"} = [ {"value" => "none",
                              "name"  => "{L_COMPOSE_IMGNONE}" },
                             {"value" => "url",

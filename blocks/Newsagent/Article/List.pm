@@ -40,6 +40,7 @@ sub _set_multiid_sessvar {
     my $self    = shift;
     my $param   = shift;
     my $varname = shift;
+    my $regex   = shift || '((\d+),?)+';
 
     # Has a remove been requested?
     if($self -> {"cgi"} -> param("remove-$param")) {
@@ -50,7 +51,7 @@ sub _set_multiid_sessvar {
         if(defined($setval)) {
             # Fetch the parameter in list context, filter out anything that isn't digits or
             # comma separated digits, and then squash into a comma separated string.
-            my $value = join(",", grep(/^((\d+),?)+$/, ($self -> {"cgi"} -> param($param))));
+            my $value = join(",", grep(/^$regex$/, ($self -> {"cgi"} -> param($param))));
 
             # Value may potentially contain repeat commas or a trailing comma at this point
             $value =~ s/,+/,/g;
@@ -69,6 +70,7 @@ sub _validate_filter_settings {
     my $self = shift;
 
     $self -> _set_multiid_sessvar("feeds", "articlelist_feeds");
+    $self -> _set_multiid_sessvar("modes", "articlelist_modes", '(([a-z]+),?)+');
 }
 
 
@@ -102,6 +104,40 @@ sub _get_feed_selection {
     }
 
     return ($feedlist, $selids, $active);
+}
+
+
+## @method private @ _get_mode_selection($articles, $settings)
+# Generate the list of modes, and the selected modes, to show in the mode
+# filter dropdown.
+#
+# @param articles A reference to a hash containing the article data.
+# @param settings A reference to a hash containing the settings that were
+#                 use when generating the article data.
+# @return A reference to an array of option hashes, a reference to an array
+#         of selected ids, and a flag indicating whether filtering is active
+#         or not.
+sub _get_mode_selection {
+    my $self     = shift;
+    my $articles = shift;
+    my $settings = shift;
+    my $active   = 0;
+
+    my $modelist = [];
+    my $selmodes = [];
+
+    foreach my $mode (@{$self -> {"filtermodes"}}) {
+        push(@{$modelist}, { "desc"  => $mode -> {"desc"},
+                             "id"    => $mode -> {"name"},
+                             "value" => $mode -> {"name"}});
+    }
+
+     if($settings -> {"modes"}) {
+        $active = $settings -> {"usermodes"};
+        $selmodes = $settings -> {"modes"};
+    }
+
+    return ($modelist, $selmodes, $active);
 }
 
 
@@ -165,8 +201,12 @@ sub _get_articlelist_settings {
     $settings -> {"feeds"} = [ split(/,/, $self -> {"session"} -> get_variable("articlelist_feeds")) ]
         if($self -> {"session"} -> is_variable_set("articlelist_feeds"));
 
-    $settings -> {"modes"} = [ split(/,/, $self -> {"session"} -> get_variable("articlelist_modes")) ]
-        if($self -> {"session"} -> is_variable_set("articlelist_modes"));
+    if($self -> {"session"} -> is_variable_set("articlelist_modes")) {
+        $settings -> {"modes"} = [ split(/,/, $self -> {"session"} -> get_variable("articlelist_modes")) ];
+        $settings -> {"usermodes"} = 1;
+    } else {
+        $settings -> {"modes"} = [ split(/,/, $self -> {"settings"} -> {"config"} -> {"Article::List:default_modes"}) ];
+    }
 
     return $settings;
 }
@@ -296,15 +336,23 @@ sub _generate_articlelist {
 
         my $maxpage = ceil($articles -> {"metadata"} -> {"count"} / $settings -> {"count"});
 
-        # Build the list of feeds for the multiselect
+        # Build the list of feeds, modes, etc for the multiselects
         my ($feeds, $selfeeds, $showremfeed) = $self -> _get_feed_selection($articles, $settings);
+        my ($modes, $selmodes, $showremmode) = $self -> _get_mode_selection($articles, $settings);
 
         return ($self -> {"template"} -> replace_langvar("ALIST_TITLE"),
                 $self -> {"template"} -> load_template("articlelist/content.tem", {"***articles***"    => $list,
+                                                                                   # == Date control ==
                                                                                    "***month***"       => "{L_MONTH_LONG".$settings -> {"month"}."}",
                                                                                    "***year***"        => $settings -> {"year"},
+
+                                                                                   # == Filtering ==
+                                                                                   "***modes***"       => $self -> generate_multiselect("modes", "mode", "mode", $modes, $selmodes),
+                                                                                   "***remove-mode***" => $showremmode ? $self -> {"template"} -> load_template("articlelist/remove-mode.tem") : "",
                                                                                    "***feeds***"       => $self -> generate_multiselect("feeds", "feed", "feed", $feeds, $selfeeds),
                                                                                    "***remove-feed***" => $showremfeed ? $self -> {"template"} -> load_template("articlelist/remove-feed.tem") : "",
+
+                                                                                   # == Navigation & pagination ==
                                                                                    "***prevurl***"     => $self -> build_url(pathinfo => [$settings -> {"prev"} -> {"year"}, $settings -> {"prev"} -> {"month"}]),
                                                                                    "***nexturl***"     => $self -> build_url(pathinfo => [$settings -> {"next"} -> {"year"}, $settings -> {"next"} -> {"month"}]),
                                                                                    "***paginate***"    => $self -> _build_pagination({ maxpage => $maxpage,

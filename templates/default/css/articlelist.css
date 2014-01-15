@@ -220,24 +220,36 @@ ul.info li .state.failed {
     float: right;
 }
 
-#filters > form > ul {
+#filters > ul {
     margin: 0px;
     padding: 0px;
 }
 
-#filters > form > ul > li {
+#filters > ul > li {
     padding: 0px;
     list-style-type: none;
     display: inline-block;
     vertical-align: top;
 }
 
-#filter-feed {
+#filters > ul > li.padright {
+    padding-right: 5px;
+}
+
+#filters > ul > li > form {
+    white-space: nowrap;
+}
+
+#filter-feed,
+#filter-mode {
     width: 16em;
+    display: inline-block;
 }
 
 button.remover {
     border: none;
     padding: 0px;
+    margin: 2px 3px 2px 3px;
+    vertical-align: top;
     cursor: pointer;
 }

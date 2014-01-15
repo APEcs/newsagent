@@ -11,6 +11,14 @@ ALIST_RELEDIT        = Edited (not publicly visible)
 ALIST_RELDELETED     = Deleted
 ALIST_RELTEMPLATE    = Template: ***preset***
 
+ALIST_FILTER_RELHIDDEN      = Hidden
+ALIST_FILTER_RELNOW         = Published
+ALIST_FILTER_RELTIME_WAIT   = Timed
+ALIST_FILTER_RELTIME_PASSED = Released
+ALIST_FILTER_RELNONE        = Draft
+ALIST_FILTER_RELEDIT        = Edited
+ALIST_FILTER_RELTEMPLATES   = Templates
+
 ALIST_CTRLEDIT       = Edit this article
 ALIST_CTRLHIDE       = Unpublish (hide) this article
 ALIST_CTRLDELETE     = Delete this article (can't be undone!)
@@ -20,9 +28,12 @@ ALIST_CTRLPUBLISH    = Publish this article immediately
 
 ALIST_EMPTYMONTH     = There are no articles available in this month.
 
-ALIST_SHOWFEED       = Show feeds:
 ALIST_RESTORE        = Remove filtering
 
-ALIST_MORE           = More...
+ALIST_SHOWFEED       = Show feeds:
+ALIST_FEEDSEL        = Select feeds...
 
-ALIST_LEVSEL         = Select feeds...
+ALIST_SHOWMODES      = Status:
+ALIST_MODESEL        = Select states...
+
+ALIST_MORE           = More...

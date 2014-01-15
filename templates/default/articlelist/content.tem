@@ -6,13 +6,24 @@
                           <input class="datepick" type="text" name="month" id="list_month" size="16" maxlength="16" value="***month*** ***year***" />
         </div>
         <div id="filters">
-            <form id="filtercontrol" method="post" action="">
             <ul>
+                <li>{L_ALIST_SHOWMODES}</li>
+                <li class="padright"><form id="mode-control" method="post" action="">
+                        <div id="filter-mode" class="chromelike">
+***modes***
+                        </div>
+***remove-mode***
+                    </form>
+                </li>
+
                 <li>{L_ALIST_SHOWFEED}</li>
-                <li><div id="filter-feed" class="chromelike">
+                <li><form id="feed-control" method="post" action="">
+                        <div id="filter-feed" class="chromelike">
 ***feeds***
-</div></li>
+                        </div>
 ***remove-feed***
+                    </form>
+                </li>
             </ul>
             </form>
         </div>
@@ -26,9 +37,13 @@
 </div>
 <script type="text/javascript">
 window.addEvent('domready', function() {
+    var multiselmode = new MultiSelect('#filter-mode', { maxMonitorText: 0,
+                                                              emptyText: '{L_ALIST_MODESEL}',
+                                                          onItemChanged: function() { $('mode-control').submit(); }
+                                                       });
     var multiselfeed = new MultiSelect('#filter-feed', { maxMonitorText: 0,
-                                                              emptyText: '{L_ALIST_LEVSEL}',
-                                                          onItemChanged: function() { $('filtercontrol').submit(); }
+                                                              emptyText: '{L_ALIST_FEEDSEL}',
+                                                          onItemChanged: function() { $('feed-control').submit(); }
                                                        });
 });
 </script>
