@@ -190,7 +190,7 @@ input.fillwide, select.fillwide, textarea.fillwide {
 
 input[type=text].datepick {
     padding: 4px 4px 4px 23px;
-    background: url(../images/datepicker.png) no-repeat 2px center;
+    background: url(../images/datepicker.png) no-repeat 2px center #fff;
 }
 
 input:disabled.datepick {
