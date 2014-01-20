@@ -1,0 +1,22 @@
+    <li id="Twitter-settings" class="shadowbox method Twitter">
+        <h2>{L_METHOD_TWITTER_SETTINGS}</h2>
+        <div class="sbcontent">
+            <dl class="input iblock">
+                <dt><label for="twitter-mode">{L_METHOD_TWITTER_MODE}</label></dt>
+                <dd><select id="twitter-mode" name="twitter-mode">***twitter-mode***</select></dd>
+            </dl>
+            <div id="twitter-textbox">
+                <div id="twitter-text-count">140</div>
+                <textarea class="twittertext" name="twitter-text" id="twitter-text" rows="2" cols="80">***twitter-text***</textarea>
+            </div>
+        </div>
+        <script type="text/javascript">
+window.addEvent('domready', function() {
+    $('twitter-text').addEvent('keyup', function() { twitter_fielduse('twitter-text', 'twitter-text-count'); });
+    twitter_fielduse('twitter-text', 'twitter-text-count');
+
+    $('twitter-mode').addEvent('change', function() { twitter_showinput('twitter-mode', 'twitter-textbox'); });
+    twitter_showinput('twitter-mode', 'twitter-textbox');
+});
+        </script>
+    </li>

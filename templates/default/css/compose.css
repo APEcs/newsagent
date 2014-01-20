@@ -142,3 +142,14 @@ span.helptext {
     color: #666;
     white-space: normal;
 }
+
+
+/* Twitter-specifics */
+#twitter-text {
+    width: 722px;
+}
+
+#twitter-text-count {
+    float: right;
+    font-size: 20px;
+}

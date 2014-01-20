@@ -25,6 +25,8 @@ dl.input > dd {
 
 dl.input > dd > select {
     min-width: 10em;
+    margin: 0px;
+    padding: 0px;
 }
 
 dl.input > dd > input[type="radio"] {

@@ -6,9 +6,13 @@ METHOD_EMAIL_REPLYTO  = Reply To
 METHOD_EMAIL_PREFIX   = Subject prefix
 METHOD_EMAIL_BCCME    = Send me a copy of this article
 
-
 METHOD_EMAIL_ERR_SINGLEADDR = ***field*** contains more than one email address; it should contain a single address.
 METHOD_EMAIL_ERR_BADADDR    = One or more email addresses specified in ***field*** are invalid.
+
+METHOD_TWITTER_SETTINGS = Twitter settings
+METHOD_TWITTER_MODE     = Tweet text
+METHOD_TWEET_MODE_SUMM  = Use article summary
+METHOD_TWEET_MODE_OWN   = Use custom tweet text:
 
 METHOD_STATE_INVALID   = Invalid
 METHOD_STATE_DRAFT     = Draft

@@ -1,5 +1,5 @@
 ## @file
-# This file contains the implementation of the moodle message method.
+# This file contains the implementation of the email message method.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
 #

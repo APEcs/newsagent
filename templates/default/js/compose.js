@@ -1,9 +1,58 @@
 
+/*******************************************************************************
+ *  Text use displays
+ */
+
+var limitcols = {
+     '0': '#009100',
+    '75': '#9B5203',
+    '90': '#AF0000',
+   'out': '#FF0000'
+};
+
+function textcount_display(counterid, current, limit)
+{
+    $(counterid).innerHTML = limit - current;
+    var used = (current * 100) / limit;
+    var color;
+    for(var key in limitcols) {
+        if(key != 'out' && used < key) break;
+        color = limitcols[key];
+    }
+
+    $(counterid).setStyle('color', color);
+    $(counterid).setStyle('font-weight', (used > 100 ? "bold" : "normal"));
+}
+
+
+function text_fielduse(fieldid, counterid, limit)
+{
+    var twitterctrl = $('twitter-mode');
+    var twitteron   = $$('input.matrix.Twitter').filter(function(box) { return box.get('checked'); }).length;
+
+    if(twitterctrl && twitteron > 0) {
+        var mode = twitterctrl.getSelected().get('value');
+        if(mode == 'summary') {
+            twitter_fielduse(fieldid, counterid);
+            return;
+        }
+    }
+
+    var curlength = $(fieldid).get("value").length;
+    textcount_display(counterid, curlength, limit);
+}
+
+
+/*******************************************************************************
+ *  Date fields
+ */
+
 var rdate_picker;
 var sdate_picker;
 var feed_levels;
 
-function date_control(datefield, tsfield, control) {
+function date_control(datefield, tsfield, control)
+{
     var selVal = $(control).getSelected().get("value");
     var disabled = (selVal != 'timed' && selVal != 'after');
 
@@ -27,7 +76,8 @@ function date_control(datefield, tsfield, control) {
 }
 
 
-function release_control(datefield, tsfield, dateopt, presetfield, presetopt, control) {
+function release_control(datefield, tsfield, dateopt, presetfield, presetopt, control)
+{
     var selVal = $(control).getSelected().get("value");
 
     var datedisabled   = (selVal != 'timed' && selVal != 'after');
@@ -66,17 +116,9 @@ function release_control(datefield, tsfield, dateopt, presetfield, presetopt, co
 }
 
 
-function limit_textfield(fieldid, counterid, charlimit) {
-    var curlength = $(fieldid).get("value").length;
-
-    if(curlength >= charlimit) {
-        $(fieldid).set("value", $(fieldid).get("value").substring(0, charlimit));
-        $(counterid).innerHTML = "0";
-    } else {
-        $(counterid).innerHTML = charlimit - curlength;
-    }
-}
-
+/*******************************************************************************
+ *  Image controls
+ */
 
 function show_image_subopt(selid)
 {
@@ -96,6 +138,10 @@ function show_image_subopt(selid)
     }
 }
 
+
+/*******************************************************************************
+ *  Level controls
+ */
 
 function set_visible_levels()
 {
@@ -148,6 +194,10 @@ function cascade_levels(element)
 }
 
 
+/*******************************************************************************
+ *  Schedule related
+ */
+
 function set_schedule_sections()
 {
     var sched_drop = $('comp-schedule');
@@ -167,6 +217,10 @@ function set_schedule_sections()
     }
 }
 
+
+/*******************************************************************************
+ *  Confirmation popup related
+ */
 
 function confirm_errors(summary, fulltext, feeds, levels, publish, pubname)
 {
@@ -408,6 +462,35 @@ function confirm_submit()
 }
 
 
+/*******************************************************************************
+ *  Twitter related
+ */
+
+function twitter_showinput(control, box)
+{
+    var mode = $(control).getSelected().get("value");
+    if(mode == 'summary') {
+        $(box).dissolve();
+    } else {
+        $(box).reveal();
+    }
+    text_fielduse('comp-summ', 'sumchars', 240);
+}
+
+
+function twitter_fielduse(textbox, counter)
+{
+    var text = $(textbox).get('value');
+    var len  = twttr.txt.getTweetLength(text);
+
+    textcount_display(counter, len, 140);
+}
+
+
+/*******************************************************************************
+ *  Page load setup
+ */
+
 window.addEvent('domready', function() {
     Locale.use('en-GB');
     rdate_picker = new Picker.Date($('release_date'), { timePicker: true,
@@ -422,8 +505,8 @@ window.addEvent('domready', function() {
     $('comp-release').addEvent('change', function() { release_control('release_date', 'rtimestamp', 'comp-reldate', 'preset', 'comp-relpreset', 'comp-release'); });
     release_control('release_date', 'rtimestamp', 'comp-reldate', 'preset', 'comp-relpreset', 'comp-release');
 
-    $('comp-summ').addEvent('keyup', function() { limit_textfield('comp-summ', 'sumchars', 240); });
-    limit_textfield('comp-summ', 'sumchars', 240);
+    $('comp-summ').addEvent('keyup', function() { text_fielduse('comp-summ', 'sumchars', 240); });
+    text_fielduse('comp-summ', 'sumchars', 240);
 
     $('imagea_mode').addEvent('change', function() { show_image_subopt('imagea_mode'); });
     show_image_subopt('imagea_mode');
