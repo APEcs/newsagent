@@ -28,7 +28,6 @@ use Digest::MD5 qw(md5_hex);
 use CGI::Util qw(escape);
 use Webperl::Utils qw(trimspace path_join);
 use v5.12;
-use Data::Dumper;
 
 # ============================================================================
 #  Constructor
@@ -82,8 +81,6 @@ sub generate_feed {
     my $items   = "";
     my $maxdate = 0;
     foreach my $result (@{$results}) {
-        #$items .= "<!-- ".Dumper($result)." -->";
-
         # Keep track of the latest date (should be the first result, really)
         $maxdate = $result -> {"release_time"}
             if($result -> {"release_time"} > $maxdate);

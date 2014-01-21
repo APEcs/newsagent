@@ -25,7 +25,6 @@ use base qw(Newsagent::Article); # This class extends the Article block class
 use v5.12;
 
 use Newsagent::System::Matrix;
-use Data::Dumper;
 
 ## @method private $ _notify_author($notify, $result)
 # Send an email to the author of the article telling them that the status of

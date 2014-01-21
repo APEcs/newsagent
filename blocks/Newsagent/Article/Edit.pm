@@ -22,7 +22,6 @@ package Newsagent::Article::Edit;
 use strict;
 use base qw(Newsagent::Article); # This class extends the Newsagent block class
 use v5.12;
-use Data::Dumper;
 
 # ============================================================================
 #  Support functions
@@ -223,8 +222,6 @@ sub _generate_edit {
     # them as appropriate.
     my $user_levels = $self -> {"article"} -> get_user_levels($user_feeds, $sys_levels, $userid);
     my $feed_levels = $self -> _build_feed_levels($user_levels, $args -> {"levels"});
-
-    print STDERR "Article: ".Dumper($args)."\nLevels: $levels\nFeeds: ".Dumper($user_feeds)."\n";
 
     # Release timing options
     my $relops = $self -> {"template"} -> build_optionlist($self -> {"relops"}, $args -> {"release_mode"});

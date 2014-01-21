@@ -36,8 +36,6 @@ use Try::Tiny;
 use Webperl::Utils qw(trimspace path_join);
 use v5.12;
 
-use Data::Dumper;
-
 
 ## @cmethod Newsagent::Notification::Method::Email new(%args)
 # Create a new Email object. This will create an object
@@ -332,8 +330,6 @@ sub get_recipient_count {
 
     if($self -> set_config($settings)) {
         foreach my $arghash (@{$self -> {"args"}}) {
-            print STDERR "Processing argument".Dumper($arghash);
-
             if($arghash -> {"cc"}) {
                 $self -> _parse_recipients_addrlist($recips -> {"cc"} , $arghash -> {"cc"});
 

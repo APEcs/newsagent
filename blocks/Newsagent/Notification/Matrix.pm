@@ -23,7 +23,8 @@ use strict;
 use base qw(Newsagent); # This class extends the Newsagent block class
 use Newsagent::System::Matrix;
 use v5.12;
-use Data::Dumper;
+
+
 # ============================================================================
 #  Constructor
 

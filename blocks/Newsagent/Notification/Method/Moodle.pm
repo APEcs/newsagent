@@ -28,7 +28,7 @@ package Newsagent::Notification::Method::Moodle;
 
 use strict;
 use base qw(Newsagent::Notification::Method); # This class is a Method module
-use Data::Dumper;
+
 
 ################################################################################
 # Model/support functions
