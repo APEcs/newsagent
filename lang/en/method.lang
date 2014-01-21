@@ -14,6 +14,11 @@ METHOD_TWITTER_MODE     = Tweet text
 METHOD_TWEET_MODE_SUMM  = Use article summary
 METHOD_TWEET_MODE_OWN   = Use custom tweet text:
 
+METHOD_TWITTER_AUTO     = Include link to full article viewer
+METHOD_TWEET_AUTO_LINK  = Use default feed viewer URL
+METHOD_TWEET_AUTO_NEWS  = Use internal Newsagent viewer URL
+METHOD_TWEET_AUTO_NONE  = Do not include full article viewer link
+
 METHOD_STATE_INVALID   = Invalid
 METHOD_STATE_DRAFT     = Draft
 METHOD_STATE_PENDING   = Pending

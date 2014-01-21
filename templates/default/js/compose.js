@@ -483,6 +483,9 @@ function twitter_fielduse(textbox, counter)
     var text = $(textbox).get('value');
     var len  = twttr.txt.getTweetLength(text);
 
+    var autolink = $('twitter-auto').getSelected().get('value');
+    if(autolink != 'none') len += 24; // 23 for https URL, plus space.
+
     textcount_display(counter, len, 140);
 }
 

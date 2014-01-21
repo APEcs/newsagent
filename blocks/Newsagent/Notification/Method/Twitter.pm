@@ -47,6 +47,17 @@ sub new {
                                    "name"  => "{L_METHOD_TWEET_MODE_OWN}",
                                   },
                                 ];
+    $self -> {"twitterauto"}  = [ {"value" => "link",
+                                   "name"  => "{L_METHOD_TWEET_AUTO_LINK}",
+                                  },
+                                  {"value" => "news",
+                                   "name"  => "{L_METHOD_TWEET_AUTO_NEWS}",
+                                  },
+                                  {"value" => "none",
+                                   "name"  => "{L_METHOD_TWEET_AUTO_NONE}",
+                                  },
+                                ];
+
     return $self;
 }
 
@@ -67,7 +78,8 @@ sub generate_compose {
     my $user = shift;
 
     return $self -> {"template"} -> load_template("Notification/Method/Twitter/compose.tem", {"***twitter-mode***" => $self -> {"template"} -> build_optionlist($self -> {"twittermodes"}, $args -> {"methods"} -> {"Twitter"} -> {"mode"}),
-                                                                                              "***twitter-text***" => $self -> {"template"} -> html_clean($args -> {"methods"} -> {"Twitter"} -> {"tweet"})
+                                                                                              "***twitter-text***" => $self -> {"template"} -> html_clean($args -> {"methods"} -> {"Twitter"} -> {"tweet"}),
+                                                                                              "***twitter-auto***" => $self -> {"template"} -> build_optionlist($self -> {"twitterauto"}, $args -> {"methods"} -> {"Twitter"} -> {"auto"}),
                                                   });
 }
 

@@ -1,7 +1,7 @@
     <li id="Twitter-settings" class="shadowbox method Twitter">
         <h2>{L_METHOD_TWITTER_SETTINGS}</h2>
         <div class="sbcontent">
-            <dl class="input iblock">
+            <dl class="input">
                 <dt><label for="twitter-mode">{L_METHOD_TWITTER_MODE}</label></dt>
                 <dd><select id="twitter-mode" name="twitter-mode">***twitter-mode***</select></dd>
             </dl>
@@ -9,10 +9,19 @@
                 <div id="twitter-text-count">140</div>
                 <textarea class="twittertext" name="twitter-text" id="twitter-text" rows="2" cols="80">***twitter-text***</textarea>
             </div>
+            <dl class="input">
+                <dt><label for="twitter-auto">{L_METHOD_TWITTER_AUTO}</label></dt>
+                <dd><select id="twitter-auto" name="twitter-auto">***twitter-auto***</select></dd>
+            </dl>
         </div>
         <script type="text/javascript">
 window.addEvent('domready', function() {
-    $('twitter-text').addEvent('keyup', function() { twitter_fielduse('twitter-text', 'twitter-text-count'); });
+    $('twitter-auto').addEvent('change', function() {
+        text_fielduse('comp-summ', 'sumchars', 240);  // Need to call this as it must update if mode is set to summary.
+        twitter_fielduse('twitter-text', 'twitter-text-count');
+    });
+
+    $('twitter-text').addEvent('keyup' , function() { twitter_fielduse('twitter-text', 'twitter-text-count'); });
     twitter_fielduse('twitter-text', 'twitter-text-count');
 
     $('twitter-mode').addEvent('change', function() { twitter_showinput('twitter-mode', 'twitter-textbox'); });
