@@ -1,3 +1,47 @@
+<script type="text/javascript">
+
+confirm_imgurl   = '{V_[templatepath]}images/confirm.png';
+spinner_imgurl   = '{V_[templatepath]}images/spinner.gif';
+confirm_messages = {   errors: "{L_EDIT_ERRORS}",
+                      nofeeds: "{L_COMPOSE_FEED_ERRNONE}",
+                     nolevels: "{L_COMPOSE_LEVEL_ERRNONE}",
+                       notext: "{L_COMPOSE_ERR_NOSUMMARYARTICLE}",
+                     ispreset: "{L_COMPOSE_ISPRESET}",
+                     nopreset: "{L_COMPOSE_ERR_NOPRESET}",
+                        title: "{L_COMPOSE_CONFIRM}",
+                        intro: "{L_EDIT_CONFIRM_INTRO}",
+                      confirm: "{L_EDIT_SUBMIT}",
+                       cancel: "{L_COMPOSE_CANCEL}",
+                         stop: "{L_COMPOSE_CONFIRM_STOP}",
+                      levshow: "{L_COMPOSE_CONFIRM_SHOWN}",
+                       levels: {   home: "{L_COMPOSE_CONFIRM_HOME}",
+                                 leader: "{L_COMPOSE_CONFIRM_LEADER}",
+                                  group: "{L_COMPOSE_CONFIRM_GROUP}",
+                               },
+                       notify: "{L_COMPOSE_CONFIRM_NOTIFY}",
+                     counting: "{L_COMPOSE_CONFIRM_COUNTING}",
+                    countwarn: "{L_COMPOSE_CONFIRM_COUNTWARN}",
+                   };
+window.addEvent('domready', function() {
+    var multiselfeed = new MultiSelect('#comp-feed', { maxMonitorText: 0,
+                                                            emptyText: 'Select feeds...',
+                                                        onItemChanged: function() { set_visible_levels(); }
+                                                     });
+
+    CKEDITOR.replace('comp-desc', { customConfig: '{V_[commonpath]}cke_configs/basic_open.js' });
+
+    var settingPane = new TabPane('relmode-tabs', {onChange: function(select) { $('relmode').set('value', select); } }, ***relmode***);
+    var filesPane   = new TabPane('file-tabs');
+
+    $$('select.fancyselect').fancySelect({showText: false, autoHide: true});
+
+    ***userlevels***
+    ***levellist***
+    set_visible_levels();
+
+    matrix_handler = new Matrix();
+});
+</script>
 <div id="composeform">
     ***errorbox***
     <form id="fullform" action="***form_url***" method="post" enctype="multipart/form-data">
@@ -127,45 +171,3 @@ Not here yet.
     </div>
     </form>
 </div>
-<script type="text/javascript">
-
-confirm_imgurl   = '{V_[templatepath]}images/confirm.png';
-spinner_imgurl   = '{V_[templatepath]}images/spinner.gif';
-confirm_messages = {   errors: "{L_EDIT_ERRORS}",
-                      nofeeds: "{L_COMPOSE_FEED_ERRNONE}",
-                     nolevels: "{L_COMPOSE_LEVEL_ERRNONE}",
-                       notext: "{L_COMPOSE_ERR_NOSUMMARYARTICLE}",
-                     ispreset: "{L_COMPOSE_ISPRESET}",
-                     nopreset: "{L_COMPOSE_ERR_NOPRESET}",
-                        title: "{L_COMPOSE_CONFIRM}",
-                        intro: "{L_EDIT_CONFIRM_INTRO}",
-                      confirm: "{L_EDIT_SUBMIT}",
-                       cancel: "{L_COMPOSE_CANCEL}",
-                         stop: "{L_COMPOSE_CONFIRM_STOP}",
-                      levshow: "{L_COMPOSE_CONFIRM_SHOWN}",
-                       levels: {   home: "{L_COMPOSE_CONFIRM_HOME}",
-                                 leader: "{L_COMPOSE_CONFIRM_LEADER}",
-                                  group: "{L_COMPOSE_CONFIRM_GROUP}",
-                               },
-                       notify: "{L_COMPOSE_CONFIRM_NOTIFY}",
-                     counting: "{L_COMPOSE_CONFIRM_COUNTING}",
-                    countwarn: "{L_COMPOSE_CONFIRM_COUNTWARN}",
-                   };
-window.addEvent('domready', function() {
-    var multiselfeed = new MultiSelect('#comp-feed', { maxMonitorText: 0,
-                                                            emptyText: 'Select feeds...',
-                                                        onItemChanged: function() { set_visible_levels(); }
-                                                     });
-
-    CKEDITOR.replace('comp-desc', { customConfig: '{V_[commonpath]}cke_configs/basic_open.js' });
-
-    var settingPane = new TabPane('relmode-tabs', {onChange: function(select) { $('relmode').set('value', select); } }, ***relmode***);
-    var filesPane   = new TabPane('file-tabs');
-
-    $$('select.fancyselect').fancySelect({showText: false, autoHide: true});
-
-    ***userlevels***
-    ***levellist***
-    set_visible_levels();
-});
-</script>

@@ -1,1 +1,1 @@
-var multisel***id*** = new MultiSelect('#***selector***', { emptyText: 'Select methods...', onItemChanged: function(box) { update_method_block(box); } });
+var multisel***id*** = new MultiSelect('#***selector***', { emptyText: 'Select methods...', onItemChanged: function(box) { matrix_handler.update_method_block(box); } });

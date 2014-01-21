@@ -17,6 +17,8 @@ window.addEvent('domready', function() {
 
     $('twitter-mode').addEvent('change', function() { twitter_showinput('twitter-mode', 'twitter-textbox'); });
     twitter_showinput('twitter-mode', 'twitter-textbox');
+
+    matrix_handler.addEvent('toggle', function(method, count) { if(method == 'Twitter') { text_fielduse('comp-summ', 'sumchars', 240); } });
 });
         </script>
     </li>
