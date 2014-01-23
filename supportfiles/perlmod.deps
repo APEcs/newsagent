@@ -30,9 +30,18 @@ Email::MIME::CreateHTML
 MediaWiki::API
 HTML::FormatText
 HTML::Tidy (Requires tidyp from http://tidyp.com/ )
+Net::Twitter::Lite *NOTE BELOW*
 HTML::WikiConverter::Markdown
 WebService::Validator::HTML::W3C
 Crypt::Eksblowfish::Bcrypt
 Net::SSH::Expect
 CGI::Compress::Gzip
 Lingua::EN::Sentence
+
+Important: Net::Twitter::Lite must contain this commit:
+
+https://github.com/TheWatcher/net-twitter-lite/commit/dbb57356238c92e3fe6bc45d3d2cd1a9ab00fed0
+
+Pull request into original project:
+
+https://github.com/semifor/net-twitter-lite/pull/14
