@@ -22,7 +22,7 @@ package Newsagent::Article::Edit;
 use strict;
 use base qw(Newsagent::Article); # This class extends the Newsagent block class
 use v5.12;
-
+use Data::Dumper;
 # ============================================================================
 #  Support functions
 
@@ -274,14 +274,19 @@ sub _generate_edit {
     my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix");
 
     # Suck in all the notification settings so they can be shown
-    $matrix -> get_article_settings($args, $articleid, $self -> {"notify_methods"});
+    ($args -> {"notify_matrix"} -> {"year"},
+     $args -> {"notify_matrix"} -> {"used_methods"},
+     $args -> {"notify_matrix"} -> {"enabled"},
+     $args -> {"methods"}                           ) = $self -> {"queue"} -> get_notifications($articleid);
+    print STDERR Dumper($args);
     my $notifyblock = $matrix -> build_matrix($userid, $args -> {"notify_matrix"} -> {"enabled"}, $args -> {"notify_matrix"} -> {"year"});
 
     my $notify_settings = "";
     my $userdata = $self -> {"session"} -> get_user_byid($userid);
 
-    foreach my $method (keys(%{$self -> {"notify_methods"}})) {
-        $notify_settings .= $self -> {"notify_methods"} -> {$method} -> generate_compose($args, $userdata);
+    my $methods = $self -> {"queue"} -> get_methods();
+    foreach my $method (keys(%{$methods})) {
+        $notify_settings .= $methods -> {$method} -> generate_compose($args, $userdata);
     }
 
     # Determine whether the user expects to be prompted for confirmation

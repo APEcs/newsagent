@@ -93,9 +93,9 @@ sub store_data {
     my $twitterh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"method:twitter"} -> {"data"}."`
                                                 (mode, auto, tweet)
                                                 VALUES(?, ?, ?)");
-    my $rows = $twitterh -> execute($args -> {"methods"} -> {"Twitter"} -> {"mode"},
-                                    $args -> {"methods"} -> {"Twitter"} -> {"auto"},
-                                    $args -> {"methods"} -> {"Twitter"} -> {"tweet"});
+    my $rows = $twitterh -> execute($article -> {"methods"} -> {"Twitter"} -> {"mode"},
+                                    $article -> {"methods"} -> {"Twitter"} -> {"auto"},
+                                    $article -> {"methods"} -> {"Twitter"} -> {"tweet"});
     return $self -> self_error("Unable to perform article twitter notification data insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Article twitter notification data insert failed, no rows inserted") if($rows eq "0E0");
     my $dataid = $self -> {"dbh"} -> {"mysql_insertid"};

@@ -108,14 +108,15 @@ sub _generate_compose {
         if($error);
 
     # Build the notification options and their settings boxes
-    my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix", notify_methods => $self -> {"notify_methods"});
+    my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix");
     my $notifyblock = $matrix -> build_matrix($userid, $args -> {"notify_matrix"} -> {"enabled"}, $args -> {"notify_matrix"} -> {"year"});
 
     my $notify_settings = "";
     my $userdata = $self -> {"session"} -> get_user_byid($userid);
 
-    foreach my $method (keys(%{$self -> {"notify_methods"}})) {
-        $notify_settings .= $self -> {"notify_methods"} -> {$method} -> generate_compose($args, $userdata);
+    my $methods = $self -> {"queue"} -> get_methods();
+    foreach my $method (keys(%{$methods})) {
+        $notify_settings .= $methods -> {$method} -> generate_compose($args, $userdata);
     }
 
     # Determine whether the user expects to be prompted for confirmation

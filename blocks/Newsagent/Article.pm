@@ -62,7 +62,8 @@ sub new {
 
     $self -> {"queue"} = Newsagent::System::NotificationQueue -> new(dbh      => $self -> {"dbh"},
                                                                      settings => $self -> {"settings"},
-                                                                     logger   => $self -> {"logger"})
+                                                                     logger   => $self -> {"logger"},
+                                                                     module => $self -> {"module"})
         or return Webperl::SystemModule::set_error("Article initialisation failed: ".$SystemModule::errstr);
 
     $self -> {"schedrelops"} = [ {"value" => "next",
@@ -602,19 +603,21 @@ sub _validate_article {
 
     $self -> log("article", "Added article $aid");
 
-    # Let notification modules store any data they need
+    # Only bother checking notification code if the release mode is "standard". "Batch" handles its
+    # notification code separately.
     if($args -> {"relmode"} == 0) {
 
+        # If any notifications have been selected, queue them.
         if($args -> {"notify_matrix"} &&                                      # has any notification data been included?
            $args -> {"notify_matrix"} -> {"used_methods"} &&                  # are any notifications enabled?
            scalar(keys(%{$args -> {"notify_matrix"} -> {"used_methods"}}))) { # no, really, are there any?
 
             my $isdraft = ($args -> {"mode"} eq "draft" || $args -> {"mode"} eq "preset");
 
-            $self -> {"system"} -> {"notify_queue"} -> queue_notifications($aid, $args, $userid, $isdraft, $args -> {"notify_matrix"} -> {"used_methods"})
+            $self -> {"queue"} -> queue_notifications($aid, $args, $userid, $isdraft, $args -> {"notify_matrix"} -> {"used_methods"})
                 or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
                                                                                            "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
-                                                                                                                                                     {"***error***" => $self -> {"system"} -> {"notify_queue"} -> errstr()
+                                                                                                                                                     {"***error***" => $self -> {"queue"} -> errstr()
                                                                                                                                                      })
                                                                   }), $args);
 

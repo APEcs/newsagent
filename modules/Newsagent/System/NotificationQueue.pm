@@ -83,7 +83,7 @@ sub queue_notifications {
         my $newid = $self -> _queue_notification($articleid, $article, $userid, $self -> {"notify_methods"} -> {$method} -> get_id(), $is_draft, $used_methods -> {$method})
             or return undef;
 
-        my $dataid = $self -> {"notify_methods"} -> {$method} -> store_data(articleid, $article, $userid, $is_draft, $used_methods -> {$method});
+        my $dataid = $self -> {"notify_methods"} -> {$method} -> store_data($articleid, $article, $userid, $is_draft, $used_methods -> {$method});
         return $self -> self_error($self -> {"notify_methods"} -> {$method} -> errstr())
             if(!defined($dataid));
 
@@ -115,8 +115,8 @@ sub cancel_notifications {
 
     $self -> clear_error();
 
-    $self -> _build_param(\@params, \$where, 'WHERE', 'article_id', $article_id  , '=');
-    $self -> _build_param(\@params, \$where, 'AND'  , 'method_id' , $method_id_id, '=');
+    $self -> _build_param(\@params, \$where, 'WHERE', 'article_id', $articleid  , '=');
+    $self -> _build_param(\@params, \$where, 'AND'  , 'method_id' , $methodid, '=');
 
     my $updateh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."`
                                                SET `status` = 'cancelled', `updated` = UNIX_TIMESTAMP()
@@ -126,6 +126,19 @@ sub cancel_notifications {
     # Note that updating no rows here is potentially valid.
 
     return 1;
+}
+
+
+## @method @ get_notifications($articleid)
+# Obtain the notification data for the specfied article.
+#
+# @param articleid The article to fetch notification data for
+# @return .
+sub get_notifications {
+    my $self      = shift;
+    my $articleid = shift;
+
+    return $self -> _get_article_notifications($articleid);
 }
 
 
@@ -266,15 +279,17 @@ sub get_notification_targets {
 }
 
 
-## @method $ get_notification_dataid($articleid)
+## @method $ get_notification_dataid($articleid, $methodid)
 # Given an article ID, fetch the data id for the current method from it.
 #
 # @param articleid The ID of the article to fetch the notification data for.
+# @param methodid  The ID of the method to fetch the data for.
 # @return The ID of the data row (or zero, if there is no data) on success, undef
 #         on error.
 sub get_notification_dataid {
     my $self = shift;
     my $articleid = shift;
+    my $methodid  = shift;
 
     $self -> clear_error();
 
@@ -282,7 +297,7 @@ sub get_notification_dataid {
                                              FROM `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."`
                                              WHERE `article_id` = ?
                                              AND `method_id` = ?");
-    $headh -> execute($articleid, $self -> {"method_id"})
+    $headh -> execute($articleid, $methodid)
         or return $self -> self_error("Unable to execute notification header lookip: ".$self -> {"dbh"} -> errstr());
 
     my $dataid = $headh -> fetchrow_arrayref();
@@ -382,6 +397,61 @@ sub _queue_notification {
     }
 
     return $newid;
+}
+
+
+## @method private $ _get_article_notifications($articleid)
+# Generate a hash containing the enabled recipients and methods, and a hash of used methods.
+#
+# @return Four values: the year id; a reference to a hash of used methods containing the
+#         methods used for notifications (each value is an arrayref of recipient method ids);
+#         a reference to a hash of enabled methods, and a reference to a hash of method-specific
+#         data. Returns undef on error.
+sub _get_article_notifications {
+    my $self      = shift;
+    my $articleid = shift;
+    my ($year, $used, $enabled, $methods);
+
+    $self -> clear_error();
+
+    # First we need to fetch the list of notification headers - this will give the
+    # list of used methods, and can be used to loop up the recipients
+    my $notifyh = $self -> {"dbh"} -> prepare("SELECT n.*, m.name
+                                               FROM `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."` AS n,
+                                                    `".$self -> {"settings"} -> {"database"} -> {"notify_methods"}."` AS m
+                                               WHERE m.id = n.method_id
+                                               AND n.article_id = ?");
+
+    # And a query will be needed to fetch recipients
+    my $reciph = $self -> {"dbh"} -> prepare("SELECT rm.recipient_id
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {"article_notify_rms"}."` AS a,
+                                                   `".$self -> {"settings"} -> {"database"} -> {"notify_matrix"}."` AS rm
+                                              WHERE rm.id = a.recip_meth_id
+                                              AND a.article_notify_id = ?");
+
+    # Start the ball rolling on fetching headers
+    $notifyh -> execute($articleid)
+        or return $self -> self_error("Unable to fetch notification headers: ".$self -> {"dbh"} -> errstr());
+
+    while(my $header = $notifyh -> fetchrow_hashref()) {
+        # All the years will be the same, so use the first one encountered
+        $year = $header -> {"year_id"}
+            if(!$year);
+
+        # Fetch all recipient/method maps associated with this notification
+        $reciph -> execute($header -> {"id"})
+            or return $self -> self_error("Unable to fetch notification map: ".$self -> {"dbh"} -> errstr());
+
+        while(my $recip = $reciph -> fetchrow_arrayref()) {
+            push(@{$used -> {$header -> {"name"}}}, $recip -> [0]);
+            $enabled -> {$recip -> [0]} -> {$header -> {"method_id"}} = 1;
+        }
+
+        # May as well fetch the method-specific data here, too!
+        $methods -> {$header -> {"name"}} = $self -> {"notify_methods"} -> {$header -> {"name"}} -> get_data($articleid, $self);
+    }
+
+    return ($year, $used, $enabled, $methods);
 }
 
 

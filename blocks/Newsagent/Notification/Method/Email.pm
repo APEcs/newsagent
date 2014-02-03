@@ -118,11 +118,11 @@ sub store_data {
     my $emailh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"method:email"} -> {"data"}."`
                                               (prefix_id, cc, bcc, reply_to, bcc_sender)
                                               VALUES(?, ?, ?, ?, ?)");
-    my $rows = $emailh -> execute($args -> {"methods"} -> {"Email"} -> {"prefix_id"},
-                                  $args -> {"methods"} -> {"Email"} -> {"cc"},
-                                  $args -> {"methods"} -> {"Email"} -> {"bcc"},
-                                  $args -> {"methods"} -> {"Email"} -> {"reply_to"},
-                                  $args -> {"methods"} -> {"Email"} -> {"bcc_sender"});
+    my $rows = $emailh -> execute($article -> {"methods"} -> {"Email"} -> {"prefix_id"},
+                                  $article -> {"methods"} -> {"Email"} -> {"cc"},
+                                  $article -> {"methods"} -> {"Email"} -> {"bcc"},
+                                  $article -> {"methods"} -> {"Email"} -> {"reply_to"},
+                                  $article -> {"methods"} -> {"Email"} -> {"bcc_sender"});
     return $self -> self_error("Unable to perform article email notification data insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Article email notification data insert failed, no rows inserted") if($rows eq "0E0");
     my $dataid = $self -> {"dbh"} -> {"mysql_insertid"};
@@ -130,24 +130,26 @@ sub store_data {
     return $self -> self_error("Unable to obtain id for new article email notification data row")
         if(!$dataid);
 
-    return $data;
+    return $dataid;
 }
 
 
-## @method $ get_article($articleid)
+## @method $ get_data($articleid, $queue)
 # Fetch the method-specific data for the current method for the specified
 # article. This generates a hash that contains the method's article-specific
 # data and returns a reference to it.
 #
 # @param articleid The ID of the article to fetch the data for.
+# @param queue     A reference to the system notification queue object.
 # @return A reference to a hash containing the data on success, undef on error
-sub get_article {
+sub get_data {
     my $self      = shift;
     my $articleid = shift;
+    my $queue     = shift;
 
     $self -> clear_error();
 
-    my $dataid = $self -> get_notification_dataid($articleid)
+    my $dataid = $queue -> get_notification_dataid($articleid, $self -> {"method_id"})
         or return $self -> self_error("Unable to get email settings for $articleid: ".($self -> errstr() || "No data stored"));
 
     my $datah = $self -> {"dbh"} -> prepare("SELECT *

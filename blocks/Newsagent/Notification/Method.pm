@@ -154,16 +154,18 @@ sub store_data {
 }
 
 
-## @method $ get_data($articleid)
+# @method $ get_data($articleid, $queue)
 # Fetch the method-specific data for the current method for the specified
 # article. This generates a hash that contains the method's article-specific
 # data and returns a reference to it.
 #
 # @param articleid The ID of the article to fetch the data for.
+# @param queue     A reference to the system notification queue object.
 # @return A reference to a hash containing the data on success, undef on error
 sub get_data {
     my $self      = shift;
     my $articleid = shift;
+    my $queue     = shift;
 
     # Does nothing.
     return {};
@@ -319,7 +321,7 @@ sub generate_notification_state {
     my $self      = shift;
     my $articleid = shift;
 
-FIXME:    my ($state, $message, $timestamp) = $self -> get_method_state($articleid);
+    my ($state, $message, $timestamp) = $self -> get_method_state($articleid);
     return "Error getting state: ".$self -> errstr() if(!defined($state));
 
     if($state) {

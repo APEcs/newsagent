@@ -270,9 +270,10 @@ sub _build_article_row {
         if($article -> {"release_mode"} eq "timed" && $article -> {"release_time"} <= $now);
 
     # build the list of notification states
+    my $methods = $self -> {"queue"} -> get_methods();
     my $states = "";
-    foreach my $method (sort keys(%{$self -> {"notify_methods"}})) {
-        $states .= $self -> {"notify_methods"} -> {$method} -> generate_notification_state($article -> {"id"});
+    foreach my $method (sort keys(%{$methods})) {
+        $states .= $methods -> {$method} -> generate_notification_state($article -> {"id"});
     }
 
     my ($action, $actdate, $actuser) = ("{L_ALIST_CREATED}", $self -> {"template"} -> fancy_time($article -> {"updated"}), $article -> {"realname"} || $article -> {"username"});
