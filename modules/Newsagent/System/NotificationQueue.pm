@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ## @class
+#
 package Newsagent::System::NotificationQueue;
 
 use strict;
@@ -24,8 +25,41 @@ use base qw(Webperl::SystemModule); # This class extends the Newsagent block cla
 use Webperl::Utils qw(hash_or_hashref);
 use v5.12;
 
+# ============================================================================
+#  Constructor
 
-## @method $ queue_notification($articleid, $article, $userid, $is_draft, $used_methods)
+## @cmethod $ new(%args)
+#
+# @return A reference to a new Newsagent::System::NotificationQueue object on
+#         success, undef on error.
+sub new {
+    my $invocant = shift;
+    my $class    = ref($invocant) || $invocant;
+    my $self     = $class -> SUPER::new(@_)
+        or return undef;
+
+    $self -> _load_notification_method_modules()
+        or return SystemModule::set_error($self -> errstr());
+
+    return $self;
+}
+
+
+# ============================================================================
+#  Interface
+
+## @method $ get_methods()
+# Return a reference to a hash containing the notification method modules.
+#
+# @return A reference to a hash of notification method modules
+sub get_methods {
+    my $self = shift;
+
+    return $self -> {"notify_methods"};
+}
+
+
+## @method $ queue_notifications($articleid, $article, $userid, $is_draft, $used_methods)
 #
 # @param articleid    The ID of the article to add the notifications for.
 # @param article      A reference to a hash containing the article data.
@@ -34,8 +68,8 @@ use v5.12;
 # @param used_methods A reference to a hash of used methods. Each key should be the name
 #                     of a notification method, and the value for each key should be a
 #                     reference to an array of ids for rows in the recipient methods table.
-# @return The ID of the article notify row on success, undef on error
-sub queue_notification {
+# @return True on success, undef on error
+sub queue_notifications {
     my $self         = shift;
     my $articleid    = shift;
     my $article      = shift;
@@ -46,22 +80,21 @@ sub queue_notification {
     $self -> clear_error();
 
     foreach my $method (keys(%{$used_methods})) {
-        my $newid = $self -> _queue_notification($articleid, $article, $userid, $self -> {"methods"} -> {$method} -> get_id(), $is_draft, $used_methods -> {$method})
+        my $newid = $self -> _queue_notification($articleid, $article, $userid, $self -> {"notify_methods"} -> {$method} -> get_id(), $is_draft, $used_methods -> {$method})
             or return undef;
 
-        my $dataid = $self -> {"methods"} -> {$method} -> store_data(articleid, $article, $userid, $is_draft, $used_methods -> {$method});
-
+        my $dataid = $self -> {"notify_methods"} -> {$method} -> store_data(articleid, $article, $userid, $is_draft, $used_methods -> {$method});
+        return $self -> self_error($self -> {"notify_methods"} -> {$method} -> errstr())
+            if(!defined($dataid));
 
         $self -> set_notification_data($newid, $dataid) or return undef
             if($dataid);
 
-    $self -> set_notification_status($newid, $is_draft ? "draft" : "pending")
-        or return undef;
+        $self -> set_notification_status($newid, $is_draft ? "draft" : "pending")
+            or return undef;
+    }
 
-
-
-
-    return $newid;
+    return 1;
 }
 
 
@@ -259,6 +292,51 @@ sub get_notification_dataid {
 }
 
 
+# ============================================================================
+#  Private functions
+
+## @method private $ _load_notification_method_modules()
+# Attempt to load all defined notification method modules and store them
+# in the $self -> {"notify_methods"} hash reference.
+#
+# @return true on succes, undef on error
+sub _load_notification_method_modules {
+    my $self = shift;
+
+    $self -> clear_error();
+
+    my $modlisth = $self -> {"dbh"} -> prepare("SELECT meths.id, meths.name, mods.perl_module
+                                                FROM `".$self -> {"settings"} -> {"database"} -> {"modules"}."` AS mods,
+                                                     `".$self -> {"settings"} -> {"database"} -> {"notify_methods"}."` AS meths
+                                                WHERE mods.module_id = meths.module_id
+                                                AND mods.active = 1");
+    $modlisth -> execute()
+        or return $self -> self_error("Unable to execute notification module lookup: ".$self -> {"dbh"} -> errstr);
+
+    while(my $modrow = $modlisth -> fetchrow_hashref()) {
+        my $module = $self -> {"module"} -> load_module($modrow -> {"perl_module"}, "method_id" => $modrow -> {"id"},
+                                                                                    "method_name" => $modrow -> {"name"})
+            or return $self -> self_error("Unable to load notification module '".$modrow -> {"name"}."': ".$self -> {"module"} -> errstr());
+
+        $self -> {"notify_methods"} -> {$modrow -> {"name"}} = $module;
+    }
+
+    return 1;
+}
+
+
+## @method private $ _queue_notification($articleid, $article, $userid, $methodid, $is_draft, $send_after, $recip_methods)
+# Create a new notification header for the specified article and method. Note that
+# this does not store any method-specific data, that should be done by the caller.
+#
+# @param articleid     The ID of the article to add the notifications for.
+# @param article       A reference to a hash containing the article data.
+# @param userid        A reference to a hash containing the user's data.
+# @param methodid      The ID of the method this is a notification through.
+# @param is_draft      True if the article is a draft, false otherwise.
+# @param send_after    The unix timestamp for the point after which the message should be sent.
+# @param recip_methods A reference to an array of ids for rows in the recipient methods table.
+# @return The new notification header ID on success, undef on error
 sub _queue_notification {
     my $self          = shift;
     my $articleid     = shift;

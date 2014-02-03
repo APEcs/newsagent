@@ -23,6 +23,7 @@ use strict;
 use base qw(Newsagent); # This class extends the Newsagent block class
 use Newsagent::System::Feed;
 use Newsagent::System::Article;
+use Newsagent::System::NotificationQueue;
 use File::Basename;
 use Lingua::EN::Sentence qw(get_sentences);
 use v5.12;
@@ -59,10 +60,10 @@ sub new {
                                                              metadata => $self -> {"system"} -> {"metadata"})
         or return Webperl::SystemModule::set_error("Article initialisation failed: ".$SystemModule::errstr);
 
-    # Load the notification method modules, as they may be needed for content generation,
-    # validation, and miscellaneous other tasks of dubious import.
-    $self -> _load_notification_method_modules()
-        or return Webperl::SystemModule::set_error($self -> errstr());
+    $self -> {"queue"} = Newsagent::System::NotificationQueue -> new(dbh      => $self -> {"dbh"},
+                                                                     settings => $self -> {"settings"},
+                                                                     logger   => $self -> {"logger"})
+        or return Webperl::SystemModule::set_error("Article initialisation failed: ".$SystemModule::errstr);
 
     $self -> {"schedrelops"} = [ {"value" => "next",
                                   "name"  => "{L_COMPOSE_RELNEXT}" },
@@ -525,6 +526,8 @@ sub _validate_article {
            $args -> {"notify_matrix"} -> {"used_methods"} &&                  # are any notifications enabled?
            scalar(keys(%{$args -> {"notify_matrix"} -> {"used_methods"}}))) { # no, really, are there any?
 
+            my $methods = $self -> {"queue"} -> get_methods();
+
             # Call each notification method to let it validate and add its data to the args hash
             foreach my $method (keys(%{$args -> {"notify_matrix"} -> {"used_methods"}})) {
                 # The method is only really used if one or more recipients are set for it
@@ -532,7 +535,7 @@ sub _validate_article {
                 # unless this is already true. But check anyway to be safer.)
                 next unless(scalar(@{$args -> {"notify_matrix"} -> {"used_methods"} -> {$method}}));
 
-                my $meth_errs = $self -> {"notify_methods"} -> {$method} -> validate_article($args, $userid);
+                my $meth_errs = $methods -> {$method} -> validate_article($args, $userid);
 
                 # If the validator returned any errors, add them to the list.
                 foreach $error (@{$meth_errs}) {
@@ -577,10 +580,10 @@ sub _validate_article {
 
         # Do not bother cancelling notifications for draft or preset
         if($article -> {"release_mode"} ne "draft" && $article -> {"release_mode"} ne "preset") {
-            $self -> {"notify_queue"} -> cancel_notifications($articleid)
+            $self -> {"queue"} -> cancel_notifications($articleid)
                 or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
                                                                                            "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
-                                                                                                                                                     {"***error***" => $self -> {"notify_methods"} -> {$method} -> errstr()
+                                                                                                                                                     {"***error***" => $self -> {"queue"} -> errstr()
                                                                                                                                                      })
                                                                   }), $args);
         }
@@ -601,12 +604,17 @@ sub _validate_article {
 
     # Let notification modules store any data they need
     if($args -> {"relmode"} == 0) {
-        my $isdraft = ($args -> {"mode"} eq "draft" || $args -> {"mode"} eq "preset");
 
-        $self -> {"notify_queue"} -> queue_notifications($aid, $args, $userid, $isdraft, $args -> {"notify_matrix"} -> {"used_methods"})
-            or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
+        if($args -> {"notify_matrix"} &&                                      # has any notification data been included?
+           $args -> {"notify_matrix"} -> {"used_methods"} &&                  # are any notifications enabled?
+           scalar(keys(%{$args -> {"notify_matrix"} -> {"used_methods"}}))) { # no, really, are there any?
+
+            my $isdraft = ($args -> {"mode"} eq "draft" || $args -> {"mode"} eq "preset");
+
+            $self -> {"system"} -> {"notify_queue"} -> queue_notifications($aid, $args, $userid, $isdraft, $args -> {"notify_matrix"} -> {"used_methods"})
+                or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
                                                                                            "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
-                                                                                                                                                     {"***error***" => $self -> {"notify_methods"} -> {$method} -> errstr()
+                                                                                                                                                     {"***error***" => $self -> {"system"} -> {"notify_queue"} -> errstr()
                                                                                                                                                      })
                                                                   }), $args);
 
@@ -746,37 +754,6 @@ sub _build_levels_jsdata {
 
 # ============================================================================
 #  Things of which Man was Not Meant To Know (also support code)
-
-
-## @method private $ _load_notification_method_modules()
-# Attempt to load all defined notification method modules and store them
-# in the $self -> {"notify_methods"} hash reference.
-#
-# @return true on succes, undef on error
-sub _load_notification_method_modules {
-    my $self = shift;
-
-    $self -> clear_error();
-
-    my $modlisth = $self -> {"dbh"} -> prepare("SELECT meths.id, meths.name, mods.perl_module
-                                                FROM `".$self -> {"settings"} -> {"database"} -> {"modules"}."` AS mods,
-                                                     `".$self -> {"settings"} -> {"database"} -> {"notify_methods"}."` AS meths
-                                                WHERE mods.module_id = meths.module_id
-                                                AND mods.active = 1");
-    $modlisth -> execute()
-        or return $self -> self_error("Unable to execute notification module lookup: ".$self -> {"dbh"} -> errstr);
-
-    while(my $modrow = $modlisth -> fetchrow_hashref()) {
-        my $module = $self -> {"module"} -> load_module($modrow -> {"perl_module"}, "method_id" => $modrow -> {"id"},
-                                                                                    "method_name" => $modrow -> {"name"})
-            or return $self -> self_error("Unable to load notification module '".$modrow -> {"name"}."': ".$self -> {"module"} -> errstr());
-
-        $self -> {"notify_methods"} -> {$modrow -> {"name"}} = $module;
-    }
-
-    return 1;
-}
-
 
 ## @method private $ _truncate_article($text, $limit)
 # Given an article string containing plain text (NOT HTML!), produce a string

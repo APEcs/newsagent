@@ -56,20 +56,20 @@ sub init {
 
     # now create the Newsagent-specific objects
     $self -> {"metadata"} = Newsagent::System::Metadata -> new(dbh      => $self -> {"dbh"},
-                                                              settings => $self -> {"settings"},
-                                                              logger   => $self -> {"logger"})
+                                                               settings => $self -> {"settings"},
+                                                               logger   => $self -> {"logger"})
         or return $self -> self_error("Metadata system init failed: ".$Metadata::errstr);
 
     $self -> {"tags"} = Newsagent::System::Tags -> new(dbh      => $self -> {"dbh"},
-                                                      settings => $self -> {"settings"},
-                                                      logger   => $self -> {"logger"},
-                                                      metadata => $self -> {"metadata"})
+                                                       settings => $self -> {"settings"},
+                                                       logger   => $self -> {"logger"},
+                                                       metadata => $self -> {"metadata"})
         or return $self -> self_error("Tag system init failed: ".$Tags::errstr);
 
     $self -> {"roles"} = Newsagent::System::Roles -> new(dbh      => $self -> {"dbh"},
-                                                        settings => $self -> {"settings"},
-                                                        logger   => $self -> {"logger"},
-                                                        metadata => $self -> {"metadata"})
+                                                         settings => $self -> {"settings"},
+                                                         logger   => $self -> {"logger"},
+                                                         metadata => $self -> {"metadata"})
         or return $self -> self_error("Roles system init failed: ".$Roles::errstr);
 
     $self -> {"userdata"} = Newsagent::System::UserDataBridge -> new(dbh      => $self -> {"dbh"},
