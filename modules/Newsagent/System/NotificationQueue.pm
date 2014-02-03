@@ -25,92 +25,72 @@ use Webperl::Utils qw(hash_or_hashref);
 use v5.12;
 
 
-## @method $ add_notification($article, $method, $userid, $articleid, $is_draft, $recip_methods)
-# Store the data for this method. This will store any method-specific
-# data in the article hash in the appropriate tables in the database.
+## @method $ queue_notification($articleid, $article, $userid, $is_draft, $used_methods)
 #
-# @param article       A reference to a hash containing the article data.
-# @param method        A reference to the notification method object for this notification.
-# @param userid        A reference to a hash containing the user's data.
-# @param articleid     The ID of the article being stored.
-# @param is_draft      True if the article is a draft, false otherwise.
-# @param recip_methods A reference to an array containing the recipient/method
-#                      map IDs for the recipients this method is being used to
-#                      send messages to.
+# @param articleid    The ID of the article to add the notifications for.
+# @param article      A reference to a hash containing the article data.
+# @param userid       A reference to a hash containing the user's data.
+# @param is_draft     True if the article is a draft, false otherwise.
+# @param used_methods A reference to a hash of used methods. Each key should be the name
+#                     of a notification method, and the value for each key should be a
+#                     reference to an array of ids for rows in the recipient methods table.
 # @return The ID of the article notify row on success, undef on error
-sub add_notification {
-    my $self          = shift;
-    my $article       = shift;
-    my $method        = shift;
-    my $userid        = shift;
-    my $articleid     = shift;
-    my $is_draft      = shift;
-    my $recip_methods = shift;
+sub queue_notification {
+    my $self         = shift;
+    my $articleid    = shift;
+    my $article      = shift;
+    my $userid       = shift;
+    my $is_draft     = shift;
+    my $used_methods = shift;
 
     $self -> clear_error();
 
-    # First create the notification header for this article for the current
-    # notification method.
-    my $notifyh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."`
-                                               (article_id, method_id, year_id, updated)
-                                               VALUES(?, ?, ?, UNIX_TIMESTAMP())");
-    my $rows = $notifyh -> execute($articleid, $self -> {"method_id"}, $article -> {"notify_matrix"} -> {"year"});
-    return $self -> self_error("Unable to perform article notification insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
-    return $self -> self_error("Article notification insert failed, no rows inserted") if($rows eq "0E0");
+    foreach my $method (keys(%{$used_methods})) {
+        my $newid = $self -> _queue_notification($articleid, $article, $userid, $self -> {"methods"} -> {$method} -> get_id(), $is_draft, $used_methods -> {$method})
+            or return undef;
 
-    # FIXME: This ties to MySQL, but is more reliable that last_insert_id in general.
-    #        Try to find a decent solution for this mess...
-    # NOTE: the DBD::mysql documentation doesn't actually provide any useful information
-    #       about what this will contain if the insert fails. In fact, DBD::mysql calls
-    #       libmysql's mysql_insert_id(), which returns 0 on error (last insert failed).
-    #       There, why couldn't they bloody /say/ that?!
-    my $newid = $self -> {"dbh"} -> {"mysql_insertid"};
-
-    return $self -> self_error("Unable to obtain id for new article notification row")
-        if(!$newid);
-
-    # Now there needs to be recipient/method map maps set up to tell this notification
-    # method which recipients it needs to be sending to, and how
-    my $rmmaph = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"article_notify_rms"}."`
-                                              (article_notify_id, recip_meth_id)
-                                              VALUES(?, ?)");
-
-    foreach my $rmid (@{$recip_methods}) {
-        $rows = $rmmaph -> execute($newid, $rmid);
-        return $self -> self_error("Unable to perform article notification rm map insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
-        return $self -> self_error("Article notification rm map insert failed, no rows inserted") if($rows eq "0E0");
-    }
+        my $dataid = $self -> {"methods"} -> {$method} -> store_data(articleid, $article, $userid, $is_draft, $used_methods -> {$method});
 
 
-
-
-    $self -> set_notification_data($newid, $dataid) or return undef
-        if($dataid);
+        $self -> set_notification_data($newid, $dataid) or return undef
+            if($dataid);
 
     $self -> set_notification_status($newid, $is_draft ? "draft" : "pending")
         or return undef;
+
+
+
 
     return $newid;
 }
 
 
-## @method $ cancel_notifications($articleid)
+## @method $ cancel_notifications($articleid, $methodid)
 # Cancel all notifications for the specified method for the provided article.
 #
 # @param articleid The ID of the article to cancel notifications for
+# @param methodid  An optional ID of the method to cancel the notification for. If
+#                  this is not specified, ALL notifications for this article are
+#                  cancelled.
 # @return true on success, undef on error.
 sub cancel_notifications {
     my $self      = shift;
     my $articleid = shift;
+    my $methodid  = shift;
+    my @params = ();
+    my $where  = "";
 
     $self -> clear_error();
 
+    $self -> _build_param(\@params, \$where, 'WHERE', 'article_id', $article_id  , '=');
+    $self -> _build_param(\@params, \$where, 'AND'  , 'method_id' , $method_id_id, '=');
+
     my $updateh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."`
                                                SET `status` = 'cancelled', `updated` = UNIX_TIMESTAMP()
-                                               WHERE article_id = ? AND method_id = ?");
-    my $rows = $updateh -> execute($articleid, $self -> {"method_id"});
+                                               $where");
+    my $rows = $updateh -> execute(@params);
     return $self -> self_error("Unable to update article notification: ".$self -> {"dbh"} -> errstr) if(!$rows);
-    # Note that updating no rows here is valid - there may be no notification set for a given method
+    # Note that updating no rows here is potentially valid.
 
     return 1;
 }
@@ -174,8 +154,9 @@ sub set_notification_status {
 # - `articleid`: the id of the article to fetch the data for. If set, `methodid` must be set.
 # - `methodid`: the id of the method to filter on.
 #
-# @param nid     The ID of the article notification header.
-# @return true on success, undef on error
+# @param args The arguments to use when querying the database.
+# @return A reference to a hash containing the article notification header on success,
+#         an empty hashref if no matching notification header exists, undef on error.
 sub get_notification_status {
     my $self   = shift;
     my $args   = hash_or_hashref(@_);
@@ -184,13 +165,18 @@ sub get_notification_status {
 
     $self -> clear_error();
 
-    _build_param(\$where, \@params, 'id'       , $args -> {'id'});
-    _build_param(\$where, \@params, 'articleid', $args -> {'articleid'});
-    _build_param(\$where, \@params, 'methodid' , $args -> {'methodid'});
+    if($args -> {"id"}) {
+        _build_param(\@params, \$where, "WHERE", 'id' , $args -> {'id'});
+    } elsif($args -> {"articleid"} && $args -> {"methodid"}) {
+        _build_param(\@params, \$where, "WHERE", 'articleid', $args -> {'articleid'});
+        _build_param(\@params, \$where, "AND"  , 'methodid' , $args -> {'methodid'});
+    } else {
+        return $self -> self_error("Incorrect parameters provided to get_notification_status()");
+    }
 
     my $stateh = $self -> {"dbh"} -> prepare("SELECT *
                                               FROM `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."`
-                                              WHERE $where
+                                              $where
                                               LIMIT 1");
     $stateh -> execute(@params)
         or return $self -> self_error("Unable to execute notification lookup: ".$self -> {"dbh"} -> errstr());
@@ -273,19 +259,67 @@ sub get_notification_dataid {
 }
 
 
+sub _queue_notification {
+    my $self          = shift;
+    my $articleid     = shift;
+    my $article       = shift;
+    my $userid        = shift;
+    my $methodid      = shift;
+    my $is_draft      = shift;
+    my $send_after    = shift;
+    my $recip_methods = shift;
+
+    $self -> clear_error();
+
+    # First create the notification header for this article for the current
+    # notification method.
+    my $notifyh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."`
+                                               (article_id, method_id, year_id, updated, send_after)
+                                               VALUES(?, ?, ?, UNIX_TIMESTAMP(), ?)");
+    my $rows = $notifyh -> execute($articleid, $methodid, $article -> {"notify_matrix"} -> {"year"}, $send_after);
+    return $self -> self_error("Unable to perform article notification insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("Article notification insert failed, no rows inserted") if($rows eq "0E0");
+
+    # FIXME: This ties to MySQL, but is more reliable that last_insert_id in general.
+    #        Try to find a decent solution for this mess...
+    # NOTE: the DBD::mysql documentation doesn't actually provide any useful information
+    #       about what this will contain if the insert fails. In fact, DBD::mysql calls
+    #       libmysql's mysql_insert_id(), which returns 0 on error (last insert failed).
+    #       There, why couldn't they bloody /say/ that?!
+    my $newid = $self -> {"dbh"} -> {"mysql_insertid"};
+
+    return $self -> self_error("Unable to obtain id for new article notification row")
+        if(!$newid);
+
+    # Now there needs to be recipient/method map maps set up to tell this notification
+    # method which recipients it needs to be sending to, and how
+    my $rmmaph = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"article_notify_rms"}."`
+                                              (article_notify_id, recip_meth_id)
+                                              VALUES(?, ?)");
+
+    foreach my $rmid (@{$recip_methods}) {
+        $rows = $rmmaph -> execute($newid, $rmid);
+        return $self -> self_error("Unable to perform article notification rm map insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
+        return $self -> self_error("Article notification rm map insert failed, no rows inserted") if($rows eq "0E0");
+    }
+
+    return $newid;
+}
+
 
 sub _build_param {
     my $self   = shift;
-    my $where  = shift;
     my $params = shift;
-    my $arg    = shift;
+    my $where  = shift;
+    my $lead   = shift;
+    my $field  = shift;
     my $value  = shift;
+    my $op     = shift;
 
-    if(defined($arg) && defined($value)) {
-        $$where .= " `$arg` = ?";
+    if(defined($value)) {
         push(@{$params}, $value);
+        $$where .= " $lead `$field` $op ?";
     }
 }
-
 
 1;

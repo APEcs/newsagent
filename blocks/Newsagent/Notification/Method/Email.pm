@@ -93,28 +93,27 @@ sub DESTROY {
 ################################################################################
 
 
-## @method $ store_article($args, $userid, $articleid, $is_draft, $recip_methods)
+## @method $ store_data($articleid, $article, $userid, $is_draft, $recip_methods)
 # Store the data for this method. This will store any method-specific
 # data in the args hash in the appropriate tables in the database.
 #
-# @param args          A reference to a hash containing the article data.
+# @param articleid     The ID of the article to add the notifications for.
+# @param article       A reference to a hash containing the article data.
 # @param userid        A reference to a hash containing the user's data.
-# @param articleid     The ID of the article being stored.
 # @param is_draft      True if the article is a draft, false otherwise.
 # @param recip_methods A reference to an array containing the recipient/method
 #                      map IDs for the recipients this method is being used to
 #                      send messages to.
-# @return The ID of the article notify row on success, undef on error
-sub store_article {
+# @return The ID of the notification data row on success, undef on error
+sub store_data {
     my $self          = shift;
-    my $args          = shift;
-    my $userid        = shift;
     my $articleid     = shift;
+    my $article       = shift;
+    my $userid        = shift;
     my $is_draft      = shift;
     my $recip_methods = shift;
 
-    my $nid = $self -> SUPER::store_article($args, $userid, $articleid, $is_draft, $recip_methods)
-        or return undef;
+    $self -> clear_error();
 
     my $emailh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"method:email"} -> {"data"}."`
                                               (prefix_id, cc, bcc, reply_to, bcc_sender)
@@ -131,14 +130,7 @@ sub store_article {
     return $self -> self_error("Unable to obtain id for new article email notification data row")
         if(!$dataid);
 
-    $self -> set_notification_data($nid, $dataid)
-        or return undef;
-
-    # Finally, enable the notification
-    $self -> set_notification_status($nid, $is_draft ? "draft" : "pending")
-        or return undef;
-
-    return $nid;
+    return $data;
 }
 
 

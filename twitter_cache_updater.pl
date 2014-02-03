@@ -25,7 +25,6 @@ use lib "/var/www/webperl";
 
 use FindBin;
 use DBI;
-use Net::Twitter::Lite::WithAPIv1_1;
 use Webperl::ConfigMicro;
 use Webperl::Utils qw(path_join);
 use v5.12;
@@ -38,7 +37,7 @@ BEGIN {
     }
 }
 use lib "$scriptpath/modules";
-
+use Net::Twitter::Lite::WithAPIv1_1;
 
 use Data::Dumper;
 
@@ -152,8 +151,17 @@ my $twitter = Net::Twitter::Lite::WithAPIv1_1 -> new(consumer_key        => $set
                                                      consumer_secret     => $settings -> {"twitter"} -> {"consumer_secret"},
                                                      access_token        => $settings -> {"twitter"} -> {"access_token"},
                                                      access_token_secret => $settings -> {"twitter"} -> {"token_secret"},
-                                                     ssl                 => 1);
+                                                     ssl                 => 1,
+                                                     wrap_result         => 1);
 
 # Work out which sort of user relation to use
 my $mode = $ARGV[0] || "friends";
 $mode = "friends" unless($mode eq "followers");
+
+my $friends = $twitter -> friends_list({"screen_name" => "csmcr",
+                                        "count"       => 2,
+                                        "skip_status" => 1,
+                                        "cursor"      => -1});
+
+#print "Limit: ".$friends -> rate_limit."\nRemain: ".$friends -> rate_limit_remaining."\nReset: ".$friends -> rate_limit_reset."\nData:".Dumper($friends->result);
+print Dumper($friends);

@@ -60,7 +60,7 @@ sub new {
 # Determine which of the user's recipients have methods set.
 #
 # @param userid The ID of the user accessing the page/
-# @return A referencce to a hash containing the selected matrix data.
+# @return A reference to a hash containing the selected matrix data.
 sub get_used_methods {
     my $self   = shift;
     my $userid = shift;

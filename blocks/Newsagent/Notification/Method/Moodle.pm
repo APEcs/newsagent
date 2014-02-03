@@ -34,37 +34,6 @@ use base qw(Newsagent::Notification::Method); # This class is a Method module
 # Model/support functions
 ################################################################################
 
-
-## @method $ store_article($args, $userid, $articleid, $is_draft, $recip_methods)
-# Store the data for this method. This will store any method-specific
-# data in the args hash in the appropriate tables in the database.
-#
-# @param args          A reference to a hash containing the article data.
-# @param userid        A reference to a hash containing the user's data.
-# @param articleid     The ID of the article being stored.
-# @param is_draft      True if the article is a draft, false otherwise.
-# @param recip_methods A reference to an array containing the recipient/method
-#                      map IDs for the recipients this method is being used to
-#                      send messages to.
-# @return The ID of the article notify row on success, undef on error
-sub store_article {
-    my $self          = shift;
-    my $args          = shift;
-    my $userid        = shift;
-    my $articleid     = shift;
-    my $is_draft      = shift;
-    my $recip_methods = shift;
-
-    my $nid = $self -> SUPER::store_article($args, $userid, $articleid, $is_draft, $recip_methods)
-        or return undef;
-
-    $self -> set_notification_status($nid, $is_draft ? "draft" : "pending")
-        or return undef;
-
-    return $nid;
-}
-
-
 # ============================================================================
 #  Article send functions
 

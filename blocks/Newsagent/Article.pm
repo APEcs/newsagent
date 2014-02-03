@@ -26,6 +26,7 @@ use Newsagent::System::Article;
 use File::Basename;
 use Lingua::EN::Sentence qw(get_sentences);
 use v5.12;
+use Data::Dumper;
 
 # ============================================================================
 #  Constructor
@@ -520,11 +521,16 @@ sub _validate_article {
          $args -> {"notify_matrix"} = $matrix -> get_used_methods($userid)
             or $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "***error***" => $matrix -> errstr()});
 
-        if($args -> {"notify_matrix"} && $args -> {"notify_matrix"} -> {"used_methods"} && scalar(keys(%{$args -> {"notify_matrix"} -> {"used_methods"}}))) {
-            # Call each notifocation method to let it validate and add its data to the args hash
-            foreach my $method (keys(%{$self -> {"notify_methods"}})) {
-                next unless($args -> {"notify_matrix"} -> {"used_methods"} -> {$method} &&
-                            scalar(@{$args -> {"notify_matrix"} -> {"used_methods"} -> {$method}}));
+        if($args -> {"notify_matrix"} &&                                      # has any notification data been included?
+           $args -> {"notify_matrix"} -> {"used_methods"} &&                  # are any notifications enabled?
+           scalar(keys(%{$args -> {"notify_matrix"} -> {"used_methods"}}))) { # no, really, are there any?
+
+            # Call each notification method to let it validate and add its data to the args hash
+            foreach my $method (keys(%{$args -> {"notify_matrix"} -> {"used_methods"}})) {
+                # The method is only really used if one or more recipients are set for it
+                # (this check should be redundant, as methods should not appear in user_methods
+                # unless this is already true. But check anyway to be safer.)
+                next unless(scalar(@{$args -> {"notify_matrix"} -> {"used_methods"} -> {$method}}));
 
                 my $meth_errs = $self -> {"notify_methods"} -> {$method} -> validate_article($args, $userid);
 
@@ -571,14 +577,12 @@ sub _validate_article {
 
         # Do not bother cancelling notifications for draft or preset
         if($article -> {"release_mode"} ne "draft" && $article -> {"release_mode"} ne "preset") {
-            foreach my $method (keys(%{$self -> {"notify_methods"}})) {
-                $self -> {"notify_methods"} -> {$method} -> cancel_notifications($articleid)
-                    or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
-                                                                                               "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
-                                                                                                                                                         {"***error***" => $self -> {"notify_methods"} -> {$method} -> errstr()
-                                                                                                                                                         })
-                                                                      }), $args);
-            }
+            $self -> {"notify_queue"} -> cancel_notifications($articleid)
+                or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
+                                                                                           "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
+                                                                                                                                                     {"***error***" => $self -> {"notify_methods"} -> {$method} -> errstr()
+                                                                                                                                                     })
+                                                                  }), $args);
         }
 
         if($args -> {"minor_edit"}) {
@@ -599,9 +603,8 @@ sub _validate_article {
     if($args -> {"relmode"} == 0) {
         my $isdraft = ($args -> {"mode"} eq "draft" || $args -> {"mode"} eq "preset");
 
-        foreach my $method (keys(%{$args -> {"notify_matrix"} -> {"used_methods"}})) {
-            $self -> {"notify_methods"} -> {$method} -> store_article($args, $userid, $aid, $isdraft, $args -> {"notify_matrix"} -> {"used_methods"} -> {$method})
-                or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
+        $self -> {"notify_queue"} -> queue_notifications($aid, $args, $userid, $isdraft, $args -> {"notify_matrix"} -> {"used_methods"})
+            or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
                                                                                            "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
                                                                                                                                                      {"***error***" => $self -> {"notify_methods"} -> {$method} -> errstr()
                                                                                                                                                      })

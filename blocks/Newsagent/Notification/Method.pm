@@ -57,6 +57,17 @@ sub new {
 # Model/support functions
 ################################################################################
 
+## @method $ get_id()
+# Return the ID for this method.
+#
+# @return The method id.
+sub get_id {
+    my $self = shift;
+
+    return $self -> {"method_id"};
+}
+
+
 ## @method $ get_method_config($name, $default)
 # Obtain the specified configuration setting for the current notification
 # method.
@@ -117,23 +128,23 @@ sub set_config {
 }
 
 
-## @method $ store_data($args, $userid, $articleid, $is_draft, $recip_methods)
+## @method $ store_data($articleid, $article, $userid, $is_draft, $recip_methods)
 # Store the data for this method. This will store any method-specific
 # data in the args hash in the appropriate tables in the database.
 #
-# @param args          A reference to a hash containing the article data.
+# @param articleid     The ID of the article to add the notifications for.
+# @param article       A reference to a hash containing the article data.
 # @param userid        A reference to a hash containing the user's data.
-# @param articleid     The ID of the article being stored.
 # @param is_draft      True if the article is a draft, false otherwise.
 # @param recip_methods A reference to an array containing the recipient/method
 #                      map IDs for the recipients this method is being used to
 #                      send messages to.
-# @return The ID of the article notify row on success, undef on error
+# @return The ID of the notification data row on success, undef on error
 sub store_data {
     my $self          = shift;
-    my $args          = shift;
-    my $userid        = shift;
     my $articleid     = shift;
+    my $article       = shift;
+    my $userid        = shift;
     my $is_draft      = shift;
     my $recip_methods = shift;
 
@@ -323,48 +334,5 @@ FIXME:    my ($state, $message, $timestamp) = $self -> get_method_state($article
     return "";
 }
 
-
-## @method $ generate_articlelist_ops($article, $args)
-# Generate the fragment to display in the 'ops' column of the user
-# article list for the specified article.
-#
-# @param article The article being processed.
-# @param args    Additional arguments to use when filling in fragment templates.
-# @return A string containing the HTML fragment to show in the ops column.
-sub generate_articlelist_ops {
-    my $self    = shift;
-    my $article = shift;
-    my $args    = shift;
-
-    return "";
-}
-
-
-## @method $ known_op()
-# Determine whether the method module can understand the operation specified
-# in the query string. This function allows UserArticles to determine which
-# Method modules understand operations added by methods during generate_articlelist_ops().
-#
-# @return true if the Method module can understand the operation, false otherwise.
-sub known_op {
-    my $self = shift;
-
-    return 0;
-}
-
-
-## @method @ process_op($article)
-# Perform the query-stringspecified operation on a article. This allows Method
-# modules to implement the operations added as part of generate_articlelist_ops().
-#
-# @param article A reference to a hash containing the article data.
-# @return A string containing a status update article to show above the list, and
-#         a flag specifying whether the returned string is an error article or not.
-sub process_op {
-    my $self    = shift;
-    my $article = shift;
-
-    return ("", 0);
-}
 
 1;
