@@ -225,8 +225,8 @@ sub _generate_edit {
 
     # Release timing options
     my $relops = $self -> {"template"} -> build_optionlist($self -> {"relops"}, $args -> {"release_mode"});
-    my $format_release = $self -> {"template"} -> format_time($args -> {"rtimestamp"}, "%d/%m/%Y %H:%M")
-        if($args -> {"rtimestamp"});
+    my $format_release = $self -> {"template"} -> format_time($args -> {"release_time"}, "%d/%m/%Y %H:%M")
+        if($args -> {"release_time"});
 
     # Which schedules and sections can the user post to?
     my $schedules  = $self -> {"article"} -> get_user_schedule_sections($userid);

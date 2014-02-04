@@ -816,19 +816,19 @@ sub add_article {
 
     # Fix up release time
     my $now = time();
-    $article -> {"rtimestamp"} = $now if(!$article -> {"rtimestamp"});
+    $article -> {"release_time"} = $now if(!$article -> {"release_time"});
 
     my ($is_sticky, $sticky_until) = (0, undef);
     if($article -> {"sticky"}) {
         $is_sticky = 1;
-        $sticky_until = $article -> {"rtimestamp"} + ($article -> {"sticky"} * 86400)
+        $sticky_until = $article -> {"release_time"} + ($article -> {"sticky"} * 86400)
     }
 
     # Add the article itself
     my $addh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"articles"}."`
                                             (previous_id, metadata_id, creator_id, created, title, summary, article, preset, release_mode, release_time, updated, updated_id, sticky_until, is_sticky)
                                             VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    my $rows = $addh -> execute($previd, $metadataid, $userid, $now, $article -> {"title"}, $article -> {"summary"}, $article -> {"article"}, $article -> {"preset"}, $article -> {"mode"}, $article -> {"rtimestamp"}, $now, $userid, $sticky_until, $is_sticky);
+    my $rows = $addh -> execute($previd, $metadataid, $userid, $now, $article -> {"title"}, $article -> {"summary"}, $article -> {"article"}, $article -> {"preset"}, $article -> {"release_mode"}, $article -> {"release_time"}, $now, $userid, $sticky_until, $is_sticky);
     return $self -> self_error("Unable to perform article insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Article insert failed, no rows inserted") if($rows eq "0E0");
 

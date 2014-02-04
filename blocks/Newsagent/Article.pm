@@ -454,16 +454,16 @@ sub _validate_article_fields {
         $error = $self -> _validate_feeds_levels($args, $userid);
         $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
-        ($args -> {"mode"}, $error) = $self -> validate_options("mode", {"required" => 1,
-                                                                         "default"  => "visible",
-                                                                         "source"   => $self -> {"relops"},
-                                                                         "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_RELEASE")});
+        ($args -> {"release_mode"}, $error) = $self -> validate_options("mode", {"required" => 1,
+                                                                                 "default"  => "visible",
+                                                                                 "source"   => $self -> {"relops"},
+                                                                                 "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_RELEASE")});
         $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
-        if($args -> {"mode"} eq "timed") {
-            ($args -> {"rtimestamp"}, $error) = $self -> validate_numeric("rtimestamp", {"required" => $args -> {"mode"} eq "timed",
-                                                                                         "default"  => 0,
-                                                                                         "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_RELDATE")});
+        if($args -> {"release_mode"} eq "timed") {
+            ($args -> {"release_time"}, $error) = $self -> validate_numeric("rtimestamp", {"required" => $args -> {"mode"} eq "timed",
+                                                                                           "default"  => 0,
+                                                                                           "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_RELDATE")});
             $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
         } elsif($args -> {"mode"} eq "preset") {
             ($args -> {"preset"}, $error) = $self -> validate_string("preset", {"required" => 1,
@@ -590,7 +590,7 @@ sub _validate_article {
         }
 
         if($args -> {"minor_edit"}) {
-            $args -> {"rtimestamp"} = $article -> {"release_time"};
+            $args -> {"release_time"} = $article -> {"release_time"};
         }
     }
 

@@ -60,9 +60,9 @@ sub _generate_compose {
     my $feed_levels = $self -> _build_feed_levels($user_levels, $args -> {"levels"});
 
     # Release timing options
-    my $relops = $self -> {"template"} -> build_optionlist($self -> {"relops"}, $args -> {"mode"});
-    my $format_release = $self -> {"template"} -> format_time($args -> {"rtimestamp"}, "%d/%m/%Y %H:%M")
-        if($args -> {"rtimestamp"});
+    my $relops = $self -> {"template"} -> build_optionlist($self -> {"relops"}, $args -> {"release_mode"});
+    my $format_release = $self -> {"template"} -> format_time($args -> {"release_time"}, "%d/%m/%Y %H:%M")
+        if($args -> {"release_time"});
 
     # Which schedules and sections can the user post to?
     my $schedules  = $self -> {"article"} -> get_user_schedule_sections($userid);
@@ -134,7 +134,7 @@ sub _generate_compose {
                                                                            "***levels***"           => $levels,
                                                                            "***release_mode***"     => $relops,
                                                                            "***release_date_fmt***" => $format_release,
-                                                                           "***rtimestamp***"       => $args -> {"rtimestamp"},
+                                                                           "***rtimestamp***"       => $args -> {"release_time"},
                                                                            "***imageaopts***"       => $imagea_opts,
                                                                            "***imagebopts***"       => $imageb_opts,
                                                                            "***imagea_url***"       => $args -> {"images"} -> {"a"} -> {"url"} || "https://",
