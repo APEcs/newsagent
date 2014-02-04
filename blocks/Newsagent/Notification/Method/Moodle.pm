@@ -37,7 +37,7 @@ use base qw(Newsagent::Notification::Method); # This class is a Method module
 # ============================================================================
 #  Article send functions
 
-## @method $ send($article, $recipients, $allrecips)
+## @method @ send($article, $recipients, $allrecips)
 # Attempt to send the specified article as moodle forum posts.
 #
 # @param article    A reference to a hash containing the article to send.
@@ -45,13 +45,14 @@ use base qw(Newsagent::Notification::Method); # This class is a Method module
 # @param allrecips A reference to a hash containing the methods being used to
 #                  send notifications for this article as keys, and arrays of
 #                  recipient names for each method as values.
-# @return A reference to an array of {name, state, message} hashes on success,
-#         on entry for each recipient, undef on error.
+# @return An overall status for the send, and a reference to an array of
+#         {name, state, message} hashes on success, one entry for each
+#         recipient, undef on error.
 sub send {
     my $self       = shift;
     my $article    = shift;
     my $recipients = shift;
-
+    my $overall    = "sent";
     my @results = ();
 
     # For each recipient, invoke the send
@@ -66,6 +67,8 @@ sub send {
                 if($self -> _post_article($article));
         }
 
+        $overall = $result if($result != "sent");
+
         # Store the send status.
         push(@results, {"name"    => $recipient -> {"shortname"},
                         "state"   => $result,
@@ -73,7 +76,7 @@ sub send {
         $self -> log("Method::Moodle", "Send of article ".$article -> {"id"}." to ".$recipient -> {"shortname"}.": $result (".($result eq "error" ? $self -> errstr() : "").")");
     }
 
-    return \@results;
+    return ($overall, \@results);
 }
 
 

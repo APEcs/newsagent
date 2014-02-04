@@ -63,7 +63,8 @@ sub new {
     $self -> {"queue"} = Newsagent::System::NotificationQueue -> new(dbh      => $self -> {"dbh"},
                                                                      settings => $self -> {"settings"},
                                                                      logger   => $self -> {"logger"},
-                                                                     module => $self -> {"module"})
+                                                                     article  => $self -> {"article"},
+                                                                     module   => $self -> {"module"})
         or return Webperl::SystemModule::set_error("Article initialisation failed: ".$SystemModule::errstr);
 
     $self -> {"schedrelops"} = [ {"value" => "next",

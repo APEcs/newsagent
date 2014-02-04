@@ -181,8 +181,9 @@ sub get_data {
 # @param allrecips A reference to a hash containing the methods being used to
 #                  send notifications for this article as keys, and arrays of
 #                  recipient names for each method as values.
-# @return A reference to an array of {name, state, message} hashes on success,
-#         on entry for each recipient, undef on error.
+# @return An overall status for the send, and a reference to an array of
+#         {name, state, message} hashes on success, one entry for each
+#         recipient, undef on error.
 sub send {
     my $self       = shift;
     my $article    = shift;
@@ -199,7 +200,7 @@ sub send {
                         "message" => "No implementation of send() for this method"});
     }
 
-    return \@results;
+    return ("error", \@results);
 }
 
 

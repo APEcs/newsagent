@@ -163,7 +163,7 @@ sub get_data {
 }
 
 
-## @method $ send($article, $recipients, $allrecips)
+## @method @ send($article, $recipients, $allrecips)
 # Attempt to send the specified article through the current method to the
 # specified recipients.
 #
@@ -172,8 +172,9 @@ sub get_data {
 # @param allrecips A reference to a hash containing the methods being used to
 #                  send notifications for this article as keys, and arrays of
 #                  recipient names for each method as values.
-# @return A reference to an array of {name, state, message} hashes on success,
-#         on entry for each recipient, undef on error.
+# @return An overall status for the send, and a reference to an array of
+#         {name, state, message} hashes on success, one entry for each
+#         recipient, undef on error.
 sub send {
     my $self       = shift;
     my $article    = shift;
@@ -617,13 +618,15 @@ sub _build_header_recipients {
 }
 
 
-## @method private $ _finish_send($status, $recipients)
+## @method private @ _finish_send($status, $recipients)
 # Generate an array of status messages for each recipient
 #
 # @param status     The status to set. If this is 'error' then $self -> errstr() is used
 #                   as the message.
 # @param recipients A reference to the recipients array
-# @return A reference to an array of status messages, one for each recipient
+# @return An overall status for the send, and a reference to an array of
+#         {name, state, message} hashes on success, one entry for each
+#         recipient, undef on error.
 sub _finish_send {
     my $self       = shift;
     my $status     = shift;
@@ -638,7 +641,7 @@ sub _finish_send {
                         "message" => $status eq "error" ? $self -> errstr() : ""});
     }
 
-    return \@results;
+    return ($status, \@results);
 }
 
 

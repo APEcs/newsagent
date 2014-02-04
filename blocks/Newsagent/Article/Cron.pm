@@ -83,8 +83,8 @@ sub _build_all_recipients {
     # At this point it doesn't matter if we're actually going to send them here, or if
     # another cron job will grab them: we need to know where they are going regardless.
     foreach my $notify (@{$pending}) {
-        my $recipmeths = $self -> {"notify_methods"} -> {$notify -> {"name"}} -> get_notification_targets($notify -> {"id"}, $notify -> {"year_id"})
-            or return $self -> self_error($self -> {"notify_methods"} -> {$notify -> {"name"}} -> errstr());
+        my $recipmeths = $self -> {"queue"} -> get_notification_targets($notify -> {"id"}, $notify -> {"year_id"})
+            or return $self -> self_error($self -> {"queue"} -> errstr());
 
         foreach my $dest (@{$recipmeths}) {
             push(@{$recipients -> {$notify -> {"name"}}}, $dest -> {"shortname"});
@@ -92,35 +92,6 @@ sub _build_all_recipients {
     }
 
     return $recipients;
-}
-
-
-## @method private $ _send_article_to_recipients($notify, $allrecips)
-# Send the specified notification to its recipients. This traverses the list
-# of recipients for the notification, updating the appropriate method with the
-# settings needed to send to that recipient, and then invoking the dispatcher.
-#
-# @param notify    The notification to send
-# @param allrecips A reference to a hash containing the methods being used to
-#                  send notifications for this article as keys, and arrays of
-#                  recipient names for each method as values.
-# @return A reference to an array containing send status information for each
-#         recipient, or undef if a serious error occurred.
-sub _send_article_to_recipients {
-    my $self      = shift;
-    my $notify    = shift;
-    my $allrecips = shift;
-
-    # Fetch the article core data
-    my $article = $self -> {"article"} -> get_article($notify -> {"article_id"})
-        or return $self -> self_error($self -> {"article"} -> errstr());
-
-    # Now fetch the list of recipient/method rows this notification is going to
-    my $recipmeths = $self -> {"notify_methods"} -> {$notify -> {"name"}} -> get_notification_targets($notify -> {"id"}, $notify -> {"year_id"})
-        or return $self -> self_error($self -> {"notify_methods"} -> {$notify -> {"name"}} -> errstr());
-
-    return $self -> {"notify_methods"} -> {$notify -> {"name"}} -> send($article, $recipmeths, $allrecips)
-        or return $self -> self_error($self -> {"notify_methods"} -> {$notify -> {"name"}} -> errstr());
 }
 
 
@@ -141,29 +112,23 @@ sub _send_pending_notifications {
         or return undef;
 
     foreach my $notify (@{$pending}) {
+        $self -> log("cron", "Starting delivery of notification ".$notify -> {"id"});
 
-        # If the notification is still marked as pending, start it sending
-        my ($state, $message, $time) = $self -> {"notify_methods"} -> {$notify -> {"name"}} -> get_notification_status($notify -> {"id"});
-        if($state eq "pending") {
-            # Mark as sending ASAP to prevent grabbing by another cron job on long jobs
-            $self -> {"notify_methods"} -> {$notify -> {"name"}} -> set_notification_status($notify -> {"id"}, "sending");
-
-            $self -> log("cron", "Starting delivery of notification ".$notify -> {"id"});
-
-            # Invoke the sender to do the actual work of dispatching the messages
-            my $result = $self -> _send_article_to_recipients($notify, $allrecipients);
-            if(!$result) {
-                $status .= $self -> {"template"} -> load_template("cron/status_item.tem", {"***article***" => $notify -> {"article_id"},
-                                                                                           "***id***"      => $notify -> {"id"},
-                                                                                           "***year***"    => $notify -> {"year_id"},
-                                                                                           "***method***"  => $notify -> {"name"},
-                                                                                           "***name***"    => "",
-                                                                                           "***state***"   => "error",
-                                                                                           "***message***" => $self -> errstr(),
-                                                                  });
-                last;
-            }
-
+        # Invoke the sender to do the actual work of dispatching the messages
+        my $result = $self -> {"queue"} -> send_pending_notification($notify, $allrecipients);
+        if(!defined($result)) {
+            $status .= $self -> {"template"} -> load_template("cron/status_item.tem", {"***article***" => $notify -> {"article_id"},
+                                                                                       "***id***"      => $notify -> {"id"},
+                                                                                       "***year***"    => $notify -> {"year_id"},
+                                                                                       "***method***"  => $notify -> {"name"},
+                                                                                       "***name***"    => "",
+                                                                                       "***state***"   => "error",
+                                                                                       "***message***" => $self -> {"queue"} -> errstr(),
+                                                              });
+            $result = [ {"name" => "",
+                         "state"   => "error",
+                         "message" => "A serious error occurred: ".$self -> {"queue"} -> errstr} ];
+        } else {
             # Go through the results from the send code, converting to something usable
             # in the page.
             my $failmsg = "";
@@ -181,26 +146,14 @@ sub _send_pending_notifications {
 
                 $self -> log("cron", "Status of notification ".$notify -> {"id"}.", ".$row -> {"name"}." = ".$row -> {"state"}." (".($row -> {"message"} || "").")");
             }
-
-            # notify the author
-            $self -> _notify_author($notify, $result);
-
-            # Update the message status depending on whether errors were encountered
-            $self -> {"notify_methods"} -> {$notify -> {"name"}} -> set_notification_status($notify -> {"id"}, $failmsg ? "failed" : "sent", $failmsg);
-            $self -> log("cron", "Finished delivery of notification ".$notify -> {"id"});
-
-        } else {
-            # notification grabed by other cron job
-            $self -> log("cron", "Status of notification ".$notify -> {"id"}." changed since get_pending_notifications() called");
-            $status .= $self -> {"template"} -> load_template("cron/status_item.tem", {"***article***" => $notify -> {"article_id"},
-                                                                                       "***id***"      => $notify -> {"id"},
-                                                                                       "***year***"    => $notify -> {"year_id"},
-                                                                                       "***method***"  => $notify -> {"name"},
-                                                                                       "***name***"    => "",
-                                                                                       "***state***"   => "",
-                                                                                       "***message***" => "Status changed during cron run, unable to process",
-                                                                  });
         }
+
+
+        # notify the author
+        $self -> _notify_author($notify, $result);
+
+        # Update the message status depending on whether errors were encountered
+        $self -> log("cron", "Finished delivery of notification ".$notify -> {"id"});
     }
 
     # return the status string

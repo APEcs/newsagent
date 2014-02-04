@@ -140,6 +140,45 @@ sub cancel_notifications {
 }
 
 
+## @method $ send_pending_notification($notification, $allrecips)
+# Send the specified notification to its recipients.
+#
+# @param notification A reference to a hash containing the notification to send
+# @param allrecips    A reference to a hash containing the methods being used to
+#                     send notifications for this article as keys, and arrays of
+#                     recipient names for each method as values.
+# @return A reference to an array containing send status information for each
+#         recipient, or undef if a serious error occurred.
+sub send_pending_notification {
+    my $self         = shift;
+    my $notification = shift;
+    my $allrecips    = shift;
+
+    $self -> clear_error();
+
+    my $header = $self -> get_notification_status(id => $notification -> {"id"});
+    if($header && $header -> {"status"} eq "pending") {
+        # Mark as sending ASAP to prevent grabbing by another cron job on long jobs
+        $self -> set_notification_status($notification -> {"id"}, "sending");
+
+        # Fetch the article core data
+        my $article = $self -> {"article"} -> get_article($notification -> {"article_id"})
+            or return $self -> self_error($self -> {"article"} -> errstr());
+
+        # Now fetch the list of recipient/method rows this notification is going to
+        my $recipmeths = $self -> get_notification_targets($notification -> {"id"}, $notification -> {"year_id"})
+            or return undef;
+
+        my ($status, $results) = $self -> {"notify_methods"} -> {$notification -> {"name"}} -> send($article, $recipmeths, $allrecips)
+            or return $self -> self_error($self -> {"notify_methods"} -> {$notify -> {"name"}} -> errstr());
+
+        $self -> set_notification_status($notification -> {"id"}, $status);
+    }
+
+    return $results;
+}
+
+
 ## @method $ get_pending_notifications()
 # Generate a list of currently pending notifications that are capable of being sent
 #
