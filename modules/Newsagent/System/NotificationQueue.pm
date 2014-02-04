@@ -59,7 +59,10 @@ sub get_methods {
 }
 
 
-## @method $ queue_notifications($articleid, $article, $userid, $is_draft, $used_methods)
+## @method $ queue_notifications($articleid, $article, $userid, $is_draft, $used_methods, $send_after)
+# Add the notifications for the specified article to the notification queue. This adds
+# notifications for all the specified used methods, including setting up any method-
+# specific data for the notifications.
 #
 # @param articleid    The ID of the article to add the notifications for.
 # @param article      A reference to a hash containing the article data.
@@ -68,6 +71,9 @@ sub get_methods {
 # @param used_methods A reference to a hash of used methods. Each key should be the name
 #                     of a notification method, and the value for each key should be a
 #                     reference to an array of ids for rows in the recipient methods table.
+# @param send_after   The message will be held in the queue until at least this time, as
+#                     a unix timestamp, has passed. If not specified, it is set to
+#                     the article publish time + the standard safety delay.
 # @return True on success, undef on error
 sub queue_notifications {
     my $self         = shift;
@@ -76,11 +82,16 @@ sub queue_notifications {
     my $userid       = shift;
     my $is_draft     = shift;
     my $used_methods = shift;
+    my $send_after   = shift;
 
     $self -> clear_error();
 
+    # Work out the send time if needed
+    $send_after = ($article -> {"release_time"} || time()) + (($self -> {"settings"} -> {"config"} -> {"Notification:hold_delay"} || 5) * 60)
+        if(!defined($send_after));
+
     foreach my $method (keys(%{$used_methods})) {
-        my $newid = $self -> _queue_notification($articleid, $article, $userid, $self -> {"notify_methods"} -> {$method} -> get_id(), $is_draft, $used_methods -> {$method})
+        my $newid = $self -> _queue_notification($articleid, $article, $userid, $self -> {"notify_methods"} -> {$method} -> get_id(), $is_draft, $send_after, $used_methods -> {$method})
             or return undef;
 
         my $dataid = $self -> {"notify_methods"} -> {$method} -> store_data($articleid, $article, $userid, $is_draft, $used_methods -> {$method});
@@ -129,16 +140,19 @@ sub cancel_notifications {
 }
 
 
-## @method @ get_notifications($articleid)
+## @method @ get_notifications($articleid, $unsent)
 # Obtain the notification data for the specfied article.
 #
-# @param articleid The article to fetch notification data for
+# @param articleid The article to fetch notification data for.
+# @param unsent    If set to true, only notifications that have not been sent
+#                  will be included in the result.
 # @return .
 sub get_notifications {
     my $self      = shift;
     my $articleid = shift;
+    my $unsent    = shift;
 
-    return $self -> _get_article_notifications($articleid);
+    return $self -> _get_article_notifications($articleid, $unsent);
 }
 
 
@@ -196,7 +210,8 @@ sub set_notification_status {
 # Obtain the status of the specified article notification header. Supported
 # arguments are:
 #
-# - `id`: the id of the notification to get the data for
+# - `id`: the id of the notification to get the data for. If this is set, the
+#         following arguments are ignored.
 # - `articleid`: the id of the article to fetch the data for. If set, `methodid` must be set.
 # - `methodid`: the id of the method to filter on.
 #
@@ -273,7 +288,7 @@ sub get_notification_targets {
 
         # Do any year id substitutions needed
         $target -> {"settings"} =~ s/\{V_\[yearid\]\}/$yid/g;
-    }
+   }
 
     return $targets;
 }
@@ -287,7 +302,7 @@ sub get_notification_targets {
 # @return The ID of the data row (or zero, if there is no data) on success, undef
 #         on error.
 sub get_notification_dataid {
-    my $self = shift;
+    my $self      = shift;
     my $articleid = shift;
     my $methodid  = shift;
 
@@ -400,9 +415,12 @@ sub _queue_notification {
 }
 
 
-## @method private $ _get_article_notifications($articleid)
+## @method private $ _get_article_notifications($articleid, $unsent)
 # Generate a hash containing the enabled recipients and methods, and a hash of used methods.
 #
+# @param articleid The article to fetch notification data for.
+# @param unsent    If set to true, only notifications that have not been sent
+#                  will be included in the result.
 # @return Four values: the year id; a reference to a hash of used methods containing the
 #         methods used for notifications (each value is an arrayref of recipient method ids);
 #         a reference to a hash of enabled methods, and a reference to a hash of method-specific
@@ -410,17 +428,22 @@ sub _queue_notification {
 sub _get_article_notifications {
     my $self      = shift;
     my $articleid = shift;
+    my $unsent    = shift || "";
     my ($year, $used, $enabled, $methods);
 
     $self -> clear_error();
 
+    # fix up the sent check
+    my $sent_check = $unsent ? "AND (n.status = 'pending' OR n.status = 'draft')" : "";
+
     # First we need to fetch the list of notification headers - this will give the
-    # list of used methods, and can be used to loop up the recipients
+    # list of used methods, and can be used to look up the recipients
     my $notifyh = $self -> {"dbh"} -> prepare("SELECT n.*, m.name
                                                FROM `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."` AS n,
                                                     `".$self -> {"settings"} -> {"database"} -> {"notify_methods"}."` AS m
                                                WHERE m.id = n.method_id
-                                               AND n.article_id = ?");
+                                               AND n.article_id = ?
+                                               $sent_check");
 
     # And a query will be needed to fetch recipients
     my $reciph = $self -> {"dbh"} -> prepare("SELECT rm.recipient_id

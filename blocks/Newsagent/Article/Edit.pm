@@ -273,11 +273,11 @@ sub _generate_edit {
 
     my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix");
 
-    # Suck in all the notification settings so they can be shown
+    # Suck in all the draft/unsent notification settings so they can be shown
     ($args -> {"notify_matrix"} -> {"year"},
      $args -> {"notify_matrix"} -> {"used_methods"},
      $args -> {"notify_matrix"} -> {"enabled"},
-     $args -> {"methods"}                           ) = $self -> {"queue"} -> get_notifications($articleid);
+     $args -> {"methods"}                           ) = $self -> {"queue"} -> get_notifications($articleid, 1);
     print STDERR Dumper($args);
     my $notifyblock = $matrix -> build_matrix($userid, $args -> {"notify_matrix"} -> {"enabled"}, $args -> {"notify_matrix"} -> {"year"});
 
