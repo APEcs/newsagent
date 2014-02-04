@@ -140,13 +140,41 @@ sub cancel_notifications {
 }
 
 
+## @method $ get_pending_notifications()
+# Generate a list of currently pending notifications that are capable of being sent
+#
+# @return A reference to an array of pending article notifications
+sub get_pending_notifications {
+    my $self = shift;
+
+    $self -> clear_error();
+
+    my $pendingh = $self -> {"dbh"} -> prepare("SELECT `m`.`name`, `n`.`id`, `n`.`article_id`, `n`.`year_id`, `a`.`release_time`
+                                                FROM `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."` AS `n`,
+                                                     `".$self -> {"settings"} -> {"database"} -> {"notify_methods"}."` AS `m`,
+                                                     `".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `a`
+                                                WHERE `m`.`id` = `n`.`method_id`
+                                                AND `a`.`id` = `n`.`article_id`
+                                                AND `n`.`status` = 'pending'
+                                                AND `n`.`send_after` <= UNIX_TIMESTAMP()
+                                                ORDER BY `a`.`release_time`, `m`.`name`");
+    $pendingh -> execute()
+        or return $self -> self_error("Unable to perform pending notification lookup: ".$self -> {"dbh"} -> errstr);
+
+    return $pendingh -> fetchall_arrayref({});
+}
+
+
 ## @method @ get_notifications($articleid, $unsent)
 # Obtain the notification data for the specfied article.
 #
 # @param articleid The article to fetch notification data for.
 # @param unsent    If set to true, only notifications that have not been sent
 #                  will be included in the result.
-# @return .
+# @return Four values: the year id; a reference to a hash of used methods containing the
+#         methods used for notifications (each value is an arrayref of recipient method ids);
+#         a reference to a hash of enabled methods, and a reference to a hash of method-specific
+#         data. Returns undef on error.
 sub get_notifications {
     my $self      = shift;
     my $articleid = shift;

@@ -78,42 +78,6 @@ sub get_user_matrix {
 }
 
 
-## @method $ get_pending_notifications()
-# Generate a list of currently pending notifications that are capable of being sent
-# (ie: the article has been published, at least 5 minutes have elapsed between
-# publish time and this call).
-#
-# @return A reference to an array of pending article notifications
-sub get_pending_notifications {
-    my $self = shift;
-
-    $self -> clear_error();
-
-    # Default delay is 5 minutes. Entries must have been released at least this long
-    # ago to qualify for pending release
-    my $time_delay = time() - (($self -> {"settings"} -> {"config"} -> {"Notification:hold_delay"} || 5) * 60);
-
-    my $pendingh = $self -> {"dbh"} -> prepare("SELECT `m`.`name`, `n`.`id`, `n`.`article_id`, `n`.`year_id`, `a`.`release_time`
-                                                FROM `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."` AS `n`,
-                                                     `".$self -> {"settings"} -> {"database"} -> {"notify_methods"}."` AS `m`,
-                                                     `".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `a`
-                                                WHERE `m`.`id` = `n`.`method_id`
-                                                AND `a`.`id` = `n`.`article_id`
-                                                AND `n`.`status` = 'pending'
-                                                AND (`a`.`release_mode` = 'visible'
-                                                     OR (`a`.`release_mode` = 'timed'
-                                                         AND `a`.`release_time` <= UNIX_TIMESTAMP()
-                                                        )
-                                                    )
-                                                AND `a`.`release_time` < ?
-                                                ORDER BY `a`.`release_time`, `m`.`name`");
-    $pendingh -> execute($time_delay)
-        or return $self -> self_error("Unable to perform pending notification lookup: ".$self -> {"dbh"} -> errstr);
-
-    return $pendingh -> fetchall_arrayref({});
-}
-
-
 ## @method $ get_available_methods()
 # Obtain a list of the methods defined in the system. This does not filter based on
 # the methods available to the user.

@@ -24,8 +24,6 @@ use strict;
 use base qw(Newsagent::Article); # This class extends the Article block class
 use v5.12;
 
-use Newsagent::System::Matrix;
-
 ## @method private $ _notify_author($notify, $result)
 # Send an email to the author of the article telling them that the status of
 # their message.
@@ -259,13 +257,11 @@ sub page_display {
     my $self = shift;
     my ($content, $extrahead) = ("", "");
 
-    my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix");
-
     $self -> log("cron", "Cron starting.");
 
     # Fetch the list of pending notifications
-    my $pending = $matrix -> get_pending_notifications()
-        or return $self -> generate_errorbox($matrix -> errstr());
+    my $pending = $self -> {"queue"} -> get_pending_notifications()
+        or return $self -> generate_errorbox($self -> {"queue"} -> errstr());
 
     if(!scalar(@{$pending})) {
         $self -> log("cron", "No pending notifications to send.");
