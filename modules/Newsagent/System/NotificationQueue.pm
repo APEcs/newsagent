@@ -170,16 +170,16 @@ sub send_pending_notification {
             or return undef;
 
         my ($status, $results) = $self -> {"notify_methods"} -> {$notification -> {"name"}} -> send($article, $recipmeths, $allrecips)
-            or return $self -> self_error($self -> {"notify_methods"} -> {$notify -> {"name"}} -> errstr());
+            or return $self -> self_error($self -> {"notify_methods"} -> {$notification -> {"name"}} -> errstr());
 
         $self -> set_notification_status($notification -> {"id"}, $status);
+
+        return $results;
     } else {
-        return [ { "name"    => $notify -> {"name"},
+        return [ { "name"    => "all",
                    "state"   => "skipped",
                    "message" => "Message status changed during cron processing."} ];
     }
-
-    return $results;
 }
 
 
