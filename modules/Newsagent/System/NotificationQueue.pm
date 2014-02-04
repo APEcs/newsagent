@@ -173,6 +173,10 @@ sub send_pending_notification {
             or return $self -> self_error($self -> {"notify_methods"} -> {$notify -> {"name"}} -> errstr());
 
         $self -> set_notification_status($notification -> {"id"}, $status);
+    } else {
+        return [ { "name"    => $notify -> {"name"},
+                   "state"   => "skipped",
+                   "message" => "Message status changed during cron processing."} ];
     }
 
     return $results;

@@ -128,6 +128,8 @@ sub _send_pending_notifications {
             $result = [ {"name" => "",
                          "state"   => "error",
                          "message" => "A serious error occurred: ".$self -> {"queue"} -> errstr} ];
+            $self -> log("cron", "Status of notification ".$notify -> {"id"}.": ".$row -> {"state"}." (".($row -> {"message"} || "").")");
+
         } else {
             # Go through the results from the send code, converting to something usable
             # in the page.
@@ -144,7 +146,7 @@ sub _send_pending_notifications {
                 $failmsg .= $row -> {"name"}.": ".$row -> {"message"}."\n"
                     if($row -> {"state"} eq "error");
 
-                $self -> log("cron", "Status of notification ".$notify -> {"id"}.", ".$row -> {"name"}." = ".$row -> {"state"}." (".($row -> {"message"} || "").")");
+                $self -> log("cron", "Status of notification ".$notify -> {"id"}.": ".$row -> {"name"}." = ".$row -> {"state"}." (".($row -> {"message"} || "").")");
             }
         }
 
