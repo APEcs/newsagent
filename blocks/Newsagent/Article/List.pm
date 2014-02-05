@@ -413,10 +413,8 @@ sub _build_api_setmode_response {
 
         # abort edited/deleted article notifications
         if($newmode eq "deleted" || $newmode eq "edited") {
-            foreach my $method (keys(%{$self -> {"notify_methods"}})) {
-                $self -> {"notify_methods"} -> {$method} -> cancel_notifications($articleid)
-                    or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"notify_methods"} -> {$method} -> errstr()}));
-            }
+            $self -> {"queue"} -> cancel_notifications($articleid)
+                or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"queue"} -> errstr()}));
         }
 
     } else {

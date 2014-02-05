@@ -107,21 +107,21 @@ sub store_data {
 }
 
 
-## @method $ get_article($articleid)
+## @method $ get_data($articleid)
 # Fetch the method-specific data for the current method for the specified
 # article. This generates a hash that contains the method's article-specific
 # data and returns a reference to it.
 #
 # @param articleid The ID of the article to fetch the data for.
 # @return A reference to a hash containing the data on success, undef on error
-sub get_article {
+sub get_data {
     my $self      = shift;
     my $articleid = shift;
 
     $self -> clear_error();
 
     my $dataid = $self -> get_notification_dataid($articleid)
-        or return $self -> self_error("Unable to get email settings for $articleid: ".($self -> errstr() || "No data stored"));
+        or return $self -> self_error("Unable to get twitter settings for $articleid: ".($self -> errstr() || "No data stored"));
 
     my $datah = $self -> {"dbh"} -> prepare("SELECT *
                                              FROM `".$self -> {"settings"} -> {"method:twitter"} -> {"data"}."`
@@ -130,11 +130,11 @@ sub get_article {
         or return $self -> self_error("Unable to perform data lookup: ".$self -> {"dbh"} -> errstr);
 
     return $datah -> fetchrow_hashref()
-        or return $self -> self_error("No email-specific settings for article $articleid");
+        or return $self -> self_error("No twitter-specific settings for article $articleid");
 }
 
 
-## @method @ send($article, $recipients, $allrecips)
+## @method @ send($article, $recipients, $allrecips, $queue)
 # Attempt to send the specified article through the current method to the
 # specified recipients.
 #
@@ -143,6 +143,7 @@ sub get_article {
 # @param allrecips A reference to a hash containing the methods being used to
 #                  send notifications for this article as keys, and arrays of
 #                  recipient names for each method as values.
+# @param queue     A reference to the system notification queue object.
 # @return An overall status for the send, and a reference to an array of
 #         {name, state, message} hashes on success, one entry for each
 #         recipient, undef on error.
@@ -151,6 +152,7 @@ sub send {
     my $article    = shift;
     my $recipients = shift;
     my $allrecips  = shift;
+    my $queue      = shift;
 
     print STDERR "Article: ".Dumper($article);
     print STDERR "Recips: ".Dumper($recipients);

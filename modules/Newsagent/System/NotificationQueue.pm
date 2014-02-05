@@ -24,6 +24,7 @@ use strict;
 use base qw(Webperl::SystemModule); # This class extends the Newsagent block class
 use Webperl::Utils qw(hash_or_hashref);
 use v5.12;
+use Data::Dumper;
 
 # ============================================================================
 #  Constructor
@@ -156,7 +157,9 @@ sub send_pending_notification {
 
     $self -> clear_error();
 
+    print STDERR "Got notification: ".Dumper($notification);
     my $header = $self -> get_notification_status(id => $notification -> {"id"});
+    print STDERR "Got header: ".Dumper($header);
     if($header && $header -> {"status"} eq "pending") {
         # Mark as sending ASAP to prevent grabbing by another cron job on long jobs
         $self -> set_notification_status($notification -> {"id"}, "sending");
@@ -169,7 +172,7 @@ sub send_pending_notification {
         my $recipmeths = $self -> get_notification_targets($notification -> {"id"}, $notification -> {"year_id"})
             or return undef;
 
-        my ($status, $results) = $self -> {"notify_methods"} -> {$notification -> {"name"}} -> send($article, $recipmeths, $allrecips)
+        my ($status, $results) = $self -> {"notify_methods"} -> {$notification -> {"name"}} -> send($article, $recipmeths, $allrecips, $self)
             or return $self -> self_error($self -> {"notify_methods"} -> {$notification -> {"name"}} -> errstr());
 
         $self -> set_notification_status($notification -> {"id"}, $status);
@@ -298,14 +301,14 @@ sub get_notification_status {
     $self -> clear_error();
 
     if($args -> {"id"}) {
-        _build_param(\@params, \$where, "WHERE", 'id' , $args -> {'id'});
+        $self -> _build_param(\@params, \$where, "WHERE", 'id' , $args -> {'id'}, "=");
     } elsif($args -> {"articleid"} && $args -> {"methodid"}) {
-        _build_param(\@params, \$where, "WHERE", 'articleid', $args -> {'articleid'});
-        _build_param(\@params, \$where, "AND"  , 'methodid' , $args -> {'methodid'});
+        $self -> _build_param(\@params, \$where, "WHERE", 'articleid', $args -> {'articleid'}, "=");
+        $self -> _build_param(\@params, \$where, "AND"  , 'methodid' , $args -> {'methodid'}, "=");
     } else {
         return $self -> self_error("Incorrect parameters provided to get_notification_status()");
     }
-
+    print STDERR "$where = ".Dumper(\@params);
     my $stateh = $self -> {"dbh"} -> prepare("SELECT *
                                               FROM `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."`
                                               $where

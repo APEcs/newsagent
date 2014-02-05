@@ -37,14 +37,16 @@ use base qw(Newsagent::Notification::Method); # This class is a Method module
 # ============================================================================
 #  Article send functions
 
-## @method @ send($article, $recipients, $allrecips)
-# Attempt to send the specified article as moodle forum posts.
+## @method @ send($article, $recipients, $allrecips, $queue)
+# Attempt to send the specified article through the current method to the
+# specified recipients.
 #
-# @param article    A reference to a hash containing the article to send.
+# @param article A reference to a hash containing the article to send.
 # @param recipients A reference to an array of recipient/emthod hashes.
 # @param allrecips A reference to a hash containing the methods being used to
 #                  send notifications for this article as keys, and arrays of
 #                  recipient names for each method as values.
+# @param queue     A reference to the system notification queue object.
 # @return An overall status for the send, and a reference to an array of
 #         {name, state, message} hashes on success, one entry for each
 #         recipient, undef on error.
@@ -52,6 +54,9 @@ sub send {
     my $self       = shift;
     my $article    = shift;
     my $recipients = shift;
+    my $allrecips  = shift;
+    my $queue      = shift;
+
     my $overall    = "sent";
     my @results = ();
 
