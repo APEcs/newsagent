@@ -50,7 +50,7 @@ sub new {
                                                        logger   => $self -> {"logger"},
                                                        roles    => $self -> {"system"} -> {"roles"},
                                                        metadata => $self -> {"system"} -> {"metadata"})
-        or return Webperl::SystemModule::set_error("Article initialisation failed: ".$SystemModule::errstr);
+        or return Webperl::SystemModule::set_error("Article initialisation failed: ".$Webperl::SystemModule::errstr);
 
     $self -> {"article"} = Newsagent::System::Article -> new(feed     => $self -> {"feed"},
                                                              dbh      => $self -> {"dbh"},
@@ -58,14 +58,14 @@ sub new {
                                                              logger   => $self -> {"logger"},
                                                              roles    => $self -> {"system"} -> {"roles"},
                                                              metadata => $self -> {"system"} -> {"metadata"})
-        or return Webperl::SystemModule::set_error("Article initialisation failed: ".$SystemModule::errstr);
+        or return Webperl::SystemModule::set_error("Article initialisation failed: ".$Webperl::SystemModule::errstr);
 
     $self -> {"queue"} = Newsagent::System::NotificationQueue -> new(dbh      => $self -> {"dbh"},
                                                                      settings => $self -> {"settings"},
                                                                      logger   => $self -> {"logger"},
                                                                      article  => $self -> {"article"},
                                                                      module   => $self -> {"module"})
-        or return Webperl::SystemModule::set_error("Article initialisation failed: ".$SystemModule::errstr);
+        or return Webperl::SystemModule::set_error("Article initialisation failed: ".$Webperl::SystemModule::errstr);
 
     $self -> {"schedrelops"} = [ {"value" => "next",
                                   "name"  => "{L_COMPOSE_RELNEXT}" },
