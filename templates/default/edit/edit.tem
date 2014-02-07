@@ -47,7 +47,7 @@ window.addEvent('domready', function() {
     <form id="fullform" action="***form_url***" method="post" enctype="multipart/form-data">
     <ul id="leftcol">
     <li id="article" class="shadowbox">
-        <h2>{L_EDIT_ARTICLE}</h2>
+        <h2>***titlemsg***</h2>
         <div class="sbcontent">
             <dl class="input">
                 <dt><label for="comp-title" class="required">{L_COMPOSE_TITLE}</label> <span class="extrainfo">{L_FORM_OPTIONAL}</span></dt>
@@ -65,11 +65,12 @@ window.addEvent('domready', function() {
                     <dd><textarea name="article" id="comp-desc" rows="15" cols="80">***article***</textarea></dd>
                 </dl>
             </div>
-            <p><label for="edit-minor" class="check"><input type="checkbox" name="minor_edit" id="edit-minor" ***isminor*** />{L_EDIT_ISMINOR}</label></p>
+***minoredit***
             <hr />
             <div class="submitbox">
                 <input type="hidden" name="stopconfirm" id="stopconfirm" value="***disable_confirm***" />
-                <input type="button" class="button blue" name="editarticle" id="submitarticle" value="{L_EDIT_SUBMIT}" />
+                <input type="hidden" name="clone" id="clone" value="***clone***" />
+                <input type="button" class="button blue" name="editarticle" id="submitarticle" value="***submitmsg***" />
             </div>
         </div>
     </li>

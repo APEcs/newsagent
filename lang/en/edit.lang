@@ -8,6 +8,12 @@ EDIT_ARTICLE             = Edit article
 EDIT_SUBMIT              = Edit article
 EDIT_ISMINOR             = This is a minor edit.
 
+CLONE_SUBMIT             = Create article
+CLONE_FORM_TITLE         = Clone article
+
+TEMPLATE_SUBMIT          = Create article
+TEMPLATE_FORM_TITLE      = Create article from template
+
 EDIT_FAILED              = Article editing failed
 
 EDIT_EDITED_TITLE       = Article Edited

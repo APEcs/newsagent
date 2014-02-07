@@ -20,6 +20,7 @@ ALIST_FILTER_RELEDIT        = Edited
 ALIST_FILTER_RELTEMPLATES   = Templates
 
 ALIST_CTRLEDIT       = Edit this article
+ALIST_CTRLCLONE      = Clone this article
 ALIST_CTRLHIDE       = Unpublish (hide) this article
 ALIST_CTRLDELETE     = Delete this article (can't be undone!)
 ALIST_CTRLUNDELETE   = Restore this article

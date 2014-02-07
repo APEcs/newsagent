@@ -488,6 +488,10 @@ sub _validate_article_fields {
     $args -> {"noconfirm"} = 1
         if($self -> {"cgi"} -> param('stopconfirm'));
 
+    # Is this a clone?
+    $args -> {"clone"} = 1
+        if(defined($self -> {"cgi"} -> param("clone")) && $self -> {"cgi"} -> param("clone"));
+
     # Handle images
     $errors .= $self -> _validate_article_image($args, "a");
     $errors .= $self -> _validate_article_image($args, "b");
@@ -560,8 +564,8 @@ sub _validate_article {
                                                                             "***errors***"  => $errors}), $args)
         if($errors);
 
-    # If an articleid has been specified, this is an edit - update the status of the previous article
-    if($articleid) {
+    # If an articleid has been specified, this is an edit - update the status of the previous article if it's not a clone
+    if($articleid && !$args -> {"clone"}) {
         my $article = $self -> {"article"} -> get_article($articleid)
             or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
                                                                                        "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",

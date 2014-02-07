@@ -200,7 +200,15 @@ sub _generate_edit {
     if($article -> {"preset"} && defined($self -> {"cgi"} -> param('usetem'))) {
         $article -> {"preset"} = '';
         $article -> {"release_mode"} = 'visible';
+        $args -> {"template"} = 1;
+
+    # having clone set when creating from a template makes no sense, so only allow it when usetem is not set.
+    } else {
+        # Is this a clone?
+        $args -> {"clone"} = 1
+            if(defined($self -> {"cgi"} -> param("clone")) && $self -> {"cgi"} -> param("clone"));
     }
+
 
     # copy the article into the args hash, skipping anything already set in the args.
     foreach my $key (keys %{$article}) {
@@ -273,12 +281,14 @@ sub _generate_edit {
 
     my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix");
 
+    my $exclude_sent = 1;
+    $exclude_sent = 0 if($args -> {"clone"});
+
     # Suck in all the draft/unsent notification settings so they can be shown
     ($args -> {"notify_matrix"} -> {"year"},
      $args -> {"notify_matrix"} -> {"used_methods"},
      $args -> {"notify_matrix"} -> {"enabled"},
-     $args -> {"methods"}                           ) = $self -> {"queue"} -> get_notifications($articleid, 1);
-    print STDERR Dumper($args);
+     $args -> {"methods"}                           ) = $self -> {"queue"} -> get_notifications($articleid, $exclude_sent);
     my $notifyblock = $matrix -> build_matrix($userid, $args -> {"notify_matrix"} -> {"enabled"}, $args -> {"notify_matrix"} -> {"year"});
 
     my $notify_settings = "";
@@ -293,8 +303,21 @@ sub _generate_edit {
     my $noconfirm = $self -> {"session"} -> {"auth"} -> {"app"} -> get_user_setting($userid, "disable_confirm");
     $noconfirm = $noconfirm -> {"value"} || "0";
 
+    # Work out the button name and title
+    my ($submitmsg, $titlemsg) = ("{L_EDIT_SUBMIT}", "EDIT_FORM_TITLE");
+
+    ($submitmsg, $titlemsg) = ("{L_CLONE_SUBMIT}", "CLONE_FORM_TITLE")
+        if($args -> {"clone"});
+
+    ($submitmsg, $titlemsg) = ("{L_TEMPLATE_SUBMIT}", "TEMPLATE_FORM_TITLE")
+        if($args -> {"template"});
+
+    # Handle the minor edit: it's disabled if this is a template instance or clone
+    my $disable_minor = ($args -> {"template"} || $args -> {"clone"});
+    my $minoredit = $self -> {"template"} -> load_template("edit/minoredit-".($disable_minor ? "disabled.tem" : "enabled.tem"), { "***isminor***" => $args -> {"minor_edit"} ? 'checked="checked"' : "" });
+
     # And generate the page title and content.
-    return ($self -> {"template"} -> replace_langvar("EDIT_FORM_TITLE"),
+    return ($self -> {"template"} -> replace_langvar($titlemsg),
             $self -> {"template"} -> load_template("edit/edit.tem", {"***errorbox***"         => $error,
                                                                      "***form_url***"         => $self -> build_url(block => "edit", pathinfo => ["update", $args -> {"id"}]),
                                                                      "***title***"            => $args -> {"title"},
@@ -315,12 +338,15 @@ sub _generate_edit {
                                                                      "***userlevels***"       => $feed_levels,
                                                                      "***levellist***"        => $jslevels,
                                                                      "***sticky_mode***"      => $self -> {"template"} -> build_optionlist($self -> {"stickyops"}, $args -> {"sticky"}),
-                                                                     "***isminor***"          => $args -> {"minor_edit"} ? 'checked="checked"' : "",
                                                                      "***batchstuff***"       => $schedblock,
                                                                      "***notifystuff***"      => $notifyblock,
                                                                      "***notifysettings***"   => $notify_settings,
                                                                      "***disable_confirm***"  => $noconfirm,
                                                                      "***preset***"           => $args -> {"preset"},
+                                                                     "***clone***"            => $args -> {"clone"} || "0",
+                                                                     "***submitmsg***"        => $submitmsg,
+                                                                     "***titlemsg***"         => "{L_".$titlemsg."}",
+                                                                     "***minoredit***"        => $minoredit,
                                                    }));
 }
 

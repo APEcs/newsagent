@@ -9,6 +9,20 @@ function edit_article(articleid)
 }
 
 
+/** Clone an article - redirect the user to an edit page for now, popup editing
+ *  may be an option in future...
+ *
+ * @param articleid The ID of the article to edit.
+ */
+function clone_article(articleid)
+{
+    var uri = new URI(edit_url + articleid);
+    uri.setData('clone', '1');
+
+    location.href = uri.toString();
+}
+
+
 /** Attempt to delete an article from the article list. This askes the
  *  server to delete the specified article entry and if the article is deleted
  *  it updates the row.

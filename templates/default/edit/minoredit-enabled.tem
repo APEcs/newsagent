@@ -1,0 +1,1 @@
+            <p><label for="edit-minor" class="check"><input type="checkbox" name="minor_edit" id="edit-minor" ***isminor*** />{L_EDIT_ISMINOR}</label></p>

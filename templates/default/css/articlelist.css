@@ -168,6 +168,18 @@ table.listtable td.title ul.info li {
     background-position: -48px -16px;
 }
 
+.control.clone {
+    background-position: -80px 0px;
+}
+
+.control.clone:hover {
+    background-position: -80px -32px;
+}
+
+.control.clone.ctrldisabled {
+    background-position: -80px -16px;
+}
+
 
 ul.info li .state.invalid {
     color: #666;
