@@ -462,11 +462,11 @@ sub _validate_article_fields {
         $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
         if($args -> {"release_mode"} eq "timed") {
-            ($args -> {"release_time"}, $error) = $self -> validate_numeric("rtimestamp", {"required" => $args -> {"mode"} eq "timed",
+            ($args -> {"release_time"}, $error) = $self -> validate_numeric("rtimestamp", {"required" => $args -> {"release_mode"} eq "timed",
                                                                                            "default"  => 0,
                                                                                            "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_RELDATE")});
             $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
-        } elsif($args -> {"mode"} eq "preset") {
+        } elsif($args -> {"release_mode"} eq "preset") {
             ($args -> {"preset"}, $error) = $self -> validate_string("preset", {"required" => 1,
                                                                                 "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_PRESETNAME"),
                                                                                 "minlen"   => 8,
@@ -617,7 +617,7 @@ sub _validate_article {
            $args -> {"notify_matrix"} -> {"used_methods"} &&                  # are any notifications enabled?
            scalar(keys(%{$args -> {"notify_matrix"} -> {"used_methods"}}))) { # no, really, are there any?
 
-            my $isdraft = ($args -> {"mode"} eq "draft" || $args -> {"mode"} eq "preset");
+            my $isdraft = ($args -> {"release_mode"} eq "draft" || $args -> {"release_mode"} eq "preset");
 
             $self -> {"queue"} -> queue_notifications($aid, $args, $userid, $isdraft, $args -> {"notify_matrix"} -> {"used_methods"})
                 or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
