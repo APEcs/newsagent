@@ -107,20 +107,22 @@ sub store_data {
 }
 
 
-## @method $ get_data($articleid)
+## @method $ get_data($articleid, $queue)
 # Fetch the method-specific data for the current method for the specified
 # article. This generates a hash that contains the method's article-specific
 # data and returns a reference to it.
 #
 # @param articleid The ID of the article to fetch the data for.
+# @param queue     A reference to the system notification queue object.
 # @return A reference to a hash containing the data on success, undef on error
 sub get_data {
     my $self      = shift;
     my $articleid = shift;
+    my $queue     = shift;
 
     $self -> clear_error();
 
-    my $dataid = $self -> get_notification_dataid($articleid)
+    my $dataid = $queue -> get_notification_dataid($articleid, $self -> {"method_id"})
         or return $self -> self_error("Unable to get twitter settings for $articleid: ".($self -> errstr() || "No data stored"));
 
     my $datah = $self -> {"dbh"} -> prepare("SELECT *
