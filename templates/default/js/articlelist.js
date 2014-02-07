@@ -19,7 +19,7 @@ function clone_article(articleid)
     var uri = new URI(edit_url + articleid);
     uri.setData('clone', '1');
 
-    location.href = uri.toString();
+    uri.go();
 }
 
 
