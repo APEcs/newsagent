@@ -211,6 +211,31 @@ sub get_pending_notifications {
 }
 
 
+## @method $ get_pending_notifications($after)
+# Fetch the unix timestamp of the next notification send after the specified time.
+#
+# @param after The time to check for notifications to send from.
+# @param The time the next notification should be sent on success, 0 if
+#        there is no pending notification, undef on error.
+sub get_next_notification_time {
+    my $self  = shift;
+    my $after = shift;
+
+    my $pendingh = $self -> {"dbh"} -> prepare("SELECT `send_after`
+                                                FROM `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."`
+                                                WHERE `status` = 'pending'
+                                                AND `send_after` >= ?
+                                                ORDER BY `send_after`
+                                                LIMIT 1");
+    $pendingh -> execute($after)
+        or return $self -> self_error("Unable to perform pending notification lookup: ".$self -> {"dbh"} -> errstr);
+
+    my $postat = $pendingh -> fetchrow_arrayref();
+
+    return $postat ? $postat -> [0]: 0;
+}
+
+
 ## @method @ get_notifications($articleid, $unsent)
 # Obtain the notification data for the specfied article.
 #

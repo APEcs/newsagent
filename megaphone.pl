@@ -93,6 +93,13 @@ my $dbh = DBI->connect($settings -> {"database"} -> {"database"},
                        { RaiseError => 0, AutoCommit => 1, mysql_enable_utf8 => 1 })
     or $logger -> die_log("Unable to connect to database: ".$DBI::errstr);
 
+# Pull configuration data out of the database into the settings hash
+$settings -> load_db_config($dbh, $settings -> {"database"} -> {"settings"});
+
+# Start database logging if available
+$logger -> init_database_log($dbh, $settings -> {"database"} -> {"logging"})
+    if($settings -> {"database"} -> {"logging"});
+
 my $megaphone = Newsagent::System::Megaphone -> new(dbh      => $dbh,
                                                     logger   => $logger,
                                                     settings => $settings)

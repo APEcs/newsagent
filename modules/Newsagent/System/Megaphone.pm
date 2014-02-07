@@ -23,9 +23,16 @@ use strict;
 use base qw(Webperl::SystemModule); # This class extends the Newsagent block class
 use v5.12;
 
+use CGI;
+use List::Util qw(min);
+use DateTime;
 use Webperl::Message::Queue;
 use Webperl::Modules;
+use Webperl::SessionHandler;
 use Webperl::Template;
+use Webperl::Auth;
+use Newsagent::AppUser;
+use Newsagent::System;
 use Newsagent::System;
 use Newsagent::System::Feed;
 use Newsagent::System::Article;
@@ -41,6 +48,8 @@ sub new {
     my $class    = ref($invocant) || $invocant;
     my $self     = $class -> SUPER::new(@_)
         or return undef;
+
+    $self -> {"cgi"} = CGI -> new();
 
     $self -> {"system"} = Newsagent::System -> new(dbh      => $self -> {"dbh"},
                                                    logger   => $self -> {"logger"},
@@ -61,20 +70,37 @@ sub new {
                                                      settings  => $self -> {"settings"})
         or return Webperl::SystemModule::set_error("Megaphone initialisation failed: ".$Webperl::SystemModule::errstr);
 
-    $self -> {"modules"} = Webperl::Modules -> new(logger   => $self -> {"logger"},
-                                                   dbh      => $self -> {"dbh"},
-                                                   settings => $self -> {"settings"},
-                                                   template => $self -> {"template"},
-                                                   blockdir => $self -> {"settings"} -> {"paths"} -> {"blocks"} || "blocks",
-                                                   system   => $self -> {"system"},
-                                                   messages => $self -> {"messages"})
+    # Initialise the appuser object
+    $self -> {"appuser"} = Newsagent::AppUser -> new();
+    $self -> {"appuser"} -> init($self -> {"cgi"}, $self -> {"dbh"}, $self -> {"settings"}, $self -> {"logger"});
+
+    # Initialise the auth object
+    $self -> {"auth"} = Webperl::Auth -> new() if(!$self -> {"auth"});
+    $self -> {"auth"} -> init($self -> {"cgi"}, $self -> {"dbh"}, $self -> {"appuser"}, $self -> {"settings"}, $self -> {"logger"});
+
+    $self -> {"session"} = Webperl::SessionHandler -> new(logger   => $self -> {"logger"},
+                                                          cgi      => $self -> {"cgi"},
+                                                          dbh      => $self -> {"dbh"},
+                                                          auth     => $self -> {"auth"},
+                                                          template => $self -> {"template"},
+                                                          settings => $self -> {"settings"})
+       or return Webperl::SystemModule::set_error("Megaphone initialisation failed: ".$Webperl::SystemModule::errstr);
+
+    $self -> {"module"} = Webperl::Modules -> new(logger   => $self -> {"logger"},
+                                                  dbh      => $self -> {"dbh"},
+                                                  settings => $self -> {"settings"},
+                                                  template => $self -> {"template"},
+                                                  blockdir => $self -> {"settings"} -> {"paths"} -> {"blocks"} || "blocks",
+                                                  system   => $self -> {"system"},
+                                                  session  => $self -> {"session"},
+                                                  messages => $self -> {"messages"})
         or return Webperl::SystemModule::set_error("Megaphone initialisation failed: ".$Webperl::SystemModule::errstr);
 
     $self -> {"system"} -> init(logger   => $self -> {"logger"},
                                 dbh      => $self -> {"dbh"},
                                 settings => $self -> {"settings"},
                                 template => $self -> {"template"},
-                                modules  => $self -> {"modules"},
+                                modules  => $self -> {"module"},
                                 messages => $self -> {"messages"})
         or return Webperl::SystemModule::set_error("Unable to create system: ".$self -> {"system"} -> errstr());
 
