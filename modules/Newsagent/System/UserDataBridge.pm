@@ -44,17 +44,61 @@ sub new {
     my $self     = $class -> SUPER::new(@_)
         or return undef;
 
-    # Check that the required objects are present
-    return Webperl::SystemModule::set_error("No metadata object available.") if(!$self -> {"metadata"});
-    return Webperl::SystemModule::set_error("No roles object available.")    if(!$self -> {"roles"});
+    $self -> connect()
+        or return Webperl::SystemModule::set_error($self -> errstr());
+
+    return $self;
+}
+
+
+# ============================================================================
+#  Connect/disconnect code
+
+
+## @method $ connect()
+# Check whether a connection to the userdata database is currently available, and
+# create one if it is not.
+#
+# @return true if the connection is available, undef on error.
+sub connect {
+    my $self = shift;
+
+    return 1 if($self -> {"udata_dbh"} && $self -> {"udata_dbh"} -> ping());
+
+    $self -> clear_error();
 
     $self -> {"udata_dbh"} = DBI->connect($self -> {"settings"} -> {"userdata"} -> {"database"},
                                           $self -> {"settings"} -> {"userdata"} -> {"username"},
                                           $self -> {"settings"} -> {"userdata"} -> {"password"},
-                                          { RaiseError => 0, AutoCommit => 1, mysql_enable_utf8 => 1 })
-        or return Webperl::SystemModule::set_error("Unable to connect to userdata database: ".$DBI::errstr);
+                                          { RaiseError => 0, AutoCommit => 1, mysql_enable_utf8 => 1, mysql_auto_reconnect => 1 })
+        or return $self -> self_error("Unable to connect to userdata database: ".$DBI::errstr);
 
-    return $self;
+    return 1;
+}
+
+
+
+## @method $ diconnect()
+# Check whether a connection to the userdata database is currently available, and
+# disconnect from it if it is. This will also clean up the database handle reference
+# in $self.
+#
+# @return true if the connection was closed (or didn't exist), undef on error.
+sub disconnect {
+    my $self = shift;
+
+    # disconnect does nothing if there is no database handle
+    return 1 if(!$self -> {"udata_dbh"});
+
+    $self -> clear_error();
+
+    # Hopefully this actually works!
+    $self -> {"udata_dbh"} -> disconnect()
+        or $self -> warn_log("Warning from disconnect: ".$self -> {"udata_dbh"} -> errstr);
+
+    $self -> {"udata_dbh"} = undef;
+
+    return 1;
 }
 
 
@@ -75,6 +119,9 @@ sub get_valid_years {
     my $as_options = shift;
 
     $self -> clear_error();
+
+    $self -> connect()
+        or return undef;
 
     my $lookuph = $self -> {"udata_dbh"} -> prepare("SELECT DISTINCT y.*
                                                      FROM `".$self -> {"settings"} -> {"userdata"} -> {"user_years"}."` AS l,
@@ -163,6 +210,8 @@ sub get_user_addresses {
     my $self     = shift;
     my $settings = shift;
 
+    $self -> clear_error();
+
     my $tables  = '`'.$self -> {"settings"} -> {"userdata"} -> {"users"}.'` AS `u`';
     my @params = ();
     my $where  = "";
@@ -233,6 +282,9 @@ sub get_user_addresses {
 
         $where .= $self -> _add_multiparam($settings -> {"course"}, \@params, "c", "course_id", "LIKE", "OR");
     }
+
+    $self -> connect()
+        or return undef;
 
     my $query = "SELECT DISTINCT(`u`.`email`)
                  FROM $tables
