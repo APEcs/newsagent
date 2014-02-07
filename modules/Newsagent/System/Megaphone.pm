@@ -95,6 +95,7 @@ sub new {
                                                   session  => $self -> {"session"},
                                                   messages => $self -> {"messages"})
         or return Webperl::SystemModule::set_error("Megaphone initialisation failed: ".$Webperl::SystemModule::errstr);
+    $self -> {"messages"} -> set_module_obj($self -> {"module"});
 
     $self -> {"system"} -> init(logger   => $self -> {"logger"},
                                 dbh      => $self -> {"dbh"},

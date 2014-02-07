@@ -24,7 +24,6 @@ use strict;
 use base qw(Webperl::SystemModule); # This class extends the Newsagent block class
 use Webperl::Utils qw(hash_or_hashref);
 use v5.12;
-use Data::Dumper;
 
 # ============================================================================
 #  Constructor
@@ -157,9 +156,7 @@ sub send_pending_notification {
 
     $self -> clear_error();
 
-    print STDERR "Got notification: ".Dumper($notification);
     my $header = $self -> get_notification_status(id => $notification -> {"id"});
-    print STDERR "Got header: ".Dumper($header);
     if($header && $header -> {"status"} eq "pending") {
         # Mark as sending ASAP to prevent grabbing by another cron job on long jobs
         $self -> set_notification_status($notification -> {"id"}, "sending");
@@ -333,7 +330,7 @@ sub get_notification_status {
     } else {
         return $self -> self_error("Incorrect parameters provided to get_notification_status()");
     }
-    print STDERR "$where = ".Dumper(\@params);
+
     my $stateh = $self -> {"dbh"} -> prepare("SELECT *
                                               FROM `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."`
                                               $where

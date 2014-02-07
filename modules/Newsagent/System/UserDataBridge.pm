@@ -22,7 +22,7 @@ package Newsagent::System::UserDataBridge;
 use strict;
 use base qw(Webperl::SystemModule); # This class extends the system module
 use v5.12;
-use Data::Dumper;
+
 # ============================================================================
 #  Constructor
 
@@ -289,7 +289,6 @@ sub get_user_addresses {
     my $query = "SELECT DISTINCT(`u`.`email`)
                  FROM $tables
                  WHERE $where";
-    print STDERR "query: $query\nargs:".Dumper(\@params);
 
     my $queryh = $self -> {"udata_dbh"} -> prepare($query);
     $queryh -> execute(@params)
