@@ -87,6 +87,7 @@ sub new {
        or return Webperl::SystemModule::set_error("Megaphone initialisation failed: ".$Webperl::SystemModule::errstr);
 
     $self -> {"module"} = Webperl::Modules -> new(logger   => $self -> {"logger"},
+                                                  cgi      => $self -> {"cgi"},
                                                   dbh      => $self -> {"dbh"},
                                                   settings => $self -> {"settings"},
                                                   template => $self -> {"template"},
@@ -201,7 +202,6 @@ sub _build_all_recipients {
 
     return $recipients;
 }
-
 
 
 ## @method private void _schedule_wait(void)
