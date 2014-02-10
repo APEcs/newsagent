@@ -21,6 +21,7 @@ package Newsagent::Article;
 
 use strict;
 use base qw(Newsagent); # This class extends the Newsagent block class
+use Webperl::Daemon;
 use Newsagent::System::Feed;
 use Newsagent::System::Article;
 use Newsagent::System::NotificationQueue;
@@ -65,6 +66,9 @@ sub new {
                                                                      logger   => $self -> {"logger"},
                                                                      article  => $self -> {"article"},
                                                                      module   => $self -> {"module"})
+        or return Webperl::SystemModule::set_error("Article initialisation failed: ".$Webperl::SystemModule::errstr);
+
+    $self -> {"daemon"} = Webperl::Daemon -> new(pidfile => $self -> {"settings"} -> {"megaphone"} -> {"pidfile"})
         or return Webperl::SystemModule::set_error("Article initialisation failed: ".$Webperl::SystemModule::errstr);
 
     $self -> {"schedrelops"} = [ {"value" => "next",
@@ -628,6 +632,9 @@ sub _validate_article {
                                                                                                                                                      })
                                                                   }), $args);
 
+            # Trigger a wakup in the dispatcher
+            my $res = $self -> {"daemon"} -> signal(14);
+            $self -> log("Daemon wakup signal result: $res");
         }
     }
 
