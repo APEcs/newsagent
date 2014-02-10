@@ -126,9 +126,15 @@ sub generate_feed {
         $result -> {"fulltext"} = $self -> cleanup_entities($result -> {"fulltext"})
             if($result -> {"fulltext"});
 
+        # work out the summary
+        my $showsum = $result -> {"full_summary"} ? "summary.tem" : "nosummary.tem";
+        my $summary = $self -> {"template"} -> load_template("feeds/html/item-$mode-$showsum", {"***summary***" => $result -> {"summary"},
+                                                                                                "***link***"    => $feedurl,
+                                                             });
+
         # Put the item together!
         $items .= $self -> {"template"} -> load_template("feeds/html/item-$mode.tem", {"***title***"       => $result -> {"title"} || $pubdate,
-                                                                                       "***summary***"     => $result -> {"summary"},
+                                                                                       "***summary***"     => $summary,
                                                                                        "***leaderimg***"   => $images[0],
                                                                                        "***articleimg***"  => $images[1],
                                                                                        "***feed***"        => $result -> {"feedname"},

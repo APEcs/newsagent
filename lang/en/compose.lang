@@ -38,6 +38,9 @@ COMPOSE_STICKYDAYS5 = Sticky for 5 days
 COMPOSE_STICKYDAYS6 = Sticky for 6 days
 COMPOSE_STICKYDAYS7 = Sticky for 7 days
 
+COMPOSE_FULLSUMMARY = Summary display
+COMPOSE_FULLSUMOPT  = Show summary in full article view.
+
 COMPOSE_NOSCHEDULE  = You do not currently have access to any scheduled releases.
 COMPOSE_SCHEDULE    = Scheduled release
 COMPOSE_NEXTREL     = Next release

@@ -304,7 +304,7 @@ sub get_feed_articles {
     # Now start constructing the query. These are the tables and where clauses that are
     # needed regardless of the settings provided by the caller.
     # All the fields the query is interested in, normally fulltext is omitted unless explicitly requested
-    my $fields = "`article`.`id`, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `user`.`email`, `article`.`created`, `article`.`title`, `article`.`summary`, `article`.`release_time`, `article`.`is_sticky`, `article`.`sticky_until`";
+    my $fields = "`article`.`id`, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `user`.`email`, `article`.`created`, `article`.`title`, `article`.`summary`, `article`.`release_time`, `article`.`is_sticky`, `article`.`sticky_until`, `article`.`full_summary`";
     $fields   .= ", `article`.`article` AS `fulltext`" if($settings -> {"fulltext_mode"});
 
     my $from  = "`".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `article`
@@ -824,11 +824,13 @@ sub add_article {
         $sticky_until = $article -> {"release_time"} + ($article -> {"sticky"} * 86400)
     }
 
+    my $full_summary = $article -> {"full_summary"} ? 1 : 0;
+
     # Add the article itself
     my $addh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"articles"}."`
-                                            (previous_id, metadata_id, creator_id, created, title, summary, article, preset, release_mode, release_time, updated, updated_id, sticky_until, is_sticky)
-                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    my $rows = $addh -> execute($previd, $metadataid, $userid, $now, $article -> {"title"}, $article -> {"summary"}, $article -> {"article"}, $article -> {"preset"}, $article -> {"release_mode"}, $article -> {"release_time"}, $now, $userid, $sticky_until, $is_sticky);
+                                            (previous_id, metadata_id, creator_id, created, title, summary, article, preset, release_mode, release_time, updated, updated_id, sticky_until, is_sticky, full_summary)
+                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    my $rows = $addh -> execute($previd, $metadataid, $userid, $now, $article -> {"title"}, $article -> {"summary"}, $article -> {"article"}, $article -> {"preset"}, $article -> {"release_mode"}, $article -> {"release_time"}, $now, $userid, $sticky_until, $is_sticky, $full_summary);
     return $self -> self_error("Unable to perform article insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Article insert failed, no rows inserted") if($rows eq "0E0");
 

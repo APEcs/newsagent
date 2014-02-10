@@ -161,6 +161,10 @@ Not here yet.
                             </select>
                         </dd>
                     </dl>
+                    <dl class="input">
+                        <dt><strong>{L_COMPOSE_FULLSUMMARY}</strong></dt>
+                        <dd><label for="comp-sumfull" class="check"><input type="checkbox" name="full_summary" id="comp-sumfull" ***fullsummary*** />{L_COMPOSE_FULLSUMOPT}</label></dd>
+                    </dl>
 ***notifystuff***
                 </div>
                 <div class="content">

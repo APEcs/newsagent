@@ -2,7 +2,7 @@
     <h1>***title***</h1>
     <div class="newsagent-fulldate">{L_FEED_PUBLISHED}: ***date***</div>
     ***articleimg***
-    <h3>***summary***</h3>
+    ***summary***
     <div class="newsagent-article">***fulltext***</div>
     <div class="newsagent-author"><img src="https://gravatar.com/avatar/***gravhash***?s=16&amp;d=mm&amp;r=g" alt="gravatar" class="newsagent-avatar" width="16" height="16" /> ***name***</div>
 </li>

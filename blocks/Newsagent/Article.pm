@@ -479,6 +479,8 @@ sub _validate_article_fields {
                                                                              "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_STICKY")});
         $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
+        $args -> {"full_summary"} = (defined($self -> {"cgi"} -> param("full_summary")) && $self -> {"cgi"} -> param("full_summary")) ? 1 : 0;
+
     # Release mode 1 is "batch" release.
     } elsif($args -> {"relmode"} == 1) {
         # FIXME: validate batch fields

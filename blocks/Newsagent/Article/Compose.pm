@@ -123,6 +123,9 @@ sub _generate_compose {
     my $noconfirm = $self -> {"session"} -> {"auth"} -> {"app"} -> get_user_setting($userid, "disable_confirm");
     $noconfirm = $noconfirm -> {"value"} || "0";
 
+    # Default the summary inclusion
+    $args -> {"full_summary"} = 1 if(!defined($args -> {"full_summary"}));
+
     # And generate the page title and content.
     return ($self -> {"template"} -> replace_langvar("COMPOSE_FORM_TITLE"),
             $self -> {"template"} -> load_template("compose/compose.tem", {"***errorbox***"         => $error,
@@ -150,6 +153,7 @@ sub _generate_compose {
                                                                            "***notifysettings***"   => $notify_settings,
                                                                            "***disable_confirm***"  => $noconfirm,
                                                                            "***preset***"           => $args -> {"preset"},
+                                                                           "***fullsummary***"      => $args -> {"full_summary"} ? 'checked="checked"' : '',
                                                                           }));
 }
 

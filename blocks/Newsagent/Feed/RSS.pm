@@ -103,7 +103,9 @@ sub generate_feed {
             if($images);
 
         # Handle fulltext transform
-        $result -> {"fulltext"} = $self -> cleanup_entities($result -> {"fulltext"})
+        my $showsum = $result -> {"full_summary"} ? "summary.tem" : "nosummary.tem";
+        $result -> {"fulltext"} = $self -> {"template"} -> load_template("feeds/rss/fulltext-$showsum", {"***summary***" => $result -> {"summary"},
+                                                                                                         "***text***"    => $self -> cleanup_entities($result -> {"fulltext"})})
             if($result -> {"fulltext"});
 
         given($result -> {"fulltext_mode"}) {
@@ -117,6 +119,14 @@ sub generate_feed {
                                                                                      "***attrs***"   => "",
                                                                                      "***content***" => "<![CDATA[\n".$result -> {"fulltext"}."\n]]>" })
             if($result -> {"fulltext_mode"} && !$result -> {"use_fulltext_desc"});
+
+        # If fulltext is activated, and it is being used as the description, but including the summary in the
+        # fulltext is not enabled, create a separate summary element
+        $extra .= $self -> {"template"} -> load_template("feeds/rss/newsagent.tem", {"***elem***"    => "summary",
+                                                                                     "***attrs***"   => "",
+                                                                                     "***content***" => "<![CDATA[".$result -> {"summary"}."]]>" })
+            if($result -> {"fulltext_mode"} && $result -> {"use_fulltext_desc"} && !$result -> {"full_summary"});
+
 
         # The date can be needed in both the title and date fields.
         my $pubdate = $self -> {"template"} -> format_time($result -> {"release_time"}, $self -> {"timefmt"});

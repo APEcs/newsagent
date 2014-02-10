@@ -316,6 +316,9 @@ sub _generate_edit {
     my $disable_minor = ($args -> {"template"} || $args -> {"clone"});
     my $minoredit = $self -> {"template"} -> load_template("edit/minoredit-".($disable_minor ? "disabled.tem" : "enabled.tem"), { "***isminor***" => $args -> {"minor_edit"} ? 'checked="checked"' : "" });
 
+    # Default the summary inclusion
+    $args -> {"full_summary"} = 1 if(!defined($args -> {"full_summary"}));
+
     # And generate the page title and content.
     return ($self -> {"template"} -> replace_langvar($titlemsg),
             $self -> {"template"} -> load_template("edit/edit.tem", {"***errorbox***"         => $error,
@@ -347,6 +350,7 @@ sub _generate_edit {
                                                                      "***submitmsg***"        => $submitmsg,
                                                                      "***titlemsg***"         => "{L_".$titlemsg."}",
                                                                      "***minoredit***"        => $minoredit,
+                                                                     "***fullsummary***"      => $args -> {"full_summary"} ? 'checked="checked"' : '',
                                                    }));
 }
 
