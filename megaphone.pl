@@ -76,7 +76,9 @@ sub handle_daemon {
     }
 }
 
-my $logger = Webperl::Logger -> new(syslog => 'Newsagent')
+# Note that the : at the end of the ident is required, otherwise the PID is not
+# written to syslog with the name. Buggered if I know *why*, but it isn't.
+my $logger = Webperl::Logger -> new(syslog => 'Megaphone:')
     or die "FATAL: Unable to create logger object\n";
 
 my $settings = Webperl::ConfigMicro -> new(path_join($scriptpath, "config", "site.cfg"))
