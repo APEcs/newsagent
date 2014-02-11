@@ -187,15 +187,15 @@ sub send {
 
     # First, need the email-specific data for the article
     $article -> {"methods"} -> {"Email"} = $self -> get_data($article -> {"id"}, $queue)
-        or return $self -> _finish_send("error", $recipients);
+        or return $self -> _finish_send("failed", $recipients);
 
     my $prefix = $self -> _get_prefix($article -> {"methods"} -> {"Email"} -> {"prefix_id"});
-    return $self -> _finish_send("error", $recipients) if(!defined($prefix));
+    return $self -> _finish_send("failed", $recipients) if(!defined($prefix));
 
     my $author = $self -> {"session"} -> get_user_byid($article -> {"creator_id"});
     if(!$author) {
         $self -> self_error("Unable to obtain author information for message ".$article -> {"id"});
-        return $self -> _finish_send("error", $recipients);
+        return $self -> _finish_send("failed", $recipients);
     }
 
     # Start building the recipient lists
@@ -640,7 +640,7 @@ sub _finish_send {
         # Store the send status.
         push(@results, {"name"    => $recipient -> {"shortname"},
                         "state"   => $status,
-                        "message" => $status eq "error" ? $self -> errstr() : ""});
+                        "message" => $status eq "failed" ? $self -> errstr() : ""});
     }
 
     return ($status, \@results);
@@ -781,7 +781,7 @@ sub _send_email_message {
 #              and recipients. If 'debug' is set, the emails are sent to the
 #              user that composed the email, along with debugging information,
 #              rather than to the real recipients.
-# @return "sent" on success, "error" on error.
+# @return "sent" on success, "failed" on error.
 sub _send_emails {
     my $self  = shift;
     my $email = shift;
@@ -814,7 +814,7 @@ sub _send_emails {
                           ];
             } else {
 #                $self -> self_error("No real sending yet!");
-#                return "error";
+#                return "failed";
 
                 $header = [ ucfirst($mode) => $recipstr,
                             "From"         => $email -> {"from"},
@@ -833,7 +833,7 @@ sub _send_emails {
                                           "text_body" => $text_body,
                                           "id"        => $email -> {"id"},
                                          })
-                or return "error";
+                or return "failed";
         }
     }
 

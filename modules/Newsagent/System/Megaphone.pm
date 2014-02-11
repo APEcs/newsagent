@@ -253,10 +253,10 @@ sub _schedule_send {
             # Invoke the sender to do the actual work of dispatching the messages
             my $result = $self -> {"queue"} -> send_pending_notification($notify, $allrecipients);
             if(!defined($result)) {
-                $result = [ {"name" => "",
+                $result = [ {"name"    => $notify -> {"name"},
                              "state"   => "error",
                              "message" => "A serious error occurred: ".$self -> {"queue"} -> errstr()} ];
-                $self -> log("cron", "Status of notification ".$notify -> {"id"}.": ".$self -> {"queue"} -> errstr());
+                $self -> {"logger"} -> print(Webperl::Logger::WARNING, "Status of notification ".$notify -> {"id"}.": ".$self -> {"queue"} -> errstr());
 
             } else {
                 foreach my $row (@{$result}) {

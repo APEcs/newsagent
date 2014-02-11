@@ -156,14 +156,22 @@ sub send {
     my $allrecips  = shift;
     my $queue      = shift;
 
-    print STDERR "Article: ".Dumper($article);
-    print STDERR "Recips: ".Dumper($recipients);
-    print STDERR "Allrecip: ".Dumper($allrecips);
+        print STDERR "Article: ".Dumper($article);
+        print STDERR "Recips: ".Dumper($recipients);
+        print STDERR "Allrecip: ".Dumper($allrecips);
 
+    foreach my $recipient (@{$recipients}) {
+        return ("failed", undef)
+            unless($self -> set_config($recipient -> {"settings"}));
 
+        print STDERR "Article: ".Dumper($article);
+        print STDERR "Recips: ".Dumper($recipients);
+        print STDERR "Allrecip: ".Dumper($allrecips);
 
+        print STDERR Dumper($self);
+    }
 
-    return $self -> self_error("Not implemented");
+    return ("failed", $self -> self_error("Twitter method not implemented"));
 }
 
 

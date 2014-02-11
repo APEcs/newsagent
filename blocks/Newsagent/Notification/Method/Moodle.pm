@@ -62,7 +62,7 @@ sub send {
 
     # For each recipient, invoke the send
     foreach my $recipient (@{$recipients}) {
-        my $result = "error";
+        my $result = "failed";
 
         # Settings setup must work first...
         if($self -> set_config($recipient -> {"settings"})) {
@@ -77,8 +77,8 @@ sub send {
         # Store the send status.
         push(@results, {"name"    => $recipient -> {"shortname"},
                         "state"   => $result,
-                        "message" => $result eq "error" ? $self -> errstr() : ""});
-        $self -> log("Method::Moodle", "Send of article ".$article -> {"id"}." to ".$recipient -> {"shortname"}.": $result (".($result eq "error" ? $self -> errstr() : "").")");
+                        "message" => $result eq "failed" ? $self -> errstr() : ""});
+        $self -> log("Method::Moodle", "Send of article ".$article -> {"id"}." to ".$recipient -> {"shortname"}.": $result (".($result eq "failed" ? $self -> errstr() : "").")");
     }
 
     return ($overall, \@results);

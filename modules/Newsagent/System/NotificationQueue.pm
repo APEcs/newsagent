@@ -24,6 +24,7 @@ use strict;
 use base qw(Webperl::SystemModule); # This class extends the Newsagent block class
 use Webperl::Utils qw(hash_or_hashref);
 use v5.12;
+use Data::Dumper;
 
 # ============================================================================
 #  Constructor
@@ -169,12 +170,14 @@ sub send_pending_notification {
         my $recipmeths = $self -> get_notification_targets($notification -> {"id"}, $notification -> {"year_id"})
             or return undef;
 
-        my ($status, $results) = $self -> {"notify_methods"} -> {$notification -> {"name"}} -> send($article, $recipmeths, $allrecips, $self)
-            or return $self -> self_error($self -> {"notify_methods"} -> {$notification -> {"name"}} -> errstr());
+        # invoke the method sent
+        my ($status, $results) = $self -> {"notify_methods"} -> {$notification -> {"name"}} -> send($article, $recipmeths, $allrecips, $self);
 
-        $self -> set_notification_status($notification -> {"id"}, $status);
+        # always reset the status to something
+        $self -> set_notification_status($notification -> {"id"}, $status || "failed");
 
-        return $results;
+        # If the result is undef, propagate the error.
+        return $results || $self -> self_error($self -> {"notify_methods"} -> {$notification -> {"name"}} -> errstr());
     } else {
         return [ { "name"    => "all",
                    "state"   => "skipped",

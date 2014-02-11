@@ -105,7 +105,7 @@ sub set_config {
     my $args = shift;
 
     $self -> clear_error();
-    return $self -> self_error("No settings provided") if(!$args);
+    return $self -> self_error("Method::set_config failed: No settings provided") if(!$args);
 
     $self -> {"args"} = $args;
 
