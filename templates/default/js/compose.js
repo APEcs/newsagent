@@ -486,6 +486,9 @@ function twitter_fielduse(textbox, counter)
     var autolink = $('twitter-auto').getSelected().get('value');
     if(autolink != 'none') len += 24; // 23 for https URL, plus space.
 
+    var articleimg = $('imageb_mode').getSelected().get('value');
+    if(articleimg == 'file' || articleimg == 'img') len += 23; // images get a http url for some reason.
+
     textcount_display(counter, len, 140);
 }
 
