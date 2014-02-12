@@ -24,6 +24,8 @@ use strict;
 use base qw(Newsagent::Notification::Method); # This class is a Method module
 use v5.12;
 
+use Webperl::Utils qw(path_join);
+use Net::Twitter::Lite::WithAPIv1_1;
 use Data::Dumper;
 
 ## @cmethod Newsagent::Notification::Method::Twitter new(%args)
@@ -38,8 +40,6 @@ sub new {
     my $class    = ref($invocant) || $invocant;
     my $self     = $class -> SUPER::new(@_)
         or return undef;
-
-    # Make local copies of the config for readability
 
     # Possible twitter text modes
     $self -> {"twittermodes"} = [ {"value" => "summary",
@@ -156,22 +156,161 @@ sub send {
     my $allrecips  = shift;
     my $queue      = shift;
 
-        print STDERR "Article: ".Dumper($article);
-        print STDERR "Recips: ".Dumper($recipients);
-        print STDERR "Allrecip: ".Dumper($allrecips);
+    $self -> clear_error();
 
+    # First, need the twitter-specific data for the article
+    $article -> {"methods"} -> {"Twitter"} = $self -> get_data($article -> {"id"}, $queue)
+        or return $self -> _finish_send("failed", $recipients);
+
+    # First traverse the list of recipients looking for distinct accounts
+    my $accounts = {};
     foreach my $recipient (@{$recipients}) {
-        return ("failed", undef)
-            unless($self -> set_config($recipient -> {"settings"}));
+        if($self -> set_config($recipient -> {"settings"})) {
+            # args contains a list of argument hashes. In reality there will generally only be one
+            # hash be list, but check anyway.
+            foreach my $arghash (@{$self -> {"args"}}) {
+                $accounts -> {$arghash -> {"consumer_key"}} = { "consumer_secret" => $arghash -> {"consumer_secret"},
+                                                                "access_token"    => $arghash -> {"access_token"},
+                                                                "token_secret"    => $arghash -> {"token_secret"}}
+                if(!$accounts -> {$arghash -> {"consumer_key"}});
 
-        print STDERR "Article: ".Dumper($article);
-        print STDERR "Recips: ".Dumper($recipients);
-        print STDERR "Allrecip: ".Dumper($allrecips);
+                push(@{$accounts -> {$arghash -> {"consumer_key"}} -> {"recipients"}}, $recipient -> {"shortname"})
+            }
 
-        print STDERR Dumper($self);
+        # If no settings are present, use the default account
+        } else {
+            $accounts -> {$self -> get_method_config("consumer_key")} = { "consumer_secret" => $self -> get_method_config("consumer_secret"),
+                                                                          "access_token"    => $self -> get_method_config("access_token"),
+                                                                          "token_secret"    => $self -> get_method_config("token_secret")}
+                if(!$accounts -> {$self -> get_method_config("consumer_key")});
+
+            push(@{$accounts -> {$self -> get_method_config("consumer_key")} -> {"recipients"}}, $recipient -> {"shortname"})
+        }
+
     }
 
-    return ("failed", $self -> self_error("Twitter method not implemented"));
+    # build the tweet
+    my $status = $self -> _build_status($article);
+
+    # Should an image be sent with the update?
+    my $image = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_path"}, $article -> {"images"} -> [1] -> {"location"})
+        if($article -> {"images"} && $article -> {"images"} -> [1] && $article -> {"images"} -> [1] -> {"type"} eq "file");
+
+    # now process the accounts.
+    my @results;
+    my $overall = "sent";
+    foreach my $account (keys(%{$accounts})) {
+        my $result = $self -> _update_status($status, $image, $account, $accounts -> {$account} -> {"consumer_secret"},
+                                                                        $accounts -> {$account} -> {"access_token"},
+                                                                        $accounts -> {$account} -> {"token_secret"});
+        $overall = $result if($result != "sent");
+
+        push(@results, {"name"    => join(",", @{$accounts -> {$account} -> {"recipients"}}),
+                        "state"   => $result,
+                        "message" => $result eq "failed" ? $self -> errstr() : ""});
+        $self -> log("Method::Twitter", "Send of article ".$article -> {"id"}." to ".join(",", @{$accounts -> {$account} -> {"recipients"}}).": $result (".($result eq "failed" ? $self -> errstr() : "").")");
+    }
+
+    return ($overall, \@results);
+}
+
+
+## @method private $ _build_status($article)
+# Given an article, generate the status string to post as a tweet.
+#
+# @param article The article hashref containing the tweet data
+# @return The text to post to Twitter. Note that the length is not checked.
+sub _build_status {
+    my $self    = shift;
+    my $article = shift;
+    my $url     = "";
+
+    $url = $self -> _build_link($article -> {"methods"} -> {"Twitter"} -> {"auto"} eq "news", $article -> {"feeds"}, $article -> {"id"})
+        if($article -> {"methods"} -> {"Twitter"} -> {"auto"} ne "none");
+
+    my $text = $article -> {"methods"} -> {"Twitter"} -> {"mode"} eq "summary" ? $article -> {"summary"} : $article -> {"methods"} -> {"Twitter"} -> {"tweet"};
+
+    if($url) {
+        $text .= " " unless($text =~ /\s+$/);
+        $text .= $url;
+    }
+
+    return $text;
+}
+
+
+## @method private $ _build_link($internal, $artfeeds, $articleid)
+# Generate the link to the full article viewer to include in the tweet.
+#
+# @param internal  If true, use the newsagent internal viewer.
+# @param artfields A reference to a list of feeds set for the article.
+# @param articleid The ID of the article to view.
+# @return A string containing the URL of an article viewer.
+sub _build_link {
+    my $self      = shift;
+    my $internal  = shift;
+    my $artfeeds  = shift;
+    my $articleid = shift;
+
+    my $viewerparam = "?articleid=$articleid";
+
+    # Use the internal viewer?
+    if($internal) {
+        return $self -> build_url(fullurl  => 1,
+                                  block    => "view",
+                                  pathinfo => [ "article", $articleid]);
+    } else {
+        return $artfeeds -> [0] -> {"default_url"}.$viewerparam;
+    }
+}
+
+
+## @method private $ _update_status($status, $image, $consumer_key, $consumer_secret, $access_token, $token_secret)
+# Update the twitter account identified by the specified keys with the
+# provided status, optionally uploading an image to attach to the tweet.
+#
+# @param status The text of the message to post. Note that this is not length-checked
+#               before posting, the account create/edit needs to have done that.
+# @param image  Optional path to the image to upload with the status. Set to "" or
+#               undef if no image is needed.
+# @param consumer_key    The Twitter API consumer key.
+# @param consumer_secret The Twitter API consumer secret.
+# @param access_token    The Twitter API access token.
+# @param token_secret    The Twitter API access token secret.
+# @return "sent" on success, "failed" on error. If this returns "failed",
+#         the reason why is in $self -> errstr().
+sub _update_status {
+    my $self            = shift;
+    my $status          = shift;
+    my $image           = shift;
+    my $consumer_key    = shift;
+    my $consumer_secret = shift;
+    my $access_token    = shift;
+    my $token_secret    = shift;
+
+    my $twitter = Net::Twitter::Lite::WithAPIv1_1 -> new(consumer_key        => $consumer_key,
+                                                         consumer_secret     => $consumer_secret,
+                                                         access_token        => $access_token,
+                                                         access_token_secret => $token_secret,
+                                                         ssl                 => 1,
+                                                         wrap_result         => 1);
+    if($image) {
+        eval { $twitter -> update_with_media($status, [$image]); };
+    } else {
+        eval { $twitter -> update($status); };
+    }
+    if($@) {
+        my $error = "Tweet failed: $@";
+        if(blessed $@ && $@ -> isa('Net::Twitter::Lite::Error')) {
+            $error = $@ -> error;
+            $error = "Tweet too long, or duplicate tweet" if($error eq "403: Forbidden");
+        }
+
+        $self -> self_error($error);
+        return "failed";
+    }
+
+    return "sent";
 }
 
 
