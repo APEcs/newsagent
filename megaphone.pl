@@ -82,7 +82,7 @@ my $logger = Webperl::Logger -> new(syslog => 'Megaphone:')
     or die "FATAL: Unable to create logger object\n";
 
 my $settings = Webperl::ConfigMicro -> new(path_join($scriptpath, "config", "site.cfg"))
-    or $logger -> die_log("FATAL: Unable to load config: ".$Webperl::SystemModule::errstr);
+    or $logger -> die_log("daemon", "FATAL: Unable to load config: ".$Webperl::SystemModule::errstr);
 
 my $daemon = Webperl::Daemon -> new(pidfile => $settings -> {"megaphone"} -> {"pidfile"});
 handle_daemon($daemon);
@@ -93,7 +93,7 @@ my $dbh = DBI->connect($settings -> {"database"} -> {"database"},
                        $settings -> {"database"} -> {"username"},
                        $settings -> {"database"} -> {"password"},
                        { RaiseError => 0, AutoCommit => 1, mysql_enable_utf8 => 1 })
-    or $logger -> die_log("Unable to connect to database: ".$DBI::errstr);
+    or $logger -> die_log("daemon", "Unable to connect to database: ".$DBI::errstr);
 
 # Pull configuration data out of the database into the settings hash
 $settings -> load_db_config($dbh, $settings -> {"database"} -> {"settings"});
@@ -105,7 +105,7 @@ $logger -> init_database_log($dbh, $settings -> {"database"} -> {"logging"})
 my $megaphone = Newsagent::System::Megaphone -> new(dbh      => $dbh,
                                                     logger   => $logger,
                                                     settings => $settings)
-    or $logger -> die_log("FATAL: Unable to start megaphone: ".$Webperl::SystemModule::errstr);
+    or $logger -> die_log("daemon", "FATAL: Unable to start megaphone: ".$Webperl::SystemModule::errstr);
 
 # Make the default alarm handler ignore the signal. This should still make sleep() wake, though.
 $SIG{"ALRM"} = sub { $logger -> print(Webperl::Logger::NOTICE, "Received alarm signal") };
