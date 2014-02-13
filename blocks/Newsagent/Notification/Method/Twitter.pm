@@ -26,6 +26,7 @@ use v5.12;
 
 use Webperl::Utils qw(path_join);
 use Net::Twitter::Lite::WithAPIv1_1;
+use Scalar::Util qw(blessed);
 
 
 ## @cmethod Newsagent::Notification::Method::Twitter new(%args)
@@ -203,7 +204,7 @@ sub send {
         my $result = $self -> _update_status($status, $image, $account, $accounts -> {$account} -> {"consumer_secret"},
                                                                         $accounts -> {$account} -> {"access_token"},
                                                                         $accounts -> {$account} -> {"token_secret"});
-        $overall = $result if($result != "sent");
+        $overall = $result if($result ne "sent");
 
         push(@results, {"name"    => join(",", @{$accounts -> {$account} -> {"recipients"}}),
                         "state"   => $result,
@@ -294,6 +295,9 @@ sub _update_status {
                                                          access_token_secret => $token_secret,
                                                          ssl                 => 1,
                                                          wrap_result         => 1);
+
+    $self -> log("twitter", "Updating with status '$status'".($image ? " attaching '$image'" :""));
+
     if($image) {
         eval { $twitter -> update_with_media($status, [$image]); };
     } else {
