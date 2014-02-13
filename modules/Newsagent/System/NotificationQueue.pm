@@ -173,8 +173,18 @@ sub send_pending_notification {
         # invoke the method sent
         my ($status, $results) = $self -> {"notify_methods"} -> {$notification -> {"name"}} -> send($article, $recipmeths, $allrecips, $self);
 
+        # Work out the status message
+        my $message = "";
+        if($results) {
+            foreach my $res (@{$results}) {
+                $message .= $res -> {"name"}.": ".$res -> {"state"}." (".$res -> {"message"}.");";
+            }
+        } else {
+            $message = $self -> {"notify_methods"} -> {$notification -> {"name"}} -> errstr();
+        }
+
         # always reset the status to something
-        $self -> set_notification_status($notification -> {"id"}, $status || "failed");
+        $self -> set_notification_status($notification -> {"id"}, $status || "failed", $message);
 
         # If the result is undef, propagate the error.
         return $results || $self -> self_error($self -> {"notify_methods"} -> {$notification -> {"name"}} -> errstr());
