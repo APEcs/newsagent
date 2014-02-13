@@ -578,7 +578,7 @@ sub build_url {
     # building the URL involves shoving the bits together. path_join is intelligent enough to ignore
     # anything that is undef or "" here, so explicit checks beforehand should not be needed.
     my $url = path_join($self -> {"settings"} -> {"config"} -> {"scriptpath"}, $args{"block"}, $pathinfo, $api);
-    $url = path_join($self -> {"cgi"} -> url(-base => 1), $url)
+    $url = path_join($self -> {"settings"} -> {"config"} -> {"httphost"}, $url)
         if($args{"fullurl"});
 
     # Strip block, pathinfo, and api from the query string if they've somehow made it in there.
