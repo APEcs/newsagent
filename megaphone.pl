@@ -84,7 +84,9 @@ my $logger = Webperl::Logger -> new(syslog => 'Megaphone:')
 my $settings = Webperl::ConfigMicro -> new(path_join($scriptpath, "config", "site.cfg"))
     or $logger -> die_log("daemon", "FATAL: Unable to load config: ".$Webperl::SystemModule::errstr);
 
-my $daemon = Webperl::Daemon -> new(pidfile => $settings -> {"megaphone"} -> {"pidfile"});
+my $daemon = Webperl::Daemon -> new(pidfile      => $settings -> {"megaphone"} -> {"pidfile"},
+                                    child_STDOUT => $settings -> {"megaphone"} -> {"stdout_logfile"},
+                                    child_STDERR => $settings -> {"megaphone"} -> {"stdett_logfile"});
 handle_daemon($daemon);
 
 $logger -> print(Webperl::Logger::NOTICE, "Started background message dispatcher");
