@@ -26,7 +26,7 @@ use v5.12;
 
 use Webperl::Utils qw(path_join);
 use Net::Twitter::Lite::WithAPIv1_1;
-use Data::Dumper;
+
 
 ## @cmethod Newsagent::Notification::Method::Twitter new(%args)
 # Create a new Twitter object. This will create an object
