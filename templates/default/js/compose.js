@@ -116,6 +116,35 @@ function release_control(datefield, tsfield, dateopt, presetfield, presetopt, co
 }
 
 
+function notify_control(container, datefield, tsfield, control)
+{
+    var selVal = $(control).getSelected().get("value");
+    var datedisabled = (selVal != 'timed');
+
+//    var id = $(datefield).get("id").
+
+    $(datefield).set("disabled", datedisabled);
+    if(datedisabled) {
+        $(datefield).set('value', '');
+        $(tsfield).set('value', '');
+        $(container).dissolve();
+    } else {
+        if(!$(tsfield).get('value')) {
+            // Create a default date one day from now
+            var defdate = new Date();
+            defdate.setTime(defdate.getTime() + 86400000);
+
+            $(tsfield).set('value', defdate.getTime() / 1000);
+            date_picker.select(defdate);
+        } else {
+            var defdate = new Date($(tsfield).get('value') * 1000);
+            rdate_picker.select(defdate);
+        }
+
+        $(container).reveal();
+    }
+}
+
 /*******************************************************************************
  *  Image controls
  */
@@ -510,6 +539,9 @@ window.addEvent('domready', function() {
                                                       });
     $('comp-release').addEvent('change', function() { release_control('release_date', 'rtimestamp', 'comp-reldate', 'preset', 'comp-relpreset', 'comp-release'); });
     release_control('release_date', 'rtimestamp', 'comp-reldate', 'preset', 'comp-relpreset', 'comp-release');
+
+//    $$('notifymode').each(function(element) {
+//        element.addEvent('change', function() { date_control(
 
     $('comp-summ').addEvent('keyup', function() { text_fielduse('comp-summ', 'sumchars', 240); });
     text_fielduse('comp-summ', 'sumchars', 240);

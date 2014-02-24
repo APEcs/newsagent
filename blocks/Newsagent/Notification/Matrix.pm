@@ -48,6 +48,14 @@ sub new {
                                                            metadata       => $self -> {"system"} -> {"metadata"})
         or return SystemModule::set_error("Matrix initialisation failed: ".$SystemModule::errstr);
 
+    $self -> {"sendmodes"} = [ {"value" => "immediate",
+                                "name"  => "{L_COMPOSE_SMODE_IMMED}" },
+                               {"value" => "delay",
+                                "name"  => "{L_COMPOSE_SMODE_DELAY}" },
+                               {"value" => "timed",
+                                "name"  => "{L_COMPOSE_SMODE_TIMED}" },
+                             ];
+
     return $self;
 }
 
@@ -116,12 +124,13 @@ sub matrix_to_recipients {
 }
 
 
-## @method $ build_matrix($userid, $selected, $acyear)
+## @method $ build_matrix($userid, $selected, $acyear, $notifyat)
 # Build a HTML block containing the recipient/method matrix.
 #
 # @param userid   The ID of the user accessing the page.
 # @param selected A reference to a hash of selected methods.
 # @param acyear   The ID of the selected academic year.
+# @param notifyat A reference to an array of notification modes and times.
 # @return A string containing the matrix html on success, undef
 #         on error.
 sub build_matrix {
@@ -129,6 +138,7 @@ sub build_matrix {
     my $userid   = shift;
     my $selected = shift;
     my $acyear   = shift;
+    my $notifyat = shift;
 
     $self -> clear_error();
 
@@ -158,6 +168,9 @@ sub build_matrix {
         # default the year
         $acyear = $years -> [0] -> {"value"} if(!$acyear);
 
+        # Build the notification release settings
+        my $releases = $self -> _build_releases($notifyat);
+
         my $methods = $self -> {"matrix"} -> get_available_methods()
             or return $self -> self_error("Unable to generate matrix: ".$self -> {"matrix"} -> errstr());
 
@@ -169,6 +182,7 @@ sub build_matrix {
         return $self -> {"template"} -> load_template("matrix/container.tem", {"***matrix***"   => $html,
                                                                                "***methods***"  => join(", ", @methlist),
                                                                                "***acyears***"  => $self -> {"template"} -> build_optionlist($years, $acyear),
+                                                                               "***releases***" => $releases,
                                                                                "***multisel***" => $multisel});
     }
 
@@ -178,6 +192,41 @@ sub build_matrix {
 
 # ============================================================================
 #  Private code
+
+## @method private $ _build_releases($notifyat)
+# Generate the notification release controls.
+#
+# @param notifyat A reference to an array of release modes and times of the form { send_mode => ..., send_at => ... }
+# @return The HTML to insert into the notification settings.
+sub _build_releases {
+    my $self     = shift;
+    my $notifyat = shift;
+
+    my $releases = "";
+    my $id = 1;
+    foreach my $notify (@{$notifyat}) {
+        # Default the timed send to 1 hour from now
+        my $send_at = $notify -> {"send_at"} || time() + 3600;
+
+        $releases .= $self -> {"template"} -> load_template("matrix/release.tem", {"***id***" => $id,
+                                                                                   "***matrixmodes***" => $self -> {"template"} -> build_optionlist($self -> {"sendmodes"}, $notify -> {"send_mode"}),
+                                                                                   "***send_at_fmt***" => $self -> {"template"} -> format_time($send_at, "%d/%m/%Y %H:%M"),
+                                                                                   "***send_at***"     => $send_at});
+    }
+
+    # If no releases are set, use a default
+    if(!$releases) {
+        my $send_at = time() + 3600;
+
+        $releases .= $self -> {"template"} -> load_template("matrix/release.tem", {"***id***" => 1,
+                                                                                   "***matrixmodes***" => $self -> {"template"} -> build_optionlist($self -> {"sendmodes"}),
+                                                                                   "***send_at_fmt***" => $self -> {"template"} -> format_time($send_at, "%d/%m/%Y %H:%M"),
+                                                                                   "***send_at***"     => $send_at});
+    }
+
+    return $releases;
+}
+
 
 ## @method private $ _build_matrix_level($level, $selected, $baseid)
 # Recursively generate the HTML representation of a level of the recipient matrix.

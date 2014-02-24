@@ -1,0 +1,10 @@
+                    <dl class="input">
+                        <dt><label for="matrix-mode***id***">{L_COMPOSE_NOTIFY_MODE}</label></dt>
+                        <dd><select class="fillwide notifymode" id="matrix-mode***id***" name="send_mode***id***">
+                                ***matrixmodes***
+                            </select>
+                        <dd id="matrix-mode***id***-date">
+                            <input class="fillwide datepick" type="text" name="send_atdate***id***" id="send_atdate***id***" size="16" maxlength="16" value="***send_at_fmt***" />
+                            <input type="hidden" name="send_at***id***" id="send_at***id***" value="***send_at***" />
+                        </dd>
+                    </dl>

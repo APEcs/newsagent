@@ -1,6 +1,6 @@
                     <h3>{L_COMPOSE_NOTIFICATION}</h3>
                     <dl class="input">
-                        <dt><label for="comp-release">{L_COMPOSE_ACYEAR}</label></dt>
+                        <dt><label for="matrix-acyear">{L_COMPOSE_ACYEAR}</label></dt>
                         <dd><select class="fillwide" id="matrix-acyear" name="acyear">
                                 ***acyears***
                             </select>
@@ -10,8 +10,8 @@
                         <dt><strong>{L_COMPOSE_RECIPIENTS}</strong></dt>
                         <dd>***matrix***
                         </dd>
-                        <dd>{L_MATRIX_DELAYNOTE}</dd>
                     </dl>
+***releases***
 <script type="text/javascript">
 window.addEvent('domready', function() {
 ***multisel***

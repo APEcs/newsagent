@@ -105,3 +105,8 @@ COMPOSE_CONFIRM_COUNTWARN = <b>NOTE:</b> where available, the number of users wh
 
 COMPOSE_ERR_NOPRESET   = This article has been set to be published as a template, but no template name has been entered.
 COMPOSE_ISPRESET       = <b>This article has been set to be published as a template</b>. It will never be published, and is only visible to you (and admins) within the system. The following publication information only applies to articles created from this template.
+
+COMPOSE_NOTIFY_MODE       = Send notifications
+COMPOSE_SMODE_IMMED       = Immediately on publication
+COMPOSE_SMODE_DELAY       = After safety delay (5 mins)
+COMPOSE_SMODE_TIMED       = At the specified time:

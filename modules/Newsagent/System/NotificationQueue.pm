@@ -72,9 +72,15 @@ sub get_methods {
 # @param used_methods A reference to a hash of used methods. Each key should be the name
 #                     of a notification method, and the value for each key should be a
 #                     reference to an array of ids for rows in the recipient methods table.
+# @param send_mode    The mode to use for sending (actually a UI convenience, as the send
+#                     date is always stored as a date). Should be one of 'immediate', 'delay'
+#                     or 'timed'. If 'immediate' or 'delay' then send_after is optional and
+#                     will be calculated from the article publish time. If 'timed', send_after
+#                     *must* be set. Defaults to 'delay'.
 # @param send_after   The message will be held in the queue until at least this time, as
 #                     a unix timestamp, has passed. If not specified, it is set to
-#                     the article publish time + the standard safety delay.
+#                     the article publish time (+ the standard safety delay if send_mode is
+#                     'delay'.) This is a required field if send_mode is 'timed'.
 # @return True on success, undef on error
 sub queue_notifications {
     my $self         = shift;
@@ -83,16 +89,28 @@ sub queue_notifications {
     my $userid       = shift;
     my $is_draft     = shift;
     my $used_methods = shift;
+    my $send_mode    = shift || 'delay';
     my $send_after   = shift;
 
     $self -> clear_error();
 
+    # Check the send mode is valid.
+    return $self -> self_error("Illigal release mode specified in call to queue_notifications")
+        unless($send_mode eq "immediate" || $send_mode eq "delay" || $send_mode eq "timed");
+
+    # Send time must be set if timed sending is specified
+    return $self -> self_error("Unable to queue notifications: no time specified for delayed notification")
+        if($send_mode eq "timed" && !defined($send_after));
+
     # Work out the send time if needed
-    $send_after = ($article -> {"release_time"} || time()) + (($self -> {"settings"} -> {"config"} -> {"Notification:hold_delay"} || 5) * 60)
-        if(!defined($send_after));
+    if(!defined($send_after)) {
+        $send_after = $article -> {"release_time"} || time();
+        $send_after += (($self -> {"settings"} -> {"config"} -> {"Notification:hold_delay"} || 5) * 60)
+            if($send_mode eq "delay");
+    }
 
     foreach my $method (keys(%{$used_methods})) {
-        my $newid = $self -> _queue_notification($articleid, $article, $userid, $self -> {"notify_methods"} -> {$method} -> get_id(), $is_draft, $send_after, $used_methods -> {$method})
+        my $newid = $self -> _queue_notification($articleid, $article, $userid, $self -> {"notify_methods"} -> {$method} -> get_id(), $is_draft, $send_mode, $send_after, $used_methods -> {$method})
             or return undef;
 
         my $dataid = $self -> {"notify_methods"} -> {$method} -> store_data($articleid, $article, $userid, $is_draft, $used_methods -> {$method});
@@ -473,6 +491,7 @@ sub _load_notification_method_modules {
 # @param userid        A reference to a hash containing the user's data.
 # @param methodid      The ID of the method this is a notification through.
 # @param is_draft      True if the article is a draft, false otherwise.
+# @param send_mode     The send mode (UI convenience value), one of 'immediate', 'delay', 'timed'.
 # @param send_after    The unix timestamp for the point after which the message should be sent.
 # @param recip_methods A reference to an array of ids for rows in the recipient methods table.
 # @return The new notification header ID on success, undef on error
@@ -483,6 +502,7 @@ sub _queue_notification {
     my $userid        = shift;
     my $methodid      = shift;
     my $is_draft      = shift;
+    my $send_mode     = shift;
     my $send_after    = shift;
     my $recip_methods = shift;
 
@@ -491,9 +511,9 @@ sub _queue_notification {
     # First create the notification header for this article for the current
     # notification method.
     my $notifyh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."`
-                                               (article_id, method_id, year_id, updated, send_after)
-                                               VALUES(?, ?, ?, UNIX_TIMESTAMP(), ?)");
-    my $rows = $notifyh -> execute($articleid, $methodid, $article -> {"notify_matrix"} -> {"year"}, $send_after);
+                                               (article_id, method_id, year_id, updated, send_mode, send_after)
+                                               VALUES(?, ?, ?, UNIX_TIMESTAMP(), ?, ?)");
+    my $rows = $notifyh -> execute($articleid, $methodid, $article -> {"notify_matrix"} -> {"year"}, $send_mode, $send_after);
     return $self -> self_error("Unable to perform article notification insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Article notification insert failed, no rows inserted") if($rows eq "0E0");
 
