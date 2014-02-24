@@ -50,6 +50,7 @@ function text_fielduse(fieldid, counterid, limit)
 var rdate_picker;
 var sdate_picker;
 var feed_levels;
+var sendat_picker = new Array();
 
 function date_control(datefield, tsfield, control)
 {
@@ -121,7 +122,7 @@ function notify_control(container, datefield, tsfield, control)
     var selVal = $(control).getSelected().get("value");
     var datedisabled = (selVal != 'timed');
 
-//    var id = $(datefield).get("id").
+    var id = datefield.substr(11);
 
     $(datefield).set("disabled", datedisabled);
     if(datedisabled) {
@@ -135,15 +136,34 @@ function notify_control(container, datefield, tsfield, control)
             defdate.setTime(defdate.getTime() + 86400000);
 
             $(tsfield).set('value', defdate.getTime() / 1000);
-            date_picker.select(defdate);
+            sendat_picker[id].select(defdate);
         } else {
             var defdate = new Date($(tsfield).get('value') * 1000);
-            rdate_picker.select(defdate);
+            sendat_picker[id].select(defdate);
         }
 
         $(container).reveal();
     }
 }
+
+
+function setup_notify_picker(element)
+{
+    var id = element.get('id').substr(11);
+
+    sendat_picker[id] = new Picker.Date($('send_atdate'+id), { timePicker: true,
+                                                               yearPicker: true,
+                                                               positionOffset: {x: 5, y: 0},
+                                                               pickerClass: 'datepicker_dashboard',
+                                                               useFadeInOut: !Browser.ie,
+                                                               onSelect: function(date) {
+                                                                   $('send_at'+id).set('value', date.format('%s'));
+                                                               }
+                                                             });
+    element.addEvent('change', function() { notify_control('matrix-mode'+id+'-date', 'send_atdate'+id, 'send_at'+id, 'matrix-mode'+id); });
+    notify_control('matrix-mode'+id+'-date', 'send_atdate'+id, 'send_at'+id, 'matrix-mode'+id);
+}
+
 
 /*******************************************************************************
  *  Image controls
@@ -540,8 +560,7 @@ window.addEvent('domready', function() {
     $('comp-release').addEvent('change', function() { release_control('release_date', 'rtimestamp', 'comp-reldate', 'preset', 'comp-relpreset', 'comp-release'); });
     release_control('release_date', 'rtimestamp', 'comp-reldate', 'preset', 'comp-relpreset', 'comp-release');
 
-//    $$('notifymode').each(function(element) {
-//        element.addEvent('change', function() { date_control(
+    $$('select.notifymode').each(function(element) { setup_notify_picker(element) });
 
     $('comp-summ').addEvent('keyup', function() { text_fielduse('comp-summ', 'sumchars', 240); });
     text_fielduse('comp-summ', 'sumchars', 240);
