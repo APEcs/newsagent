@@ -21,6 +21,7 @@ package Newsagent::Notification::Matrix;
 
 use strict;
 use base qw(Newsagent); # This class extends the Newsagent block class
+use Webperl::Daemon;
 use Newsagent::System::Matrix;
 use v5.12;
 
@@ -38,7 +39,8 @@ use v5.12;
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    my $self     = $class -> SUPER::new(@_)
+    my $self     = $class -> SUPER::new(send_mode_limit => 5,
+                                        @_)
         or return undef;
 
     $self -> {"matrix"} = Newsagent::System::Matrix -> new(dbh            => $self -> {"dbh"},
@@ -47,6 +49,9 @@ sub new {
                                                            roles          => $self -> {"system"} -> {"roles"},
                                                            metadata       => $self -> {"system"} -> {"metadata"})
         or return SystemModule::set_error("Matrix initialisation failed: ".$SystemModule::errstr);
+
+    $self -> {"daemon"} = Webperl::Daemon -> new(pidfile => $self -> {"settings"} -> {"megaphone"} -> {"pidfile"})
+        or return Webperl::SystemModule::set_error("Article initialisation failed: ".$Webperl::SystemModule::errstr);
 
     $self -> {"sendmodes"} = [ {"value" => "immediate",
                                 "name"  => "{L_COMPOSE_SMODE_IMMED}" },
@@ -94,6 +99,127 @@ sub get_used_methods {
     $self -> _check_used_methods($matrix, $methods, $result);
 
     return $result;
+}
+
+
+## @method private @ _validate_notify_times()
+#
+# @return An array of two values: a reference to an array of {send_mode =>, send_at => }
+#         hashes, and a string containing any error messages.
+sub _validate_notify_times {
+    my $self = shift;
+    my $notifylist = [];
+    my $errors     = "";
+
+    my $id = 1;
+    # Go through send_mode select boxes until we hit the limit or there are no more,
+    # checking the validity of the select box and the accompanying send_at field and
+    # pushing the data into the notification list.
+    while($id <= $self -> {"send_mode_limit"} && defined($self -> {"cgi"} -> param("send_mode$id"))) {
+        my ($mode, $error) = $self -> validate_options("send_mode$id", {"required" => 1,
+                                                                        "default"  => "delay",
+                                                                        "source"   => $self -> {"sendmodes"},
+                                                                        "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_NOTIFY_MODE")});
+        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+
+        my $sendat = $self -> validate_numeric("send_at$id", {"required" => $mode eq "timed",
+                                                              "default"  => 0,
+                                                              "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_SMODE_TIMED")});
+        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+
+        push(@{$notifylist}, {"send_mode" => $mode, "send_at" => $sendat});
+        ++$id;
+    }
+
+    # Having 0 notification times set is an error at this point.
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => "{L_COMPOSE_SMODE_NOMODES}"})
+        unless(scalar(@{$notifylist}));
+
+    return ($notifylist, $errors);
+}
+
+
+## @method $ validate_matrix($args, $userid)
+#
+sub validate_matrix {
+    my $self    = shift;
+    my $args    = shift;
+    my $userid  = shift;
+    my $methods = shift;
+    my $errors  = "";
+
+    $args -> {"notify_matrix"} = $self -> get_used_methods($userid)
+        or $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "***error***" => $matrix -> errstr()});
+
+    if($args -> {"notify_matrix"} &&                                      # has any notification data been included?
+       $args -> {"notify_matrix"} -> {"used_methods"} &&                  # are any notifications enabled?
+       scalar(keys(%{$args -> {"notify_matrix"} -> {"used_methods"}}))) { # no, really, are there any?
+
+        my $methods = $self -> {"queue"} -> get_methods();
+
+        # Call each notification method to let it validate and add its data to the args hash
+        foreach my $method (keys(%{$args -> {"notify_matrix"} -> {"used_methods"}})) {
+            # The method is only really used if one or more recipients are set for it.
+            # This check should be redundant, as methods should not appear in user_methods
+            # unless this is already true. But check anyway to be safer.
+            next unless(scalar(@{$args -> {"notify_matrix"} -> {"used_methods"} -> {$method}}));
+
+            my $meth_errs = $methods -> {$method} -> validate_article($args, $userid);
+
+            # If the validator returned any errors, add them to the list.
+            foreach $error (@{$meth_errs}) {
+                $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "***error***" => $error });
+            }
+        }
+
+        # Grab the year here, too.
+        my $years = $self -> {"system"} -> {"userdata"} -> get_valid_years(1);
+        ($args -> {"notify_matrix"} -> {"year"}, $error) = $self -> validate_options("acyear", {"required" => 1,
+                                                                                                "source"   => $years,
+                                                                                                "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_ACYEAR")});
+        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+
+        # Pull in any notification times
+        ($args -> {"notify_matrix"} -> {"notify_at"}, $error) = $self -> _validate_notify_times();
+        $errors .= $error if($error);
+    }
+
+    return $errors;
+}
+
+
+## @method $ queue_notifications($aid, $article, $userid)
+#
+# @return An empty string on success, otherwise a string containing error messages.
+sub queue_notifications {
+    my $self    = shift;
+    my $aid     = shift;
+    my $article = shift;
+    my $userid  = shift;
+
+    # If any notifications have been selected, queue them.
+    if($article -> {"notify_matrix"} &&                                      # has any notification data been included?
+       $article -> {"notify_matrix"} -> {"used_methods"} &&                  # are any notifications enabled?
+       scalar(keys(%{$article -> {"notify_matrix"} -> {"used_methods"}}))) { # no, really, are there any?
+
+        my $isdraft = ($article -> {"release_mode"} eq "draft" || $article -> {"release_mode"} eq "preset");
+
+        # Create separate notifications for each send
+        foreach my $notify (@{$article -> {"notify_matrix"} -> {"notify_at"}}) {
+            $self -> {"queue"} -> queue_notifications($aid, $article, $userid, $isdraft, $article -> {"notify_matrix"} -> {"used_methods"}, $notify -> {"send_mode"}, $notify -> {"send_at"})
+                or return $self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
+                                                                                          "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
+                                                                                                                                                    {"***error***" => $self -> {"queue"} -> errstr()
+                                                                                                                                                    })
+                                                                 });
+        }
+
+        # Trigger a wakup in the dispatcher
+        my $res = $self -> {"daemon"} -> signal(14);
+        $self -> log("Daemon wakup signal result: $res");
+    }
+
+    return "";
 }
 
 
@@ -219,7 +345,7 @@ sub _build_releases {
         my $send_at = time() + 3600;
 
         $releases .= $self -> {"template"} -> load_template("matrix/release.tem", {"***id***" => 1,
-                                                                                   "***matrixmodes***" => $self -> {"template"} -> build_optionlist($self -> {"sendmodes"}),
+                                                                                   "***matrixmodes***" => $self -> {"template"} -> build_optionlist($self -> {"sendmodes"}, "delay"),
                                                                                    "***send_at_fmt***" => $self -> {"template"} -> format_time($send_at, "%d/%m/%Y %H:%M"),
                                                                                    "***send_at***"     => $send_at});
     }

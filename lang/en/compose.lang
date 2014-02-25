@@ -108,5 +108,6 @@ COMPOSE_ISPRESET       = <b>This article has been set to be published as a templ
 
 COMPOSE_NOTIFY_MODE       = Send notifications
 COMPOSE_SMODE_IMMED       = Immediately on publication
-COMPOSE_SMODE_DELAY       = After safety delay (5 mins)
+COMPOSE_SMODE_DELAY       = After 5 min safety delay
 COMPOSE_SMODE_TIMED       = At the specified time:
+COMPOSE_SMODE_NOMODES     = No notification send time specifications set. This should not happen.

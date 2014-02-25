@@ -60,7 +60,7 @@ sub get_methods {
 }
 
 
-## @method $ queue_notifications($articleid, $article, $userid, $is_draft, $used_methods, $send_after)
+## @method $ queue_notifications($articleid, $article, $userid, $is_draft, $used_methods, $send_mode, $send_after)
 # Add the notifications for the specified article to the notification queue. This adds
 # notifications for all the specified used methods, including setting up any method-
 # specific data for the notifications.
@@ -102,8 +102,9 @@ sub queue_notifications {
     return $self -> self_error("Unable to queue notifications: no time specified for delayed notification")
         if($send_mode eq "timed" && !defined($send_after));
 
-    # Work out the send time if needed
-    if(!defined($send_after)) {
+    # Force calculation of send time for immediate and delayed notifications, prevents bogus timings
+    # being provided for non-timed notifications.
+    if($send_mode ne "timed") {
         $send_after = $article -> {"release_time"} || time();
         $send_after += (($self -> {"settings"} -> {"config"} -> {"Notification:hold_delay"} || 5) * 60)
             if($send_mode eq "delay");

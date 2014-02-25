@@ -21,7 +21,6 @@ package Newsagent::Article;
 
 use strict;
 use base qw(Newsagent); # This class extends the Newsagent block class
-use Webperl::Daemon;
 use Newsagent::System::Feed;
 use Newsagent::System::Article;
 use Newsagent::System::NotificationQueue;
@@ -66,9 +65,6 @@ sub new {
                                                                      logger   => $self -> {"logger"},
                                                                      article  => $self -> {"article"},
                                                                      module   => $self -> {"module"})
-        or return Webperl::SystemModule::set_error("Article initialisation failed: ".$Webperl::SystemModule::errstr);
-
-    $self -> {"daemon"} = Webperl::Daemon -> new(pidfile => $self -> {"settings"} -> {"megaphone"} -> {"pidfile"})
         or return Webperl::SystemModule::set_error("Article initialisation failed: ".$Webperl::SystemModule::errstr);
 
     $self -> {"schedrelops"} = [ {"value" => "next",
@@ -526,44 +522,12 @@ sub _validate_article {
     $error = $self -> _validate_article_fields($args, $userid);
     $errors .= $error if($error);
 
-    my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix");
+    my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix", {"queue" => $self -> {"queue"}});
 
     # Only bother checking notification code if the release mode is "standard". "Batch" handles its
     # notification code separately.
-    if($args -> {"relmode"} == 0) {
-         $args -> {"notify_matrix"} = $matrix -> get_used_methods($userid)
-            or $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "***error***" => $matrix -> errstr()});
-
-        if($args -> {"notify_matrix"} &&                                      # has any notification data been included?
-           $args -> {"notify_matrix"} -> {"used_methods"} &&                  # are any notifications enabled?
-           scalar(keys(%{$args -> {"notify_matrix"} -> {"used_methods"}}))) { # no, really, are there any?
-
-            my $methods = $self -> {"queue"} -> get_methods();
-
-            # Call each notification method to let it validate and add its data to the args hash
-            foreach my $method (keys(%{$args -> {"notify_matrix"} -> {"used_methods"}})) {
-                # The method is only really used if one or more recipients are set for it
-                # (this check should be redundant, as methods should not appear in user_methods
-                # unless this is already true. But check anyway to be safer.)
-                next unless(scalar(@{$args -> {"notify_matrix"} -> {"used_methods"} -> {$method}}));
-
-                my $meth_errs = $methods -> {$method} -> validate_article($args, $userid);
-
-                # If the validator returned any errors, add them to the list.
-                foreach $error (@{$meth_errs}) {
-                    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "***error***" => $error });
-                }
-            }
-
-            # Get the year here, too - technically it's part of the notificiation matrix, but
-            # shoving this in get_used_methods() is a bit manky
-            my $years = $self -> {"system"} -> {"userdata"} -> get_valid_years(1);
-            ($args -> {"notify_matrix"} -> {"year"}, $error) = $self -> validate_options("acyear", {"required" => 1,
-                                                                                                    "source"   => $years,
-                                                                                                    "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_ACYEAR")});
-            $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
-        }
-    }
+    $errors .= $matrix -> validate_matrix($args, $userid)
+        if($args -> {"relmode"} == 0);
 
     # Give up here if there are any errors
     return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
@@ -617,25 +581,8 @@ sub _validate_article {
     # Only bother checking notification code if the release mode is "standard". "Batch" handles its
     # notification code separately.
     if($args -> {"relmode"} == 0) {
-
-        # If any notifications have been selected, queue them.
-        if($args -> {"notify_matrix"} &&                                      # has any notification data been included?
-           $args -> {"notify_matrix"} -> {"used_methods"} &&                  # are any notifications enabled?
-           scalar(keys(%{$args -> {"notify_matrix"} -> {"used_methods"}}))) { # no, really, are there any?
-
-            my $isdraft = ($args -> {"release_mode"} eq "draft" || $args -> {"release_mode"} eq "preset");
-
-            $self -> {"queue"} -> queue_notifications($aid, $args, $userid, $isdraft, $args -> {"notify_matrix"} -> {"used_methods"})
-                or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
-                                                                                           "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
-                                                                                                                                                     {"***error***" => $self -> {"queue"} -> errstr()
-                                                                                                                                                     })
-                                                                  }), $args);
-
-            # Trigger a wakup in the dispatcher
-            my $res = $self -> {"daemon"} -> signal(14);
-            $self -> log("Daemon wakup signal result: $res");
-        }
+        $errors = $matrix -> queue_notifications($aid, $args, $userid);
+        return $errors if($errors);
     }
 
     # If the user has stopped confirmations, set the flag here
