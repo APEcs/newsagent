@@ -27,7 +27,6 @@ use Newsagent::System::NotificationQueue;
 use File::Basename;
 use Lingua::EN::Sentence qw(get_sentences);
 use v5.12;
-use Data::Dumper;
 
 # ============================================================================
 #  Constructor
