@@ -279,7 +279,7 @@ sub _generate_edit {
     $error = $self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $error})
         if($error);
 
-    my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix");
+    my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix", "queue" => $self -> {"queue"});
 
     my $exclude_sent = 1;
     $exclude_sent = 0 if($args -> {"clone"});
@@ -288,8 +288,9 @@ sub _generate_edit {
     ($args -> {"notify_matrix"} -> {"year"},
      $args -> {"notify_matrix"} -> {"used_methods"},
      $args -> {"notify_matrix"} -> {"enabled"},
+     $args -> {"notify_matrix"} -> {"notify_at"},
      $args -> {"methods"}                           ) = $self -> {"queue"} -> get_notifications($articleid, $exclude_sent);
-    my $notifyblock = $matrix -> build_matrix($userid, $args -> {"notify_matrix"} -> {"enabled"}, $args -> {"notify_matrix"} -> {"year"});
+    my $notifyblock = $matrix -> build_matrix($userid, $args -> {"notify_matrix"} -> {"enabled"}, $args -> {"notify_matrix"} -> {"year"}, $args -> {"notify_matrix"} -> {"notify_at"});
 
     my $notify_settings = "";
     my $userdata = $self -> {"session"} -> get_user_byid($userid);

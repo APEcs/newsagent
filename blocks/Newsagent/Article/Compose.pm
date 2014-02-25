@@ -108,8 +108,8 @@ sub _generate_compose {
         if($error);
 
     # Build the notification options and their settings boxes
-    my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix");
-    my $notifyblock = $matrix -> build_matrix($userid, $args -> {"notify_matrix"} -> {"enabled"}, $args -> {"notify_matrix"} -> {"year"});
+    my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix", "queue" => $self -> {"queue"});
+    my $notifyblock = $matrix -> build_matrix($userid, $args -> {"notify_matrix"} -> {"enabled"}, $args -> {"notify_matrix"} -> {"year"}, $args -> {"notify_matrix"} -> {"notify_at"});
 
     my $notify_settings = "";
     my $userdata = $self -> {"session"} -> get_user_byid($userid);
