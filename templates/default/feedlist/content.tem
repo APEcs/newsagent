@@ -60,7 +60,7 @@ var def_count = 10;
 window.addEvent('domready', function() {
     var multiselfeed = new MultiSelect('#syslevels', { maxMonitorText: 0,
                                                             emptyText: '{L_FLIST_LEVSEL}',
-                                                        onListClose: function() { build_feedurl(); }
+                                                          onListClose: function() { build_feedurl(); }
                                                        });
 });
 </script>

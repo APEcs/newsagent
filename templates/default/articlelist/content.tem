@@ -39,11 +39,11 @@
 window.addEvent('domready', function() {
     var multiselmode = new MultiSelect('#filter-mode', { maxMonitorText: 0,
                                                               emptyText: '{L_ALIST_MODESEL}',
-                                                          onItemChanged: function() { $('mode-control').submit(); }
+                                                            onListClose: function() { $('mode-control').submit(); }
                                                        });
     var multiselfeed = new MultiSelect('#filter-feed', { maxMonitorText: 0,
                                                               emptyText: '{L_ALIST_FEEDSEL}',
-                                                          onItemChanged: function() { $('feed-control').submit(); }
+                                                            onListClose: function() { $('feed-control').submit(); }
                                                        });
 });
 </script>
