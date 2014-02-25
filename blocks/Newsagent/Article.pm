@@ -522,7 +522,7 @@ sub _validate_article {
     $error = $self -> _validate_article_fields($args, $userid);
     $errors .= $error if($error);
 
-    my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix", {"queue" => $self -> {"queue"}});
+    my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix", "queue" => $self -> {"queue"});
 
     # Only bother checking notification code if the release mode is "standard". "Batch" handles its
     # notification code separately.
@@ -581,7 +581,7 @@ sub _validate_article {
     # Only bother checking notification code if the release mode is "standard". "Batch" handles its
     # notification code separately.
     if($args -> {"relmode"} == 0) {
-        $errors = $matrix -> queue_notifications($aid, $args, $userid);
+        $errors = $matrix -> queue_notifications($aid, $args, $userid, $failmode);
         return $errors if($errors);
     }
 

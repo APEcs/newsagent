@@ -146,10 +146,10 @@ sub validate_matrix {
     my $args    = shift;
     my $userid  = shift;
     my $methods = shift;
-    my $errors  = "";
+    my ($error, $errors)  = ("", "");
 
     $args -> {"notify_matrix"} = $self -> get_used_methods($userid)
-        or $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "***error***" => $matrix -> errstr()});
+        or $errors .= $self -> {"template"} -> load_template("error/error_item.tem", { "***error***" => $self -> errstr()});
 
     if($args -> {"notify_matrix"} &&                                      # has any notification data been included?
        $args -> {"notify_matrix"} -> {"used_methods"} &&                  # are any notifications enabled?
@@ -188,14 +188,15 @@ sub validate_matrix {
 }
 
 
-## @method $ queue_notifications($aid, $article, $userid)
+## @method $ queue_notifications($aid, $article, $userid, $failmode)
 #
 # @return An empty string on success, otherwise a string containing error messages.
 sub queue_notifications {
-    my $self    = shift;
-    my $aid     = shift;
-    my $article = shift;
-    my $userid  = shift;
+    my $self     = shift;
+    my $aid      = shift;
+    my $article  = shift;
+    my $userid   = shift;
+    my $failmode = shift;
 
     # If any notifications have been selected, queue them.
     if($article -> {"notify_matrix"} &&                                      # has any notification data been included?
