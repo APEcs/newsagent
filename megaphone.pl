@@ -64,7 +64,7 @@ sub handle_daemon {
         }
 
         when("wake") {
-            exit $daemon -> signal(14);
+            exit $daemon -> send_signal(14);
         }
 
         when("debug") { # do nothing
