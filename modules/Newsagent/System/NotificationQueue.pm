@@ -24,7 +24,6 @@ use strict;
 use base qw(Webperl::SystemModule); # This class extends the Newsagent block class
 use Webperl::Utils qw(hash_or_hashref);
 use v5.12;
-use Data::Dumper;
 
 # ============================================================================
 #  Constructor
@@ -271,9 +270,10 @@ sub get_next_notification_time {
 # @param articleid The article to fetch notification data for.
 # @param unsent    If set to true, only notifications that have not been sent
 #                  will be included in the result.
-# @return Four values: the year id; a reference to a hash of used methods containing the
+# @return Five values: the year id; a reference to a hash of used methods containing the
 #         methods used for notifications (each value is an arrayref of recipient method ids);
-#         a reference to a hash of enabled methods, and a reference to a hash of method-specific
+#         a reference to a hash of enabled methods, a reference to an array of notification
+#         time control hashes, and a reference to a hash of method-specific
 #         data. Returns undef on error.
 sub get_notifications {
     my $self      = shift;
@@ -551,9 +551,10 @@ sub _queue_notification {
 # @param articleid The article to fetch notification data for.
 # @param unsent    If set to true, only notifications that have not been sent
 #                  will be included in the result.
-# @return Four values: the year id; a reference to a hash of used methods containing the
+# @return Five values: the year id; a reference to a hash of used methods containing the
 #         methods used for notifications (each value is an arrayref of recipient method ids);
-#         a reference to a hash of enabled methods, and a reference to a hash of method-specific
+#         a reference to a hash of enabled methods, a reference to an array of notification
+#         time control hashes, and a reference to a hash of method-specific
 #         data. Returns undef on error.
 sub _get_article_notifications {
     my $self      = shift;
@@ -586,6 +587,8 @@ sub _get_article_notifications {
     $notifyh -> execute($articleid)
         or return $self -> self_error("Unable to fetch notification headers: ".$self -> {"dbh"} -> errstr());
 
+    # Store send modes and times as a hash to begin with
+    my $notify_at = {};
     while(my $header = $notifyh -> fetchrow_hashref()) {
         # All the years will be the same, so use the first one encountered
         $year = $header -> {"year_id"}
@@ -602,9 +605,34 @@ sub _get_article_notifications {
 
         # May as well fetch the method-specific data here, too!
         $methods -> {$header -> {"name"}} = $self -> {"notify_methods"} -> {$header -> {"name"}} -> get_data($articleid, $self);
+
+        # Store the mode and time
+        $notify_at -> {$header -> {"send_mode"}} -> {$header -> {"send_after"}} = 1;
     }
 
-    return ($year, $used, $enabled, $methods);
+    # Now convert the send mode and time lists
+    my @notify_list = ();
+    foreach my $mode (keys %{$notify_at}) {
+        given($mode) {
+            # There should only be at most one immediate message
+            when('immediate') { push(@notify_list, {"send_mode" => "immediate", "send_at" => (keys(%{$notify_at -> {$mode}}))[0]}); }
+
+            # There should only be at most one delayed message
+            when('delay') { push(@notify_list, {"send_mode" => "delay", "send_at" => (keys(%{$notify_at -> {$mode}}))[0]}); }
+
+            # There may be any number of unique timed messages, though
+            when('timed') {
+                foreach my $time (keys(%{$notify_at -> {$mode}})) {
+                    push(@notify_list, {"send_mode" => "timed", "send_at" => $time});
+                }
+            }
+        }
+    }
+
+    # And sort the list into ascending chronological send order
+    my @notify_sorted = sort { $a -> {"send_at"} <=> $b -> {"send_at"} } @notify_list;
+
+    return ($year, $used, $enabled, \@notify_sorted, $methods);
 }
 
 
