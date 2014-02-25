@@ -327,7 +327,7 @@ sub build_matrix {
 # @return The HTML to insert into the notification settings.
 sub _build_releases {
     my $self     = shift;
-    my $notifyat = shift;
+    my $notifyat = shift || [];
 
     my $releases = "";
     my $id = 1;
@@ -344,7 +344,6 @@ sub _build_releases {
     # If no releases are set, use a default
     if(!$releases) {
         my $send_at = time() + 3600;
-
         $releases .= $self -> {"template"} -> load_template("matrix/release.tem", {"***id***" => 1,
                                                                                    "***matrixmodes***" => $self -> {"template"} -> build_optionlist($self -> {"sendmodes"}, "delay"),
                                                                                    "***send_at_fmt***" => $self -> {"template"} -> format_time($send_at, "%d/%m/%Y %H:%M"),
