@@ -25,7 +25,6 @@ use Webperl::Daemon;
 use Newsagent::System::Matrix;
 use v5.12;
 
-
 # ============================================================================
 #  Constructor
 
@@ -115,14 +114,15 @@ sub _validate_notify_times {
     # Go through send_mode select boxes until we hit the limit or there are no more,
     # checking the validity of the select box and the accompanying send_at field and
     # pushing the data into the notification list.
+    my ($mode, $sendat, $error);
     while($id <= $self -> {"send_mode_limit"} && defined($self -> {"cgi"} -> param("send_mode$id"))) {
-        my ($mode, $error) = $self -> validate_options("send_mode$id", {"required" => 1,
+        ($mode, $error) = $self -> validate_options("send_mode$id", {"required" => 1,
                                                                         "default"  => "delay",
                                                                         "source"   => $self -> {"sendmodes"},
                                                                         "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_NOTIFY_MODE")});
         $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
-        my $sendat = $self -> validate_numeric("send_at$id", {"required" => $mode eq "timed",
+        ($sendat, $error) = $self -> validate_numeric("send_at$id", {"required" => $mode eq "timed",
                                                               "default"  => 0,
                                                               "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_SMODE_TIMED")});
         $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
@@ -216,7 +216,7 @@ sub queue_notifications {
         }
 
         # Trigger a wakup in the dispatcher
-        my $res = $self -> {"daemon"} -> signal(14);
+        my $res = $self -> {"daemon"} -> send_signal(14);
         $self -> log("Daemon wakup signal result: $res");
     }
 
