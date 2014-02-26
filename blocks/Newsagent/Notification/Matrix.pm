@@ -122,10 +122,14 @@ sub _validate_notify_times {
                                                                         "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_NOTIFY_MODE")});
         $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
-        ($sendat, $error) = $self -> validate_numeric("send_at$id", {"required" => $mode eq "timed",
-                                                              "default"  => 0,
-                                                              "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_SMODE_TIMED")});
-        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+        if($mode eq "timed") {
+            ($sendat, $error) = $self -> validate_numeric("send_at$id", {"required" => 1,
+                                                                         "default"  => 0,
+                                                                         "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_SMODE_TIMED")});
+            $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+        } else {
+            $sendat = undef;
+        }
 
         push(@{$notifylist}, {"send_mode" => $mode, "send_at" => $sendat});
         ++$id;
