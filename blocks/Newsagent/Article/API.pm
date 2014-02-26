@@ -86,16 +86,18 @@ sub _build_rcount_response {
 
     my $output = { 'response' => { 'status' => 'ok' }};
 
+    my $methods = $self -> {"queue"} -> get_methods();
+
     # At this point, recipmeth contains the list of selected recipients, organised by the
     # method that will be used to contact them, and the settings that will be used by the
     # notification method to contact them. Now we need to go through these lists fetching
     # the counts for each
     foreach my $method (keys(%{$recipmeth -> {"methods"}})) {
         return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_API_ERROR_BADMETHOD}"}))
-            if(!$self -> {"notify_methods"} -> {$method});
+            if(!$methods -> {$method});
 
         foreach my $recip (@{$recipmeth -> {"methods"} -> {$method}}) {
-            $recip -> {"recipient_count"} = $self -> {"notify_methods"} -> {$method} -> get_recipient_count($recip -> {"settings"})
+            $recip -> {"recipient_count"} = $methods -> {$method} -> get_recipient_count($recip -> {"settings"})
                 or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"notify_methods"} -> {$method} -> errstr()}));
 
             push(@{$output -> {"response"} -> {"recipient"}}, { id           => $recip -> {"recipient_id"}."-".$recip -> {"method_id"},
