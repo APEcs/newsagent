@@ -388,8 +388,10 @@ function notify_count_api(enabled)
                                 } else {
                                     var recipients = respXML.getElementsByTagName('recipient');
                                     Array.each(recipients, function(element) {
-                                                   if($('mcount-'+element.id) && element.get('count') >= 0) {
-                                                       $('mcount-'+element.id).set('html', element.get('name')+" ["+element.get('count')+"]");
+                                                   var count = element.getAttribute('count');
+                                                   var name  = element.getAttribute('name');
+                                                   if($('mcount-'+element.id) && count >= 0) {
+                                                       $('mcount-'+element.id).set('html', name+" ["+count+"]");
                                                    }
                                                });
                                     $('notifycount-msg').reveal();
