@@ -48,7 +48,7 @@ sub _parse_rfc822_datestring {
 
     $self -> clear_error();
 
-    my ($day, $month, $year, $hour, $minute, $second, $tz) = $datestr =~ /^(?:\w+, )?(\d{2}) (\w+) (\d{4})(?:[T ]?(\d{2}):(\d{2}):(\d{2})(.*))?$/;
+    my ($day, $month, $year, $hour, $minute, $second, $tz) = $datestr =~ /^(?:\w+, )?(\d{2}) (\w+) (\d{4})(?:[T ]?(\d{2}):(\d{2}):(\d{2}) ([-+]\d{4}))?$/;
 
     # This should never actually happen - _parse_datestring() should never be able to call
     # this function if any of these values are bad - but check in case they are zeros.
@@ -81,7 +81,7 @@ sub _parse_datestring {
     my $datestr = shift;
 
     given($datestr) {
-        when(/^(?:\w+, )?(\d{2}) (\w+) (\d{4})(?:[T ]?(\d{2}):(\d{2}):(\d{2})(.*))?$/) {
+        when(/^(?:\w+, )?(\d{2}) (\w+) (\d{4})(?:[T ]?(\d{2}):(\d{2}):(\d{2}) ([-+]\d{4}))?$/) {
             return $self -> _parse_rfc822_datestring($datestr);
         }
         default {
