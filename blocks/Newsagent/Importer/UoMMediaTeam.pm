@@ -65,11 +65,16 @@ sub _fetch_updated_xml {
     # Force the headline, strapline, and body to be properly cdata-wrapped
     foreach my $tag ("headline", "strapline", "mainbody") {
         $content =~ s|<$tag>\s*|<$tag><![CDATA[|gs;
-        $content =~ s|\s*</tag>|]]></$tag>|gs;
+        $content =~ s|\s*</$tag>|]]></$tag>|gs;
     }
 
-    print "Content:\n$content";
+    my $tree = eval { XMLin($content); };
+    die "XML parsing $content\nError: $@\n"
+        if($@);
+
+    return $tree;
 }
 
 
-_fetch_updated_xml("http://newsadmin.manchester.ac.uk/xml/eps/computerscience/currentmonth.xml", 0);
+my $tree = _fetch_updated_xml("http://newsadmin.manchester.ac.uk/xml/eps/computerscience/currentmonth.xml", 0);
+print "Tree: ".Dumper($tree)."\n";
