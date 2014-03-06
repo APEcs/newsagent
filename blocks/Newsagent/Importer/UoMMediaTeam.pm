@@ -34,7 +34,60 @@ use Data::Dumper;
 
 
 # ============================================================================
+#  Interface functions
+
+## @method $ import()
+# Run the import process for this module. This will fetch the articles from the
+# source, determine whether any need to be added to the system, and perform any
+# additions or updates as needed.
+#
+# @return true on success (note that 'nothing imported' is considered success
+#         if there is nothing to import!) or undef on error.
+sub import {
+    my $self = shift;
+
+    $self -> clear_error();
+
+    my $updates = $self -> _fetch_updated_xml($self -> {"args"} -> {"url"}, $self -> {"lastrun"})
+        or return undef;
+
+    foreach my $article (@{$updates}) {
+        $self -> _import_article($article)
+            or return undef;
+    }
+
+    return 1;
+}
+
+
+# ============================================================================
 #  Internal implementation-specifics
+
+## @method private $ _import_article($article)
+# Attempt to import the specified article into the system, either updating the
+# existing copy of it, or adding a copy to the system.
+#
+# @param article A reference to an UoM media article.
+# @return true on succes, undef on error.
+sub _import_article {
+    my $self    = shift;
+    my $article = shift;
+
+    $self -> clear_error();
+
+    # Attempt to locate any existing copies of this article in the system
+    my $oldid = $self -> find_by_sourceid($article -> {"a"} -> {"name"});
+    return undef if(!defined($oldid));
+
+    # If an old ID has been found, update the article associated with it, otherwise
+    # create a new article instead.
+    if($oldid) {
+        return $self -> _update_import($oldid, $article);
+    } else {
+        return $self -> _create_import($article);
+    }
+}
+
 
 ## @method private $ _parse_rfc822_datestring($datestr)
 # Parse the specified date string into a new DateTime object.
