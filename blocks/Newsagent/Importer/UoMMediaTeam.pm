@@ -21,7 +21,7 @@
 # university of manchester media team. This fetches and processes the
 # XML containing the news stories published by the media team.
 #
-package Newsagent::Importer::UoMMEdiaTeam;
+package Newsagent::Importer::UoMMediaTeam;
 
 use strict;
 #use base qw(Newsagent); # This class extends the Newsagent block class
@@ -53,7 +53,7 @@ sub _parse_rfc822_datestring {
     # This should never actually happen - _parse_datestring() should never be able to call
     # this function if any of these values are bad - but check in case they are zeros.
     return $self -> self_error("Illegal date format '$datestr'")
-        if(!$day || !$month || !$year)
+        if(!$day || !$month || !$year);
 
     # Convert the month
     $month = $monmap -> {$month};
@@ -109,7 +109,6 @@ sub _fetch_updated_xml {
 
     # Bail if the xml file can not be read
     return $self -> self_error("Unable to fetch XML file at $url: ".$result -> status_line)
-    die "Unable to fetch XML file at $url: ".$result -> status_line."\n"
         unless($result -> is_success);
 
     # Fix up the hilariously broken content of the XML file. Seriously, why does it
