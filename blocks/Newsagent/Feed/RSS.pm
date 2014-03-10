@@ -109,7 +109,7 @@ sub generate_feed {
             if($result -> {"fulltext"});
 
         given($result -> {"fulltext_mode"}) {
-            when("markdown") { $result -> {"fulltext"} = $self -> make_markdown_body(Encode::encode("iso-8859-1", $result -> {"fulltext"})); }
+            when("markdown") { $result -> {"fulltext"} = $self -> make_markdown_body($result -> {"fulltext"}); }
             when("plain")    { $result -> {"fulltext"} = $self -> html_strip($result -> {"fulltext"}); }
             when("embedimg") { $result -> {"fulltext"} = $self -> embed_fulltext_image($result); }
         }

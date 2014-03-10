@@ -52,6 +52,7 @@ sub new {
                                                        '&lt;'     => '<',
                                                        '&amp;'    => '&',
                                                        '&nbsp;'   => ' ',
+                                                       '&#x200B;' => '',
                                         },
                                         @_)
         or return undef;
@@ -455,7 +456,8 @@ sub make_markdown_body {
 
     my $converter = new HTML::WikiConverter(dialect => 'Markdown',
                                             link_style => 'inline',
-                                            image_tag_fallback => 0);
+                                            image_tag_fallback => 0,
+                                            encoding => 'utf8');
     my $body = $converter -> html2wiki($html);
 
     # Clean up html the converter misses consistently
