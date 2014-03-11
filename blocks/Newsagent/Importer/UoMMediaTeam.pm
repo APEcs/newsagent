@@ -36,14 +36,14 @@ use Data::Dumper;
 # ============================================================================
 #  Interface functions
 
-## @method $ import()
+## @method $ import_articles()
 # Run the import process for this module. This will fetch the articles from the
 # source, determine whether any need to be added to the system, and perform any
 # additions or updates as needed.
 #
 # @return true on success (note that 'nothing imported' is considered success
 #         if there is nothing to import!) or undef on error.
-sub import {
+sub import_articles {
     my $self = shift;
 
     $self -> clear_error();
