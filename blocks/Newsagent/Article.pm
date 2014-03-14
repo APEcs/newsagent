@@ -180,6 +180,7 @@ sub new {
             '*'   => 0,
         },
         img => {
+            src    => 1,
             class  => 1,
             alt    => 1,
             width  => 1,

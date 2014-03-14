@@ -76,13 +76,13 @@ sub _import_article {
     $self -> clear_error();
 
     # Attempt to locate any existing copies of this article in the system
-    my $oldid = $self -> find_by_sourceid($article -> {"a"} -> {"name"});
-    return undef if(!defined($oldid));
+    my $oldmeta = $self -> find_by_sourceid('uom_xml', $article -> {"a"} -> {"name"});
+    return undef if(!defined($oldmeta));
 
     # If an old ID has been found, update the article associated with it, otherwise
     # create a new article instead.
-    if($oldid) {
-        return $self -> _update_import($oldid, $article);
+    if($oldmeta) {
+        return $self -> _update_import($oldmeta -> {"article_id"}, $article);
     } else {
         return $self -> _create_import($article);
     }

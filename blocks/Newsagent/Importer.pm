@@ -65,4 +65,32 @@ sub new {
 }
 
 
+# ============================================================================
+#  Class support functions
+
+
+## @method $ find_by_sourceid($sourcename, $sourceid)
+# Determine whether an article already exists containing the data for the imported
+# article with the specified import-specific id.
+#
+# @param sourcename The name of the importer.
+# @param sourceid   The ID of the article as it appears in the import.
+# @return A reference to a hash containing the
+sub find_by_sourceid {
+    my $self       = shift;
+    my $sourcename = shift;
+    my $sourceid   = shift;
+
+    $self -> clear_error();
+
+    my $datah = $self -> {"dbh"} -> prepare("SELECT *
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"import_meta"}."`
+                                             WHERE `source` LIKE ?
+                                             AND `source_id` LIKE ?");
+    my $datah -> execute($sourcename, $sourceid)
+        or return $self -> self_error("Unable to look up import metadata: ".$self -> {"dbh"} -> errstr());
+
+    return $datah -> fetchrow_hashref() || 0;
+}
+
 1;

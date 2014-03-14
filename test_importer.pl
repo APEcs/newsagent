@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 
+use v5.12;
 use lib qw(/var/www/webperl);
 use lib qw(blocks);
 
