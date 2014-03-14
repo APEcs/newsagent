@@ -218,10 +218,19 @@ sub html_strip {
     my $text = shift;
 
     $text = Encode::encode("iso-8859-1", $text);
+    $text =~ s|<img(.*?)/?>|convert_img($1)|iseg;
     my $tree = HTML::TreeBuilder -> new_from_content($text);
 
     my $formatter = HTML::FormatText -> new(leftmargin => 0, rightmargin => 50000);
     return $formatter -> format($tree);
+}
+
+
+sub convert_img {
+    my $attrs = shift;
+
+    my ($src) = $attrs =~ /src=["'](.*?)["']/;
+    return "img: $src" || "";
 }
 
 1;
