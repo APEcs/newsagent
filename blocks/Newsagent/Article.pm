@@ -140,7 +140,7 @@ sub new {
         "a", "b", "blockquote", "br", "caption", "col", "colgroup", "comment",
         "em", "h1", "h2", "h3", "h4", "h5", "h6", "hr", "li", "ol", "p",
         "pre", "small", "span", "strong", "sub", "sup", "table", "tbody", "td",
-        "tfoot", "th", "thead", "tr", "tt", "ul"
+        "tfoot", "th", "thead", "tr", "tt", "ul",
         ];
 
     $self -> {"tag_rules"} = [
@@ -178,6 +178,15 @@ sub new {
             style => 1,
             title => 1,
             '*'   => 0,
+        },
+        img => {
+            class  => 1,
+            alt    => 1,
+            width  => 1,
+            height => 1,
+            style  => 1,
+            title  => 1,
+            '*'    => 0,
         },
         ];
 
@@ -421,6 +430,9 @@ sub _validate_article_fields {
                                                                           "minlen"   => 8,
                                                                           "maxlen"   => 240});
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+
+    push(@{$self -> {"allow_tags"}}, "img")
+        if($self -> check_permission("freeimg"));
 
     ($args -> {"article"}, $error) = $self -> validate_htmlarea("article", {"required"   => 0,
                                                                             "minlen"     => 8,
