@@ -28,7 +28,7 @@ window.addEvent('domready', function() {
                                                           onListClose: function() { set_visible_levels(); }
                                                      });
 
-    CKEDITOR.replace('comp-desc', { customConfig: '{V_[commonpath]}cke_configs/basic_open.js' });
+    CKEDITOR.replace('comp-desc', { customConfig: '{V_[commonpath]}cke_configs/***ckeconfig***' });
 
     var settingPane = new TabPane('relmode-tabs', {onChange: function(select) { $('relmode').set('value', select); } }, ***relmode***);
     var filesPane   = new TabPane('file-tabs');

@@ -126,6 +126,9 @@ sub _generate_compose {
     # Default the summary inclusion
     $args -> {"full_summary"} = 1 if(!defined($args -> {"full_summary"}));
 
+    # permission-based access to image button
+    my $ckeconfig = $self -> check_permission('freeimg') ? "image_open.js" : "basic_open.js";
+
     # And generate the page title and content.
     return ($self -> {"template"} -> replace_langvar("COMPOSE_FORM_TITLE"),
             $self -> {"template"} -> load_template("compose/compose.tem", {"***errorbox***"         => $error,
@@ -154,6 +157,7 @@ sub _generate_compose {
                                                                            "***disable_confirm***"  => $noconfirm,
                                                                            "***preset***"           => $args -> {"preset"},
                                                                            "***fullsummary***"      => $args -> {"full_summary"} ? 'checked="checked"' : '',
+                                                                           "***ckeconfig***"        => $ckeconfig,
                                                                           }));
 }
 
