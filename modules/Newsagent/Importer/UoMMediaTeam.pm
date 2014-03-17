@@ -34,6 +34,13 @@ use Data::Dumper;
 
 
 # ============================================================================
+#  Constructor
+
+# No explicit constructor (uses Importer class constructor) but this must be
+# created with 'importer_id' set appropriately.
+
+
+# ============================================================================
 #  Interface functions
 
 ## @method $ import_articles()
@@ -76,7 +83,7 @@ sub _import_article {
     $self -> clear_error();
 
     # Attempt to locate any existing copies of this article in the system
-    my $oldmeta = $self -> find_by_sourceid('uom_xml', $article -> {"a"} -> {"name"});
+    my $oldmeta = $self -> find_by_sourceid($article -> {"a"} -> {"name"});
     return undef if(!defined($oldmeta));
 
     # If an old ID has been found, update the article associated with it, otherwise

@@ -64,30 +64,43 @@ sub new {
     return $self;
 }
 
+# ============================================================================
+#  Importer loading
+
+## @method $ load_importer($id)
+# Load the importer with the specified ID. This will create an instance of an import
+# module identified by the specified ID in the import_sources table.
+#
+# @param id The ID of the import source to create an importer for.
+# @return A reference to an importer object on success, undef on error.
+sub load_importer {
+    my $self = shift;
+    my $id   = shift;
+
+
+
 
 # ============================================================================
 #  Class support functions
 
 
-## @method $ find_by_sourceid($sourcename, $sourceid)
+## @method $ find_by_sourceid($sourceid)
 # Determine whether an article already exists containing the data for the imported
 # article with the specified import-specific id.
 #
-# @param sourcename The name of the importer.
 # @param sourceid   The ID of the article as it appears in the import.
 # @return A reference to a hash containing the
 sub find_by_sourceid {
     my $self       = shift;
-    my $sourcename = shift;
     my $sourceid   = shift;
 
     $self -> clear_error();
 
     my $datah = $self -> {"dbh"} -> prepare("SELECT *
                                              FROM `".$self -> {"settings"} -> {"database"} -> {"import_meta"}."`
-                                             WHERE `source` LIKE ?
+                                             WHERE `importer_id` = ?`
                                              AND `source_id` LIKE ?");
-    my $datah -> execute($sourcename, $sourceid)
+    my $datah -> execute($self -> {"importer_id"}, $sourceid)
         or return $self -> self_error("Unable to look up import metadata: ".$self -> {"dbh"} -> errstr());
 
     return $datah -> fetchrow_hashref() || 0;
