@@ -182,6 +182,16 @@ var LightFace = new Class({
         }
     },
 
+    disableButtons: function(disable) {
+        this.buttons.each(function(element) {
+            element.disabled = disable;
+            if(disable) {
+                element.addClass('disabled');
+            } else {
+                element.removeClass('disabled');
+            }
+        });
+    },
 
     // Open and close box
     close: function(fast) {
