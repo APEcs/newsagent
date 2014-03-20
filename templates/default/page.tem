@@ -29,6 +29,7 @@
     <![endif]-->
     <script type="text/javascript">
 // <![CDATA[
+        spinner_url = "{V_[templatepath]}images/spinner.gif";
         basepath = "{V_[scriptpath]}";
         tempath  = "{V_[templatepath]}";
 // ]]>

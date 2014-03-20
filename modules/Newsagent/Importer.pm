@@ -64,6 +64,7 @@ sub new {
     return $self;
 }
 
+
 # ============================================================================
 #  Importer loading
 
@@ -77,7 +78,19 @@ sub load_importer {
     my $self = shift;
     my $id   = shift;
 
+    $self -> clear_error();
 
+    # Fetch the importer data
+    my $importdata = $self -> get_import_source($id)
+        or return undef;
+
+    my $importer = $self -> {"module"} -> load_module($importdata -> {"perl_module"}, "importer_id" => $id,
+                                                                                      "importer_shortname" => $importdata -> {"shortname"},
+                                                                                      "importer_args"      => $importdata -> {"args"})
+        or return $self -> self_error("Unable to load import module '".$importdata -> {"name"}."': ".$self -> {"module"} -> errstr());
+
+    return $importer;
+}
 
 
 # ============================================================================

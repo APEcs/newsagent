@@ -494,6 +494,8 @@ function confirm_submit()
             buttons = [ { title: confirm_messages['confirm'], color: 'blue', event: function() { if($('conf-suppress-cb').get('checked')) {
                                                                                                      $('stopconfirm').set('value', 1);
                                                                                                  }
+                                                                                                 $('popspinner').fade('in');
+                                                                                                 popbox.disableButtons(true);
                                                                                                  $('fullform').submit();
                                                                                                }
                         },
@@ -508,6 +510,11 @@ function confirm_submit()
         $('poptitle').set('text', confirm_messages['title']);
         $('popbody').empty().adopt(bodytext);
         popbox.setButtons(buttons);
+        new Element("img", {   'id': 'popspinner',
+                               'src': spinner_url,
+                               width: 16,
+                               height: 16,
+                               'class': 'workspin'}).inject(popbox.footer, 'top');
         popbox.open();
     }
 }

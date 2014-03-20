@@ -315,3 +315,7 @@ ul.paginate li.pagebox:last-child {
 
 li.pagebox.active {
 }
+
+img.workspin {
+    opacity: 0;
+}
