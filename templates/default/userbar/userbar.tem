@@ -2,7 +2,7 @@
     <div class="bar-container">
         <ul class="site-options top-menu">
             <li id="site-front" title="{L_USERBAR_FRONT}"><a href="***front_url***" class="item"><img class="controlicon" src="{V_[templatepath]}userbar/images/site-logo.png" alt="logo" /></a></li>
-            <li id="site-name"><div class="empty-item"><a href="***mainurl***">{V_[sitename]}: ***pagename***</a></div></li>
+            <li id="site-name" title="***pagename***"><a href="***mainurl***" class="item">{V_[sitename]}: ***pagename***</a></li>
 ***site-admin***
 ***presets***
         </ul>
