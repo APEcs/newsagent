@@ -142,6 +142,7 @@ sub block_display {
     } # if(!$self -> {"session"} -> anonymous_session())
 
     return $self -> {"template"} -> load_template("userbar/userbar.tem", {"***pagename***"   => $title,
+                                                                          "***mainurl***"    => $self -> build_url(),
                                                                           "***front_url***"  => $fronturl,
                                                                           "***site-admin***" => $siteadmin,
                                                                           "***presets***"    => $presets,
