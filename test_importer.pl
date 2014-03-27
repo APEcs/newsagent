@@ -3,6 +3,7 @@
 use v5.12;
 use lib qw(/var/www/webperl);
 use lib qw(blocks);
+use lib qw(modules);
 
 use Newsagent::Importer::UoMMediaTeam;
 use Data::Dumper;

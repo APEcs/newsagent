@@ -27,7 +27,7 @@ use base qw(Newsagent); # This class extends the Newsagent block class
 use Newsagent::System::Feed;
 use Newsagent::System::Article;
 use v5.12;
-
+use Data::Dumper;
 
 # ============================================================================
 #  Constructor
@@ -42,8 +42,7 @@ use v5.12;
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    my $self     = $class -> SUPER::new("timefmt" => '%a, %d %b %Y %H:%M:%S %z',
-                                        @_)
+    my $self     = $class -> SUPER::new(@_)
         or return undef;
 
     $self -> {"feed"} = Newsagent::System::Feed -> new(dbh      => $self -> {"dbh"},
@@ -59,7 +58,13 @@ sub new {
                                                              logger   => $self -> {"logger"},
                                                              roles    => $self -> {"system"} -> {"roles"},
                                                              metadata => $self -> {"system"} -> {"metadata"})
-        or return Webperl::SystemModule::set_error("Article initialisation failed: ".$SystemModule::errstr);
+        or return Webperl::SystemModule::set_error("Article initialisation failed: ".$Webperl::SystemModule::errstr);
+
+    # If importer args have been provided, split them
+    if($self -> {"importer_args"}) {
+        my %args = $self -> {"importer_args"} =~ /(\w+)=([^;]+)/g;
+        $self -> {"args"} = \%args;
+    }
 
     return $self;
 }
@@ -68,34 +73,33 @@ sub new {
 # ============================================================================
 #  Importer loading
 
-## @method $ load_importer($id)
+## @method $ load_importer($source)
 # Load the importer with the specified ID. This will create an instance of an import
 # module identified by the specified ID in the import_sources table.
 #
-# @param id The ID of the import source to create an importer for.
+# @param source The shortname of the import source to create an importer for.
 # @return A reference to an importer object on success, undef on error.
 sub load_importer {
-    my $self = shift;
-    my $id   = shift;
+    my $self   = shift;
+    my $source = shift;
 
     $self -> clear_error();
 
     # Fetch the importer data
-    my $importdata = $self -> get_import_source($id)
+    my $importdata = $self -> _get_import_source($source)
         or return undef;
 
-    my $importer = $self -> {"module"} -> load_module($importdata -> {"perl_module"}, "importer_id" => $id,
-                                                                                      "importer_shortname" => $importdata -> {"shortname"},
-                                                                                      "importer_args"      => $importdata -> {"args"})
-        or return $self -> self_error("Unable to load import module '".$importdata -> {"name"}."': ".$self -> {"module"} -> errstr());
-
-    return $importer;
+    return $self -> {"module"} -> load_module($importdata -> {"perl_module"},
+                                              "importer_id"        => $importdata -> {"id"},
+                                              "importer_shortname" => $importdata -> {"shortname"},
+                                              "importer_args"      => $importdata -> {"args"},
+                                              "importer_lastrun"   => $importdata -> {"lastrun"})
+        or $self -> self_error("Unable to load import module '$source': ".$self -> {"module"} -> errstr());
 }
 
 
 # ============================================================================
-#  Class support functions
-
+#  Interface
 
 ## @method $ find_by_sourceid($sourceid)
 # Determine whether an article already exists containing the data for the imported
@@ -108,15 +112,99 @@ sub find_by_sourceid {
     my $sourceid   = shift;
 
     $self -> clear_error();
+    print STDERR "Searching for sourceid $sourceid";
 
     my $datah = $self -> {"dbh"} -> prepare("SELECT *
                                              FROM `".$self -> {"settings"} -> {"database"} -> {"import_meta"}."`
-                                             WHERE `importer_id` = ?`
+                                             WHERE `importer_id` = ?
                                              AND `source_id` LIKE ?");
-    my $datah -> execute($self -> {"importer_id"}, $sourceid)
+    $datah -> execute($self -> {"importer_id"}, $sourceid)
         or return $self -> self_error("Unable to look up import metadata: ".$self -> {"dbh"} -> errstr());
 
     return $datah -> fetchrow_hashref() || 0;
+}
+
+
+sub create_import {
+    my $self    = shift;
+    my $article = shift;
+
+    $self -> clear_error();
+
+    my $aid = $self -> {"article"} -> add_article({"images"  => {"a" => { "url" => $article -> {"images"} -> {"small"},
+                                                                          "mode" => "url",
+                                                                        },
+                                                                 "b" => { "url" => $article -> {"images"} -> {"large"},
+                                                                          "mode" => "url",
+                                                                        },
+                                                                },
+                                                   "levels"  => { 'home' => 1 },
+                                                   "feeds"   => [ $self -> {"args"} -> {"feed"} ],
+                                                   "release_mode" => 'visible',
+                                                   "relmode"      => 0,
+                                                   "full_summary" => 0,
+                                                   "minor_edit"   => 0,
+                                                   "sticky"       => 0,
+                                                   "title"   => $article -> {"headline"},
+                                                   "summary" => $article -> {"strapline"},
+                                                   "article" => $article -> {"mainbody"},
+                                                  },
+                                                  $self -> {"args"} -> {"userid"})
+        or return $self -> self_error("Article addition failed: ".$self -> {"article"} -> errstr());
+
+    return $self -> _add_import_meta($aid, $article -> {"a"} -> {"name"});
+}
+
+
+# ============================================================================
+#  Class support functions
+
+## @method private $ _get_import_source($source)
+# Fetch the information for the specified import source from the database.
+#
+# @param source The shortname of the importer to fetch the data for.
+# @return A reference to a hash containing the importer data on success, undef
+#         on error.
+sub _get_import_source {
+    my $self   = shift;
+    my $source = shift;
+
+    $self -> clear_error();
+
+    my $sourceh = $self -> {"dbh"} -> prepare("SELECT s.*,m.perl_module
+                                               FROM `".$self -> {"settings"} -> {"database"} -> {"import_sources"}."` AS `s`,
+                                                    `".$self -> {"settings"} -> {"database"} -> {"modules"}."` AS `m`
+                                               WHERE `m`.`module_id` = `s`.`module_id`
+                                               AND `s`.`shortname` LIKE ?");
+    $sourceh -> execute($source)
+        or return $self -> self_error("Unable to look up import metadata: ".$self -> {"dbh"} -> errstr());
+
+    return $sourceh -> fetchrow_hashref()
+        or $self -> self_error("Request for unknown import source.");
+}
+
+
+## @method private $ _add_import_meta(articleid, $sourceid)
+# Add an entry to the import metainfo table for the specified article
+#
+# @param articleid The ID of the article associated with this import.
+# @param sourceid  The ID of the article in the source data
+# @return true on success, undef on error.
+sub _add_import_meta {
+    my $self      = shift;
+    my $articleid = shift;
+    my $sourceid  = shift;
+
+    $self -> clear_error();
+
+    my $addh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"import_meta"}."`
+                                            (importer_id, article_id, source_id, imported, updated)
+                                            VALUES(?, ?, ?, UNIX_TIMESTAMP(), UNIX_TIMESTAMP())");
+    my $rows = $addh -> execute($self -> {"importer_id"}, $articleid, $sourceid);
+    return $self -> self_error("Unable to perform article metainfo insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("Article metainfo insert failed, no rows inserted") if($rows eq "0E0");
+
+    return 1;
 }
 
 1;

@@ -24,8 +24,7 @@
 package Newsagent::Importer::UoMMediaTeam;
 
 use strict;
-#use base qw(Newsagent); # This class extends the Newsagent block class
-use base qw(Webperl::SystemModule);
+use base qw(Newsagent::Importer); # This class extends the Newsagent block class
 use v5.12;
 use DateTime;
 use LWP::UserAgent;
@@ -38,7 +37,6 @@ use Data::Dumper;
 
 # No explicit constructor (uses Importer class constructor) but this must be
 # created with 'importer_id' set appropriately.
-
 
 # ============================================================================
 #  Interface functions
@@ -55,7 +53,7 @@ sub import_articles {
 
     $self -> clear_error();
 
-    my $updates = $self -> _fetch_updated_xml($self -> {"args"} -> {"url"}, $self -> {"lastrun"})
+    my $updates = $self -> _fetch_updated_xml($self -> {"args"} -> {"url"}, DateTime -> from_epoch(epoch => $self -> {"importer_lastrun"} || 0))
         or return undef;
 
     foreach my $article (@{$updates}) {
@@ -89,9 +87,9 @@ sub _import_article {
     # If an old ID has been found, update the article associated with it, otherwise
     # create a new article instead.
     if($oldmeta) {
-        return $self -> _update_import($oldmeta -> {"article_id"}, $article);
+        return $self -> update_import($oldmeta -> {"article_id"}, $article);
     } else {
-        return $self -> _create_import($article);
+        return $self -> create_import($article);
     }
 }
 

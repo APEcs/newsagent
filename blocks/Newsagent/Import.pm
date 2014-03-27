@@ -59,8 +59,8 @@ sub _run_import {
 
     my $importer = $self -> {"importer"} -> load_importer($source);
     if($importer) {
-        my $result = $importer -> _fetch_updated_xml($importer -> {"args"} -> {"url"}, DateTime -> from_epoch(epoch => 0));
-        return ("Testing", Dumper($result));
+        my $result = $importer -> import_articles();
+        return ("Testing", $result ? "Imported" : $importer -> errstr());
     }
 
     return ("error", $self -> {"importer"} -> errstr());
