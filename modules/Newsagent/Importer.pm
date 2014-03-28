@@ -125,37 +125,6 @@ sub find_by_sourceid {
 }
 
 
-sub create_import {
-    my $self    = shift;
-    my $article = shift;
-
-    $self -> clear_error();
-
-    my $aid = $self -> {"article"} -> add_article({"images"  => {"a" => { "url" => $article -> {"images"} -> {"small"},
-                                                                          "mode" => "url",
-                                                                        },
-                                                                 "b" => { "url" => $article -> {"images"} -> {"large"},
-                                                                          "mode" => "url",
-                                                                        },
-                                                                },
-                                                   "levels"  => { 'home' => 1 },
-                                                   "feeds"   => [ $self -> {"args"} -> {"feed"} ],
-                                                   "release_mode" => 'visible',
-                                                   "relmode"      => 0,
-                                                   "full_summary" => 0,
-                                                   "minor_edit"   => 0,
-                                                   "sticky"       => 0,
-                                                   "title"   => $article -> {"headline"},
-                                                   "summary" => $article -> {"strapline"},
-                                                   "article" => $article -> {"mainbody"},
-                                                  },
-                                                  $self -> {"args"} -> {"userid"})
-        or return $self -> self_error("Article addition failed: ".$self -> {"article"} -> errstr());
-
-    return $self -> _add_import_meta($aid, $article -> {"a"} -> {"name"});
-}
-
-
 # ============================================================================
 #  Class support functions
 

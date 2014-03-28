@@ -68,6 +68,7 @@ sub import_articles {
 # ============================================================================
 #  Internal implementation-specifics
 
+
 ## @method private $ _import_article($article)
 # Attempt to import the specified article into the system, either updating the
 # existing copy of it, or adding a copy to the system.
@@ -87,10 +88,41 @@ sub _import_article {
     # If an old ID has been found, update the article associated with it, otherwise
     # create a new article instead.
     if($oldmeta) {
-        return $self -> update_import($oldmeta -> {"article_id"}, $article);
+        return $self -> _update_import($oldmeta -> {"article_id"}, $article);
     } else {
-        return $self -> create_import($article);
+        return $self -> _create_import($article);
     }
+}
+
+
+sub _create_import {
+    my $self    = shift;
+    my $article = shift;
+
+    $self -> clear_error();
+
+    my $aid = $self -> {"article"} -> add_article({"images"  => {"a" => { "url" => $article -> {"images"} -> {"small"},
+                                                                          "mode" => "url",
+                                                                        },
+                                                                 "b" => { "url" => $article -> {"images"} -> {"large"},
+                                                                          "mode" => "url",
+                                                                        },
+                                                                },
+                                                   "levels"  => { 'home' => 1 },
+                                                   "feeds"   => [ $self -> {"args"} -> {"feed"} ],
+                                                   "release_mode" => 'visible',
+                                                   "relmode"      => 0,
+                                                   "full_summary" => 0,
+                                                   "minor_edit"   => 0,
+                                                   "sticky"       => 0,
+                                                   "title"   => $article -> {"headline"},
+                                                   "summary" => $article -> {"strapline"},
+                                                   "article" => $article -> {"mainbody"},
+                                                  },
+                                                  $self -> {"args"} -> {"userid"})
+        or return $self -> self_error("Article addition failed: ".$self -> {"article"} -> errstr());
+
+    return $self -> _add_import_meta($aid, $article -> {"a"} -> {"name"});
 }
 
 
