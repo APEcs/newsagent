@@ -55,7 +55,7 @@ sub import_articles {
 
     my $updates = $self -> _fetch_updated_xml($self -> {"args"} -> {"url"}, DateTime -> from_epoch(epoch => $self -> {"importer_lastrun"} || 0))
         or return undef;
-
+    return $updates;
     foreach my $article (@{$updates}) {
         $self -> _import_article($article)
             or return undef;
@@ -88,13 +88,18 @@ sub _import_article {
     # If an old ID has been found, update the article associated with it, otherwise
     # create a new article instead.
     if($oldmeta) {
-        return $self -> _update_import($oldmeta -> {"article_id"}, $article);
+        return $self -> _update_import($oldmeta, $article);
     } else {
         return $self -> _create_import($article);
     }
 }
 
 
+## @method private $ _create_import($article)
+# Create a new Newsagent article using the contents of the specified UoM media team article.
+#
+# @param article A reference to hash containing a UoM media team article.
+# @return true on success, undef on error.
 sub _create_import {
     my $self    = shift;
     my $article = shift;
@@ -108,7 +113,7 @@ sub _create_import {
                                                                           "mode" => "url",
                                                                         },
                                                                 },
-                                                   "levels"  => { 'home' => 1 },
+                                                   "levels"  => { 'home' => 1, 'leader' => 1, 'group' => 1 },
                                                    "feeds"   => [ $self -> {"args"} -> {"feed"} ],
                                                    "release_mode" => 'visible',
                                                    "relmode"      => 0,
@@ -123,6 +128,44 @@ sub _create_import {
         or return $self -> self_error("Article addition failed: ".$self -> {"article"} -> errstr());
 
     return $self -> _add_import_meta($aid, $article -> {"a"} -> {"name"});
+}
+
+
+## @method private $ _update_import($oldmeta, $article)
+# Determine whether the specified article needs to be updated, and if so update the data.
+#
+# @param oldmeta The import metadata for the import.
+# @param article A reference to hash containing a UoM media team article.
+# @return true on success (either the article does not need updating, or it has been
+#         updated successfully), undef on error.
+sub _update_import {
+    my $self    = shift;
+    my $oldmeta = shift;
+    my $article = shift;
+
+    $self -> clear_error();
+
+    # Convert the last update in the metadata to a datatime, and then check whether the
+    # source article has been updated since the last update
+    # WARNING: This may cause problems with DST. By default from_epoch will be UTC, and
+    # hopefully comparison with the datePub field will be timezone/DST sane....
+    my $updated = DateTime -> from_epoch(epoch => $oldmeta -> {"updated"});
+    return 1 if($updated >= $article -> {"datePub"});
+
+    # Okay, the source article was updated after the last update for the import
+    # update the settings for the newsagent article
+    return $self -> {"article"} -> update_article_inplace($oldmeta -> {"article_id"}, { "images"  => {"a" => { "url" => $article -> {"images"} -> {"small"},
+                                                                                                               "mode" => "url",
+                                                                                                             },
+                                                                                                      "b" => { "url" => $article -> {"images"} -> {"large"},
+                                                                                                               "mode" => "url",
+                                                                                                             },
+                                                                                                     },
+                                                                                        "title"   => $article -> {"headline"},
+                                                                                        "summary" => $article -> {"strapline"},
+                                                                                        "article" => $article -> {"mainbody"},
+                                                                                      })
+        or $self -> self_error($self -> {"article"} -> errstr());
 }
 
 
