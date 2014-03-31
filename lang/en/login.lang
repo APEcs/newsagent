@@ -172,4 +172,5 @@ LOGIN_LOCKOUT_MESSAGE   = Your '{V_[sitename]}' account has deactivated and your
 LOGIN_LOCKOUT_ACTNEEDED = As your account has been deactivated, before you can successfully log in you will need to reactivate your account. To do this, please click on the following link, or copy and paste it into your web browser:
 LOGIN_LOCKOUT_ALTACT    = Alternatively, enter the following code in the account activation form:
 
-#
+# API stuff
+LOGIN_EXPIRED  = Your login session has expired, please log in again using the form below to continue.

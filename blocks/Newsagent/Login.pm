@@ -1043,6 +1043,29 @@ sub generate_reset {
 
 
 # ============================================================================
+#  API handling
+
+
+## @method private $ _build_login_check_response(void)
+# Determine whether the user's session is still login
+#
+# @return The data to send back to the user in an API response.
+sub _build_login_check_response {
+    my $self = shift;
+
+    return { "login" => {"loggedin" => $self -> {"session"} -> anonymous_session() ? "no" : "yes" }};
+}
+
+
+sub _build_loginform_response {
+    my $self = shift;
+
+    return $self -> {"template"} -> load_template("login/apiform.tem");
+}
+
+
+
+# ============================================================================
 #  Interface functions
 
 ## @method $ page_display()
@@ -1055,8 +1078,10 @@ sub page_display {
     if(defined($apiop)) {
         # API call - dispatch to appropriate handler.
         given($apiop) {
+            when("check")     { return $self -> api_response     ($self -> _build_login_check_response()); }
+            when("loginform") { return $self -> api_html_response($self -> _build_loginform_response()); }
+            when("login")     { return $self -> api_response     ($self -> _build_login_response()); }
 
-            # API operation rcount, requires query string parameters yearid=<id> and matrix=<rid>-<mid>,<rid>-<mid>,...
             default {
                 return $self -> api_response($self -> api_errorhash('bad_op',
                                                                     $self -> {"template"} -> replace_langvar("API_BAD_OP")))

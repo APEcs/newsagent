@@ -60,7 +60,7 @@ sub _run_import {
     my $importer = $self -> {"importer"} -> load_importer($source);
     if($importer) {
         my $result = $importer -> import_articles();
-        return ("Testing", $result ? "Imported" : $importer -> errstr());
+        return ("Testing", Dumper($result));#$result ? "Imported" : $importer -> errstr());
     }
 
     return ("error", $self -> {"importer"} -> errstr());

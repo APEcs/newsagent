@@ -1,0 +1,11 @@
+<div id="loginform" title="{L_LOGIN_LOGIN}">
+    <p>{L_LOGIN_EXPIRED}</p>
+    <div class="entry">
+        <label for="username">{L_LOGIN_USERNAME}:<br />
+        <input type="text" id="username" name="username" class="highlight" size="24" maxlength="32" /></label>
+    </div>
+    <div class="entry">
+        <label for="password">{L_LOGIN_PASSWORD}:<br />
+        <input type="password" id="password" name="password" class="highlight" size="24" maxlength="255" /></label>
+    </div>
+</div>

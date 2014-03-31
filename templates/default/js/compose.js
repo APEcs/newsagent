@@ -268,6 +268,41 @@ function set_schedule_sections()
 
 
 /*******************************************************************************
+ *  Login check
+ */
+
+function check_login()
+{
+    var req = new Request({ url: api_request_path("login", "check", basepath),
+                            onRequest: function() {
+                                $('submitarticle').addClass('disabled').disabled = true;
+                            },
+                            onSuccess: function(respText, respXML) {
+                                $('submitarticle').removeClass('disabled').disabled = false;
+
+                                var err = respXML.getElementsByTagName("error")[0];
+                                if(err) {
+                                    $('errboxmsg').set('html', '<p class="error">'+err.getAttribute('info')+'</p>');
+                                    errbox.open();
+
+                                // No error, we have a response
+                                } else {
+                                    var login = respXML.getElementsByTagName('login');
+                                    var logged_in = login[0].getAttribute('loggedin');
+
+                                    if(logged_in == 'yes') {
+                                        confirm_submit();
+                                    } else {
+                                        /* do login */
+                                    }
+                                }
+                            }
+                          });
+    req.post();
+}
+
+
+/*******************************************************************************
  *  Confirmation popup related
  */
 
@@ -401,7 +436,6 @@ function notify_count_api(enabled)
 
     req.post({ yearid: yearid,
                matrix: mlist.join(',')});
-
 }
 
 
@@ -462,9 +496,9 @@ function confirm_submit()
             // Side image for the confirm dialog
             new Element('img', { src: confirm_imgurl,
                                  styles: {  'width': 48,
-                                           'height': 48,
+                                            'height': 48,
                                             'float': 'right',
-                                           'margin': '0em 0em 0.5em 1em'
+                                            'margin': '0em 0em 0.5em 1em'
                                          }
                                }),
             // Introduction message.
@@ -481,6 +515,7 @@ function confirm_submit()
                 new Element('hr')
 
             );
+
             // Inject a confirmation disable checkbox into the footer, it looks better there than in the body
             popbox.footer.adopt(new Element('label', { 'for': 'conf-suppress-cb',
                                                        'styles': { 'float': 'left' }
@@ -501,8 +536,8 @@ function confirm_submit()
                         },
                         buttons[0] ];
 
-        // Otherwise, the system will reject the article - produce errors to show to the user, and keep
-        // the single 'cancel' button.
+            // Otherwise, the system will reject the article - produce errors to show to the user, and keep
+            // the single 'cancel' button.
         } else {
             bodytext.adopt(confirm_errors(summary, fulltext, feeds, levels, publish, pubname));
         }
@@ -598,6 +633,6 @@ window.addEvent('domready', function() {
 
     $$('input[name=level]').addEvent('change', function(event) { cascade_levels(event.target); });
 
-    $('submitarticle').addEvent('click', function() { confirm_submit(); });
+    $('submitarticle').addEvent('click', function() { check_login(); });
 
 });
