@@ -1050,177 +1050,191 @@ sub generate_reset {
 sub page_display {
     my $self = shift;
 
-    # We need to determine what the page title should be, and the content to shove in it...
-    my ($title, $body, $extrahead) = ("", "", "");
-    my @pathinfo = $self -> {"cgi"} -> param("pathinfo");
+    # Is this an API call, or a normal page operation?
+    my $apiop = $self -> is_api_operation();
+    if(defined($apiop)) {
+        # API call - dispatch to appropriate handler.
+        given($apiop) {
 
-    # User is attempting to do a password change
-    if(defined($self -> {"cgi"} -> param("changepass"))) {
-
-        # Check the password is valid
-        my ($user, $args) = $self -> validate_passchange();
-
-        # Change failed, send back the change form
-        if(!ref($user)) {
-            $self -> log("passchange error", $user);
-            ($title, $body) = $self -> generate_passchange_form($user);
-
-        # Change done, send back the loggedin page
-        } else {
-            $self -> log("password updated", $user);
-            ($title, $body, $extrahead) = $self -> generate_loggedin();
+            # API operation rcount, requires query string parameters yearid=<id> and matrix=<rid>-<mid>,<rid>-<mid>,...
+            default {
+                return $self -> api_response($self -> api_errorhash('bad_op',
+                                                                    $self -> {"template"} -> replace_langvar("API_BAD_OP")))
+            }
         }
+    } else {
+        # We need to determine what the page title should be, and the content to shove in it...
+        my ($title, $body, $extrahead) = ("", "", "");
+        my @pathinfo = $self -> {"cgi"} -> param("pathinfo");
 
-    # If the user is not anonymous, they have logged in already.
-    } elsif(!$self -> {"session"} -> anonymous_session()) {
+        # User is attempting to do a password change
+        if(defined($self -> {"cgi"} -> param("changepass"))) {
 
-        # Is the user requesting a logout? If so, doo eet.
-        if(defined($self -> {"cgi"} -> param("logout")) || ($pathinfo[0] && $pathinfo[0] eq "logout")) {
-            $self -> log("logout", $self -> {"session"} -> get_session_userid());
-            if($self -> {"session"} -> delete_session()) {
-                ($title, $body, $extrahead) = $self -> generate_loggedout();
+            # Check the password is valid
+            my ($user, $args) = $self -> validate_passchange();
+
+            # Change failed, send back the change form
+            if(!ref($user)) {
+                $self -> log("passchange error", $user);
+                ($title, $body) = $self -> generate_passchange_form($user);
+
+                # Change done, send back the loggedin page
             } else {
-                return $self -> generate_fatal($SessionHandler::errstr);
+                $self -> log("password updated", $user);
+                ($title, $body, $extrahead) = $self -> generate_loggedin();
             }
 
-        # Already logged in, check password and either force a change or tell the user they logged in.
-        } else {
-            my $user = $self -> {"session"} -> get_user_byid();
+            # If the user is not anonymous, they have logged in already.
+        } elsif(!$self -> {"session"} -> anonymous_session()) {
 
-            if($user) {
+            # Is the user requesting a logout? If so, doo eet.
+            if(defined($self -> {"cgi"} -> param("logout")) || ($pathinfo[0] && $pathinfo[0] eq "logout")) {
+                $self -> log("logout", $self -> {"session"} -> get_session_userid());
+                if($self -> {"session"} -> delete_session()) {
+                    ($title, $body, $extrahead) = $self -> generate_loggedout();
+                } else {
+                    return $self -> generate_fatal($SessionHandler::errstr);
+                }
+
+                # Already logged in, check password and either force a change or tell the user they logged in.
+            } else {
+                my $user = $self -> {"session"} -> get_user_byid();
+
+                if($user) {
+                    # Does the user need to change their password?
+                    my $passchange = $self -> {"session"} -> {"auth"} -> force_passchange($user -> {"username"});
+                    if(!$passchange) {
+                        $self -> log("login", "Revisit to login form by logged in user ".$user -> {"username"});
+
+                        # No passchange needed, user is good
+                        ($title, $body, $extrahead) = $self -> generate_loggedin();
+                    } else {
+                        $self -> {"session"} -> set_variable("passchange_reason", $passchange);
+                        ($title, $body) = $self -> generate_passchange_form();
+                    }
+                } else {
+                    $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Logged in session with no user record. This Should Not Happen.");
+                }
+            }
+
+            # User is anonymous - do we have a login?
+        } elsif(defined($self -> {"cgi"} -> param("login"))) {
+
+            # Validate the other fields...
+            my ($user, $args) = $self -> validate_login();
+
+            # Do we have any errors? If so, send back the login form with them
+            if(!ref($user)) {
+                $self -> log("login error", $user);
+                ($title, $body) = $self -> generate_login_form($user, $args);
+
+                # No errors, user is valid...
+            } else {
+                # should the login be made persistent?
+                my $persist = defined($self -> {"cgi"} -> param("persist")) && $self -> {"cgi"} -> param("persist");
+
+                # Get the session variables so they can be copied to the new session.
+                my ($block, $pathinfo, $api, $qstring) = $self -> get_saved_state();
+
+                # create the new logged-in session, copying over the savestate session variable
+                $self -> {"session"} -> create_session($user -> {"user_id"},
+                                                       $persist,
+                                                       {"saved_block"    => $block,
+                                                        "saved_pathinfo" => $pathinfo,
+                                                        "saved_api"      => $api,
+                                                        "saved_qstring"  => $qstring});
+
+                $self -> log("login", $user -> {"username"});
+
                 # Does the user need to change their password?
-                my $passchange = $self -> {"session"} -> {"auth"} -> force_passchange($user -> {"username"});
+                my $passchange = $self -> {"session"} -> {"auth"} -> force_passchange($args -> {"username"});
                 if(!$passchange) {
-                    $self -> log("login", "Revisit to login form by logged in user ".$user -> {"username"});
-
                     # No passchange needed, user is good
                     ($title, $body, $extrahead) = $self -> generate_loggedin();
                 } else {
                     $self -> {"session"} -> set_variable("passchange_reason", $passchange);
                     ($title, $body) = $self -> generate_passchange_form();
                 }
-            } else {
-                $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Logged in session with no user record. This Should Not Happen.");
             }
-        }
 
-    # User is anonymous - do we have a login?
-    } elsif(defined($self -> {"cgi"} -> param("login"))) {
+            # Has a registration attempt been made?
+        } elsif(defined($self -> {"cgi"} -> param("register"))) {
 
-        # Validate the other fields...
-        my ($user, $args) = $self -> validate_login();
+            # Validate/perform the registration
+            my ($user, $args) = $self -> validate_register();
 
-        # Do we have any errors? If so, send back the login form with them
-        if(!ref($user)) {
-            $self -> log("login error", $user);
-            ($title, $body) = $self -> generate_login_form($user, $args);
+            # Do we have any errors? If so, send back the login form with them
+            if(!ref($user)) {
+                $self -> log("registration error", $user);
+                ($title, $body) = $self -> generate_login_form($user, $args);
 
-        # No errors, user is valid...
-        } else {
-            # should the login be made persistent?
-            my $persist = defined($self -> {"cgi"} -> param("persist")) && $self -> {"cgi"} -> param("persist");
-
-            # Get the session variables so they can be copied to the new session.
-            my ($block, $pathinfo, $api, $qstring) = $self -> get_saved_state();
-
-            # create the new logged-in session, copying over the savestate session variable
-            $self -> {"session"} -> create_session($user -> {"user_id"},
-                                                   $persist,
-                                                   {"saved_block"    => $block,
-                                                    "saved_pathinfo" => $pathinfo,
-                                                    "saved_api"      => $api,
-                                                    "saved_qstring"  => $qstring});
-
-            $self -> log("login", $user -> {"username"});
-
-            # Does the user need to change their password?
-            my $passchange = $self -> {"session"} -> {"auth"} -> force_passchange($args -> {"username"});
-            if(!$passchange) {
-                # No passchange needed, user is good
-                ($title, $body, $extrahead) = $self -> generate_loggedin();
+                # No errors, user is registered
             } else {
-                $self -> {"session"} -> set_variable("passchange_reason", $passchange);
-                ($title, $body) = $self -> generate_passchange_form();
+                # Do not create a new session - the user needs to confirm the account.
+                $self -> log("registered inactive", $user -> {"username"});
+                ($title, $body) = $self -> generate_registered();
             }
-        }
 
-    # Has a registration attempt been made?
-    } elsif(defined($self -> {"cgi"} -> param("register"))) {
+            # Is the user attempting activation?
+        } elsif(defined($self -> {"cgi"} -> param("actcode"))) {
 
-        # Validate/perform the registration
-        my ($user, $args) = $self -> validate_register();
+            my ($user, $args) = $self -> validate_actcode();
+            if(!ref($user)) {
+                $self -> log("activation error", $user);
+                ($title, $body) = $self -> generate_actcode_form($user);
+            } else {
+                $self -> log("activation success", $user -> {"username"});
+                ($title, $body) = $self -> generate_activated($user);
+            }
 
-        # Do we have any errors? If so, send back the login form with them
-        if(!ref($user)) {
-            $self -> log("registration error", $user);
-            ($title, $body) = $self -> generate_login_form($user, $args);
+            # Password reset requested?
+        } elsif(defined($self -> {"cgi"} -> param("dorecover"))) {
 
-        # No errors, user is registered
+            my ($user, $args) = $self -> validate_recover();
+            if(!ref($user)) {
+                $self -> log("Reset error", $user);
+                ($title, $body) = $self -> generate_recover_form($user);
+            } else {
+                $self -> log("Reset success", $user -> {"username"});
+                ($title, $body) = $self -> generate_recover($user);
+            }
+
+        } elsif(defined($self -> {"cgi"} -> param("resetcode"))) {
+
+            my ($user, $args) = $self -> validate_reset();
+            ($title, $body) = $self -> generate_reset(!ref($user) ? $user : undef);
+            # User wants a resend?
+        } elsif(defined($self -> {"cgi"} -> param("doresend"))) {
+
+            my ($user, $args) = $self -> validate_resend();
+            if(!ref($user)) {
+                $self -> log("Resend error", $user);
+                ($title, $body) = $self -> generate_resend_form($user);
+            } else {
+                $self -> log("Resend success", $user -> {"username"});
+                ($title, $body) = $self -> generate_resent($user);
+            }
+
+
+        } elsif(defined($self -> {"cgi"} -> param("activate")) || ($pathinfo[0] && $pathinfo[0] eq "activate")) {
+            ($title, $body) = $self -> generate_actcode_form();
+
+        } elsif(defined($self -> {"cgi"} -> param("recover")) || ($pathinfo[0] && $pathinfo[0] eq "recover")) {
+            ($title, $body) = $self -> generate_recover_form();
+
+        } elsif(defined($self -> {"cgi"} -> param("resend")) || ($pathinfo[0] && $pathinfo[0] eq "resend")) {
+            ($title, $body) = $self -> generate_resend_form();
+
+            # No session, no submission? Send back the login form...
         } else {
-            # Do not create a new session - the user needs to confirm the account.
-            $self -> log("registered inactive", $user -> {"username"});
-            ($title, $body) = $self -> generate_registered();
+            ($title, $body) = $self -> generate_login_form();
         }
 
-    # Is the user attempting activation?
-    } elsif(defined($self -> {"cgi"} -> param("actcode"))) {
-
-        my ($user, $args) = $self -> validate_actcode();
-        if(!ref($user)) {
-            $self -> log("activation error", $user);
-            ($title, $body) = $self -> generate_actcode_form($user);
-        } else {
-            $self -> log("activation success", $user -> {"username"});
-            ($title, $body) = $self -> generate_activated($user);
-        }
-
-    # Password reset requested?
-    } elsif(defined($self -> {"cgi"} -> param("dorecover"))) {
-
-        my ($user, $args) = $self -> validate_recover();
-        if(!ref($user)) {
-            $self -> log("Reset error", $user);
-            ($title, $body) = $self -> generate_recover_form($user);
-        } else {
-            $self -> log("Reset success", $user -> {"username"});
-            ($title, $body) = $self -> generate_recover($user);
-        }
-
-    } elsif(defined($self -> {"cgi"} -> param("resetcode"))) {
-
-        my ($user, $args) = $self -> validate_reset();
-        ($title, $body) = $self -> generate_reset(!ref($user) ? $user : undef);
-    # User wants a resend?
-    } elsif(defined($self -> {"cgi"} -> param("doresend"))) {
-
-        my ($user, $args) = $self -> validate_resend();
-        if(!ref($user)) {
-            $self -> log("Resend error", $user);
-            ($title, $body) = $self -> generate_resend_form($user);
-        } else {
-            $self -> log("Resend success", $user -> {"username"});
-            ($title, $body) = $self -> generate_resent($user);
-        }
-
-
-    } elsif(defined($self -> {"cgi"} -> param("activate")) || ($pathinfo[0] && $pathinfo[0] eq "activate")) {
-        ($title, $body) = $self -> generate_actcode_form();
-
-    } elsif(defined($self -> {"cgi"} -> param("recover")) || ($pathinfo[0] && $pathinfo[0] eq "recover")) {
-        ($title, $body) = $self -> generate_recover_form();
-
-    } elsif(defined($self -> {"cgi"} -> param("resend")) || ($pathinfo[0] && $pathinfo[0] eq "resend")) {
-        ($title, $body) = $self -> generate_resend_form();
-
-    # No session, no submission? Send back the login form...
-    } else {
-        ($title, $body) = $self -> generate_login_form();
+        # Done generating the page content, return the filled in page template
+        return $self -> {"template"} -> load_template("login/page.tem", {"***title***"     => $title,
+                                                                         "***extrahead***" => $extrahead,
+                                                                         "***content***"   => $body,});
     }
-
-    # Done generating the page content, return the filled in page template
-    return $self -> {"template"} -> load_template("login/page.tem", {"***title***"     => $title,
-                                                                     "***extrahead***" => $extrahead,
-                                                                     "***content***"   => $body,});
 }
 
 1;
