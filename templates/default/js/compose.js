@@ -361,6 +361,7 @@ function check_login_popup()
                                         set_session_cookies(respXML.getElementsByTagName('cookies'));
 
                                         popbox.close();
+                                        popbox.footer.empty();
                                         confirm_submit();
                                     } else {
                                         $('apiloginerr').set('html', login[0].textContent);
@@ -690,18 +691,24 @@ window.addEvent('domready', function() {
                                                             $('rtimestamp').set('value', date.format('%s'));
                                                         }
                                                       });
-    $('comp-release').addEvent('change', function() { release_control('release_date', 'rtimestamp', 'comp-reldate', 'preset', 'comp-relpreset', 'comp-release'); });
-    release_control('release_date', 'rtimestamp', 'comp-reldate', 'preset', 'comp-relpreset', 'comp-release');
+    if($('comp-release')) {
+        $('comp-release').addEvent('change', function() { release_control('release_date', 'rtimestamp', 'comp-reldate', 'preset', 'comp-relpreset', 'comp-release'); });
+        release_control('release_date', 'rtimestamp', 'comp-reldate', 'preset', 'comp-relpreset', 'comp-release');
+    }
 
     $$('select.notifymode').each(function(element) { setup_notify_picker(element) });
 
-    $('comp-summ').addEvent('keyup', function() { text_fielduse('comp-summ', 'sumchars', 240); });
-    text_fielduse('comp-summ', 'sumchars', 240);
+    if($('comp-summ')) {
+        $('comp-summ').addEvent('keyup', function() { text_fielduse('comp-summ', 'sumchars', 240); });
+        text_fielduse('comp-summ', 'sumchars', 240);
+    }
 
-    $('imagea_mode').addEvent('change', function() { show_image_subopt('imagea_mode'); });
-    show_image_subopt('imagea_mode');
-    $('imageb_mode').addEvent('change', function() { show_image_subopt('imageb_mode'); });
-    show_image_subopt('imageb_mode');
+    if($('imagea_mode')) {
+        $('imagea_mode').addEvent('change', function() { show_image_subopt('imagea_mode'); });
+        show_image_subopt('imagea_mode');
+        $('imageb_mode').addEvent('change', function() { show_image_subopt('imageb_mode'); });
+        show_image_subopt('imageb_mode');
+    }
 
     if($('comp-schedule')) {
         sdate_picker = new Picker.Date($('schedule_date'), { timePicker: true,
@@ -722,6 +729,7 @@ window.addEvent('domready', function() {
 
     $$('input[name=level]').addEvent('change', function(event) { cascade_levels(event.target); });
 
-    $('submitarticle').addEvent('click', function() { check_login(); });
-
+    if($('submitarticle')) {
+        $('submitarticle').addEvent('click', function() { check_login(); });
+    }
 });
