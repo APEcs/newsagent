@@ -112,7 +112,6 @@ sub find_by_sourceid {
     my $sourceid   = shift;
 
     $self -> clear_error();
-    print STDERR "Searching for sourceid $sourceid";
 
     my $datah = $self -> {"dbh"} -> prepare("SELECT *
                                              FROM `".$self -> {"settings"} -> {"database"} -> {"import_meta"}."`
@@ -197,4 +196,5 @@ sub _touch_import_meta {
 
     return 1;
 }
+
 1;
