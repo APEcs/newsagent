@@ -153,3 +153,16 @@ span.helptext {
     float: right;
     font-size: 20px;
 }
+
+div.entry {
+    text-align: left;
+    margin: 0px auto;
+}
+
+div.entry label {
+    color: #222;
+}
+
+div.entry label input {
+    width: 100%;
+}

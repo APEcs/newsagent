@@ -1057,12 +1057,36 @@ sub _build_login_check_response {
 }
 
 
+## @method private $ _build_loginform_response(void)
+# Generate the HTML to send back in response to a loginform API request.
+#
+# @return The HTML to send back to the client.
 sub _build_loginform_response {
     my $self = shift;
 
     return $self -> {"template"} -> load_template("login/apiform.tem");
 }
 
+
+sub _build_login_response {
+    my $self = shift;
+
+    my ($user, $args) = $self -> validate_login();
+    if(ref($user) eq "HASH") {
+        $self -> {"session"} -> create_session($user -> {"user_id"});
+        $self -> log("login", $user -> {"username"});
+
+        my $cookies = $self -> {"session"} -> session_cookies();
+
+        return { "login" => { "loggedin" => "yes",
+                              "user"     => $user -> {"user_id"},
+                              "sid"      => $self -> {"session"} -> {"sessid"},
+                              "cookies"  => $cookies}};
+    } else {
+        return { "login" => { "loggedin" => "no",
+                              "content"  => $user}};
+    }
+}
 
 
 # ============================================================================
