@@ -144,14 +144,12 @@ sub _update_import {
     my $article = shift;
 
     $self -> clear_error();
-    print STDERR "Checking update for article ".$oldmeta -> {"id"};
 
     # Convert the last update in the metadata to a datatime, and then check whether the
     # source article has been updated since the last update
     # WARNING: This may cause problems with DST. By default from_epoch will be UTC, and
     # hopefully comparison with the datePub field will be timezone/DST sane....
     my $updated = DateTime -> from_epoch(epoch => $oldmeta -> {"updated"});
-    print STDERR "old: ".$updated." set: ".$article -> {"datePub"};
 
     return 1 if($updated >= $article -> {"datePub"});
 
@@ -169,6 +167,8 @@ sub _update_import {
                                                                                         "article" => $article -> {"mainbody"},
                                                                                       })
         or $self -> self_error($self -> {"article"} -> errstr());
+
+    return $self -> _touch_import_meta($oldmeta -> {"id"});
 }
 
 

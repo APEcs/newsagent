@@ -153,7 +153,7 @@ sub _get_import_source {
 }
 
 
-## @method private $ _add_import_meta(articleid, $sourceid)
+## @method private $ _add_import_meta($articleid, $sourceid)
 # Add an entry to the import metainfo table for the specified article
 #
 # @param articleid The ID of the article associated with this import.
@@ -176,4 +176,25 @@ sub _add_import_meta {
     return 1;
 }
 
+
+## @method private $ _touch_import_meta($metaid)
+# Update the timestamp associated with the specified import metadata
+#
+# @param metaid The ID of the import metadata to update.
+# @return true on success, undef on error.
+sub _touch_import_meta {
+    my $self   = shift;
+    my $metaid = shift;
+
+    $self -> clear_error();
+
+    my $touch = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"import_meta"}."`
+                                            SET `updated` = UNIX_TIMESTAMP()
+                                            WHERE id = ?");
+    my $rows = $touch -> execute($metaid);
+    return $self -> self_error("Unable to perform article metainfo update: ". $self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("Article metainfo update failed, no rows updated") if($rows eq "0E0");
+
+    return 1;
+}
 1;
