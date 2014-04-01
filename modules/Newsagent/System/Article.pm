@@ -900,6 +900,91 @@ sub set_article_status {
 }
 
 
+## @method update_image_url($articleid, $order, $url)
+# Update the URL set for the article to the url specified. If the article does
+# not have a URL associated with it at the specified order, this adds the relation,
+# otherwise it updates the existing URL.
+#
+# @param articleid The ID of the article to update the URL for.
+# @param order     The image order (0 or 1)
+# @param url       A URL to update for the article.
+# @return true on success, undef on error.
+sub update_image_url {
+    my $self      = shift;
+    my $articleid = shift;
+    my $order     = shift;
+    my $url       = shift;
+
+    $self -> clear_error();
+
+    # Work out the name
+    my ($name) = $url =~ m|/([^/]+?)(\?.*)?$|;
+    $name = "unknown" if(!$name);
+
+    # Locate the image ID
+    my $relationh = $self -> {"dbh"} -> prepare("SELECT `image_id`
+                                                 FROM `".$self -> {"settings"} -> {"database"} -> {"articleimages"}."`
+                                                 WHERE `article_id` = ? AND `order` = ?");
+    $relationh -> execute($articleid, $order)
+        or return $self -> self_error("Unable to execute image ID lookup: ".$self -> {"dbh"} -> errstr);
+
+    my $relation = $relationh -> fetchrow_arrayref();
+
+    # If there is no relation set for this article and order, add a new one
+    if(!$relation) {
+        $url = $self -> _add_url($url)
+            or return undef;
+
+        $self -> _add_image_relation($articleid, $url, $order)
+            or return undef;
+
+    # If the relation is present, update the url
+    } else {
+        my $imageh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"images"}."`
+                                                  SET `type` = 'url', `name` = ?, `location` = ?
+                                                  WHERE `id` = ?");
+        my $rows = $imageh -> execute($name, $url, $relation -> [0]);
+        return $self -> self_error("Unable to perform article image url update: ". $self -> {"dbh"} -> errstr) if(!$rows);
+        return $self -> self_error("Article image url update failed, no rows updated") if($rows eq "0E0");
+    }
+
+    return 1;
+}
+
+
+## @method $ update_article_inplace($articleid, $newsettings)
+# Update the title, summary, article text, and image URLs for the specified article.
+#
+# @note This will not work correctly if the images set for the article are not URLs
+#       (ie: existing image/new image types will not work correctly)
+# @todo Fix this function to support different image types.
+#
+# @param articleid   The ID of the article to update.
+# @param newsettings The settings to apply for the article
+# @return true on success, undef on error.
+sub update_article_inplace {
+    my $self        = shift;
+    my $articleid   = shift;
+    my $newsettings = shift;
+
+    # Update the simple settings
+    my $articleh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"articles"}."`
+                                                SET `title` = ?, `summary` = ?, `article` = ?
+                                                WHERE `id` = ?");
+    my $rows = $articleh -> execute($newsettings -> {"title"}, $newsettings -> {"summary"}, $newsettings -> {"article"}, $articleid);
+    return $self -> self_error("Unable to perform article update: ". $self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("Article update failed, no rows updated") if($rows eq "0E0");
+
+    $self -> update_image_url($articleid, 0, $newsettings -> {"images"} -> {"a"} -> {"url"}) or return undef
+        if($newsettings -> {"images"} -> {"a"} -> {"url"});
+
+    $self -> update_image_url($articleid, 0, $newsettings -> {"images"} -> {"b"} -> {"url"}) or return undef
+        if($newsettings -> {"images"} -> {"b"} -> {"url"});
+
+    return 1;
+}
+
+
 # ==============================================================================
 #  Private methods
 

@@ -55,7 +55,7 @@ sub import_articles {
 
     my $updates = $self -> _fetch_updated_xml($self -> {"args"} -> {"url"}, DateTime -> from_epoch(epoch => $self -> {"importer_lastrun"} || 0))
         or return undef;
-    return $updates;
+
     foreach my $article (@{$updates}) {
         $self -> _import_article($article)
             or return undef;
@@ -144,12 +144,15 @@ sub _update_import {
     my $article = shift;
 
     $self -> clear_error();
+    print STDERR "Checking update for article ".$oldmeta -> {"id"};
 
     # Convert the last update in the metadata to a datatime, and then check whether the
     # source article has been updated since the last update
     # WARNING: This may cause problems with DST. By default from_epoch will be UTC, and
     # hopefully comparison with the datePub field will be timezone/DST sane....
     my $updated = DateTime -> from_epoch(epoch => $oldmeta -> {"updated"});
+    print STDERR "old: ".$updated." set: ".$article -> {"datePub"};
+
     return 1 if($updated >= $article -> {"datePub"});
 
     # Okay, the source article was updated after the last update for the import
