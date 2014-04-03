@@ -182,7 +182,7 @@ sub get_recipmethod {
         if($settings && $settings -> [0]);
 
     # Do any year id substitutions needed
-    $target -> {"settings"} =~ s/\{V_\[yearid\]\}/$yid/g;
+    $target -> {"settings"} =~ s/\{V_\[yearid\]\}/$yearid/g;
 
     return $target;
 }
