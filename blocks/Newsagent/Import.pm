@@ -100,7 +100,11 @@ sub page_display {
     } else {
         my @pathinfo = $self -> {"cgi"} -> param('pathinfo');
 
-        ($title, $content) = $self -> _run_import($pathinfo[0]);
+        if($pathinfo[0]) {
+            ($title, $content) = $self -> _run_import($pathinfo[0]);
+        } else {
+            ($title, $content) = ("Error", "No import module selected");
+        }
 
         return $self -> generate_newsagent_page($title, $content, $extrahead);
     }
