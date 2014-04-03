@@ -57,12 +57,18 @@ sub _run_import {
     my $self   = shift;
     my $source = shift;
 
-    my $importer = $self -> {"importer"} -> load_importer($source);
-    if($importer) {
-        my $result = $importer -> import_articles();
-        return ("Testing", $result ? "Imported" : $importer -> errstr());
-    }
+    # Run the import?
+    if($self -> {"importer"} -> should_run($source)) {
+        my $importer = $self -> {"importer"} -> load_importer($source);
+        if($importer) {
+            my $result = $importer -> import_articles();
+            $self -> {"importer"} -> touch_importer($source);
 
+            return ("Testing", $result ? "Imported" : $importer -> errstr());
+        }
+    } else {
+        return ("Skipped", "Skipped import as importer does not need to run yet");
+    }
     return ("error", $self -> {"importer"} -> errstr());
 }
 

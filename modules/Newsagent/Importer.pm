@@ -97,7 +97,6 @@ sub load_importer {
         or $self -> self_error("Unable to load import module '$source': ".$self -> {"module"} -> errstr());
 }
 
-
 # ============================================================================
 #  Interface
 
@@ -121,6 +120,52 @@ sub find_by_sourceid {
         or return $self -> self_error("Unable to look up import metadata: ".$self -> {"dbh"} -> errstr());
 
     return $datah -> fetchrow_hashref() || 0;
+}
+
+
+## @method $ should_run($source)
+# Determine whether the importer with the specified name should run.
+#
+# @param source The shortname of the import source to create an importer for.
+# @return True if the importer should run, false if not, undef on error.
+sub should_run {
+    my $self   = shift;
+    my $source = shift;
+
+    $self -> clear_error();
+
+    my $checkh = $self -> {"dbh"} -> prepare("SELECT `frequency`, `last_run`
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {"import_sources"}."`
+                                              WHERE `shortname` LIKE ?");
+    $checkh -> execute($source)
+        or return $self -> self_error("Unable to look up source timing information: ".$self -> {"dbh"} -> errstr());
+
+    my $source = $checkh -> fetchrow_hashref()
+        or return $self -> self_error("Request for non-existent source $source");
+
+    return(time() >= ($source -> {"last_run"} + $source -> {"frequency"}));
+}
+
+
+## @method $ touch_importer($source)
+# Update the lastrun time associated with the specified importer.
+#
+# @param source The shortname of the import source to create an importer for.
+# @return True on success, undef on error.
+sub touch_importer {
+    my $self   = shift;
+    my $source = shift;
+
+    $self -> clear_error();
+
+    my $touch = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"import_sources"}."`
+                                             SET `last_run` = UNIX_TIMESTAMP()
+                                             WHERE `shortname` LIKE ?");
+    my $rows = $touch -> execute($source);
+    return $self -> self_error("Unable to perform article source update: ". $self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("Article source update failed, no rows updated") if($rows eq "0E0");
+
+    return 1;
 }
 
 
