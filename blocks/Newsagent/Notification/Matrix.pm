@@ -499,11 +499,8 @@ sub _build_recipmeths {
 
     foreach my $method (keys(%{$reciplists -> {"methods"}})) {
         foreach my $recip (@{$reciplists -> {"methods"} -> {$method}}) {
-            my $recipmethod = $self -> {"matrix"} -> get_recipmethod($recip -> {"recipient_id"}, $recip -> {"method_id"})
+            my $recipmethod = $self -> {"matrix"} -> get_recipmethod($recip -> {"recipient_id"}, $recip -> {"method_id"}, $yearid)
                 or return $self -> self_error($self -> {"matrix"} -> errstr());
-
-            # Replace any year markers
-            $recipmethod -> {"settings"} =~ s/\{V_\[yearid\]\}/$yearid/;
 
             # copy across the missing settings
             $recip -> {"id"} = $recipmethod -> {"id"};

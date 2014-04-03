@@ -142,18 +142,20 @@ sub get_recipient_byid {
 }
 
 
-## @method $ get_recipmethod($recipientid, $methodid)
+## @method $ get_recipmethod($recipientid, $methodid, $yearid)
 # Given a recipient and a method id, obtain the corresponding recipmethod data if
 # possible.
 #
 # @param recipientid The ID of the recipient.
 # @param methodid    The ID of the method.
+# @param yearid      The ID of the year to fetch year-specific data for.
 # @return A reference to a hash containing the recipmethod data corresponding to
 #         the specified recipient and method on success, undef on error
 sub get_recipmethod {
     my $self        = shift;
     my $recipientid = shift;
     my $methodid    = shift;
+    my $yearid      = shift;
 
     $self -> clear_error();
 
@@ -163,8 +165,26 @@ sub get_recipmethod {
     $methods -> execute($recipientid, $methodid)
         or return $self -> self_error("Unable to look up recipmethod data: ".$self -> {"dbh"} -> errstr);
 
-    return $methods -> fetchrow_hashref()
+    my $target = $methods -> fetchrow_hashref()
         or return $self -> self_error("No recipmethod data for recipient $recipientid via method $methodid");
+
+    my $yearh = $self -> {"dbh"} -> prepare("SELECT `settings`
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"notify_matrix_cfg"}."`
+                                             WHERE `rm_id` = ?
+                                             AND `year_id` = ?");
+
+    $yearh -> execute($target -> {"id"}, $yearid)
+        or return $self -> self_error("Unable to perform recipient method year data lookup: ".$self -> {"dbh"} -> errstr);
+
+    # If there are year-specific settings, override the basic ones
+    my $settings = $yearh -> fetchrow_arrayref();
+    $target -> {"settings"} = $settings -> [0]
+        if($settings && $settings -> [0]);
+
+    # Do any year id substitutions needed
+    $target -> {"settings"} =~ s/\{V_\[yearid\]\}/$yid/g;
+
+    return $target;
 }
 
 
