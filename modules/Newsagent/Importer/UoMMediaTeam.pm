@@ -257,7 +257,7 @@ sub _fetch_updated_xml {
         $content =~ s|\s*</$tag>|]]></$tag>|gs;
     }
 
-    my $tree = eval { XMLin($content); };
+    my $tree = eval { XMLin($content, ForceArray => ['newsitem'] ); };
     die "XML parsing $content\nError: $@\n"
         if($@);
 
