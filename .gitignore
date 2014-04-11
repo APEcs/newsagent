@@ -11,4 +11,5 @@ templates/default/datepicker
 .emacs.desktop.lock
 templates/default/MultiSelect
 templates/default/js/twitter-text.js
+templates/default/js_*
 modules/Net
