@@ -157,6 +157,7 @@ function setup_notify_picker(element)
                                                                pickerClass: 'datepicker_dashboard',
                                                                useFadeInOut: !Browser.ie,
                                                                onSelect: function(date) {
+                                                                   date.setSeconds(0, 0);
                                                                    $('send_at'+id).set('value', date.getTimeAdjusted(utcoffset));
                                                                }
                                                              });
@@ -688,6 +689,7 @@ window.addEvent('domready', function() {
                                                         pickerClass: 'datepicker_dashboard',
                                                         useFadeInOut: !Browser.ie,
                                                         onSelect: function(date) {
+                                                            date.setSeconds(0, 0);
                                                             $('rtimestamp').set('value', date.getTimeAdjusted(utcoffset));
                                                         }
                                                       });
@@ -717,6 +719,7 @@ window.addEvent('domready', function() {
                                                              pickerClass: 'datepicker_dashboard',
                                                              useFadeInOut: !Browser.ie,
                                                              onSelect: function(date) {
+                                                                 date.setSeconds(0, 0);
                                                                  $('stimestamp').set('value', date.getTimeAdjusted(utcoffset));
                                                              }
                                                            });
