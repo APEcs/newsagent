@@ -10,6 +10,9 @@
     <script type='text/javascript' src="{V_[templatepath]}js/mootools-core.js"></script>
     <script type='text/javascript' src="{V_[templatepath]}js/mootools-more.js"></script>
 
+    <!-- Date fixes -->
+    <script type='text/javascript' src="{V_[templatepath]}js/date-adjust.js"></script>
+
     <!-- lightface for popup window -->
     <script type='text/javascript' src="{V_[templatepath]}lightface/LightFaceMod.js"></script>
     <link href="{V_[templatepath]}lightface/LightFace.css" rel="stylesheet" type="text/css" />
@@ -32,12 +35,14 @@
         spinner_url = "{V_[templatepath]}images/spinner.gif";
         basepath = "{V_[scriptpath]}";
         tempath  = "{V_[templatepath]}";
+        utcoffset = ***utcoffset***;
 // ]]>
     </script>
 </head>
 <body id="newsagent" class="newsagent">
 <div id="content" class="content clear">
 ***content***
+<div id="footer">***footer***</div>
             <script type="text/javascript">
 // <![CDATA[
 window.addEvent('domready', function() {

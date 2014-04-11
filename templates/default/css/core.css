@@ -140,6 +140,12 @@
     border: 1px solid red;
 }
 
+.newsagent #footer {
+    clear: both;
+    text-align: center;
+    font-size: 9px;
+    color: #666;
+}
 
 .navpoint {
     border: none;

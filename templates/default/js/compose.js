@@ -157,7 +157,7 @@ function setup_notify_picker(element)
                                                                pickerClass: 'datepicker_dashboard',
                                                                useFadeInOut: !Browser.ie,
                                                                onSelect: function(date) {
-                                                                   $('send_at'+id).set('value', date.format('%s'));
+                                                                   $('send_at'+id).set('value', date.getTimeAdjusted(utcoffset));
                                                                }
                                                              });
     element.addEvent('change', function() { notify_control('matrix-mode'+id+'-date', 'send_atdate'+id, 'send_at'+id, 'matrix-mode'+id); });
@@ -688,7 +688,7 @@ window.addEvent('domready', function() {
                                                         pickerClass: 'datepicker_dashboard',
                                                         useFadeInOut: !Browser.ie,
                                                         onSelect: function(date) {
-                                                            $('rtimestamp').set('value', date.format('%s'));
+                                                            $('rtimestamp').set('value', date.getTimeAdjusted(utcoffset));
                                                         }
                                                       });
     if($('comp-release')) {
@@ -717,7 +717,7 @@ window.addEvent('domready', function() {
                                                              pickerClass: 'datepicker_dashboard',
                                                              useFadeInOut: !Browser.ie,
                                                              onSelect: function(date) {
-                                                                 $('stimestamp').set('value', date.format('%s'));
+                                                                 $('stimestamp').set('value', date.getTimeAdjusted(utcoffset));
                                                              }
                                                            });
         $('comp-schedule').addEvent('change', function() { set_schedule_sections(); });

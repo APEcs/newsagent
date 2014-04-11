@@ -22,10 +22,12 @@ package Newsagent;
 
 use strict;
 use base qw(Webperl::Block); # Features are just a specific form of Block
-use CGI::Util qw(escape);
-use HTML::Entities;
 use Webperl::Utils qw(join_complex path_join);
+use CGI::Util qw(escape);
+use DateTime::TimeZone;
+use HTML::Entities;
 use HTML::WikiConverter;
+use Time::Local;
 use XML::Simple;
 
 # ============================================================================
@@ -85,8 +87,19 @@ sub generate_newsagent_page {
 
     my $userbar = $self -> {"module"} -> load_module("Newsagent::Userbar");
 
+    # Work out the current local offset from UTC in seconds.
+    my @t = localtime();
+    my $offset = timegm(@t) - timelocal(@t);
+
+    # And a descriptive version of the timezone and DST status in the footer.
+    my $dst = $self -> {"template"} -> replace_langvar($t[8] ? "FOOTER_TIMEDST" : "FOOTER_NODST");
+    my $footer = $self -> {"template"} -> load_template("footer.tem", {"***timezone***"  => DateTime::TimeZone -> new(name => 'local') -> name(),
+                                                                       "***dst***"       => $dst});
+
     return $self -> {"template"} -> load_template("page.tem", {"***extrahead***" => $extrahead || "",
                                                                "***title***"     => $title || "",
+                                                               "***utcoffset***" => $offset,
+                                                               "***footer***"    => $footer,
                                                                "***userbar***"   => ($userbar ? $userbar -> block_display($title, $self -> {"block"}, $doclink) : "<!-- Userbar load failed: ".$self -> {"module"} -> errstr()." -->"),
                                                                "***content***"   => $content});
 }

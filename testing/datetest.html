@@ -10,6 +10,9 @@
     <script type='text/javascript' src="../templates/default/js/mootools-core.js"></script>
     <script type='text/javascript' src="../templates/default/js/mootools-more.js"></script>
 
+    <!-- Date fixes -->
+    <script type='text/javascript' src="../templates/default/js/date-adjust.js"></script>
+
     <!-- lightface for popup window -->
     <script type='text/javascript' src="../templates/default/lightface/LightFaceMod.js"></script>
     <link href="../templates/default/lightface/LightFace.css" rel="stylesheet" type="text/css" />
@@ -113,16 +116,15 @@ window.addEvent('domready', function() {
                                                         pickerClass: 'datepicker_dashboard',
                                                         useFadeInOut: !Browser.ie,
                                                         onSelect: function(date) {
-                                                            date.setSeconds(0);
-                                                            date.setMilliseconds(0);
-                                                            $('rtimestamp').set('value', date.format('%s'));
+                                                            date.setSeconds(0, 0);
                                                             $('localtime').set('text', date.format('%s'));
                                                             $('utcoff').set('text', date.getTimezoneOffset());
                                                             $('string').set('text', date.toString());
                                                             $('utcstring').set('text', date.toUTCString());
 
-                                                            var servtime = (date.getTime()/1000) - (date.getTimezoneOffset() * 60) - utcoffset;
+                                                            var servtime = date.getTimeAdjusted(utcoffset);
                                                             $('server').set('text', servtime);
+                                                            $('rtimestamp').set('value', servtime);
                                                         }
                                                       });
 });
