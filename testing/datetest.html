@@ -58,8 +58,9 @@
     <script type="text/javascript">
 // <![CDATA[
         spinner_url = "../templates/default/images/spinner.gif";
-        basepath = "../";
-        tempath  = "../templates/default/";
+        basepath    = "../";
+        tempath     = "../templates/default/";
+        utcoffset   = 3600;
 // ]]>
     </script>
 </head>
@@ -75,6 +76,7 @@
     <p>UTC offset: <span id="utcoff"></span></p>
     <p>toString: <span id="string"></span></p>
     <p>toUTCString: <span id="utcstring"></span></p>
+    <p>adjusted to server: <span id="server"></span></p>
 
     <script type="text/javascript">
 // <![CDATA[
@@ -118,6 +120,9 @@ window.addEvent('domready', function() {
                                                             $('utcoff').set('text', date.getTimezoneOffset());
                                                             $('string').set('text', date.toString());
                                                             $('utcstring').set('text', date.toUTCString());
+
+                                                            var servtime = (date.getTime()/1000) - (date.getTimezoneOffset() * 60) - utcoffset;
+                                                            $('server').set('text', servtime);
                                                         }
                                                       });
 });
