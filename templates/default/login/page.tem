@@ -5,8 +5,8 @@
     <title>{V_[sitename]}: {L_LOGIN_TITLE}</title>
 
     <!-- mootools for effects and javascript sanity -->
-    <script type='text/javascript' src="{V_[templatepath]}js/mootools-core.js"></script>
-    <script type='text/javascript' src="{V_[templatepath]}js/mootools-more.js"></script>
+    <script type='text/javascript' src="{V_[jspath]}mootools-core.js"></script>
+    <script type='text/javascript' src="{V_[jspath]}mootools-more.js"></script>
 
     <!-- lightface for popup window -->
     <script type='text/javascript' src="{V_[templatepath]}lightface/LightFaceMod.js"></script>
