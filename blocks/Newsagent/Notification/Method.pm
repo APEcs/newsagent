@@ -236,14 +236,14 @@ sub get_method_state {
 
     $self -> clear_error();
 
-    my $stateh = $self -> {"dbh"} -> prepare("SELECT status, message, updated
+    my $stateh = $self -> {"dbh"} -> prepare("SELECT status, message, updated, send_mode, send_after
                                               FROM `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."`
                                               WHERE article_id = ? AND method_id = ?");
     $stateh -> execute($articleid, $self -> {"method_id"})
         or return $self -> self_error("Unable to execute notification lookup: ".$self -> {"dbh"} -> errstr());
 
     my $staterow = $stateh -> fetchrow_arrayref();
-    return ("", "", 0) if(!$staterow);
+    return ("", "", 0, "", 0) if(!$staterow);
 
     return @{$staterow};
 }
@@ -324,16 +324,23 @@ sub generate_notification_state {
     my $self      = shift;
     my $articleid = shift;
 
-    my ($state, $message, $timestamp) = $self -> get_method_state($articleid);
+    my ($state, $message, $timestamp, $send_mode, $send_after) = $self -> get_method_state($articleid);
     return "Error getting state: ".$self -> errstr() if(!defined($state));
 
     if($state) {
+        my $title = $message || $state;
+
+        if($state eq "pending") {
+            $title = $self -> {"template"} -> load_template("articlelist/pending.tem", {"***send_mode***" => $send_mode,
+                                                                                        "***send_after***" => $self -> {"template"} -> format_time($send_after)});
+        }
+
         return $self -> {"template"} -> load_template("articlelist/status.tem", {"***name***"     => $self -> {"method_name"},
                                                                                  "***id***"       => $self -> {"method_id"},
                                                                                  "***status***"   => $state,
                                                                                  "***statemsg***" => "{L_METHOD_STATE_".uc($state)."}",
                                                                                  "***date***"     => $self -> {"template"} -> fancy_time($timestamp),
-                                                                                 "***title***"    => $message || $state,
+                                                                                 "***title***"    => $title,
                                                       });
     }
     return "";

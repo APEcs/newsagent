@@ -38,3 +38,6 @@ ALIST_SHOWMODES      = Status:
 ALIST_MODESEL        = Select states...
 
 ALIST_MORE           = More...
+
+ALIST_MODE           = Mode
+ALIST_SENDTIME       = Send after

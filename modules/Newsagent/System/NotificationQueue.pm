@@ -195,7 +195,9 @@ sub send_pending_notification {
         my $message = "";
         if($results) {
             foreach my $res (@{$results}) {
-                $message .= $res -> {"name"}.": ".$res -> {"state"}." (".$res -> {"message"}.");";
+                $message .= $res -> {"name"}.": ".$res -> {"state"};
+                $message .= (" (".$res -> {"message"}.");")
+                    if($res -> {"message"});
             }
         } else {
             $message = $self -> {"notify_methods"} -> {$notification -> {"name"}} -> errstr();
