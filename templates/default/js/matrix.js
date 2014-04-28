@@ -13,7 +13,6 @@ var Matrix = new Class({
         this.setOptions(options);
 
         $$(this.options.recipdiv).each(function(element) {
-            console.log(this);
             element.addEvent('click', function() {
                                  console.log(this);
                                  this.toggle_matrix_fold(element);
