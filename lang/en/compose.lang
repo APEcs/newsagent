@@ -111,3 +111,5 @@ COMPOSE_SMODE_IMMED       = Immediately on publication
 COMPOSE_SMODE_DELAY       = After 5 min safety delay
 COMPOSE_SMODE_TIMED       = At the specified time:
 COMPOSE_SMODE_NOMODES     = No notification send time specifications set. This should not happen.
+
+COMPOSE_EDITWARN          = Leaving this page may cause to to lose any changes you have made.

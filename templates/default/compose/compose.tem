@@ -20,6 +20,7 @@ confirm_messages = {   errors: "{L_COMPOSE_ERRORS}",
                        notify: "{L_COMPOSE_CONFIRM_NOTIFY}",
                      counting: "{L_COMPOSE_CONFIRM_COUNTING}",
                     countwarn: "{L_COMPOSE_CONFIRM_COUNTWARN}",
+                     editwarn: "{L_COMPOSE_EDITWARN}",
                    };
 
 window.addEvent('domready', function() {
