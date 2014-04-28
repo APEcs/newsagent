@@ -571,6 +571,7 @@ function confirm_notify()
 function confirm_submit()
 {
     if($('stopconfirm').get('value') == '1') {
+        window.onbeforeunload = null;
         $('fullform').submit();
     } else {
         var summary  = $('comp-summ').get('value');
@@ -622,6 +623,7 @@ function confirm_submit()
                                                                                                  }
                                                                                                  $('popspinner').fade('in');
                                                                                                  popbox.disableButtons(true);
+                                                                                                 window.onbeforeunload = null;
                                                                                                  $('fullform').submit();
                                                                                                }
                         },
