@@ -113,6 +113,41 @@ sub _build_rcount_response {
 }
 
 
+## @method private $ _build_autosave_response()
+# Save the contents of the subject, summary, and article text to the current
+# user's autosave record. This will replace any autosave data set for the user,
+# and return a success response as appropriate.
+#
+# @return A refrence to a hash containing the API response.
+sub _build_autosave_response {
+    my $self = shift;
+
+}
+
+
+## @method private $ _build_autoload_response()
+# Load any previously autosaved subject, summary, and article text for the user.
+# If the user has no autosave, this will return empty values.
+#
+# @return A refrence to a hash containing the API response.
+sub _build_autoload_response {
+    my $self = shift;
+
+}
+
+
+## @method private $ _build_autocheck_response()
+# Determine whether the user has a previously saved subject, summary, and article
+# text. This will return the timestamp of the last autosave if one has been
+# set for the user.
+#
+# @return A refrence to a hash containing the API response.
+sub _build_autocheck_response {
+    my $self = shift;
+
+}
+
+
 # ============================================================================
 #  Interface functions
 
@@ -130,7 +165,13 @@ sub page_display {
         # API call - dispatch to appropriate handler.
         given($apiop) {
             # API operation rcount, requires query string parameters yearid=<id> and matrix=<rid>-<mid>,<rid>-<mid>,...
-            when("rcount") { return $self -> api_response($self -> _build_rcount_response()); }
+            when("rcount")     { return $self -> api_response($self -> _build_rcount_response()); }
+
+            # API operations related to autosave
+            when("auto.save")  { return $self -> api_response($self -> _build_autosave_response());  }
+            when("auto.load")  { return $self -> api_response($self -> _build_autoload_response());  }
+            when("auto.check") { return $self -> api_response($self -> _build_autocheck_response()); }
+
             default {
                 return $self -> api_response($self -> api_errorhash('bad_op',
                                                                     $self -> {"template"} -> replace_langvar("API_BAD_OP")))
