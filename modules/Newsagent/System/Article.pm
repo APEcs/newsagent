@@ -834,7 +834,7 @@ sub add_article {
     return $self -> self_error("Unable to perform article insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Article insert failed, no rows inserted") if($rows eq "0E0");
 
-    # FIXME: This ties to MySQL, but is more reliable that last_insert_id in general.
+    # MYSQL: This ties to MySQL, but is more reliable that last_insert_id in general.
     #        Try to find a decent solution for this mess...
     # NOTE: the DBD::mysql documentation doesn't actually provide any useful information
     #       about what this will contain if the insert fails. In fact, DBD::mysql calls
@@ -985,6 +985,124 @@ sub update_article_inplace {
 }
 
 
+# ============================================================================
+#  Autosave support methods
+
+## @method $ set_autosave($userid, $subject, $summary, $article)
+# Set the autosave data for the specified user, overwriting any previously stored
+# autosave or creating the autosave if the user does not already have one.
+#
+# @param userid  The ID of the user autosaving
+# @param subject The subject to store.
+# @param summary The summary to store.
+# @param article The full article text to store.
+# @return true on success, undef on error
+sub set_autosave {
+    my $self    = shift;
+    my $userid  = shift;
+    my $subject = shift;
+    my $summary = shift;
+    my $article = shift;
+
+    $self -> clear_error();
+
+    # Note that this behaviour might be implemented using INSERT...ON DUPLICATE KEY UPDATE
+    # but doing so has potential problems should replication be used. This may be more
+    # long-winded, but it does the job.
+    my $oldsave = $self -> get_autosave($userid)
+        or return undef;
+
+    # the oldsave hash will contain a non-zero id field if the user has a previous autosave
+    if($oldsave -> {"id"}) {
+        return $self -> _update_autosave($oldsave -> {"id"}, $subject, $summary, $article);
+    } else {
+        return $self -> _add_autosave($userid, $subject, $summary, $article);
+    }
+}
+
+
+## @method $ get_autosave($userid)
+# Fetch the autosave data for the specified user, if the user has any set.
+#
+# @param userid  The ID of the user to fetch autosave data for.
+# @return A reference to a hash containing the user's autosave data, or an
+#         empty hash if the user has no autosave data; undef on error.
+sub get_autosave {
+    my $self   = shift;
+    my $userid = shift;
+
+    $self -> clear_error();
+
+    my $geth = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"autosave"}."`
+                                            WHERE `user_id` = ?");
+    $geth -> execute($userid)
+        or return $self -> self_error("Unable to execute autosave lookup: ".$self -> {"dbh"} -> errstr);
+
+    return $geth -> fetchrow_hashref() || {};
+}
+
+
+# ============================================================================
+#  Private autosave support methods
+
+## @method private $ _add_autosave($userid, $subject, $summary, $article)
+# Create the autosave data for the specified user. This will fail if the user
+# already has autosave data!
+#
+# @param userid  The ID of the user autosaving
+# @param subject The subject to store.
+# @param summary The summary to store.
+# @param article The full article text to store.
+# @return true on success, undef on error
+sub _add_autosave {
+    my $self    = shift;
+    my $userid  = shift;
+    my $subject = shift;
+    my $summary = shift;
+    my $article = shift;
+
+    $self -> clear_error();
+
+    my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"autosave"}."`
+                                            (`user_id`, `subject`, `summary`, `article`, `saved`)
+                                            VALUES(?, ?, ?, ?, UNIX_TIMESTAMP())");
+    my $rows = $newh -> execute($userid, $subject, $summary, $article);
+    return $self -> self_error("Unable to perform autosave insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("Autosave insert failed, no rows inserted") if($rows eq "0E0");
+
+    return 1;
+}
+
+
+## @method private $ _update_autosave($id, $subject, $summary, $article)
+# Set the autosave data in the specified autosave row, overwriting any previously stored
+# autosave.
+#
+# @param id      The ID of the autosave row to update
+# @param subject The subject to store.
+# @param summary The summary to store.
+# @param article The full article text to store.
+# @return true on success, undef on error
+sub _update_autosave {
+    my $self    = shift;
+    my $id      = shift;
+    my $subject = shift;
+    my $summary = shift;
+    my $article = shift;
+
+    $self -> clear_error();
+
+    my $seth = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"autosave"}."`
+                                            SET `subject` = ?, `summary` = ?, `article` = ?, `saved` = UNIX_TIMESTAMP()
+                                            WHERE `id` = ?");
+    my $rows = $seth -> execute($subject, $summary, $article, $id);
+    return $self -> self_error("Unable to perform autosave update: ". $self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("Autosave update failed, no rows inserted") if($rows eq "0E0");
+
+    return 1;
+}
+
+
 # ==============================================================================
 #  Private methods
 
@@ -1071,7 +1189,7 @@ sub _add_file {
     return $self -> self_error("Unable to perform image file insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Image file insert failed, no rows inserted") if($rows eq "0E0");
 
-    # FIXME: This ties to MySQL, but is more reliable that last_insert_id in general.
+    # MYSQL: This ties to MySQL, but is more reliable that last_insert_id in general.
     #        Try to find a decent solution for this mess...
     # NOTE: the DBD::mysql documentation doesn't actually provide any useful information
     #       about what this will contain if the insert fails. In fact, DBD::mysql calls
@@ -1108,7 +1226,7 @@ sub _add_url {
     return $self -> self_error("Unable to perform image url insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Image url insert failed, no rows inserted") if($rows eq "0E0");
 
-    # FIXME: This ties to MySQL, but is more reliable that last_insert_id in general.
+    # MYSQL: This ties to MySQL, but is more reliable that last_insert_id in general.
     #        Try to find a decent solution for this mess...
     # NOTE: the DBD::mysql documentation doesn't actually provide any useful information
     #       about what this will contain if the insert fails. In fact, DBD::mysql calls
@@ -1191,7 +1309,7 @@ sub _add_image_relation {
     return $self -> self_error("Unable to perform image relation insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Image relation insert failed, no rows inserted") if($rows eq "0E0");
 
-    # FIXME: This ties to MySQL, but is more reliable that last_insert_id in general.
+    # MYSQL: This ties to MySQL, but is more reliable that last_insert_id in general.
     #        Try to find a decent solution for this mess...
     # NOTE: the DBD::mysql documentation doesn't actually provide any useful information
     #       about what this will contain if the insert fails. In fact, DBD::mysql calls
