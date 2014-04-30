@@ -68,15 +68,15 @@ sub _build_rcount_response {
     my $self = shift;
 
     my $yearid = is_defined_numeric($self -> {"cgi"}, "yearid")
-        or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_API_ERROR_NOYID}"}));
+        or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"template"} -> replace_langvar("API_ERROR_NOYID")}));
 
     my $setmatrix = $self -> {"cgi"} -> param("matrix")
-        or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_API_ERROR_NOMATRIX}"}));
+        or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"template"} -> replace_langvar("API_ERROR_NOMATRIX")}));
 
     # Split the matrix into recipient/method hashes. If nothing comes out of this,
     # the data in $matrix is bad
     my $enabled = $self -> _explode_matrix($setmatrix);
-    return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_API_ERROR_EMPTYMATRIX}"}))
+    return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"template"} -> replace_langvar("API_ERROR_EMPTYMATRIX")}))
         if(!scalar(@{$enabled}));
 
     my $matrix = $self -> {"module"} -> load_module("Newsagent::Notification::Matrix");
@@ -93,7 +93,7 @@ sub _build_rcount_response {
     # notification method to contact them. Now we need to go through these lists fetching
     # the counts for each
     foreach my $method (keys(%{$recipmeth -> {"methods"}})) {
-        return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_API_ERROR_BADMETHOD}"}))
+        return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"template"} -> replace_langvar("API_ERROR_BADMETHOD")}))
             if(!$methods -> {$method});
 
         foreach my $recip (@{$recipmeth -> {"methods"} -> {$method}}) {
@@ -121,7 +121,51 @@ sub _build_rcount_response {
 # @return A refrence to a hash containing the API response.
 sub _build_autosave_response {
     my $self = shift;
+    my $args = {};
+    my ($error, $errors);
+    my $userid = $self -> {"session"} -> get_session_userid();
 
+    # This should never happen in normal use: the user shouldn't even have been able to get to the compose
+    # or edit forms if they don't have compose permission. However, if the API is accessed directly, the
+    # permission needs to be checked to be sure.
+    if(!$self -> check_permission("compose")) {
+        $self -> log("error:autosave:permission", "User does not have permission to autosave (no compose)");
+
+        return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"template"} -> replace_langvar("COMPOSE_AUTOSAVE_PERM")}));
+    }
+
+    # Fetch the parameters.
+    ($args -> {"title"}, $error) = $self -> validate_string("title", {"required" => 0,
+                                                                      "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_TITLE"),
+                                                                      "maxlen"   => 100});
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+
+    ($args -> {"summary"}, $error) = $self -> validate_string("summary", {"required" => 0,
+                                                                          "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_SUMMARY"),
+                                                                          "minlen"   => 8,
+                                                                          "maxlen"   => 240});
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+
+    ($args -> {"article"}, $error) = $self -> validate_htmlarea("article", {"required"   => 0,
+                                                                            "minlen"     => 8,
+                                                                            "nicename"   => $self -> {"template"} -> replace_langvar("COMPOSE_DESC"),
+                                                                            "validate"   => $self -> {"config"} -> {"Core:validate_htmlarea"},
+                                                                            "allow_tags" => $self -> {"allow_tags"},
+                                                                            "tag_rules"  => $self -> {"tag_rules"}});
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+
+    # Give up if there have been any errors
+    return $self -> api_errorhash("internal_error", $self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => "{L_COMPOSE_AUTOSAVE_FAIL}",
+                                                                                                                    "***errors***"  => $errors}))
+        if($errors);
+
+    $self -> {"article"} -> set_autosave($userid, $args -> {"title"}, $args -> {"summary"}, $args -> {"article"})
+        or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"article"} -> errstr()}));
+
+    return { "result" => {"autosave"  => "ok",
+                          "timestamp" => time()
+                         }
+           };
 }
 
 
