@@ -22,6 +22,7 @@ confirm_messages = {   errors: "{L_COMPOSE_ERRORS}",
                     countwarn: "{L_COMPOSE_CONFIRM_COUNTWARN}",
                      editwarn: "{L_COMPOSE_EDITWARN}",
                     restoring: "{L_COMPOSE_AUTOSAVE_LOADING}",
+                     checking: "{L_COMPOSE_AUTOSAVE_CHECKING}",
                        saving: "{L_COMPOSE_AUTOSAVE_SAVING}",
                    };
 

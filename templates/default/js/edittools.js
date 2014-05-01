@@ -198,7 +198,7 @@ var EditTools = new Class({
          var req = new Request({ url: api_request_path("webapi", "auto.check", basepath),
                                  onRequest: function() {
                                      $('autostate').fade('in');
-                                     $('autostatus').set('html', confirm_messages['restoring']);
+                                     $('autostatus').set('html', confirm_messages['checking']);
                                  },
                                  onSuccess: function(respText, respXML) {
                                      $('autostate').fade('out');
