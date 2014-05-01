@@ -114,5 +114,10 @@ COMPOSE_SMODE_NOMODES     = No notification send time specifications set. This s
 
 COMPOSE_EDITWARN          = Leaving this page may cause to to lose any changes you have made.
 
+COMPOSE_AUTOSAVE_SAVED    = Autosaved ***time***
+COMPOSE_AUTOSAVE_NONE     = No autosave available
 COMPOSE_AUTOSAVE_FAIL     = Autosave failed
 COMPOSE_AUTOSAVE_PERM     = You do not have permission to autosave
+COMPOSE_AUTOSAVE_SAVE     = Save now
+COMPOSE_AUTOSAVE_LOAD     = Restore autosave
+COMPOSE_AUTOSAVE_LOADING  = Restoring autosave...

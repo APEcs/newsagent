@@ -166,3 +166,34 @@ div.entry label {
 div.entry label input {
     width: 100%;
 }
+
+div.autosavebox {
+    border: 1px grey inset;
+    padding: 2px;
+    font-size: 9px;
+}
+
+#autotools {
+    margin: 0px;
+    padding: 0px;
+    float: right;
+}
+
+#autotools li {
+    padding: 0px 0px 0px 5px;
+    list-style-type: none;
+    display: inline;
+}
+
+#autotools li span {
+ 	cursor: pointer;
+}
+
+#autotools li span:hover {
+ 	color: #0077FF;
+}
+
+
+#autoloadopt {
+    opacity: 0;
+}

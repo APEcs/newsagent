@@ -77,8 +77,16 @@ var EditTools = new Class({
          }
 
          return null;
-     }
+     },
 
+
+     /** Determine whether the user has an autosave set, and if so when it was made.
+      *
+      */
+     check_autosave: function() {
+
+
+     }
 });
 
 
