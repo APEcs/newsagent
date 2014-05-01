@@ -867,6 +867,10 @@ sub add_article {
     $self -> {"roles"} -> user_assign_role($metadataid, $userid, $roleid)
         or return $self -> self_error($self -> {"roles"} -> errstr());
 
+    # Remove any autosave
+    $self -> clear_autosave($userid)
+        or return undef;
+
     return $newid;
 }
 
@@ -1039,6 +1043,26 @@ sub get_autosave {
         or return $self -> self_error("Unable to execute autosave lookup: ".$self -> {"dbh"} -> errstr);
 
     return $geth -> fetchrow_hashref() || {};
+}
+
+
+## @method $ clear_autosave($userid)
+# Delete the specified user's autosave data.
+#
+# @param userid  The ID of the user to delete the autosave for
+# @return true on success, undef on error
+sub clear_autosave {
+    my $self   = shift;
+    my $userid = shift;
+
+    $self -> clear_error();
+
+    my $nukeh = $self -> {"dbh"} -> prepare("DELETE FROM `".$self -> {"settings"} -> {"database"} -> {"autosave"}."`
+                                             WHERE `user_id` = ?");
+    $nukeh -> execute($userid)
+        or return $self -> self_error("Unable to execute autosave delete: ".$self -> {"dbh"} -> errstr);
+
+    return 1;
 }
 
 

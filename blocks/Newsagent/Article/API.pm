@@ -162,9 +162,9 @@ sub _build_autosave_response {
     $self -> {"article"} -> set_autosave($userid, $args -> {"title"}, $args -> {"summary"}, $args -> {"article"})
         or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"article"} -> errstr()}));
 
-    return { "result" => {"autosave"  => "ok",
+    return { "result" => {"autosave"  => "available",
                           "timestamp" => time(),
-                          "content"   => $self -> {"template"} -> replace_langvar("COMPOSE_AUTOSAVE_SAVED", {"***time***" => $self -> {"template"} -> format_time(time())})
+                          "desc"      => $self -> {"template"} -> replace_langvar("COMPOSE_AUTOSAVE_SAVED", {"***time***" => $self -> {"template"} -> format_time(time())})
                          }
            };
 }
