@@ -9,8 +9,7 @@ var EditTools = new Class({
     Implements: [Options],
 
     options: {
-//        delay: 120000,   // Default autosave delay is 2 minutes
-        delay: 20000,   // Default autosave delay is 2 minutes
+        delay: 60000,   // Default autosave delay is 60 seconds
         savedHook: null,
         warnMsg: null,
         fields: [ ],
