@@ -135,23 +135,23 @@ sub _build_autosave_response {
     }
 
     # Fetch the parameters.
-    ($args -> {"title"}, $error) = $self -> validate_string("title", {"required" => 0,
-                                                                      "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_TITLE"),
-                                                                      "maxlen"   => 100});
+    ($args -> {"title"}, $error) = $self -> validate_string("comp-title", {"required" => 0,
+                                                                           "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_TITLE"),
+                                                                           "maxlen"   => 100});
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
-    ($args -> {"summary"}, $error) = $self -> validate_string("summary", {"required" => 0,
-                                                                          "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_SUMMARY"),
-                                                                          "minlen"   => 8,
-                                                                          "maxlen"   => 240});
+    ($args -> {"summary"}, $error) = $self -> validate_string("comp-summ", {"required" => 0,
+                                                                            "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_SUMMARY"),
+                                                                            "minlen"   => 8,
+                                                                            "maxlen"   => 240});
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
-    ($args -> {"article"}, $error) = $self -> validate_htmlarea("article", {"required"   => 0,
-                                                                            "minlen"     => 8,
-                                                                            "nicename"   => $self -> {"template"} -> replace_langvar("COMPOSE_DESC"),
-                                                                            "validate"   => $self -> {"config"} -> {"Core:validate_htmlarea"},
-                                                                            "allow_tags" => $self -> {"allow_tags"},
-                                                                            "tag_rules"  => $self -> {"tag_rules"}});
+    ($args -> {"article"}, $error) = $self -> validate_htmlarea("comp-desc", {"required"   => 0,
+                                                                              "minlen"     => 8,
+                                                                              "nicename"   => $self -> {"template"} -> replace_langvar("COMPOSE_DESC"),
+                                                                              "validate"   => $self -> {"config"} -> {"Core:validate_htmlarea"},
+                                                                              "allow_tags" => $self -> {"allow_tags"},
+                                                                              "tag_rules"  => $self -> {"tag_rules"}});
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
     # Give up if there have been any errors
@@ -192,12 +192,13 @@ sub _build_autoload_response {
         or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"article"} -> errstr()}));
 
     if($save -> {"id"}) {
-        return { "result" => {"autosave"  => "available",
-                              "timestamp" => $save -> {"saved"},
-                              "desc"      => $self -> {"template"} -> replace_langvar("COMPOSE_AUTOSAVE_SAVED", {"***time***" => $self -> {"template"} -> format_time($save -> {"saved"})}),
-                              "subject"   => { "content" => "<![CDATA[".$save -> {"subject"}."]]>" },
-                              "summary"   => { "content" => "<![CDATA[".$save -> {"summary"}."]]>" },
-                              "article"   => { "content" => "<![CDATA[".$save -> {"article"}."]]>" },
+        return { "result" => {"autosave"   => "available",
+                              "timestamp"  => $save -> {"saved"},
+                              "desc"       => $self -> {"template"} -> replace_langvar("COMPOSE_AUTOSAVE_SAVED", {"***time***" => $self -> {"template"} -> format_time($save -> {"saved"})}),
+                              "fields"     => [ {"id" => "comp-title", "content" => $save -> {"subject"} },
+                                                {"id" => "comp-summ", "content" => $save -> {"summary"} },
+                                                {"id" => "comp-desc", "content" => '<![CDATA['.$save -> {"article"}.']]>' },
+                                              ],
                              }
                };
     } else {
