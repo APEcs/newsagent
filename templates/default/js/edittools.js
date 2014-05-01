@@ -4,7 +4,7 @@
  * will be shown during submission as well as normal navigation.
  */
 
-var edittools = new Class({
+var EditTools = new Class({
 
     Implements: [Options],
 
@@ -26,14 +26,14 @@ var edittools = new Class({
 
         // addEvent doesn't work for this for some bizarre reason,
         // so hook the warnUnload function straight into the event
-        window.onbeforeunload = this.warn_unload;
+        window.onbeforeunload = this.warn_unload.bind(this);
 
         // Make sure the handler is set when the page is show if needed.
         window.addEvent('pageshow', function() {
             if(!window.onbeforeunload) {
                 window.onbeforeunload = this.options.savedHook;
             }
-        });
+        }.bind(this));
     },
 
 
@@ -63,11 +63,11 @@ var edittools = new Class({
      warn_unload: function() {
          var warnmsg;
 
-         if($('comp-title').get('value') !== $('comp-title').retrieve('initialValue') ||
-            $('comp-summ').get('value')  !== $('comp-summ').retrieve('initialValue') ||
-            ckeditor_data('comp-desc')   !== $('comp-desc').retrieve('initialValue')) {
-             warnmsg = confirm_messages['editwarn'];
-         }
+         this.options.fields.each(function(fieldid) {
+             if(this.ckeditor_data(fieldid) !== $(fieldid).retrieve('initialValue')) {
+                 warnmsg = confirm_messages['editwarn'];
+             }
+         });
 
          this.options.savedHook = window.onbeforeunload;
          window.onbeforeunload = null;
@@ -83,7 +83,7 @@ var edittools = new Class({
 
 
 window.addEvent('domready', function() {
-
-
+    new EditTools({warnmsg: confirm_messages['warnmsg'],
+                   fields: [ 'comp-title', 'comp-summ', 'comp-desc' ]});
 
 });
