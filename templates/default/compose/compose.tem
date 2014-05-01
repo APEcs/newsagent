@@ -73,7 +73,7 @@ window.addEvent('domready', function() {
                     <li id="autosaveopt"><span id="autosave">{L_COMPOSE_AUTOSAVE_SAVE}</span></li>
                 </ul>
                 <div id="autoindicator">
-                    <img src="{V_[templatepath]}images/shortspin.gif" height="11" width="16" alt="working" class="workspin" />
+                    <img id="autostate" src="{V_[templatepath]}images/shortspin.gif" height="11" width="16" alt="working" class="workspin" />
                     <span id="autostatus"></span>
                 </div>
             </div>
