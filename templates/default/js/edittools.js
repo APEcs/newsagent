@@ -18,10 +18,10 @@ var EditTools = new Class({
         this.setOptions(options);
 
         // Get the original values of the important elements
-        // Note that using ckeditor_data() is safe even for plain input
+        // Note that using get_ckeditor_data() is safe even for plain input
         // or textarea fields, as it will just return their value
         this.options.fields.each(function(fieldid) {
-            $(fieldid).store('initialValue', this.ckeditor_data(fieldid));
+            $(fieldid).store('initialValue', this.get_ckeditor_data(fieldid));
         }.bind(this));
 
         // addEvent doesn't work for this as mootools bizarrely does not
@@ -34,6 +34,8 @@ var EditTools = new Class({
                 window.onbeforeunload = this.options.savedHook;
             }
         }.bind(this));
+
+        this.init_autosave();
     },
 
 
@@ -42,7 +44,7 @@ var EditTools = new Class({
      *  recording to work even if ckeditor hasn't loaded and replaced the
      *  textarea yet.
      */
-    ckeditor_data: function(fieldname) {
+    get_ckeditor_data: function(fieldname) {
         var value = $(fieldname).get('value');
 
         if(CKEDITOR && CKEDITOR.instances[fieldname]) {
@@ -52,6 +54,15 @@ var EditTools = new Class({
         return value;
     },
 
+    set_ckeditor_data: function(fieldname, value) {
+
+        if(CKEDITOR && CKEDITOR.instances[fieldname]) {
+            return CKEDITOR.instances[fieldname].setData(value);
+        } else {
+            $(fieldname).set('value', value);
+        }
+
+    },
 
     /** Handle the beforeunload event. This will return a warning message
      *  to show in the dialog if the user should be prompted to confirm
@@ -64,7 +75,7 @@ var EditTools = new Class({
          var warnmsg;
 
          this.options.fields.each(function(fieldid) {
-             if(this.ckeditor_data(fieldid) !== $(fieldid).retrieve('initialValue')) {
+             if(this.get_ckeditor_data(fieldid) !== $(fieldid).retrieve('initialValue')) {
                  warnmsg = confirm_messages['editwarn'];
              }
          }.bind(this));
@@ -79,16 +90,70 @@ var EditTools = new Class({
          return null;
      },
 
+     /** Initialise the autosave stuff. If the edit boxes are empty, attempt to restore
+      *  any previously set autosave. If the edit boxes contain stuff, simply check
+      *  whether any autosave is available.
+      */
+     init_autosave: function() {
+         var allEmpty = true;
+
+         this.options.fields.each(function(fieldid) {
+             if(this.get_ckeditor_data(fieldid) !== '') {
+                 allEmpty = false;
+             }
+         }.bind(this));
+
+         if(allEmpty) {
+             this.load_autosave();
+         } else {
+             this.check_autosave();
+         }
+     },
+
 
      /** Determine whether the user has an autosave set, and if so when it was made.
       *
       */
-     check_autosave: function() {
+     load_autosave: function() {
 
+         var req = new Request({ url: api_request_path("webapi", "auto.load", basepath),
+                                 onRequest: function() {
+                                     $('autostate').fade('in');
+                                     $('autostatus').set('html', confirm_messages['restoring']);
+                                 },
+                                 onSuccess: function(respText, respXML) {
+                                     $('autostate').fade('out');
 
+                                     var err = respXML.getElementsByTagName("error")[0];
+                                     if(err) {
+                                         $('autostatus').set('html', err.getAttribute('info'));
+                                     } else {
+                                         var response = respXML.getElementsByTagName("result")[0];
+
+                                         // Is any autosave data available?
+                                         if(response.getAttribute('autosave') == "available") {
+                                             this.options.fields.each(function(fieldid) {
+                                                 var fielddata = respXML.getElementById(fieldid);
+                                                 if(fielddata) {
+                                                     this.set_ckeditor_data(fieldid, fielddata.textContent);
+                                                 }
+                                             }.bind(this));
+                                         }
+
+                                         $('autostatus').set('html', response.getAttribute('desc'));
+                                     }
+                                 }.bind(this)
+                               });
+         req.post();
      }
 });
 
+/*          var data = {};
+         this.options.fields.each(function(fieldid) {
+             data[fieldid] = this.get_ckeditor_data(fieldid)
+         }.bind(this));
+
+*/
 
 window.addEvent('domready', function() {
     new EditTools({warnmsg: confirm_messages['warnmsg'],
