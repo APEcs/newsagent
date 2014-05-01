@@ -28,6 +28,12 @@ var edittools = new Class({
         // so hook the warnUnload function straight into the event
         window.onbeforeunload = this.warn_unload;
 
+        // Make sure the handler is set when the page is show if needed.
+        window.addEvent('pageshow', function() {
+            if(!window.onbeforeunload) {
+                window.onbeforeunload = this.options.savedHook;
+            }
+        });
     },
 
 
@@ -79,10 +85,5 @@ var edittools = new Class({
 window.addEvent('domready', function() {
 
 
-    // Make sure the handler is set when the page is show if needed.
-    window.addEvent('pageshow', function() {
-        if(!window.onbeforeunload) {
-            window.onbeforeunload = savedOnBeforeUnload;
-        }
-    });
+
 });
