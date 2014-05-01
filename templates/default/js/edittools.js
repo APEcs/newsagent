@@ -8,7 +8,7 @@ var EditTools = new Class({
 
     Implements: [Options],
 
-    options {
+    options: {
         savedHook: null,
         warnMsg: null,
         fields: [ ],
@@ -22,10 +22,10 @@ var EditTools = new Class({
         // or textarea fields, as it will just return their value
         this.options.fields.each(function(fieldid) {
             $(fieldid).store('initialValue', this.ckeditor_data(fieldid));
-        });
+        }.bind(this));
 
-        // addEvent doesn't work for this for some bizarre reason,
-        // so hook the warnUnload function straight into the event
+        // addEvent doesn't work for this as mootools bizarrely does not
+        // support returning values from event handlers.
         window.onbeforeunload = this.warn_unload.bind(this);
 
         // Make sure the handler is set when the page is show if needed.
@@ -67,12 +67,12 @@ var EditTools = new Class({
              if(this.ckeditor_data(fieldid) !== $(fieldid).retrieve('initialValue')) {
                  warnmsg = confirm_messages['editwarn'];
              }
-         });
+         }.bind(this));
 
          this.options.savedHook = window.onbeforeunload;
          window.onbeforeunload = null;
          if(warnmsg !== undefined) {
-             setTimeout(function() { window.onbeforeunload = this.options.savedHook; }, 1);
+             setTimeout(function() { window.onbeforeunload = this.options.savedHook; }.bind(this), 1);
              return warnmsg;
          }
 
