@@ -168,7 +168,7 @@ div.entry label input {
 }
 
 div.autosavebox {
-    border: 1px grey inset;
+    border: 1px #CCC inset;
     padding: 2px;
     font-size: 9px;
 }
