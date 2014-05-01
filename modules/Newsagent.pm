@@ -340,12 +340,15 @@ sub api_response {
     $xmlopts{"RootName"} = 'api'
         unless(defined($xmlopts{"RootName"}));
 
+    $xmlopts{"NoEscape"} = 1
+        unless(defined($xmlopts{"NoEscape"}));
+
     eval { $xmldata = XMLout($data, %xmlopts); };
     $xmldata = $self -> {"template"} -> load_template("xml/error_response.tem", { "***code***"  => "encoding_failed",
                                                                                   "***error***" => "Error encoding XML response: $@"})
         if($@);
 
-    print $self -> {"cgi"} -> header(-type => 'application/xml',
+    print $self -> {"cgi"} -> header(-type => 'text/xml',
                                      -charset => 'utf-8');
     print Encode::encode_utf8($xmldata);
 
