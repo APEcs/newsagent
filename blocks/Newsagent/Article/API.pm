@@ -163,7 +163,8 @@ sub _build_autosave_response {
         or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"article"} -> errstr()}));
 
     return { "result" => {"autosave"  => "ok",
-                          "timestamp" => time()
+                          "timestamp" => time(),
+                          "content"   => $self -> {"template"} -> replace_langvar("COMPOSE_AUTOSAVE_SAVED", {"***time***" => $self -> {"template"} -> format_time(time())})
                          }
            };
 }
@@ -176,7 +177,35 @@ sub _build_autosave_response {
 # @return A refrence to a hash containing the API response.
 sub _build_autoload_response {
     my $self = shift;
+    my $userid = $self -> {"session"} -> get_session_userid();
 
+    # This should never happen in normal use: the user shouldn't even have been able to get to the compose
+    # or edit forms if they don't have compose permission. However, if the API is accessed directly, the
+    # permission needs to be checked to be sure.
+    if(!$self -> check_permission("compose")) {
+        $self -> log("error:autosave:permission", "User does not have permission to autosave (no compose)");
+
+        return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"template"} -> replace_langvar("COMPOSE_AUTOSAVE_PERM")}));
+    }
+
+    my $save = $self -> {"article"} -> get_autosave($userid)
+        or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"article"} -> errstr()}));
+
+    if($save -> {"id"}) {
+        return { "result" => {"autosave"  => "available",
+                              "timestamp" => $save -> {"saved"},
+                              "desc"      => $self -> {"template"} -> replace_langvar("COMPOSE_AUTOSAVE_SAVED", {"***time***" => $self -> {"template"} -> format_time($save -> {"saved"})}),
+                              "subject"   => { "content" => "<![CDATA[".$save -> {"subject"}."]]>" },
+                              "summary"   => { "content" => "<![CDATA[".$save -> {"summary"}."]]>" },
+                              "article"   => { "content" => "<![CDATA[".$save -> {"article"}."]]>" },
+                             }
+               };
+    } else {
+        return { "result" => {"autosave" => "none",
+                              "desc"     => $self -> {"template"} -> replace_langvar("COMPOSE_AUTOSAVE_NONE"),
+                             }
+               };
+    }
 }
 
 
@@ -188,7 +217,32 @@ sub _build_autoload_response {
 # @return A refrence to a hash containing the API response.
 sub _build_autocheck_response {
     my $self = shift;
+    my $userid = $self -> {"session"} -> get_session_userid();
 
+    # This should never happen in normal use: the user shouldn't even have been able to get to the compose
+    # or edit forms if they don't have compose permission. However, if the API is accessed directly, the
+    # permission needs to be checked to be sure.
+    if(!$self -> check_permission("compose")) {
+        $self -> log("error:autosave:permission", "User does not have permission to autosave (no compose)");
+
+        return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"template"} -> replace_langvar("COMPOSE_AUTOSAVE_PERM")}));
+    }
+
+    my $save = $self -> {"article"} -> get_autosave($userid)
+        or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"article"} -> errstr()}));
+
+    if($save -> {"id"}) {
+        return { "result" => {"autosave"  => "available",
+                              "timestamp" => $save -> {"saved"},
+                              "desc"      => $self -> {"template"} -> replace_langvar("COMPOSE_AUTOSAVE_SAVED", {"***time***" => $self -> {"template"} -> format_time($save -> {"saved"})})
+                             }
+               };
+    } else {
+        return { "result" => {"autosave"  => "none",
+                              "desc"      => $self -> {"template"} -> replace_langvar("COMPOSE_AUTOSAVE_NONE"),
+                             }
+               };
+    }
 }
 
 
