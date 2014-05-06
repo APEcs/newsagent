@@ -825,6 +825,7 @@ sub _send_emails {
                     if($self -> get_method_config("require_to"));
             }
 
+            push(@{$header}, "Precedence", "bulk");
             push(@{$header}, "X-Mailer", "Newsagent");
             push(@{$header}, "X-Newsagent-Recipients", $email -> {"recips"});
 
