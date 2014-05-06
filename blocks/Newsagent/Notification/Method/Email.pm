@@ -744,13 +744,13 @@ sub _send_email_message {
                     foreach my $addr (@bccaddrs) {
 
                         $outgoing -> header_set("To", $addr);
-                        sendmail($outgoing, { from      => $self -> {"env_sender"},
+                        sendmail($outgoing, { from      => $email -> {"envelope"},
                                               transport => $self -> {"smtp"}});
                     }
                 }
                 default {
                     sendmail($outgoing, { to        => \@bccaddrs,
-                                          from      => $self -> {"env_sender"},
+                                          from      => $email -> {"envelope"},
                                           transport => $self -> {"smtp"}});
                 }
             }
@@ -761,7 +761,7 @@ sub _send_email_message {
             $outgoing -> header_set("To", $to) if($to);
             $outgoing -> header_set("Cc", $cc) if($cc);
 
-            sendmail($outgoing, { from      => $self -> {"env_sender"},
+            sendmail($outgoing, { from      => $email -> {"envelope"},
                                   transport => $self -> {"smtp"}});
         }
     } catch {
@@ -825,6 +825,10 @@ sub _send_emails {
                     if($self -> get_method_config("require_to"));
             }
 
+            # Errors-To is a deprecated, non-standard header. But there's no other
+            # possibility I can find, other than mucking with the envelope, which
+            # might trigger google to reject.
+            push(@{$header}, "Errors-To", $self -> {"env_sender"});
             push(@{$header}, "Precedence", "bulk");
             push(@{$header}, "X-Mailer", "Newsagent");
             push(@{$header}, "X-Newsagent-Recipients", $email -> {"recips"});
@@ -833,6 +837,7 @@ sub _send_emails {
                                           "html_body" => $email -> {"html_body"},
                                           "text_body" => $text_body,
                                           "id"        => $email -> {"id"},
+                                          "envelope"  => $email -> {"from"},
                                          })
                 or return "failed";
         }
