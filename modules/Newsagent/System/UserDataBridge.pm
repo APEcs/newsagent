@@ -184,6 +184,44 @@ sub _add_multiparam {
 }
 
 
+sub process_progact {
+    my $self     = shift;
+    my $progacts = shift;
+    my $yearid   = shift;
+    my $mode     = shift;
+    my $dotables = shift;
+    my $tables   = shift;
+    my $where    = shift;
+    my $params   = shift;
+
+    my @proglist = split(/,/, $progacts);
+
+    my $added = 0;
+    foreach my $progact (@proglist) {
+        my ($action, $reason) = $progact =~ /^(\w+):(\w+)$/;
+
+        if($action && $reason) {
+            # Add tables and join to the progact table at most once.
+            if($dotables) {
+                $$tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"progact"}."` AS `pa`";
+                $$where  .= "AND" if($where);
+                $$where  .= " `pa`.`student_id` = `u`.`id` AND `pa`.`year_id` = ? ";
+                push(@{$params}, $yearid);
+
+                $dotables = 0;
+            }
+
+            $where  .= " AND (`pa`.`action` $mode ? AND `pa`.`reason` $mode ?)";
+            push(@{$params}, $action, $reason);
+
+            $added = 1;
+        }
+    }
+
+    return $added;
+}
+
+
 ## @method $ get_user_addresses($settings)
 # Fetch an array of all user addresses that match the query controlled by the
 # specified settings. The settings hash provided may contain:
@@ -204,6 +242,8 @@ sub _add_multiparam {
 # - `exlprog`: A comma seperated list of programme names to exclude (if set,
 #              students are included as long as they are not on the specified
 #              programmes(s))
+# - `progact`: A program action and reason specified as progact=ACTION:REASON
+#              Students must have the specified action and reason to be included.
 # - `course`: A comma separated list of courses the student must be in. Note that
 #             the student must be in all of the courses.
 sub get_user_addresses {
@@ -276,39 +316,18 @@ sub get_user_addresses {
 
     # progact should be of the form 'progact=ACTION:REASON'
     if(defined($settings -> {"progact"})) {
-        my ($action, $reason) = $settings -> {"progact"} =~ /^(\w+):(\w+)$/;
+        my $donetables = $self -> process_progact($settings -> {"progact"}, $settings -> {"yearid"}, "LIKE", 1,
+                                                  \$tables, \$where, \@params);
 
-        if($action && $reason) {
-            $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"progact"}."` AS `pa`";
-            $where  .= "AND" if($where);
-            $where  .= " `pa`.`student_id` = `u`.`id` AND `pa`.`year_id` = ? ";
-            push(@params, $settings -> {"yearid"});
-
-            $where  .= " AND (`pa`.`action` LIKE ? AND `pa`.`reason` LIKE ?)";
-            push(@params, $action, $reason);
-
-            # Allow for exclusion at the same time as inclusion.
-            if(defined($settings -> {"exlprogact"})) {
-                my ($exlact, $exlreas) = $settings -> {"exlprogact"} =~ /^(\w+):(\w+)$/;
-
-                if($exlact && $exlreas) {
-                    $where  .= " AND (`pa`.`action` NOT LIKE ? AND `pa`.`reason` NOT LIKE ?)";
-                    push(@params, $action, $reason);
-                }
-            }
+        # Allow for exclusion at the same time as inclusion.
+        if(defined($settings -> {"exlprogact"})) {
+            $self -> process_progact($settings -> {"exlprogact"}, $settings -> {"yearid"}, "NOT LIKE", !$donetables,
+                                     \$tables, \$where, \@params);
         }
+
     } elsif(defined($settings -> {"exlprogact"})) {
-        my ($action, $reason) = $settings -> {"exlprogact"} =~ /^(\w+):(\w+)$/;
-
-        if($action && $reason) {
-            $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"progact"}."` AS `pa`";
-            $where  .= "AND" if($where);
-            $where  .= " `pa`.`student_id` = `u`.`id` AND `pa`.`year_id` = ? ";
-            push(@params, $settings -> {"yearid"});
-
-            $where  .= " AND (`pa`.`action` LIKE ? AND `pa`.`reason` LIKE ?)";
-            push(@params, $action, $reason);
-        }
+        $self -> process_progact($settings -> {"exlprogact"}, $settings -> {"yearid"}, "NOT LIKE", 1,
+                                 \$tables, \$where, \@params);
     }
 
     if(defined($settings -> {"course"}) && defined($settings -> {"yearid"})) {
