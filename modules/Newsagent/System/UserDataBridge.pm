@@ -274,6 +274,43 @@ sub get_user_addresses {
         $where .= $self -> _add_multiparam($settings -> {"exlprog"}, \@params, "pg", "name", "NOT LIKE", "AND");
     }
 
+    # progact should be of the form 'progact=ACTION:REASON'
+    if(defined($settings -> {"progact"})) {
+        my ($action, $reason) = $settings -> {"progact"} =~ /^(\w+):(\w+)$/;
+
+        if($action && $reason) {
+            $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"progact"}."` AS `pa`";
+            $where  .= "AND" if($where);
+            $where  .= " `pa`.`student_id` = `u`.`id` AND `pa`.`year_id` = ? ";
+            push(@params, $settings -> {"yearid"});
+
+            $where  .= " AND (`pa`.`action` LIKE ? AND `pa`.`reason` LIKE ?)";
+            push(@params, $action, $reason);
+
+            # Allow for exclusion at the same time as inclusion.
+            if(defined($settings -> {"exlprogact"})) {
+                my ($exlact, $exlreas) = $settings -> {"exlprogact"} =~ /^(\w+):(\w+)$/;
+
+                if($exlact && $exlreas) {
+                    $where  .= " AND (`pa`.`action` NOT LIKE ? AND `pa`.`reason` NOT LIKE ?)";
+                    push(@params, $action, $reason);
+                }
+            }
+        }
+    } elsif(defined($settings -> {"exlprogact"})) {
+        my ($action, $reason) = $settings -> {"exlprogact"} =~ /^(\w+):(\w+)$/;
+
+        if($action && $reason) {
+            $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"progact"}."` AS `pa`";
+            $where  .= "AND" if($where);
+            $where  .= " `pa`.`student_id` = `u`.`id` AND `pa`.`year_id` = ? ";
+            push(@params, $settings -> {"yearid"});
+
+            $where  .= " AND (`pa`.`action` LIKE ? AND `pa`.`reason` LIKE ?)";
+            push(@params, $action, $reason);
+        }
+    }
+
     if(defined($settings -> {"course"}) && defined($settings -> {"yearid"})) {
         $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"courses"}."` AS `c`";
         $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"user_course"}."` AS `uc`";
