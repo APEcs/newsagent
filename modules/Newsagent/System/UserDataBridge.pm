@@ -309,7 +309,7 @@ sub get_user_addresses {
     # All students at a given level in a given year
     if(defined($settings -> {"level"}) && defined($settings -> {"yearid"})) {
         $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"user_years"}."` AS l";
-        $where  .= "`u`.`id` = `l`.`student_id` AND `l`.`year_id` = ? ";
+        $where  .= "`u`.`id` = `l`.`student_id` AND `l`.`active` = 1 AND `l`.`year_id` = ? ";
         push(@params, $settings -> {"yearid"});
 
         $where .= $self -> _add_multiparam($settings -> {"level"}, \@params, "l", "level", '=', "OR")
@@ -371,7 +371,7 @@ sub get_user_addresses {
     if(defined($settings -> {"course"}) && defined($settings -> {"yearid"})) {
         $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"courses"}."` AS `c`";
         $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"user_course"}."` AS `uc`";
-        $where  .= "AND `uc`.`student_id` = `u`.`id` AND `c`.`id` = `uc`.`course_id` AND `uc`.`year_id` = ? ";
+        $where  .= "AND `uc`.`student_id` = `u`.`id` AND `c`.`id` = `uc`.`course_id` AND `uc`.`active` = 1 AND `uc`.`year_id` = ? ";
         push(@params, $settings -> {"yearid"});
 
         $where .= $self -> _add_multiparam($settings -> {"course"}, \@params, "c", "course_id", "LIKE", "OR");
