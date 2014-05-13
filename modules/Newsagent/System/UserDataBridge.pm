@@ -186,6 +186,17 @@ sub _add_multiparam {
 
 
 ## @method $ _process_progplan($names, $yearid, $mode, $combine, $progplan, $dotables, $tables, $where, $params)
+# Build a query fragment to include program or plan selection in user lookup.
+#
+# @param names    A string containing the program or plan names to use.
+# @param yearid   An optional year id to restrict the plan or program selection to a year.
+# @param mode     The mode to use when checking the action and reason. Should be "LIKE" or "NOT LIKE".
+# @param combine  How to combine terms in the program or plan query. Should be "OR" or "AND"
+# @param progplan Should be set to "plan" or "prog" depending on the type of query.
+# @param dotables If true, include the table and initial where clauses.
+# @param tables   A reference to a scalar containing the table string for the query.
+# @param where    A reference to a acalar containing the where string for the query.
+# @param params   A reference to the list of parameters used to fill in the where string.
 sub _process_progplan {
     my $self = shift;
     my ($names, $yearid, $mode, $combine, $progplan, $dotables, $tables, $where, $params) = @_;
