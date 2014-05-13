@@ -238,8 +238,8 @@ sub _process_progact {
     foreach my $progact (@proglist) {
 
         # If the action parses, include the condition in the query.
-        my ($action, $reason) = $progact =~ /^(\w+):(\w+)$/;
-        if($action && $reason) {
+        my ($action, $reason) = $progact =~ /^(?:(\w+):)?(\w+)$/;
+        if($reason) {
             # Add tables and join to the progact table at most once.
             if($dotables) {
                 $$tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"progact"}."` AS `pa`";
@@ -250,8 +250,19 @@ sub _process_progact {
                 $dotables = 0;
             }
 
-            $$where  .= " AND (`pa`.`action` $mode ? AND `pa`.`reason` $mode ?)";
-            push(@{$params}, $action, $reason);
+            my $clause = "";
+            if($action) {
+                $clause .= "`pa`.`action` $mode ?";
+                push(@{$params}, $action);
+            }
+
+            if($reason) {
+                $clause .= " AND " if($clause);
+                $clause .= " `pa`.`reason` $mode ?";
+                push(@{$params}, $reason);
+            }
+
+            $$where  .= " AND ($clause)";
 
             $added = 1;
         }
