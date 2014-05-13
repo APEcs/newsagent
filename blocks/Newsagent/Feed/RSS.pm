@@ -222,7 +222,7 @@ sub html_strip {
     my $tree = HTML::TreeBuilder -> new_from_content($text);
 
     my $formatter = HTML::FormatText -> new(leftmargin => 0, rightmargin => 50000);
-    my $text = $formatter -> format($tree);
+    $text = $formatter -> format($tree);
 
     my $bar = "-" x 80;
     $text =~ s/-{80,}/$bar/g;
