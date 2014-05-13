@@ -22,6 +22,7 @@ package Newsagent::System::UserDataBridge;
 use strict;
 use base qw(Webperl::SystemModule); # This class extends the system module
 use v5.12;
+use Data::Dumper;
 
 # ============================================================================
 #  Constructor
@@ -184,22 +185,49 @@ sub _add_multiparam {
 }
 
 
-sub process_progact {
+## @method $ _process_progplan($names, $yearid, $mode, $combine, $progplan, $dotables, $tables, $where, $params)
+sub _process_progplan {
+    my $self = shift;
+    my ($names, $yearid, $mode, $combine, $progplan, $dotables, $tables, $where, $params) = @_;
+
+    if($dotables) {
+        $$tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"ac".$progplan."s"}."` AS `a$progplan`";
+        $$tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"user_".$progplan."s"}."` AS `u$progplan`";
+        $$where  .= "AND" if($where);
+        $$where  .= " `u$progplan`.`student_id` = `u`.`id` AND `a$progplan`.`id` = `u$progplan`.`plan_id` ";
+
+        if(defined($yearid)) {
+            $$where .= "AND `u$progplan`.`year_id` = ? ";
+            push(@{$params}, $yearid);
+        }
+    }
+
+    $$where .= $self -> _add_multiparam($names, $params, "a$progplan", "name", $mode, $combine);
+}
+
+
+## @method private $ _process_progact($progacts, $yearid, $mode, $dotables, $tables, $where, $params)
+# Build a query fragment to include program actions and reasons in the user lookup.
+#
+# @param progacts The comma separated list of ACTION:DATA elements.
+# @param yearid   The id of the year to constrain the query to.
+# @param mode     The mode to use when checking the action and reason. Should be "LIKE" or "NOT LIKE".
+# @param dotables If true, include the table and initial where clauses.
+# @param tables   A reference to a scalar containing the table string for the query.
+# @param where    A reference to a acalar containing the where string for the query.
+# @param params   A reference to the list of parameters used to fill in the where string.
+# @return true if the table and where strings were updated, false otherwise.
+sub _process_progact {
     my $self     = shift;
-    my $progacts = shift;
-    my $yearid   = shift;
-    my $mode     = shift;
-    my $dotables = shift;
-    my $tables   = shift;
-    my $where    = shift;
-    my $params   = shift;
+    my ($progacts, $yearid, $mode, $dotables, $tables, $where, $params) = @_;
 
     my @proglist = split(/,/, $progacts);
 
     my $added = 0;
     foreach my $progact (@proglist) {
-        my ($action, $reason) = $progact =~ /^(\w+):(\w+)$/;
 
+        # If the action parses, include the condition in the query.
+        my ($action, $reason) = $progact =~ /^(\w+):(\w+)$/;
         if($action && $reason) {
             # Add tables and join to the progact table at most once.
             if($dotables) {
@@ -211,7 +239,7 @@ sub process_progact {
                 $dotables = 0;
             }
 
-            $where  .= " AND (`pa`.`action` $mode ? AND `pa`.`reason` $mode ?)";
+            $$where  .= " AND (`pa`.`action` $mode ? AND `pa`.`reason` $mode ?)";
             push(@{$params}, $action, $reason);
 
             $added = 1;
@@ -273,63 +301,51 @@ sub get_user_addresses {
 
     # plan filtering, inclusive
     if(defined($settings -> {"plan"})) {
-        $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"acplans"}."` AS `pl`";
-        $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"user_plans"}."` AS `p`";
-        $where  .= "AND" if($where);
-        $where  .= " `p`.`student_id` = `u`.`id` AND `pl`.`id` = `p`.`plan_id` ";
-
-        $where .= $self -> _add_multiparam($settings -> {"plan"}, \@params, "pl", "name", "LIKE", "OR");
+        $self -> _process_progplan($settings -> {"plan"}, $settings  -> {"yearid"}, "LIKE", "OR", "plan", 1,
+                                   \$tables, \$where, \@params);
 
         # Allow for exclusion at the same time as inclusion.
-        $where .= $self -> _add_multiparam($settings -> {"exlplan"}, \@params, "pl", "name", "NOT LIKE", "AND")
+        $self -> _process_progplan($settings -> {"exlplan"}, $settings  -> {"yearid"}, "NOT LIKE", "AND", "plan", 0,
+                                   \$tables, \$where, \@params)
             if(defined($settings -> {"exlplan"}));
 
     } elsif(defined($settings -> {"exlplan"})) {
-        $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"acplans"}."` AS `pl`";
-        $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"user_plans"}."` AS `p`";
-        $where  .= "AND" if($where);
-        $where  .= " `p`.`student_id` = `u`.`id` AND `pl`.`id` = `p`.`plan_id` ";
-
-        $where .= $self -> _add_multiparam($settings -> {"exlplan"}, \@params, "pl", "name", "NOT LIKE", "AND");
+        $self -> _process_progplan($settings -> {"exlplan"}, $settings  -> {"yearid"}, "NOT LIKE", "AND", "plan", 1,
+                                   \$tables, \$where, \@params)
     }
 
     if(defined($settings -> {"prog"})) {
-        $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"acprogs"}."` AS `pg`";
-        $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"user_progs"}."` AS `sp`";
-        $where  .= "AND" if($where);
-        $where  .= " `sp`.`student_id` = `u`.`id` AND `pg`.`id` = `sp`.`prog_id` ";
-
-        $where .= $self -> _add_multiparam($settings -> {"prog"}, \@params, "pg", "name", "LIKE", "OR");
+        $self -> _process_progplan($settings -> {"prog"}, $settings  -> {"yearid"}, "LIKE", "OR", "prog", 1,
+                                   \$tables, \$where, \@params);
 
         # Allow for exclusion at the same time as inclusion.
-        $where .= $self -> _add_multiparam($settings -> {"exlprog"}, \@params, "pg", "name", "NOT LIKE", "AND")
+        $self -> _process_progplan($settings -> {"exlprog"}, $settings  -> {"yearid"}, "NOT LIKE", "AND", "prog", 0,
+                                   \$tables, \$where, \@params)
             if(defined($settings -> {"exlprog"}));
 
     } elsif(defined($settings -> {"exlprog"})) {
-        $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"acprogs"}."` AS `pg`";
-        $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"user_progs"}."` AS `sp`";
-        $where  .= "AND" if($where);
-        $where  .= " `sp`.`student_id` = `u`.`id` AND `pg`.`id` = `sp`.`prog_id` ";
-
-        $where .= $self -> _add_multiparam($settings -> {"exlprog"}, \@params, "pg", "name", "NOT LIKE", "AND");
+        $self -> _process_progplan($settings -> {"exlprog"}, $settings  -> {"yearid"}, "NOT LIKE", "AND", "prog", 1,
+                                   \$tables, \$where, \@params)
     }
 
     # progact should be of the form 'progact=ACTION:REASON'
-    if(defined($settings -> {"progact"})) {
-        my $donetables = $self -> process_progact($settings -> {"progact"}, $settings -> {"yearid"}, "LIKE", 1,
-                                                  \$tables, \$where, \@params);
+    # Filtering on program action requires a current year ID
+    if(defined($settings -> {"progact"}) && defined($settings -> {"yearid"})) {
+        my $donetables = $self -> _process_progact($settings -> {"progact"}, $settings -> {"yearid"}, "LIKE", 1,
+                                                   \$tables, \$where, \@params);
 
         # Allow for exclusion at the same time as inclusion.
         if(defined($settings -> {"exlprogact"})) {
-            $self -> process_progact($settings -> {"exlprogact"}, $settings -> {"yearid"}, "NOT LIKE", !$donetables,
-                                     \$tables, \$where, \@params);
+            $self -> _process_progact($settings -> {"exlprogact"}, $settings -> {"yearid"}, "NOT LIKE", !$donetables,
+                                      \$tables, \$where, \@params);
         }
 
-    } elsif(defined($settings -> {"exlprogact"})) {
-        $self -> process_progact($settings -> {"exlprogact"}, $settings -> {"yearid"}, "NOT LIKE", 1,
-                                 \$tables, \$where, \@params);
+    } elsif(defined($settings -> {"exlprogact"}) && defined($settings -> {"yearid"})) {
+        $self -> _process_progact($settings -> {"exlprogact"}, $settings -> {"yearid"}, "NOT LIKE", 1,
+                                  \$tables, \$where, \@params);
     }
 
+    # Filtering on course requires a current year
     if(defined($settings -> {"course"}) && defined($settings -> {"yearid"})) {
         $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"courses"}."` AS `c`";
         $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"user_course"}."` AS `uc`";
@@ -345,6 +361,7 @@ sub get_user_addresses {
     my $query = "SELECT DISTINCT(`u`.`email`)
                  FROM $tables
                  WHERE $where";
+    print STDERR "Query: $query\n".Dumper(\@params);
 
     my $queryh = $self -> {"udata_dbh"} -> prepare($query);
     $queryh -> execute(@params)
