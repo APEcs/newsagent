@@ -365,14 +365,14 @@ sub _set_user_extradata {
     return $user unless($extradata);
 
     if($extradata -> {"fullname"}) {
-        my $set = $self -> _set_user_field('realname', $extradata -> {"fullname"});
+        my $set = $self -> _set_user_field($user -> {"user_id"}, 'realname', $extradata -> {"fullname"});
         return undef if(!defined($set));
 
         $user -> {"realname"} = $extradata -> {"fullname"} if($set);
     }
 
     if($extradata -> {"email"}) {
-        my $set = $self -> _set_user_field('email', $extradata -> {"email"});
+        my $set = $self -> _set_user_field($user -> {"user_id"}, 'email', $extradata -> {"email"});
         return undef if(!defined($set));
 
         $user -> {"email"} = $extradata -> {"email"} if($set);
