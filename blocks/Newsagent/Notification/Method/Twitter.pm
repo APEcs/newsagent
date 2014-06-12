@@ -201,6 +201,8 @@ sub send {
     my @results;
     my $overall = "sent";
     foreach my $account (keys(%{$accounts})) {
+        $self -> log("Method::Twitter", "Posting ".$article -> {"id"}." to ".join(",", @{$accounts -> {$account} -> {"recipients"}})." using $account|".$accounts -> {$account} -> {"consumer_secret"}."|".$accounts -> {$account} -> {"access_token"}."|".$accounts -> {$account} -> {"token_secret"});
+
         my $result = $self -> _update_status($status, $image, $account, $accounts -> {$account} -> {"consumer_secret"},
                                                                         $accounts -> {$account} -> {"access_token"},
                                                                         $accounts -> {$account} -> {"token_secret"});
