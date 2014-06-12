@@ -156,28 +156,43 @@ sub get_user_setting {
 }
 
 
-## @method $ post_authenticate($username, $password, $auth)
-# After the user has logged in, ensure that they have an in-system record.
-# This is essentially a wrapper around the standard AppUser::post_authenticate()
-# that handles things like user account activation checks.
+# @method $ post_authenticate($username, $password, $auth, $authmethod, $extradata)
+# Perform any system-specific post-authentication tasks on the specified
+# user's data. This function allows each system to tailor post-auth tasks
+# to the requirements of the system. This function is only called if
+# authentication has been successful (one of the AuthMethods has indicated
+# that the user's credentials are valid), and if it returns undef the
+# authentication is treated as having failed even if the user's credentials
+# are valid.
 #
-# @param username The username of the user to perform post-auth tasks on.
-# @param password The password the user authenticated with.
-# @param auth     A reference to the auth object calling this.
+# @note The implementation provided here will create an empty user record
+#       if one with the specified username does not already exist. The
+#       user is initialised as a type 0 ('normal') user, with default
+#       values for all the fields. If this behaviour is not required or
+#       desirable, subclasses may wish to override this function completely.
+#
+# @param username   The username of the user to perform post-auth tasks on.
+# @param password   The password the user authenticated with.
+# @param auth       A reference to the auth object calling this.
 # @param authmethod The id of the authmethod to set for the user.
+# @param extradata  An optional reference to a hash containin extra data to set.
 # @return A reference to a hash containing the user's data on success,
 #         undef otherwise. If this returns undef, an error message will be
-#         set in to the specified auth's errstr field.
+#         set in the specified auth's errstr field.
 sub post_authenticate {
     my $self       = shift;
     my $username   = shift;
     my $password   = shift;
     my $auth       = shift;
     my $authmethod = shift;
+    my $extradata  = shift;
 
     # Let the superclass handle user creation
-    my $user = $self -> SUPER::post_authenticate($username, $password, $auth, $authmethod);
+    my $user = $self -> SUPER::post_authenticate($username, $password, $auth, $authmethod, $extradata);
     return undef unless($user);
+
+    $user = $self -> _set_user_extradata($user, $extradata) or return undef
+        if($extradata);
 
     # User now exists, determine whether the user is active
     return $self -> post_login_checks($user, $auth)
@@ -297,6 +312,8 @@ sub _update_user_setting {
     my $id    = shift;
     my $value = shift;
 
+    $self -> clear_error();
+
     my $seth = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"user_settings"}."`
                                             SET `value` = ?
                                             WHERE `id` = ?");
@@ -329,6 +346,65 @@ sub _delete_user_setting {
         or return $self -> self_error("Unable to delete user setting: ".$self -> {"dbh"} -> errstr);
 
     return 1;
+}
+
+
+## @method private $ _set_user_extradata($user, $extradata)
+# Update the name and email fields for the user to the values given in
+# the specified extradata, if they are not already set.
+#
+# @param user      A reference to a hash containing the user's data.
+# @param extradata A reference to a hash containing the name and email to set.
+
+sub _set_user_extradata {
+    my $self      = shift;
+    my $user      = shift;
+    my $extradata = shift;
+
+    # do nothing if there's no extradata at all
+    return $user unless($extradata);
+
+    if($extradata -> {"fullname"}) {
+        my $set = $self -> _set_user_field('realname', $extradata -> {"fullname"});
+        return undef if(!defined($set));
+
+        $user -> {"realname"} = $extradata -> {"fullname"} if($set);
+    }
+
+    if($extradata -> {"email"}) {
+        my $set = $self -> _set_user_field('email', $extradata -> {"email"});
+        return undef if(!defined($set));
+
+        $user -> {"email"} = $extradata -> {"email"} if($set);
+    }
+
+    return $user;
+}
+
+
+## @method private $ _set_user_field($userid, $field, $value)
+# Set the vlaue of the specified field for the indicated user if it has not already been set.
+#
+# @param userid The ID of the user to set the field for.
+# @param field  The name of the field to set.
+# @param value  The value to set for the field.
+# @return true if the value was updated, false if not, undef on error.
+sub _set_user_field {
+    my $self   = shift;
+    my $userid = shift;
+    my $field  = shift;
+    my $value  = shift;
+
+    $self -> clear_error();
+
+    my $seth = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"users"}."`
+                                            SET `$field` = ?
+                                            WHERE `user_id` = ?
+                                            ANd `$field` IS NULL");
+    my $rows = $seth -> execute($value, $userid);
+    return $self -> self_error("Unable to perform user update: ". $self -> {"dbh"} -> errstr) if(!$rows);
+
+    return($rows > 0 ? 1 : 0);
 }
 
 1;
