@@ -22,7 +22,7 @@ package Newsagent::Article::Edit;
 use strict;
 use base qw(Newsagent::Article); # This class extends the Newsagent block class
 use v5.12;
-use Data::Dumper;
+
 # ============================================================================
 #  Support functions
 
@@ -238,7 +238,7 @@ sub _generate_edit {
 
     # Which schedules and sections can the user post to?
     my $schedules  = $self -> {"article"} -> get_user_schedule_sections($userid);
-    my $schedblock = $self -> {"template"} -> load_template("compose/schedule_noaccess.tem"); # default to 'none of them'
+    my $schedblock = $self -> {"template"} -> load_template("article/compose/schedule_noaccess.tem"); # default to 'none of them'
     if($schedules && scalar(keys(%{$schedules}))) {
         my $schedlist    = $self -> {"template"} -> build_optionlist($schedules -> {"_schedules"}, $args -> {"schedule"});
         my $schedmode    = $self -> {"template"} -> build_optionlist($self -> {"schedrelops"}, $args -> {"schedule_mode"});
@@ -257,12 +257,12 @@ sub _generate_edit {
                                                } @{$schedules -> {$id} -> {"sections"}}).']},';
         }
 
-        $schedblock = $self -> {"template"} -> load_template("compose/schedule.tem", {"***schedule***"          => $schedlist,
-                                                                                      "***schedule_mode***"     => $schedmode,
-                                                                                      "***schedule_date_fmt***" => $schedrelease,
-                                                                                      "***stimestamp***"        => $args -> {"stimestamp"} || 0,
-                                                                                      "***priority***"          => $args -> {"priority"} || 2,
-                                                                                      "***scheduledata***"      => $scheddata,
+        $schedblock = $self -> {"template"} -> load_template("article/compose/schedule.tem", {"***schedule***"          => $schedlist,
+                                                                                              "***schedule_mode***"     => $schedmode,
+                                                                                              "***schedule_date_fmt***" => $schedrelease,
+                                                                                              "***stimestamp***"        => $args -> {"stimestamp"} || 0,
+                                                                                              "***priority***"          => $args -> {"priority"} || 2,
+                                                                                              "***scheduledata***"      => $scheddata,
                                                              });
     }
 
@@ -315,7 +315,7 @@ sub _generate_edit {
 
     # Handle the minor edit: it's disabled if this is a template instance or clone
     my $disable_minor = ($args -> {"template"} || $args -> {"clone"});
-    my $minoredit = $self -> {"template"} -> load_template("edit/minoredit-".($disable_minor ? "disabled.tem" : "enabled.tem"), { "***isminor***" => $args -> {"minor_edit"} ? 'checked="checked"' : "" });
+    my $minoredit = $self -> {"template"} -> load_template("article/edit/minoredit-".($disable_minor ? "disabled.tem" : "enabled.tem"), { "***isminor***" => $args -> {"minor_edit"} ? 'checked="checked"' : "" });
 
     # Default the summary inclusion
     $args -> {"full_summary"} = 1 if(!defined($args -> {"full_summary"}));
@@ -325,37 +325,37 @@ sub _generate_edit {
 
     # And generate the page title and content.
     return ($self -> {"template"} -> replace_langvar($titlemsg),
-            $self -> {"template"} -> load_template("edit/edit.tem", {"***errorbox***"         => $error,
-                                                                     "***form_url***"         => $self -> build_url(block => "edit", pathinfo => ["update", $args -> {"id"}]),
-                                                                     "***title***"            => $args -> {"title"},
-                                                                     "***summary***"          => $args -> {"summary"},
-                                                                     "***article***"          => $args -> {"article"},
-                                                                     "***allowed_feeds***"    => $feeds,
-                                                                     "***levels***"           => $levels,
-                                                                     "***release_mode***"     => $relops,
-                                                                     "***release_date_fmt***" => $format_release,
-                                                                     "***rtimestamp***"       => $args -> {"release_time"},
-                                                                     "***imageaopts***"       => $imagea_opts,
-                                                                     "***imagebopts***"       => $imageb_opts,
-                                                                     "***imagea_url***"       => $args -> {"images"} -> {"a"} -> {"url"} || "https://",
-                                                                     "***imageb_url***"       => $args -> {"images"} -> {"b"} -> {"url"} || "https://",
-                                                                     "***imageaimgs***"       => $imagea_img,
-                                                                     "***imagebimgs***"       => $imageb_img,
-                                                                     "***relmode***"          => $args -> {"relmode"} || 0,
-                                                                     "***userlevels***"       => $feed_levels,
-                                                                     "***levellist***"        => $jslevels,
-                                                                     "***sticky_mode***"      => $self -> {"template"} -> build_optionlist($self -> {"stickyops"}, $args -> {"sticky"}),
-                                                                     "***batchstuff***"       => $schedblock,
-                                                                     "***notifystuff***"      => $notifyblock,
-                                                                     "***notifysettings***"   => $notify_settings,
-                                                                     "***disable_confirm***"  => $noconfirm,
-                                                                     "***preset***"           => $args -> {"preset"},
-                                                                     "***clone***"            => $args -> {"clone"} || "0",
-                                                                     "***submitmsg***"        => $submitmsg,
-                                                                     "***titlemsg***"         => "{L_".$titlemsg."}",
-                                                                     "***minoredit***"        => $minoredit,
-                                                                     "***fullsummary***"      => $args -> {"full_summary"} ? 'checked="checked"' : '',
-                                                                     "***ckeconfig***"        => $ckeconfig,
+            $self -> {"template"} -> load_template("article/edit/edit.tem", {"***errorbox***"         => $error,
+                                                                             "***form_url***"         => $self -> build_url(block => "edit", pathinfo => ["update", $args -> {"id"}]),
+                                                                             "***title***"            => $args -> {"title"},
+                                                                             "***summary***"          => $args -> {"summary"},
+                                                                             "***article***"          => $args -> {"article"},
+                                                                             "***allowed_feeds***"    => $feeds,
+                                                                             "***levels***"           => $levels,
+                                                                             "***release_mode***"     => $relops,
+                                                                             "***release_date_fmt***" => $format_release,
+                                                                             "***rtimestamp***"       => $args -> {"release_time"},
+                                                                             "***imageaopts***"       => $imagea_opts,
+                                                                             "***imagebopts***"       => $imageb_opts,
+                                                                             "***imagea_url***"       => $args -> {"images"} -> {"a"} -> {"url"} || "https://",
+                                                                             "***imageb_url***"       => $args -> {"images"} -> {"b"} -> {"url"} || "https://",
+                                                                             "***imageaimgs***"       => $imagea_img,
+                                                                             "***imagebimgs***"       => $imageb_img,
+                                                                             "***relmode***"          => $args -> {"relmode"} || 0,
+                                                                             "***userlevels***"       => $feed_levels,
+                                                                             "***levellist***"        => $jslevels,
+                                                                             "***sticky_mode***"      => $self -> {"template"} -> build_optionlist($self -> {"stickyops"}, $args -> {"sticky"}),
+                                                                             "***batchstuff***"       => $schedblock,
+                                                                             "***notifystuff***"      => $notifyblock,
+                                                                             "***notifysettings***"   => $notify_settings,
+                                                                             "***disable_confirm***"  => $noconfirm,
+                                                                             "***preset***"           => $args -> {"preset"},
+                                                                             "***clone***"            => $args -> {"clone"} || "0",
+                                                                             "***submitmsg***"        => $submitmsg,
+                                                                             "***titlemsg***"         => "{L_".$titlemsg."}",
+                                                                             "***minoredit***"        => $minoredit,
+                                                                             "***fullsummary***"      => $args -> {"full_summary"} ? 'checked="checked"' : '',
+                                                                             "***ckeconfig***"        => $ckeconfig,
                                                    }));
 }
 
@@ -484,7 +484,7 @@ sub page_display {
             }
         }
 
-        $extrahead .= $self -> {"template"} -> load_template("edit/extrahead.tem");
+        $extrahead .= $self -> {"template"} -> load_template("article/edit/extrahead.tem");
         return $self -> generate_newsagent_page($title, $content, $extrahead, "edit");
     }
 }

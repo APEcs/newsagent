@@ -286,22 +286,22 @@ sub _build_article_row {
 
     my $feeds = "";
     foreach my $feed (@{$article -> {"feeds"}}) {
-        $feeds .= $self -> {"template"} -> load_template("articlelist/feed.tem", {"***desc***" => $feed -> {"description"}});
+        $feeds .= $self -> {"template"} -> load_template("article/list/feed.tem", {"***desc***" => $feed -> {"description"}});
     }
 
-    return $self -> {"template"} -> load_template("articlelist/row.tem", {"***modeclass***" => $article -> {"release_mode"},
-                                                                          "***modeinfo***"  => $self -> {"relmodes"} -> {$article -> {"release_mode"}},
-                                                                          "***date***"      => $self -> {"template"} -> fancy_time($article -> {"release_time"}, 0, 1),
-                                                                          "***feeds***"     => $feeds,
-                                                                          "***title***"     => $article -> {"title"} || $self -> {"template"} -> format_time($article -> {"release_time"}),
-                                                                          "***action***"    => $action,
-                                                                          "***actdate***"   => $actdate,
-                                                                          "***actuser***"   => $actuser,
-                                                                          "***status***"    => $states,
-                                                                          "***preset***"    => $article -> {"preset"},
-                                                                          "***controls***"  => $self -> {"template"} -> load_template("articlelist/control_".$article -> {"release_mode"}.".tem"),
-                                                                          "***id***"        => $article -> {"id"},
-                                                                          "***editurl***"   => $self -> build_url(block => "edit", pathinfo => [$article -> {"id"}]),
+    return $self -> {"template"} -> load_template("article/list/row.tem", {"***modeclass***" => $article -> {"release_mode"},
+                                                                           "***modeinfo***"  => $self -> {"relmodes"} -> {$article -> {"release_mode"}},
+                                                                           "***date***"      => $self -> {"template"} -> fancy_time($article -> {"release_time"}, 0, 1),
+                                                                           "***feeds***"     => $feeds,
+                                                                           "***title***"     => $article -> {"title"} || $self -> {"template"} -> format_time($article -> {"release_time"}),
+                                                                           "***action***"    => $action,
+                                                                           "***actdate***"   => $actdate,
+                                                                           "***actuser***"   => $actuser,
+                                                                           "***status***"    => $states,
+                                                                           "***preset***"    => $article -> {"preset"},
+                                                                           "***controls***"  => $self -> {"template"} -> load_template("article/list/control_".$article -> {"release_mode"}.".tem"),
+                                                                           "***id***"        => $article -> {"id"},
+                                                                           "***editurl***"   => $self -> build_url(block => "edit", pathinfo => [$article -> {"id"}]),
                                                   });
 }
 
@@ -332,7 +332,7 @@ sub _generate_articlelist {
         foreach my $article (@{$articles -> {"articles"}}) {
             $list .= $self -> _build_article_row($article, $now);
         }
-        $list = $self -> {"template"} -> load_template("articlelist/empty_month.tem")
+        $list = $self -> {"template"} -> load_template("article/list/empty_month.tem")
             if(!$list);
 
         my $maxpage = ceil($articles -> {"metadata"} -> {"count"} / $settings -> {"count"});
@@ -342,27 +342,27 @@ sub _generate_articlelist {
         my ($modes, $selmodes, $showremmode) = $self -> _get_mode_selection($articles, $settings);
 
         return ($self -> {"template"} -> replace_langvar("ALIST_TITLE"),
-                $self -> {"template"} -> load_template("articlelist/content.tem", {"***articles***"    => $list,
-                                                                                   # == Date control ==
-                                                                                   "***month***"       => "{L_MONTH_LONG".$settings -> {"month"}."}",
-                                                                                   "***year***"        => $settings -> {"year"},
+                $self -> {"template"} -> load_template("article/list/content.tem", {"***articles***"    => $list,
+                                                                                    # == Date control ==
+                                                                                    "***month***"       => "{L_MONTH_LONG".$settings -> {"month"}."}",
+                                                                                    "***year***"        => $settings -> {"year"},
 
-                                                                                   # == Filtering ==
-                                                                                   "***modes***"       => $self -> generate_multiselect("modes", "mode", "mode", $modes, $selmodes),
-                                                                                   "***remove-mode***" => $showremmode ? $self -> {"template"} -> load_template("articlelist/remove-mode.tem") : "",
-                                                                                   "***feeds***"       => $self -> generate_multiselect("feeds", "feed", "feed", $feeds, $selfeeds),
-                                                                                   "***remove-feed***" => $showremfeed ? $self -> {"template"} -> load_template("articlelist/remove-feed.tem") : "",
+                                                                                    # == Filtering ==
+                                                                                    "***modes***"       => $self -> generate_multiselect("modes", "mode", "mode", $modes, $selmodes),
+                                                                                    "***remove-mode***" => $showremmode ? $self -> {"template"} -> load_template("article/list/remove-mode.tem") : "",
+                                                                                    "***feeds***"       => $self -> generate_multiselect("feeds", "feed", "feed", $feeds, $selfeeds),
+                                                                                    "***remove-feed***" => $showremfeed ? $self -> {"template"} -> load_template("article/list/remove-feed.tem") : "",
 
-                                                                                   # == Navigation & pagination ==
-                                                                                   "***prevurl***"     => $self -> build_url(pathinfo => [$settings -> {"prev"} -> {"year"}, $settings -> {"prev"} -> {"month"}]),
-                                                                                   "***nexturl***"     => $self -> build_url(pathinfo => [$settings -> {"next"} -> {"year"}, $settings -> {"next"} -> {"month"}]),
-                                                                                   "***paginate***"    => $self -> _build_pagination({ maxpage => $maxpage,
-                                                                                                                                    pagenum => $settings -> {"pagenum"},
-                                                                                                                                    mode    => "page",
-                                                                                                                                    year    => $settings -> {"year"},
-                                                                                                                                    month   => $settings -> {"month"}
-                                                                                                                                  })
-                                                                                  })
+                                                                                    # == Navigation & pagination ==
+                                                                                    "***prevurl***"     => $self -> build_url(pathinfo => [$settings -> {"prev"} -> {"year"}, $settings -> {"prev"} -> {"month"}]),
+                                                                                    "***nexturl***"     => $self -> build_url(pathinfo => [$settings -> {"next"} -> {"year"}, $settings -> {"next"} -> {"month"}]),
+                                                                                    "***paginate***"    => $self -> _build_pagination({ maxpage => $maxpage,
+                                                                                                                                        pagenum => $settings -> {"pagenum"},
+                                                                                                                                        mode    => "page",
+                                                                                                                                        year    => $settings -> {"year"},
+                                                                                                                                        month   => $settings -> {"month"}
+                                                                                                                                      })
+                                                       })
                );
     } else {
         return $self -> build_error_box($self -> {"article"} -> errstr());
@@ -490,7 +490,7 @@ sub page_display {
             }
         }
 
-        $extrahead .= $self -> {"template"} -> load_template("articlelist/extrahead.tem");
+        $extrahead .= $self -> {"template"} -> load_template("article/list/extrahead.tem");
         return $self -> generate_newsagent_page($title, $content, $extrahead, "list");
     }
 }

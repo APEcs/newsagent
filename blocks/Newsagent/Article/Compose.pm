@@ -66,7 +66,7 @@ sub _generate_compose {
 
     # Which schedules and sections can the user post to?
     my $schedules  = $self -> {"article"} -> get_user_schedule_sections($userid);
-    my $schedblock = $self -> {"template"} -> load_template("compose/schedule_noaccess.tem"); # default to 'none of them'
+    my $schedblock = $self -> {"template"} -> load_template("article/compose/schedule_noaccess.tem"); # default to 'none of them'
     if($schedules && scalar(keys(%{$schedules}))) {
         my $schedlist    = $self -> {"template"} -> build_optionlist($schedules -> {"_schedules"}, $args -> {"schedule"});
         my $schedmode    = $self -> {"template"} -> build_optionlist($self -> {"schedrelops"}, $args -> {"schedule_mode"});
@@ -85,12 +85,12 @@ sub _generate_compose {
                                                } @{$schedules -> {$id} -> {"sections"}}).']},';
         }
 
-        $schedblock = $self -> {"template"} -> load_template("compose/schedule.tem", {"***schedule***"          => $schedlist,
-                                                                                      "***schedule_mode***"     => $schedmode,
-                                                                                      "***schedule_date_fmt***" => $schedrelease,
-                                                                                      "***stimestamp***"        => $args -> {"stimestamp"} || 0,
-                                                                                      "***priority***"          => $args -> {"priority"} || 2,
-                                                                                      "***scheduledata***"      => $scheddata,
+        $schedblock = $self -> {"template"} -> load_template("article/compose/schedule.tem", {"***schedule***"          => $schedlist,
+                                                                                              "***schedule_mode***"     => $schedmode,
+                                                                                              "***schedule_date_fmt***" => $schedrelease,
+                                                                                              "***stimestamp***"        => $args -> {"stimestamp"} || 0,
+                                                                                              "***priority***"          => $args -> {"priority"} || 2,
+                                                                                              "***scheduledata***"      => $scheddata,
                                                              });
     }
 
@@ -131,34 +131,34 @@ sub _generate_compose {
 
     # And generate the page title and content.
     return ($self -> {"template"} -> replace_langvar("COMPOSE_FORM_TITLE"),
-            $self -> {"template"} -> load_template("compose/compose.tem", {"***errorbox***"         => $error,
-                                                                           "***form_url***"         => $self -> build_url(block => "compose", pathinfo => ["add"]),
-                                                                           "***title***"            => $args -> {"title"},
-                                                                           "***summary***"          => $args -> {"summary"},
-                                                                           "***article***"          => $args -> {"article"},
-                                                                           "***allowed_feeds***"    => $feeds,
-                                                                           "***levels***"           => $levels,
-                                                                           "***release_mode***"     => $relops,
-                                                                           "***release_date_fmt***" => $format_release,
-                                                                           "***rtimestamp***"       => $args -> {"release_time"},
-                                                                           "***imageaopts***"       => $imagea_opts,
-                                                                           "***imagebopts***"       => $imageb_opts,
-                                                                           "***imagea_url***"       => $args -> {"images"} -> {"a"} -> {"url"} || "https://",
-                                                                           "***imageb_url***"       => $args -> {"images"} -> {"b"} -> {"url"} || "https://",
-                                                                           "***imageaimgs***"       => $imagea_img,
-                                                                           "***imagebimgs***"       => $imageb_img,
-                                                                           "***relmode***"          => $args -> {"relmode"} || 0,
-                                                                           "***userlevels***"       => $feed_levels,
-                                                                           "***levellist***"        => $jslevels,
-                                                                           "***sticky_mode***"      => $self -> {"template"} -> build_optionlist($self -> {"stickyops"}, $args -> {"sticky"}),
-                                                                           "***batchstuff***"       => $schedblock,
-                                                                           "***notifystuff***"      => $notifyblock,
-                                                                           "***notifysettings***"   => $notify_settings,
-                                                                           "***disable_confirm***"  => $noconfirm,
-                                                                           "***preset***"           => $args -> {"preset"},
-                                                                           "***fullsummary***"      => $args -> {"full_summary"} ? 'checked="checked"' : '',
-                                                                           "***ckeconfig***"        => $ckeconfig,
-                                                                          }));
+            $self -> {"template"} -> load_template("article/compose/compose.tem", {"***errorbox***"         => $error,
+                                                                                   "***form_url***"         => $self -> build_url(block => "compose", pathinfo => ["add"]),
+                                                                                   "***title***"            => $args -> {"title"},
+                                                                                   "***summary***"          => $args -> {"summary"},
+                                                                                   "***article***"          => $args -> {"article"},
+                                                                                   "***allowed_feeds***"    => $feeds,
+                                                                                   "***levels***"           => $levels,
+                                                                                   "***release_mode***"     => $relops,
+                                                                                   "***release_date_fmt***" => $format_release,
+                                                                                   "***rtimestamp***"       => $args -> {"release_time"},
+                                                                                   "***imageaopts***"       => $imagea_opts,
+                                                                                   "***imagebopts***"       => $imageb_opts,
+                                                                                   "***imagea_url***"       => $args -> {"images"} -> {"a"} -> {"url"} || "https://",
+                                                                                   "***imageb_url***"       => $args -> {"images"} -> {"b"} -> {"url"} || "https://",
+                                                                                   "***imageaimgs***"       => $imagea_img,
+                                                                                   "***imagebimgs***"       => $imageb_img,
+                                                                                   "***relmode***"          => $args -> {"relmode"} || 0,
+                                                                                   "***userlevels***"       => $feed_levels,
+                                                                                   "***levellist***"        => $jslevels,
+                                                                                   "***sticky_mode***"      => $self -> {"template"} -> build_optionlist($self -> {"stickyops"}, $args -> {"sticky"}),
+                                                                                   "***batchstuff***"       => $schedblock,
+                                                                                   "***notifystuff***"      => $notifyblock,
+                                                                                   "***notifysettings***"   => $notify_settings,
+                                                                                   "***disable_confirm***"  => $noconfirm,
+                                                                                   "***preset***"           => $args -> {"preset"},
+                                                                                   "***fullsummary***"      => $args -> {"full_summary"} ? 'checked="checked"' : '',
+                                                                                   "***ckeconfig***"        => $ckeconfig,
+                                                   }));
 }
 
 
@@ -271,7 +271,7 @@ sub page_display {
             }
         }
 
-        $extrahead .= $self -> {"template"} -> load_template("compose/extrahead.tem");
+        $extrahead .= $self -> {"template"} -> load_template("article/compose/extrahead.tem");
         return $self -> generate_newsagent_page($title, $content, $extrahead, "compose");
     }
 }

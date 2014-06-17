@@ -46,14 +46,14 @@ sub _notify_author {
 
     my $status = "";
     foreach my $row (@{$result}) {
-        $status .= $self -> {"template"} -> load_template("cron/notify_email_row.tem", {"***name***"    => $row -> {"name"},
-                                                                                        "***state***"   => $row -> {"state"},
-                                                                                        "***message***" => $row -> {"message"} || "No errors reported",
+        $status .= $self -> {"template"} -> load_template("article/cron/notify_email_row.tem", {"***name***"    => $row -> {"name"},
+                                                                                                "***state***"   => $row -> {"state"},
+                                                                                                "***message***" => $row -> {"message"} || "No errors reported",
                                                           });
     }
 
     $status =  $self -> {"messages"} -> queue_message(subject => $self -> {"template"} -> replace_langvar("CRON_NOTIFY_STATUS", {"***article***" => $article -> {"title"}}),
-                                                      message => $self -> {"template"} -> load_template("cron/notify_email.tem",
+                                                      message => $self -> {"template"} -> load_template("article/cron/notify_email.tem",
                                                                                                         {"***article***"  => $article -> {"title"},
                                                                                                          "***status***"   => $status,
                                                                                                          "***realname***" => $author -> {"fullname"},
@@ -117,13 +117,13 @@ sub _send_pending_notifications {
         # Invoke the sender to do the actual work of dispatching the messages
         my $result = $self -> {"queue"} -> send_pending_notification($notify, $allrecipients);
         if(!defined($result)) {
-            $status .= $self -> {"template"} -> load_template("cron/status_item.tem", {"***article***" => $notify -> {"article_id"},
-                                                                                       "***id***"      => $notify -> {"id"},
-                                                                                       "***year***"    => $notify -> {"year_id"},
-                                                                                       "***method***"  => $notify -> {"name"},
-                                                                                       "***name***"    => "",
-                                                                                       "***state***"   => "error",
-                                                                                       "***message***" => $self -> {"queue"} -> errstr(),
+            $status .= $self -> {"template"} -> load_template("article/cron/status_item.tem", {"***article***" => $notify -> {"article_id"},
+                                                                                               "***id***"      => $notify -> {"id"},
+                                                                                               "***year***"    => $notify -> {"year_id"},
+                                                                                               "***method***"  => $notify -> {"name"},
+                                                                                               "***name***"    => "",
+                                                                                               "***state***"   => "error",
+                                                                                               "***message***" => $self -> {"queue"} -> errstr(),
                                                               });
             $result = [ {"name" => "",
                          "state"   => "error",
@@ -135,13 +135,13 @@ sub _send_pending_notifications {
             # in the page.
             my $failmsg = "";
             foreach my $row (@{$result}) {
-                $status .= $self -> {"template"} -> load_template("cron/status_item.tem", {"***article***" => $notify -> {"article_id"},
-                                                                                           "***id***"      => $notify -> {"id"},
-                                                                                           "***year***"    => $notify -> {"year_id"},
-                                                                                           "***method***"  => $notify -> {"name"},
-                                                                                           "***name***"    => $row -> {"name"},
-                                                                                           "***state***"   => $row -> {"state"},
-                                                                                           "***message***" => $row -> {"message"},
+                $status .= $self -> {"template"} -> load_template("article/cron/status_item.tem", {"***article***" => $notify -> {"article_id"},
+                                                                                                   "***id***"      => $notify -> {"id"},
+                                                                                                   "***year***"    => $notify -> {"year_id"},
+                                                                                                   "***method***"  => $notify -> {"name"},
+                                                                                                   "***name***"    => $row -> {"name"},
+                                                                                                   "***state***"   => $row -> {"state"},
+                                                                                                   "***message***" => $row -> {"message"},
                                                                   });
                 $failmsg .= $row -> {"name"}.": ".$row -> {"message"}."\n"
                     if($row -> {"state"} eq "error");
@@ -159,7 +159,7 @@ sub _send_pending_notifications {
     }
 
     # return the status string
-    return $self -> {"template"} -> load_template("cron/status.tem", {"***items***" => $status});
+    return $self -> {"template"} -> load_template("article/cron/status.tem", {"***items***" => $status});
 }
 
 
@@ -174,15 +174,15 @@ sub _build_pending_summary {
     my $notify  = "";
 
     foreach my $entry (@{$pending}) {
-        $notify .= $self -> {"template"} -> load_template("cron/summary_item.tem", {"***article***" => $entry -> {"article_id"},
-                                                                                    "***id***"      => $entry -> {"id"},
-                                                                                    "***year***"    => $entry -> {"year_id"},
-                                                                                    "***method***"  => $entry -> {"name"},
-                                                                                    "***time***"    => $self -> {"template"} -> fancy_time($entry -> {"release_time"}),
+        $notify .= $self -> {"template"} -> load_template("article/cron/summary_item.tem", {"***article***" => $entry -> {"article_id"},
+                                                                                            "***id***"      => $entry -> {"id"},
+                                                                                            "***year***"    => $entry -> {"year_id"},
+                                                                                            "***method***"  => $entry -> {"name"},
+                                                                                            "***time***"    => $self_error -> {"template"} -> fancy_time($entry -> {"release_time"}),
                                                           });
     }
 
-    return $self -> {"template"} -> load_template("cron/summary.tem", {"***items***" => $notify});
+    return $self -> {"template"} -> load_template("article/cron/summary.tem", {"***items***" => $notify});
 }
 
 
@@ -221,7 +221,7 @@ sub page_display {
     if(!scalar(@{$pending})) {
         $self -> log("cron", "No pending notifications to send.");
 
-        $content = $self -> {"template"} -> load_template("cron/noitems.tem");
+        $content = $self -> {"template"} -> load_template("article/cron/noitems.tem");
     } else {
         $self -> log("cron", scalar(@{$pending})." pending notifications to send.");
 
