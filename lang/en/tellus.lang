@@ -1,0 +1,5 @@
+
+
+TELLUS_NEW      = Unread
+TELLUS_VIEWED   = Read
+TELLUS_REJECTED = Rejected
