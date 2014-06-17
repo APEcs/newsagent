@@ -1,4 +1,8 @@
+TELLUS_FORM_TITLE = Tell Us
 
+TELLUS_ADDED_TITLE       = Submission successful
+TELLUS_ADDED_SUMMARY     = Message created and added to the system successfully.
+TELLUS_ADDED_DESC        = Thank you for submission! Your message has been added to a queue, and the members of staff responsible for the queue have been notified. If additional information is required you may be contacted directly.
 
 TELLUS_NEW      = Unread
 TELLUS_VIEWED   = Read

@@ -22,6 +22,79 @@ package Newsagent::TellUs::Compose;
 use strict;
 use base qw(Newsagent::TellUs); # This class extends the Article block class
 use v5.12;
+# ============================================================================
+#  Content generators
+
+## @method private @ _generate_compose($args, $error)
+# Generate the page content for a compose page.
+#
+# @param args  An optional reference to a hash containing defaults for the form fields.
+# @param error An optional error message to display above the form if needed.
+# @return Two strings, the first containing the page title, the second containing the
+#         page content.
+sub _generate_compose {
+    my $self  = shift;
+    my $args  = shift || { };
+    my $error = shift;
+
+    my $userid = $self -> {"session"} -> get_session_userid();
+
+
+    # permission-based access to image button
+    my $ckeconfig = $self -> check_permission('freeimg') ? "image_open.js" : "basic_open.js";
+
+    # And generate the page title and content.
+    return ($self -> {"template"} -> replace_langvar("TELLUS_FORM_TITLE"),
+            $self -> {"template"} -> load_template("tellus/compose/compose.tem", {"***errorbox***"         => $error,
+                                                                                  "***form_url***"         => $self -> build_url(block => "tellus", pathinfo => ["add"]),
+
+                                                                                  "***ckeconfig***"        => $ckeconfig,
+                                                   }));
+}
+
+
+## @method private @ _generate_success()
+# Generate a success page to send to the user. This creates a message box telling the
+# user that their article has been added - this is needed to ensure that users get a
+# confirmation, but it isn't generated inside _add_article() or _validate_article() so
+# that page refreshes don't submit multiple copies.
+#
+# @return The page title, content, and meta refresh strings.
+sub _generate_success {
+    my $self = shift;
+
+    return ("{L_TELLUS_ADDED_TITLE}",
+            $self -> {"template"} -> message_box("{L_TELLUS_ADDED_TITLE}",
+                                                 "articleok",
+                                                 "{L_TELLUS_ADDED_SUMMARY}",
+                                                 "{L_TELLUS_ADDED_DESC}",
+                                                 undef,
+                                                 "messagecore",
+                                                 [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
+                                                    "colour"  => "blue",
+                                                    "action"  => "location.href='".$self -> build_url(block => "feeds", pathinfo => [])."'"} ]),
+            ""
+        );
+}
+
+
+# ============================================================================
+#  Addition functions
+
+## @method private @ _add_article()
+# Add a Tell Us article to the system. This validates and processes the values submitted by
+# the user in the compose form, and stores the result in the database.
+#
+# @return Three values: the page title, the content to show in the page, and the extra
+#         css and javascript directives to place in the header.
+sub _add_article {
+    my $self  = shift;
+    my $error = "";
+    my $args  = {};
+
+    ($error, $args) = $self -> _validate_article();
+    return $self -> _generate_compose($args, $error);
+}
 
 
 ## @method $ page_display()
