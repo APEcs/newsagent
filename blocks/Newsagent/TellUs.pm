@@ -40,11 +40,11 @@ sub new {
     my $self     = $class -> SUPER::new(@_)
         or return undef;
 
-    $self -> {"article"} = Newsagent::System::TellUs -> new(dbh      => $self -> {"dbh"},
-                                                            settings => $self -> {"settings"},
-                                                            logger   => $self -> {"logger"},
-                                                            roles    => $self -> {"system"} -> {"roles"},
-                                                            metadata => $self -> {"system"} -> {"metadata"})
+    $self -> {"tellus"} = Newsagent::System::TellUs -> new(dbh      => $self -> {"dbh"},
+                                                           settings => $self -> {"settings"},
+                                                           logger   => $self -> {"logger"},
+                                                           roles    => $self -> {"system"} -> {"roles"},
+                                                           metadata => $self -> {"system"} -> {"metadata"})
         or return Webperl::SystemModule::set_error("TellUs initialisation failed: ".$Webperl::SystemModule::errstr);
 
     $self -> {"state"} = [ {"value" => "new",

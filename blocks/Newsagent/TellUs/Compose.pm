@@ -38,7 +38,7 @@ sub _generate_compose {
     my $error = shift;
 
     my $userid = $self -> {"session"} -> get_session_userid();
-
+    my $queues = $self -> {"tellus"} -> get_queues($userid, "additem");
 
     # permission-based access to image button
     my $ckeconfig = $self -> check_permission('freeimg') ? "image_open.js" : "basic_open.js";
@@ -47,6 +47,7 @@ sub _generate_compose {
     return ($self -> {"template"} -> replace_langvar("TELLUS_FORM_TITLE"),
             $self -> {"template"} -> load_template("tellus/compose/compose.tem", {"***errorbox***"         => $error,
                                                                                   "***form_url***"         => $self -> build_url(block => "tellus", pathinfo => ["add"]),
+                                                                                  "***article***"          => $args -> {"article"},
 
                                                                                   "***ckeconfig***"        => $ckeconfig,
                                                    }));

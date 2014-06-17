@@ -1,3 +1,8 @@
+<script type="text/javascript">
+window.addEvent('domready', function() {
+    CKEDITOR.replace('tell-desc', { customConfig: '{V_[commonpath]}cke_configs/***ckeconfig***' });
+});
+</script>
 <div id="tellusform">
     ***errorbox***
     <form action="***form_url***" method="post" enctype="multipart/form-data">
