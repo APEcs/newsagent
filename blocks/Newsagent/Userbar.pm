@@ -23,6 +23,7 @@ package Newsagent::Userbar;
 
 use strict;
 use base qw(Newsagent);
+use Newsagent::System::Article;
 use v5.12;
 
 sub new {
