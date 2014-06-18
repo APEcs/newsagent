@@ -11,24 +11,24 @@ window.addEvent('domready', function() {
         <div class="sbcontent">
             <div class="textwrapper">
                 <dl class="input">
+                    <dt><label for="tell-desc">{L_TELLUS_DESC}</label></dt>
+                    <dd><textarea name="article" id="tell-desc" rows="15" cols="80">***article***</textarea></dd>
+                </dl>
+            </div>
+            <div class="textwrapper">
+                <dl class="input iblock">
                     <dt><label for="tell-type">{L_TELLUS_TYPE}</label></dt>
                     <dd><select name="type" id="tell-type" class="tellus-dropdown">
                         ***typeopts***
                         </select>
                     </dd>
                 </dl>
-                <dl class="input">
+                <dl class="input iblock">
                     <dt><label for="tell-queue">{L_TELLUS_QUEUE}</label></dt>
                     <dd><select name="queue" id="tell-queue" class="tellus-dropdown">
                         ***queueopts***
                         </select>
                     </dd>
-                </dl>
-            </div>
-            <div class="textwrapper">
-                <dl class="input">
-                    <dt><label for="tell-desc">{L_TELLUS_DESC}</label></dt>
-                    <dd><textarea name="article" id="tell-desc" rows="15" cols="80">***article***</textarea></dd>
                 </dl>
             </div>
             <hr />

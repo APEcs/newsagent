@@ -7,3 +7,9 @@ TELLUS_ADDED_DESC        = Thank you for submission! Your message has been added
 TELLUS_NEW      = Unread
 TELLUS_VIEWED   = Read
 TELLUS_REJECTED = Rejected
+
+TELLUS_ARTICLE  = Tell Us!
+TELLUS_TYPE     = Message type:
+TELLUS_QUEUE    = Initial queue:
+TELLUS_DESC     = Message:
+TELLUS_SUBMIT   = Tell Us

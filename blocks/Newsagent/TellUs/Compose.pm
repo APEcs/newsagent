@@ -167,7 +167,7 @@ sub page_display {
             }
         }
 
-        $extrahead .= $self -> {"template"} -> load_template("compose/extrahead.tem");
+        $extrahead .= $self -> {"template"} -> load_template("tellus/compose/extrahead.tem");
         return $self -> generate_newsagent_page($title, $content, $extrahead, "compose");
     }
 }
