@@ -22,6 +22,7 @@ package Newsagent::TellUs::Compose;
 use strict;
 use base qw(Newsagent::TellUs); # This class extends the Article block class
 use v5.12;
+
 # ============================================================================
 #  Content generators
 
@@ -37,19 +38,25 @@ sub _generate_compose {
     my $args  = shift || { };
     my $error = shift;
 
+    # Fix up defaults
+    $args -> {"queue"} = $self -> {"settings"} -> {"config"} -> {"TellUs:default_queue"}
+        unless($args -> {"queue"});
+
     my $userid = $self -> {"session"} -> get_session_userid();
     my $queues = $self -> {"tellus"} -> get_queues($userid, "additem");
+    my $types  = $self -> {"tellus"} -> get_types();
 
     # permission-based access to image button
     my $ckeconfig = $self -> check_permission('freeimg') ? "image_open.js" : "basic_open.js";
 
     # And generate the page title and content.
     return ($self -> {"template"} -> replace_langvar("TELLUS_FORM_TITLE"),
-            $self -> {"template"} -> load_template("tellus/compose/compose.tem", {"***errorbox***"         => $error,
-                                                                                  "***form_url***"         => $self -> build_url(block => "tellus", pathinfo => ["add"]),
-                                                                                  "***article***"          => $args -> {"article"},
-
-                                                                                  "***ckeconfig***"        => $ckeconfig,
+            $self -> {"template"} -> load_template("tellus/compose/compose.tem", {"***errorbox***"  => $error,
+                                                                                  "***form_url***"  => $self -> build_url(block => "tellus", pathinfo => ["add"]),
+                                                                                  "***article***"   => $args -> {"article"},
+                                                                                  "***queueopts***" => $self -> {"template"} -> build_optionlist($queues, $args -> {"queue"}),
+                                                                                  "***typeopts***"  => $self -> {"template"} -> build_optionlist($types , $args -> {"type"}),
+                                                                                  "***ckeconfig***" => $ckeconfig,
                                                    }));
 }
 

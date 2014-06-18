@@ -55,6 +55,30 @@ sub new {
 # ============================================================================
 #  Data access
 
+## @method $ get_types()
+# Fetch the list of types defined in the system.
+#
+# @return A reference to a list of tellus article types defined in the system.
+sub get_types {
+    my $self    = shift;
+    my $entries = [];
+
+    $self -> clear_error();
+
+    my $typeh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"tellus_types"}."`
+                                             ORDER BY name");
+    $typeh -> execute()
+        or return $self -> self_error("Unable to execute type query: ".$self -> {"dbh"} -> errstr);
+
+    while(my $type = $typeh -> fetchrow_hashref()) {
+        push(@{$entries}, {"value" => $type -> {"id"},
+                           "name"  => $type -> {"name"}});
+    }
+
+    return $entries;
+}
+
+
 ## @method $ get_queues($userid, $access)
 # Fetch the list of queues defined in the system the user can perform the requested
 # action in.
@@ -77,9 +101,10 @@ sub get_queues {
     my $queueh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"tellus_queues"}."`
                                               ORDER BY name");
     $queueh -> execute()
-        or return $self -> self_error("Unable to execute article query: ".$self -> {"dbh"} -> errstr);
+        or return $self -> self_error("Unable to execute queue query: ".$self -> {"dbh"} -> errstr);
 
     while(my $queue = $queueh -> fetchrow_hashref()) {
+        # Only add the queue to the result list if the user has the required capability
         if($self -> {"roles"} -> user_has_capability($queue -> {"metadata_id"}, $userid, "tellus.$access")) {
             push(@{$entries}, {"value" => $queue -> {"id"},
                                "name"  => $queue -> {"name"}});
@@ -180,10 +205,8 @@ sub get_article {
     $geth -> execute($articleid)
         or return $self -> self_error("Unable to execute article query: ".$self -> {"dbh"} -> errstr);
 
-    my $article = $articleh -> fetchrow_hashref()
-        or return $self -> self_error("Request for non-existent article with ID $articleid");
-
-    return $article;
+    return $geth -> fetchrow_hashref()
+        or $self -> self_error("Request for non-existent article with ID $articleid");
 }
 
 
@@ -242,7 +265,7 @@ sub set_article_status {
     my $seth = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"tellus_articles"}."`
                                             SET `state` = ?, `updated` = UNIX_TIMESTAMP()
                                             WHERE `id` = ?");
-    my $rows = $seth -> execute($state, $articleid);
+    my $result = $seth -> execute($state, $articleid);
     return $self -> self_error("Unable to update article state: ".$self -> {"dbh"} -> errstr) if(!$result);
     return $self -> self_error("Article state update failed: no rows updated.") if($result eq "0E0");
 
@@ -268,7 +291,7 @@ sub set_article_queue {
     my $seth = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"tellus_articles"}."`
                                             SET `queue_id` = ?, `queued` = UNIX_TIMESTAMP(), `updated` = UNIX_TIMESTAMP()
                                             WHERE `id` = ?");
-    my $rows = $seth -> execute($queueid, $articleid);
+    my $result = $seth -> execute($queueid, $articleid);
     return $self -> self_error("Unable to update article queue: ".$self -> {"dbh"} -> errstr) if(!$result);
     return $self -> self_error("Article queue update failed: no rows updated.") if($result eq "0E0");
 
