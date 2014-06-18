@@ -189,7 +189,7 @@ sub _validate_article {
                                                           }), $args);
 
 
-    $self -> log("article", "Added tellus article $aid");
+    $self -> log("tellus", "Added tellus article $aid");
 
     # Send notifications to queue notification targets
     $self -> _notify_add_queue($aid);
@@ -216,6 +216,9 @@ sub _notify_add_queue {
 
     $self -> clear_error();
 
+    # Get the current user's info
+    my $user = $self -> {"session"} -> get_user_byid();
+
     # Get the article information, that will contain almost all the information needed for the email
     my $message = $self -> {"tellus"} -> get_article($articleid)
         or return $self -> self_error("Unable to fetch article data: ".$self -> {"tellus"} -> errstr());
@@ -225,20 +228,29 @@ sub _notify_add_queue {
         or return $self -> self_error("Unable to fetch queue recipients: ".$self -> {"tellus"} -> errstr());
 
     # No point doing anything if there are not recipients to notify
-    return 1 if(!scalar(@{$recipients}));
+    if(!scalar(@{$recipients})) {
+        $self -> log("tellus.add", "No notification recipients for '".$message -> {"queuename"}."' - no notifications sent");
+        return 1;
+    }
 
     my $summary = $self -> {"template"} -> html_strip($message -> {"article"});
     $summary = $self -> truncate_text($summary, 240);
+    $summary =~ s/^/> /gm;
 
-    my $status =  $self -> {"messages"} -> queue_message(subject => $self -> {"template"} -> replace_langvar("TELLUS_EMAIL_NEWMSGSUB", {"***queue***" => $message -> {"queuename"}} ),
+    $self -> log("tellus.add", "Sending new queued message notifications to ".join(",", @{$recipients}));
+
+    my $status =  $self -> {"messages"} -> queue_message(subject => $self -> {"template"} -> replace_langvar("TELLUS_EMAIL_MSGSUB", {"***queue***" => $message -> {"queuename"}} ),
                                                          message => $self -> {"template"} -> load_template("tellus/email/newqueuemsg.tem",
-                                                                                                           {"***fullname***"   => $message -> {"realname"},
+                                                                                                           {"***movename***"   => $user -> {"realname"},
+                                                                                                            "***movemail***"   => $user -> {"email"},
+                                                                                                            "***fullname***"   => $message -> {"realname"},
                                                                                                             "***email***"      => $message -> {"email"},
                                                                                                             "***queuename***"  => $message -> {"queuename"},
                                                                                                             "***typename***"   => $message -> {"typename"},
                                                                                                             "***summary***"    => $summary,
-                                                                                                            "***manage_url***" => $self -> build_url(block => "queues",
-                                                                                                                                                     pathinfo => [ $message -> {"queue_id"} ]),
+                                                                                                            "***manage_url***" => $self -> build_url("block"    => "queues",
+                                                                                                                                                     "pathinfo" => [ $message -> {"queue_id"} ],
+                                                                                                                                                     "fullurl"  => 1),
                                                                                                            }),
                                                          recipients       => $recipients,
                                                          send_immediately => 1);
