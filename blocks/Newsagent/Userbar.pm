@@ -104,14 +104,20 @@ sub block_display {
                                       pathinfo => [],
                                       params   => {});
 
+    my $feedsurl = $self -> build_url(block    => "feeds",
+                                      fullurl  => 1,
+                                      pathinfo => [],
+                                      params   => {});
+
     # Initialise fragments to sane "logged out" defaults.
-    my ($siteadmin, $msglist, $compose, $userprofile, $presets, $docs) =
+    my ($siteadmin, $msglist, $compose, $userprofile, $presets, $docs, $tellus) =
         ($self -> {"template"} -> load_template("userbar/siteadmin_disabled.tem"),
          $self -> {"template"} -> load_template("userbar/msglist_disabled.tem"),
          $self -> {"template"} -> load_template("userbar/compose_disabled.tem"),
          $self -> {"template"} -> load_template("userbar/profile_loggedout_http".($ENV{"HTTPS"} eq "on" ? "s" : "").".tem", {"***url-login***" => $loginurl}),
          $self -> {"template"} -> load_template("userbar/presets_disabled.tem"),
          $self -> {"template"} -> load_template("userbar/doclink_disabled.tem"),
+         $self -> {"template"} -> load_template("userbar/tellus_disabled.tem"),
         );
 
     # Is documentation available?
@@ -133,6 +139,9 @@ sub block_display {
         $siteadmin = $self -> {"template"} -> load_template("userbar/siteadmin_enabled.tem", {"***url-admin***"   => $self -> build_url(block => "admin"   , pathinfo => [])})
             if($self -> check_permission("siteadmin"));
 
+        $tellus = $self -> {"template"} -> load_template("userbar/tellus_enabled.tem"      , {"***tellus_url***"  => $self -> build_url(block => "tellus"  , pathinfo => [])})
+            if($self -> check_permission("tellus"));
+
         $presets = $self -> _build_preset_list($user -> {"user_id"});
 
         # User is logged in, so actually reflect their current options and state
@@ -145,6 +154,8 @@ sub block_display {
     return $self -> {"template"} -> load_template("userbar/userbar.tem", {"***pagename***"   => $title,
                                                                           "***mainurl***"    => $self -> build_url(),
                                                                           "***front_url***"  => $fronturl,
+                                                                          "***feeds_url***"  => $feedsurl,
+                                                                          "***tellus***"     => $tellus,
                                                                           "***site-admin***" => $siteadmin,
                                                                           "***presets***"    => $presets,
                                                                           "***compose***"    => $compose,
