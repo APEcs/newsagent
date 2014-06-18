@@ -49,6 +49,10 @@ sub _generate_compose {
     # permission-based access to image button
     my $ckeconfig = $self -> check_permission('freeimg') ? "image_open.js" : "basic_open.js";
 
+    # Wrap the error in an error box, if needed.
+    $error = $self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $error})
+        if($error);
+
     # And generate the page title and content.
     return ($self -> {"template"} -> replace_langvar("TELLUS_FORM_TITLE"),
             $self -> {"template"} -> load_template("tellus/compose/compose.tem", {"***errorbox***"  => $error,
@@ -118,7 +122,7 @@ sub page_display {
     return $error if($error);
 
     # Exit with a permission error unless the user has permission to compose
-    if(!$self -> check_permission("compose")) {
+    if(!$self -> check_permission("tellus")) {
         $self -> log("error:compose:permission", "User does not have permission to compose articles");
 
         my $userbar = $self -> {"module"} -> load_module("Newsagent::Userbar");

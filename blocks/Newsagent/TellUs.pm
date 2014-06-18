@@ -114,5 +114,90 @@ sub new {
 }
 
 
+# ============================================================================
+#  Validation code
+
+
+## @method private $ _validate_article_fields($args, $userid)
+# Validate the contents of the fields in the article form. This will validate the
+# fields, and perform any background file-wrangling operations necessary to deal
+# with the submitted images (if any).
+#
+# @param args   A reference to a hash to store validated data in.
+# @param userid The ID of the user submitting the form.
+# @return empty string on success, otherwise an error string.
+sub _validate_article_fields {
+    my $self   = shift;
+    my $args   = shift;
+    my $userid = shift;
+    my ($errors, $error) = ("", "");
+
+    my $queues = $self -> {"tellus"} -> get_queues($userid, "additem");
+    my $types  = $self -> {"tellus"} -> get_types();
+
+    ($args -> {"article"}, $error) = $self -> validate_htmlarea("article", {"required"   => 1,
+                                                                            "minlen"     => 8,
+                                                                            "nicename"   => $self -> {"template"} -> replace_langvar("TELLUS_DESC"),
+                                                                            "validate"   => $self -> {"config"} -> {"Core:validate_htmlarea"},
+                                                                            "allow_tags" => $self -> {"allow_tags"},
+                                                                            "tag_rules"  => $self -> {"tag_rules"}});
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+
+    ($args -> {"type"}, $error) = $self -> validate_options("type", {"required" => 1,
+                                                                     "default"  => "1",
+                                                                     "source"   => $types,
+                                                                     "nicename" => $self -> {"template"} -> replace_langvar("TELLUS_TYPE")});
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+
+    ($args -> {"queue"}, $error) = $self -> validate_options("queue", {"required" => 1,
+                                                                       "default"  => "1",
+                                                                       "source"   => $queues,
+                                                                       "nicename" => $self -> {"template"} -> replace_langvar("TELLUS_QUEUE")});
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+
+    return $errors;
+}
+
+
+## @method private $ _validate_article($articleid)
+# Validate the article data submitted by the user, and potentially add
+# a new article to the system. Note that this will not return if the article
+# fields validate; it will redirect the user to the new article and exit.
+#
+# @param articleid Optional article ID used when doing edits. Note that the
+#                  caller must ensure this ID is valid and the user can edit it.
+# @return An error message, and a reference to a hash containing
+#         the fields that passed validation.
+sub _validate_article {
+    my $self      = shift;
+    my $articleid = shift;
+    my ($args, $errors, $error) = ({}, "", "", undef);
+    my $userid = $self -> {"session"} -> get_session_userid();
+
+    $error = $self -> _validate_article_fields($args, $userid);
+    $errors .= $error if($error);
+
+    # Give up here if there are any errors
+    return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => "{L_TELLUS_FAILED}",
+                                                                            "***errors***"  => $errors}), $args)
+        if($errors);
+
+    my $aid = $self -> {"tellus"} -> add_article($args, $userid)
+        or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => "{L_TELLUS_FAILED}",
+                                                                                   "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
+                                                                                                                                             {"***error***" => $self -> {"tellus"} -> errstr()
+                                                                                                                                             })
+                                                          }), $args);
+
+
+    $self -> log("article", "Added tellus article $aid");
+
+    # Send notifications to queue notification targets
+
+    # redirect to a success page
+    # Doing this prevents page reloads adding multiple article copies!
+    print $self -> {"cgi"} -> redirect($self -> build_url(pathinfo => ["success"]));
+    exit;
+}
 
 1;

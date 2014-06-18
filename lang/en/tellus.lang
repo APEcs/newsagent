@@ -13,3 +13,5 @@ TELLUS_TYPE     = Message type:
 TELLUS_QUEUE    = Initial queue:
 TELLUS_DESC     = Message:
 TELLUS_SUBMIT   = Tell Us
+
+TELLUS_FAILED   = An error occurred when adding your message to the system:

@@ -213,22 +213,24 @@ sub get_article {
 # ============================================================================
 #  Storage and addition
 
-## @method $ add_article($article)
+## @method $ add_article($article, $userid)
 # Add an entry to the tellus article table. This adds the specified article to the tellus
 # article list, and sets up the supporting information for it.
 #
 # @param article A reference to a hash containing the article data.
+# @param userid  The ID of the user adding the article.
 # @return The ID of the new article on success, undef on error.
 sub add_article {
     my $self    = shift;
     my $article = shift;
+    my $userid  = shift;
 
     $self -> clear_error();
 
     my $addh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"tellus_articles"}."`
                                             (creator_id, created, queue_id, queued, type_id, updated, state, article)
                                             VALUES(?, UNIX_TIMESTAMP(), ?, UNIX_TIMESTAMP(), ?, UNIX_TIMESTAMP(), 'new', ?)");
-    my $rows = $addh -> execute($article -> {"user_id"}, $article -> {"queue_id"}, $article -> {"type_id"}, $article -> {"article"});
+    my $rows = $addh -> execute($userid, $article -> {"queue"}, $article -> {"type"}, $article -> {"article"});
     return $self -> self_error("Unable to perform article insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Article insert failed, no rows inserted") if($rows eq "0E0");
 
