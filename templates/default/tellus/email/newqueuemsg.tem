@@ -1,0 +1,14 @@
+{L_TELLUS_EMAIL_GREETING},
+
+{L_TELLUS_EMAIL_NEWMSG}
+
+{L_TELLUS_EMAIL_AUTHOR}: ***fullename*** <***email***>
+ {L_TELLUS_EMAIL_QUEUE}: ***queuename***
+  {L_TELLUS_EMAIL_TYPE}: ***typename***
+{L_TELLUS_EMAIL_SUMMARY}:
+***summary***
+
+{L_TELLUS_EMAIL_MANAGE}: ***manage_url***
+
+--
+{L_EMAIL_SIG}

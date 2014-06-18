@@ -25,7 +25,6 @@ use Newsagent::System::Feed;
 use Newsagent::System::Article;
 use Newsagent::System::NotificationQueue;
 use File::Basename;
-use Lingua::EN::Sentence qw(get_sentences);
 use v5.12;
 
 # ============================================================================
@@ -398,7 +397,7 @@ sub _validate_summary_text {
 
     # If there's an article text, but no summary, copy over the first <240 chars
     } elsif(!$args -> {"summary"} && $nohtml) {
-        $args -> {"summary"} = $self -> _truncate_article($nohtml, 240);
+        $args -> {"summary"} = $self -> truncate_text($nohtml, 240);
         return undef;
     }
 
@@ -643,9 +642,9 @@ sub _build_level_options {
     foreach my $level (@{$levels}) {
         my $checked = $setlevels -> {$level -> {"value"}} ? " checked=\"checked\"": "";
 
-        $options .= $self -> {"template"} -> load_template("compose/levelop.tem", {"***desc***"    => $level -> {"name"},
-                                                                                   "***value***"   => $level -> {"value"},
-                                                                                   "***checked***" => $checked,
+        $options .= $self -> {"template"} -> load_template("article/compose/levelop.tem", {"***desc***"    => $level -> {"name"},
+                                                                                           "***value***"   => $level -> {"value"},
+                                                                                           "***checked***" => $checked,
                                                            });
     }
 
@@ -726,40 +725,5 @@ sub _build_levels_jsdata {
     my $array = "level_list = new Array(".join(",", @names).");";
 }
 
-
-
-# ============================================================================
-#  Things of which Man was Not Meant To Know (also support code)
-
-## @method private $ _truncate_article($text, $limit)
-# Given an article string containing plain text (NOT HTML!), produce a string
-# that can be used as a summary. This truncates the specified text to the
-# nearest sentence boundary less than the specified limit.
-#
-# @param text The text to truncate to a sentence boundary less than the limit.
-# @param limit The number of characters the output may contain
-# @return A string containing the truncated text
-sub _truncate_article {
-    my $self  = shift;
-    my $text  = shift;
-    my $limit = shift;
-
-    # If the text fits in the limit, just return it
-    return $text
-        if(length($text) <= $limit);
-
-    # Otherwise, split into sentences and stick sentences together until the limit
-    my $sentences = get_sentences($text);
-    my $trunc = "";
-    for(my $i = 0; $i < scalar(@{$sentences}) && (length($trunc) + length($sentences -> [$i])) <= $limit; ++$i) {
-        $trunc .= $sentences -> [$i];
-    }
-
-    # If the first sentence was too long (trunc is empty), truncate to word boundaries instead
-    $trunc = $self -> {"template"} -> truncate_words($text, $limit)
-        if(!$trunc);
-
-    return $trunc;
-}
 
 1;

@@ -195,12 +195,14 @@ sub get_article {
 
     $self -> clear_error();
 
-    my $geth = $self -> {"dbh"} -> prepare("SELECT `a`.*, `u`.`user_id`, `u`.`username`, `u`.`realname`, `u`.`email`, `t`.`name`
+    my $geth = $self -> {"dbh"} -> prepare("SELECT `a`.*, `u`.`user_id`, `u`.`username`, `u`.`realname`, `u`.`email`, `t`.`name` AS `typename`, `q`.`name` AS `queuename`
                                             FROM `".$self -> {"settings"} -> {"database"} -> {"tellus_articles"}."` AS `a`
                                             LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `u`
                                                 ON `u`.`user_id` = `a`.`creator_id`
                                             LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"tellus_types"}."` AS `t`
                                                 ON `t`.`id` = `a`.`type_id`
+                                            LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"tellus_queues"}."` AS `q`
+                                                ON `q`.`id` = `a`.`queue_id`
                                             WHERE `a`.`id` = ?");
     $geth -> execute($articleid)
         or return $self -> self_error("Unable to execute article query: ".$self -> {"dbh"} -> errstr);

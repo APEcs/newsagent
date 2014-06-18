@@ -28,6 +28,7 @@ use DateTime::TimeZone;
 use HTML::Entities;
 use HTML::WikiConverter;
 use Time::Local;
+use Lingua::EN::Sentence qw(get_sentences);
 use XML::Simple;
 
 # ============================================================================
@@ -439,6 +440,9 @@ sub get_saved_state {
 }
 
 
+# ============================================================================
+#  Things of which Man was Not Meant To Know (also support code)
+
 ## @method $ cleanup_entities($html)
 # Wrangle the specified HTML into something that won't produce an unholy mess when
 # passed to something that doesn't handle UTF-8 properly.
@@ -494,6 +498,37 @@ sub make_markdown_body {
                                                                                              "***images***" => $imageblock});
 }
 
+
+## @method $ truncate_text($text, $limit)
+# Given a string containing plain text (NOT HTML!), produce a string
+# that can be used as a summary. This truncates the specified text to the
+# nearest sentence boundary less than the specified limit.
+#
+# @param text The text to truncate to a sentence boundary less than the limit.
+# @param limit The number of characters the output may contain
+# @return A string containing the truncated text
+sub truncate_text {
+    my $self  = shift;
+    my $text  = shift;
+    my $limit = shift;
+
+    # If the text fits in the limit, just return it
+    return $text
+        if(length($text) <= $limit);
+
+    # Otherwise, split into sentences and stick sentences together until the limit
+    my $sentences = get_sentences($text);
+    my $trunc = "";
+    for(my $i = 0; $i < scalar(@{$sentences}) && (length($trunc) + length($sentences -> [$i])) <= $limit; ++$i) {
+        $trunc .= $sentences -> [$i];
+    }
+
+    # If the first sentence was too long (trunc is empty), truncate to word boundaries instead
+    $trunc = $self -> {"template"} -> truncate_words($text, $limit)
+        if(!$trunc);
+
+    return $trunc;
+}
 
 # ============================================================================
 #  URL building

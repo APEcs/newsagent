@@ -15,3 +15,12 @@ TELLUS_DESC     = Message:
 TELLUS_SUBMIT   = Tell Us
 
 TELLUS_FAILED   = An error occurred when adding your message to the system:
+
+TELLUS_EMAIL_NEWMSGSUB = [Newsagent] A message has been added to 'Tell Us' queue '***queue***'
+TELLUS_EMAIL_GREETING  = Hi
+TELLUS_EMAIL_NEWMSG    = A new message has been added to a Newsagent 'Tell Us' queue you have access to manage.
+TELLUS_EMAIL_AUTHOR    = Author
+TELLUS_EMAIL_QUEUE     = Queue
+TELLUS_EMAIL_TYPE      = Type
+TELLUS_EMAIL_SUMMARY   = Message extract
+TELLUS_EMAIL_MANAGE    = To create a Newsagent article from this message, move it to another queue, or reject the message you should log into the queue management interface here

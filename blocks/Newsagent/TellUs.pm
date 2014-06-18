@@ -192,7 +192,7 @@ sub _validate_article {
     $self -> log("article", "Added tellus article $aid");
 
     # Send notifications to queue notification targets
-    $self -> _notify_queue($args -> {"queue"}, $args);
+    $self -> _notify_add_queue($aid);
 
     # redirect to a success page
     # Doing this prevents page reloads adding multiple article copies!
@@ -204,32 +204,41 @@ sub _validate_article {
 # ============================================================================
 #  Notification code
 
-## @method private $ _notify_queue($queueid, $article)
+## @method private $ _notify_add_queue($articleid)
 # Send notifications to the users who are responsible for the queue specified that
 # a new article has been added to their queue.
 #
-# @param queueid The ID of the queue to notify the responsible users for.
-# @param article A reference to a hash containing the article information.
+# @param articleid The ID of the article added to the queue.
 # @return true on success, undef on error.
-sub _notify_queue {
-    my $self    = shift;
-    my $queueid = shift;
-    my $article = shift;
+sub _notify_add_queue {
+    my $self      = shift;
+    my $articleid = shift;
 
     $self -> clear_error();
 
-    my $recipients = $self -> {"tellus"} -> get_queue_notify_recipients($queueid)
+    # Get the article information, that will contain almost all the information needed for the email
+    my $message = $self -> {"tellus"} -> get_article($articleid)
+        or return $self -> self_error("Unable to fetch article data: ".$self -> {"tellus"} -> errstr());
+
+    # Need the list of people to notify in addition to the article data.
+    my $recipients = $self -> {"tellus"} -> get_queue_notify_recipients($message -> {"queue_id"})
         or return $self -> self_error("Unable to fetch queue recipients: ".$self -> {"tellus"} -> errstr());
 
     # No point doing anything if there are not recipients to notify
     return 1 if(!scalar(@{$recipients}));
 
-    my $queue = $self -> {"tellus"} -> get_queue_notify_recipients($queueid)
-        or return $self -> self_error("Unable to fetch queue information: ".$self -> {"tellus"} -> errstr());
+    my $summary = $self -> {"template"} -> html_strip($message -> {"article"});
+    $summary = $self -> truncate_text($summary, 240);
 
-    my $status =  $self -> {"messages"} -> queue_message(subject => $self -> {"template"} -> replace_langvar("NOTIFY_NEWMSG_SUBJECT", {"***queue***" => $queue -> {"name"}} ),
+    my $status =  $self -> {"messages"} -> queue_message(subject => $self -> {"template"} -> replace_langvar("TELLUS_EMAIL_NEWMSGSUB", {"***queue***" => $message -> {"queuename"}} ),
                                                          message => $self -> {"template"} -> load_template("tellus/email/newqueuemsg.tem",
-                                                                                                           {
+                                                                                                           {"***fullname***"   => $message -> {"realname"},
+                                                                                                            "***email***"      => $message -> {"email"},
+                                                                                                            "***queuename***"  => $message -> {"queuename"},
+                                                                                                            "***typename***"   => $message -> {"typename"},
+                                                                                                            "***summary***"    => $summary,
+                                                                                                            "***manage_url***" => $self -> build_url(block => "queues",
+                                                                                                                                                     pathinfo => [ $message -> {"queue_id"} ]),
                                                                                                            }),
                                                          recipients       => $recipients,
                                                          send_immediately => 1);
