@@ -1,0 +1,25 @@
+<div id="queuelist" class="shadowbox">
+    <h2>{L_TELLUS_QUEUES_TITLE}</h2>
+    <div class="sbcontent">
+        <div id="queuebrowser">
+            <h3>{L_TELLUS_QUEUELIST}</h3>
+            <table class="queues">
+                <tr><th>{L_TELLUS_QUEUE_NAME}</th>
+                    <th>{L_TELLUS_QUEUE_NEW}</th>
+                    <th>{L_TELLUS_QUEUE_READ}</th>
+                    <th>{L_TELLUS_QUEUE_ALL}</th>
+                </tr>
+***queues***
+            </table>
+        </div>
+        <div id="messagebrowser">
+            <h3>{L_TELLUS_MESSAGELIST}</h3>
+            <table class="listtable">
+                <tbody>
+***messages***
+                </tbody>
+            </table>
+***paginate***
+        </div>
+    </div>
+</div>
