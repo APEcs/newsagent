@@ -9,6 +9,7 @@ window.addEvent('domready', function() {
     <div id="tellus-article" class="shadowbox">
         <h2>{L_TELLUS_ARTICLE}</h2>
         <div class="sbcontent">
+            {L_TELLUS_FORM_INTRO}
             <div class="textwrapper">
                 <dl class="input">
                     <dt><label for="tell-desc">{L_TELLUS_DESC}</label></dt>

@@ -1,5 +1,5 @@
 TELLUS_FORM_TITLE = Tell Us
-
+TELLUS_FORM_INTRO = <p>This form allows anyone with a University of Manchester login to tell us about an event, a piece of news, a seminar, or any other piece of information you think may be of interest. Your message will go into a queue, and staff in the school will contact you if more information is needed. Once your message has been reviewed and approved it will be published through Newsagent in the appropriate feeds.</p>
 TELLUS_ADDED_TITLE       = Submission successful
 TELLUS_ADDED_SUMMARY     = Message created and added to the system successfully.
 TELLUS_ADDED_DESC        = Thank you for submission! Your message has been added to a queue, and the members of staff responsible for the queue have been notified. If additional information is required you may be contacted directly.
