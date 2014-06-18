@@ -183,6 +183,37 @@ sub get_queue_articles {
 }
 
 
+## @method $ get_queue_notify_recipients($queuid)
+# Fetch the list of email addresses for users who should be notfied about changes
+# in the specified queue.
+#
+# @param queueid The ID of the queue to fetch the notification addresses for
+# @return A reference to an array of email addresses on success, undef on error.
+#         Note that, if no notification recipients have been set for the queue, this
+#         will return an empty array.
+sub get_queue_notify_recipients {
+    my $self    = shift;
+    my $queueid = shift;
+    my $result  = [];
+
+    $self -> clear_error();
+
+    my $notifyh = $self -> {"dbh"} -> prepare("SELECT `u`.`email`
+                                               FROM `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `u`,
+                                                    `".$self -> {"settings"} -> {"database"} -> {"tellus_notify"}."` AS `n`
+                                               WHERE `u`.`user_id` = `n`.`user_id`
+                                               AND `n`.`queue_id` = ?");
+    $notifyh -> execute($queueid)
+        or return $self -> self_error("Unable to execute queue notification query: ".$self -> {"dbh"} -> errstr);
+
+    while(my $user = $notifyh -> fetchrow_arrayref()) {
+        push(@{$result}, $user -> [0]);
+    }
+
+    return $result;
+}
+
+
 ## @method $ get_article($articleid)
 # Obtain the data for the specified article.
 #
