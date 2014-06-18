@@ -117,7 +117,6 @@ sub new {
 # ============================================================================
 #  Validation code
 
-
 ## @method private $ _validate_article_fields($args, $userid)
 # Validate the contents of the fields in the article form. This will validate the
 # fields, and perform any background file-wrangling operations necessary to deal
@@ -193,11 +192,52 @@ sub _validate_article {
     $self -> log("article", "Added tellus article $aid");
 
     # Send notifications to queue notification targets
+    $self -> _notify_queue($args -> {"queue"}, $args);
 
     # redirect to a success page
     # Doing this prevents page reloads adding multiple article copies!
     print $self -> {"cgi"} -> redirect($self -> build_url(pathinfo => ["success"]));
     exit;
 }
+
+
+# ============================================================================
+#  Notification code
+
+## @method private $ _notify_queue($queueid, $article)
+# Send notifications to the users who are responsible for the queue specified that
+# a new article has been added to their queue.
+#
+# @param queueid The ID of the queue to notify the responsible users for.
+# @param article A reference to a hash containing the article information.
+# @return true on success, undef on error.
+sub _notify_queue {
+    my $self    = shift;
+    my $queueid = shift;
+    my $article = shift;
+
+    $self -> clear_error();
+
+    my $recipients = $self -> {"tellus"} -> get_queue_notify_recipients($queueid)
+        or return $self -> self_error("Unable to fetch queue recipients: ".$self -> {"tellus"} -> errstr());
+
+    # No point doing anything if there are not recipients to notify
+    return 1 if(!scalar(@{$recipients}));
+
+    my $queue = $self -> {"tellus"} -> get_queue_notify_recipients($queueid)
+        or return $self -> self_error("Unable to fetch queue information: ".$self -> {"tellus"} -> errstr());
+
+    my $status =  $self -> {"messages"} -> queue_message(subject => $self -> {"template"} -> replace_langvar("NOTIFY_NEWMSG_SUBJECT", {"***queue***" => $queue -> {"name"}} ),
+                                                         message => $self -> {"template"} -> load_template("tellus/email/newqueuemsg.tem",
+                                                                                                           {
+                                                                                                           }),
+                                                         recipients       => $recipients,
+                                                         send_immediately => 1);
+    return $self -> self_error("Unable to send queue notification: $status")
+        if($status);
+
+    return 1;
+}
+
 
 1;
