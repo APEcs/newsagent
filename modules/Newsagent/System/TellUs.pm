@@ -99,19 +99,56 @@ sub get_queues {
     $self -> clear_error();
 
     my $queueh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"tellus_queues"}."`
-                                              ORDER BY name");
+                                              ORDER BY `name`");
     $queueh -> execute()
         or return $self -> self_error("Unable to execute queue query: ".$self -> {"dbh"} -> errstr);
 
     while(my $queue = $queueh -> fetchrow_hashref()) {
         # Only add the queue to the result list if the user has the required capability
         if($self -> {"roles"} -> user_has_capability($queue -> {"metadata_id"}, $userid, "tellus.$access")) {
-            push(@{$entries}, {"value" => $queue -> {"id"},
-                               "name"  => $queue -> {"name"}});
+            $queue -> {"value"} = $queue -> {"id"};
+            push(@{$entries}, $queue);
         }
     }
 
     return $entries;
+}
+
+
+## @method $ active_queue($queue, $userid)
+# Obtain the data for the active queue. If no queue name is provided, or the user
+# does not have manage access to the queue, this will choose the first queue the user
+# has manage access to (in alphabetical order) and return the data for that.
+#
+# @param queue  The name of the active queue.
+# @param userid The ID of the user fetching the queue data.
+# @return A reference to a hash containing the queue data to use as the active queue.
+sub active_queue {
+    my $self   = shift;
+    my $queue  = shift;
+    my $userid = shift;
+
+    $self -> clear_error();
+
+    # Try to locate a queue with the specified name
+    my $queueh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"tellus_queues"}."`
+                                              WHERE `name` LIKE ?
+                                              LIMIT 1");
+    $queueh -> execute($queue)
+        or return $self -> self_error("Unable to execute queue query: ".$self -> {"dbh"} -> errstr);
+
+    # If the queue data has been found, and the user has access to it, return the data
+    my $queue = $queueh -> fetchrow_hashref();
+    return $queue if($queue && $self -> {"roles"} -> user_has_capability($queue -> {"metadata_id"}, $userid, "tellus.manage"));
+
+    # queue is bad/user doesn't have access, so fetch the queues the user does have access to
+    my $queues = $self -> get_queues($userid, "manage")
+        or return undef;
+
+    return $self -> self_error("User does not have manage access to any queues")
+        if(!scalar(@{$queues}));
+
+    return $queues -> [0];
 }
 
 
@@ -194,7 +231,7 @@ sub get_queue_messages {
                                             $types
                                             ORDER BY `a`.`created`
                                             $limit");
-    $geth -> execute($queueid)
+    $geth -> execute($settings -> {"queueid"})
         or return $self -> self_error("Unable to execute queue query: ".$self -> {"dbh"} -> errstr);
 
     return $geth -> fetchall_arrayref({});

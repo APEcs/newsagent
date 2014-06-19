@@ -24,6 +24,29 @@ use base qw(Newsagent::TellUs); # This class extends the Newsagent TellUs class
 use v5.12;
 
 
+## @method private $ _get_messagelist_settings($year, $month, $pagenum)
+# Build the settings used to fetch the message list and build the message list
+# user interface.
+#
+# @param queueid The ID of the queue the user is viewing.
+# @param pagenum The page of results the user is looking at.
+# @return A reference to a hash of settings to use for the article list
+sub _get_messagelist_settings {
+    my $self     = shift;
+    my $queueid  = shift;
+    my $pagenum  = shift;
+    my $settings = {"count" => $self -> {"settings"} -> {"config"} -> {"Article::List:count"},
+                    "pagenum"       => 1,
+                    "show_rejected" => 0
+    };
+
+    $settings -> {"pagenum"} = $pagenum if(defined($pagenum) && $pagenum =~ /^\d+$/ && $pagenum > 0);
+    $settings -> {"offset"}  = ($settings -> {"pagenum"} - 1) * $settings -> {"count"};
+
+    return $settings;
+}
+
+
 # ============================================================================
 #  Content generators
 
@@ -127,19 +150,23 @@ sub _build_message_row {
 #
 # @return Two strings: the page title, and the contents of the page.
 sub _generate_messagelist {
-    my $self     = shift;
-    my $queue    = shift;
-    my $pagenum  = shift || 1;
-    my $userid   = $self -> {"session"} -> get_session_userid();
-    my $now      = time();
+    my $self      = shift;
+    my $queue     = shift;
+    my $pagenum   = shift || 1;
+    my $userid    = $self -> {"session"} -> get_session_userid();
+    my $now       = time();
+    my ($body, $queuelist, $paginate) = ("", "", "");
 
-    my $queuedata = $self -> _active_queue($queue);
-    my $queuelist = $self -> _build_queue_list($queuedata -> {"id"}, $userid);
+    my $queuedata = $self -> {"tellus"} -> active_queue($queue, $userid);
+    if($queuedata) {
+        $queuelist = $self -> _build_queue_list($queuedata -> {"id"}, $userid);
 
-    my $body = "";
-    my $messages = $self -> {"tellus"} -> get_queue_messages($queuedata -> {"id"});
-    foreach my $message (@{$messages}) {
-        $body .= $self -> _build_message_row($message, $now);
+        my $settings  = $self -> _get_messagelist_settings($queuedata -> {"id"}, $pagenum);
+
+        my $messages = $self -> {"tellus"} -> get_queue_messages($settings);
+        foreach my $message (@{$messages}) {
+            $body .= $self -> _build_message_row($message, $now);
+        }
     }
 
     return ($self -> {"template"} -> replace_langvar("TELLUS_QLIST_TITLE"),
