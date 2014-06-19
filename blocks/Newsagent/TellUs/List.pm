@@ -106,14 +106,14 @@ sub _build_queue_list {
 
 
 ## @method private $ _build_message_row($message, $now)
-# Generate the article list row for the specified message.
+# Generate the message list row for the specified message.
 #
-# @param article The article to generate the list row for.
+# @param message The message to generate the list row for.
 # @param now     The current time as a unix timestamp.
-# @return A string containing the article row html.
-sub _build_article_row {
+# @return A string containing the message row html.
+sub _build_message_row {
     my $self    = shift;
-    my $article = shift;
+    my $message = shift;
     my $now     = shift;
 
     return $self -> {"template"} -> load_template("tellus/queues/row.tem", {
@@ -126,13 +126,27 @@ sub _build_article_row {
 # permission to edit.
 #
 # @return Two strings: the page title, and the contents of the page.
-sub _generate_articlelist {
+sub _generate_messagelist {
     my $self     = shift;
     my $queue    = shift;
     my $pagenum  = shift || 1;
+    my $userid   = $self -> {"session"} -> get_session_userid();
+    my $now      = time();
 
+    my $queuedata = $self -> _active_queue($queue);
+    my $queuelist = $self -> _build_queue_list($queuedata -> {"id"}, $userid);
 
+    my $body = "";
+    my $messages = $self -> {"tellus"} -> get_queue_messages($queuedata -> {"id"});
+    foreach my $message (@{$messages}) {
+        $body .= $self -> _build_message_row($message, $now);
+    }
 
+    return ($self -> {"template"} -> replace_langvar("TELLUS_QLIST_TITLE"),
+            $self -> {"template"} -> load_template("tellus/queues/content.tem", {"***queues***"   => $queuelist,
+                                                                                 "***messages***" => $body,
+                                                                                 "***paginate***" => $paginate,
+                                                   }));
 }
 
 

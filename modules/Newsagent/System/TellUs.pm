@@ -152,19 +152,36 @@ sub get_queue_stats {
 # Fetch messages in the specified queue, ordered by descending creation
 # date. If alternative orderings are needed, the caller should re-sort the list.
 #
+# Supported arguments in the setting are:
+# - queueid The ID of the queue to fetch messages from (required!)
+# - count   The number of messages to return
+# - offset  An offset to start returning messages from. The first message is
+#           at offset = 0
+# - show_rejected If set, messages with "rejected" status are included
+# - types   A reference to an array of type IDs to include. If not specified,
+#           all types are included.
+#
 # @param settings A reference to a hash containing the settings to use when
 #                 fetching the messages
 # @return A reference to an array of hashrefs containing the message information
 #         but not including the message text on success, undef on error.
 sub get_queue_messages {
-    my $self          = shift;
-    my $queueid       = shift;
-    my $show_rejected = shift;
+    my $self     = shift;
+    my $settings = shift;
 
     $self -> clear_error();
 
     my $modes = "'new', 'viewed'";
-    $modes .= ",'rejected'" if($show_rejected);
+    $modes .= ",'rejected'" if($settings -> {"show_rejected"});
+
+    my $types = "";
+    $types = "AND `a`.`type_id` IN (".join(",", $settings -> {"types"}).")"
+        if($settings -> {"types"} && scalar($settings -> {"types"}));
+
+    # limiting
+    my $limit = "";
+    $limit = " LIMIT ".$settings -> {"offset"}.",".$settings -> {"count"}
+        if(defined($settings -> {"offset"}) && $settings -> {"count"});
 
     my $geth = $self -> {"dbh"} -> prepare("SELECT `a`.`creator_id`, `a`.`created`, `a`.`queue_id`, `a`.`queued`, `a`.`updated`, `a`.`type_id`, `a`.`state`, `u`.`user_id`, `u`.`username`, `u`.`realname`, `u`.`email`, `t`.`name`
                                             FROM `".$self -> {"settings"} -> {"database"} -> {"tellus_messages"}."` AS `a`
@@ -174,7 +191,9 @@ sub get_queue_messages {
                                                 ON `t`.`id` = `a`.`type_id`
                                             WHERE `q`.`queue_id` = ?
                                             AND `a`.`state` IN ($modes)
-                                            ORDER BY `a`.`created`");
+                                            $types
+                                            ORDER BY `a`.`created`
+                                            $limit");
     $geth -> execute($queueid)
         or return $self -> self_error("Unable to execute queue query: ".$self -> {"dbh"} -> errstr);
 
