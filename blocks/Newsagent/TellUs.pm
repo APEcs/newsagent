@@ -28,12 +28,12 @@ use v5.12;
 #  Constructor
 
 ## @cmethod $ new(%args)
-# Overloaded constructor for the Article, loads the System::Article model
-# and other classes required to generate article pages.
+# Overloaded constructor for the TellUs classes, loads the System::TellUs model
+# and other classes required to generate message pages.
 #
 # @param args A hash of values to initialise the object with. See the Block docs
 #             for more information.
-# @return A reference to a new Newsagent::Article object on success, undef on error.
+# @return A reference to a new Newsagent::TellUs object on success, undef on error.
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
@@ -117,15 +117,15 @@ sub new {
 # ============================================================================
 #  Validation code
 
-## @method private $ _validate_article_fields($args, $userid)
-# Validate the contents of the fields in the article form. This will validate the
+## @method private $ _validate_message_fields($args, $userid)
+# Validate the contents of the fields in the message form. This will validate the
 # fields, and perform any background file-wrangling operations necessary to deal
 # with the submitted images (if any).
 #
 # @param args   A reference to a hash to store validated data in.
 # @param userid The ID of the user submitting the form.
 # @return empty string on success, otherwise an error string.
-sub _validate_article_fields {
+sub _validate_message_fields {
     my $self   = shift;
     my $args   = shift;
     my $userid = shift;
@@ -134,7 +134,7 @@ sub _validate_article_fields {
     my $queues = $self -> {"tellus"} -> get_queues($userid, "additem");
     my $types  = $self -> {"tellus"} -> get_types();
 
-    ($args -> {"article"}, $error) = $self -> validate_htmlarea("article", {"required"   => 1,
+    ($args -> {"message"}, $error) = $self -> validate_htmlarea("message", {"required"   => 1,
                                                                             "minlen"     => 8,
                                                                             "nicename"   => $self -> {"template"} -> replace_langvar("TELLUS_DESC"),
                                                                             "validate"   => $self -> {"config"} -> {"Core:validate_htmlarea"},
@@ -158,22 +158,22 @@ sub _validate_article_fields {
 }
 
 
-## @method private $ _validate_article($articleid)
-# Validate the article data submitted by the user, and potentially add
-# a new article to the system. Note that this will not return if the article
-# fields validate; it will redirect the user to the new article and exit.
+## @method private $ _validate_message($messageid)
+# Validate the message data submitted by the user, and potentially add
+# a new message to the system. Note that this will not return if the message
+# fields validate; it will redirect the user to the new message and exit.
 #
-# @param articleid Optional article ID used when doing edits. Note that the
+# @param messageid Optional message ID used when doing edits. Note that the
 #                  caller must ensure this ID is valid and the user can edit it.
 # @return An error message, and a reference to a hash containing
 #         the fields that passed validation.
-sub _validate_article {
+sub _validate_message {
     my $self      = shift;
-    my $articleid = shift;
+    my $messageid = shift;
     my ($args, $errors, $error) = ({}, "", "", undef);
     my $userid = $self -> {"session"} -> get_session_userid();
 
-    $error = $self -> _validate_article_fields($args, $userid);
+    $error = $self -> _validate_message_fields($args, $userid);
     $errors .= $error if($error);
 
     # Give up here if there are any errors
@@ -181,7 +181,7 @@ sub _validate_article {
                                                                             "***errors***"  => $errors}), $args)
         if($errors);
 
-    my $aid = $self -> {"tellus"} -> add_article($args, $userid)
+    my $aid = $self -> {"tellus"} -> add_message($args, $userid)
         or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => "{L_TELLUS_FAILED}",
                                                                                    "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
                                                                                                                                              {"***error***" => $self -> {"tellus"} -> errstr()
@@ -189,13 +189,13 @@ sub _validate_article {
                                                           }), $args);
 
 
-    $self -> log("tellus", "Added tellus article $aid");
+    $self -> log("tellus", "Added tellus message $aid");
 
     # Send notifications to queue notification targets
     $self -> _notify_add_queue($aid);
 
     # redirect to a success page
-    # Doing this prevents page reloads adding multiple article copies!
+    # Doing this prevents page reloads adding multiple message copies!
     print $self -> {"cgi"} -> redirect($self -> build_url(pathinfo => ["success"]));
     exit;
 }
@@ -204,26 +204,26 @@ sub _validate_article {
 # ============================================================================
 #  Notification code
 
-## @method private $ _notify_add_queue($articleid)
+## @method private $ _notify_add_queue($messageid)
 # Send notifications to the users who are responsible for the queue specified that
-# a new article has been added to their queue.
+# a new message has been added to their queue.
 #
-# @param articleid The ID of the article added to the queue.
+# @param messageid The ID of the message added to the queue.
 # @return true on success, undef on error.
 sub _notify_add_queue {
     my $self      = shift;
-    my $articleid = shift;
+    my $messageid = shift;
 
     $self -> clear_error();
 
     # Get the current user's info
     my $user = $self -> {"session"} -> get_user_byid();
 
-    # Get the article information, that will contain almost all the information needed for the email
-    my $message = $self -> {"tellus"} -> get_article($articleid)
-        or return $self -> self_error("Unable to fetch article data: ".$self -> {"tellus"} -> errstr());
+    # Get the message information, that will contain almost all the information needed for the email
+    my $message = $self -> {"tellus"} -> get_message($messageid)
+        or return $self -> self_error("Unable to fetch message data: ".$self -> {"tellus"} -> errstr());
 
-    # Need the list of people to notify in addition to the article data.
+    # Need the list of people to notify in addition to the message data.
     my $recipients = $self -> {"tellus"} -> get_queue_notify_recipients($message -> {"queue_id"})
         or return $self -> self_error("Unable to fetch queue recipients: ".$self -> {"tellus"} -> errstr());
 
@@ -233,7 +233,7 @@ sub _notify_add_queue {
         return 1;
     }
 
-    my $summary = $self -> {"template"} -> html_strip($message -> {"article"});
+    my $summary = $self -> {"template"} -> html_strip($message -> {"message"});
     $summary = $self -> truncate_text($summary, 240);
     $summary =~ s/^/> /gm;
 

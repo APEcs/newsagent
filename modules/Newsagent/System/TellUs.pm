@@ -1,5 +1,5 @@
 ## @file
-# This file contains the implementation of the tellus article model.
+# This file contains the implementation of the tellus message model.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
 #
@@ -27,7 +27,7 @@ use v5.12;
 #  Constructor
 
 ## @cmethod $ new(%args)
-# Create a new Article object to manage tag allocation and lookup.
+# Create a new Message object to manage tag allocation and lookup.
 # The minimum values you need to provide are:
 #
 # * dbh       - The database handle to use for queries.
@@ -37,7 +37,7 @@ use v5.12;
 # * logger    - The system logger object.
 #
 # @param args A hash of key value pairs to initialise the object with.
-# @return A new Article object, or undef if a problem occured.
+# @return A new Message object, or undef if a problem occured.
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
@@ -58,7 +58,7 @@ sub new {
 ## @method $ get_types()
 # Fetch the list of types defined in the system.
 #
-# @return A reference to a list of tellus article types defined in the system.
+# @return A reference to a list of tellus message types defined in the system.
 sub get_types {
     my $self    = shift;
     my $entries = [];
@@ -116,9 +116,9 @@ sub get_queues {
 
 
 ## @method $ get_queue_stats($queueid)
-# Fetch information about the number of articles in the specified queue. This
-# determines how many articles are in the queue, including the number of unread
-# articles and the number of rejected.
+# Fetch information about the number of messages in the specified queue. This
+# determines how many messages are in the queue, including the number of unread
+# messages and the number of rejected.
 #
 # @param queueid The ID of the queue to fetch the information for.
 # @return A reference to a hash containing the queue statistics on success, undef
@@ -130,7 +130,7 @@ sub get_queue_stats {
     $self -> clear_error();
 
     my $counth = $self -> {"dbh"} -> prepare("SELECT COUNT(*)
-                                              FROM `".$self -> {"settings"} -> {"database"} -> {"tellus_articles"}."`
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {"tellus_messages"}."`
                                               WHERE `queue_id` = ?
                                               AND `state` = ?");
     my @states = ("new", "viewed", "rejected");
@@ -148,16 +148,15 @@ sub get_queue_stats {
 }
 
 
-## @method $ get_queue_articles($queueid, $show_rejected)
-# Fetch all the articles in the specified queue, ordered by descending creation
+## @method $ get_queue_messages($settings)
+# Fetch messages in the specified queue, ordered by descending creation
 # date. If alternative orderings are needed, the caller should re-sort the list.
 #
-# @param queueid The ID of the queue to fetch the articles for. Note that this
-#                *does not* check access to the queue for the current user.
-# @param show_rejected If true, include rejected items in the list.
-# @return A reference to an array of hashrefs containing the article information
-#         but not including the article text on success, undef on error.
-sub get_queue_articles {
+# @param settings A reference to a hash containing the settings to use when
+#                 fetching the messages
+# @return A reference to an array of hashrefs containing the message information
+#         but not including the message text on success, undef on error.
+sub get_queue_messages {
     my $self          = shift;
     my $queueid       = shift;
     my $show_rejected = shift;
@@ -168,7 +167,7 @@ sub get_queue_articles {
     $modes .= ",'rejected'" if($show_rejected);
 
     my $geth = $self -> {"dbh"} -> prepare("SELECT `a`.`creator_id`, `a`.`created`, `a`.`queue_id`, `a`.`queued`, `a`.`updated`, `a`.`type_id`, `a`.`state`, `u`.`user_id`, `u`.`username`, `u`.`realname`, `u`.`email`, `t`.`name`
-                                            FROM `".$self -> {"settings"} -> {"database"} -> {"tellus_articles"}."` AS `a`
+                                            FROM `".$self -> {"settings"} -> {"database"} -> {"tellus_messages"}."` AS `a`
                                             LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `u`
                                                 ON `u`.`user_id` = `a`.`creator_id`
                                             LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"tellus_types"}."` AS `t`
@@ -212,20 +211,20 @@ sub get_queue_notify_recipients {
 }
 
 
-## @method $ get_article($articleid)
-# Obtain the data for the specified article.
+## @method $ get_message($messageid)
+# Obtain the data for the specified message.
 #
-# @param articleid The ID of the article to fetch the data for.
-# @return A reference to a hash containing the article data on success, undef
+# @param messageid The ID of the message to fetch the data for.
+# @return A reference to a hash containing the message data on success, undef
 #         on error
-sub get_article {
+sub get_message {
     my $self      = shift;
-    my $articleid = shift;
+    my $messageid = shift;
 
     $self -> clear_error();
 
     my $geth = $self -> {"dbh"} -> prepare("SELECT `a`.*, `u`.`user_id`, `u`.`username`, `u`.`realname`, `u`.`email`, `t`.`name` AS `typename`, `q`.`name` AS `queuename`
-                                            FROM `".$self -> {"settings"} -> {"database"} -> {"tellus_articles"}."` AS `a`
+                                            FROM `".$self -> {"settings"} -> {"database"} -> {"tellus_messages"}."` AS `a`
                                             LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `u`
                                                 ON `u`.`user_id` = `a`.`creator_id`
                                             LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"tellus_types"}."` AS `t`
@@ -233,37 +232,37 @@ sub get_article {
                                             LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"tellus_queues"}."` AS `q`
                                                 ON `q`.`id` = `a`.`queue_id`
                                             WHERE `a`.`id` = ?");
-    $geth -> execute($articleid)
-        or return $self -> self_error("Unable to execute article query: ".$self -> {"dbh"} -> errstr);
+    $geth -> execute($messageid)
+        or return $self -> self_error("Unable to execute message query: ".$self -> {"dbh"} -> errstr);
 
     return $geth -> fetchrow_hashref()
-        or $self -> self_error("Request for non-existent article with ID $articleid");
+        or $self -> self_error("Request for non-existent message with ID $messageid");
 }
 
 
 # ============================================================================
 #  Storage and addition
 
-## @method $ add_article($article, $userid)
-# Add an entry to the tellus article table. This adds the specified article to the tellus
-# article list, and sets up the supporting information for it.
+## @method $ add_message($message, $userid)
+# Add an entry to the tellus message table. This adds the specified message to the tellus
+# message list, and sets up the supporting information for it.
 #
-# @param article A reference to a hash containing the article data.
-# @param userid  The ID of the user adding the article.
-# @return The ID of the new article on success, undef on error.
-sub add_article {
+# @param message A reference to a hash containing the message data.
+# @param userid  The ID of the user adding the message.
+# @return The ID of the new message on success, undef on error.
+sub add_message {
     my $self    = shift;
-    my $article = shift;
+    my $message = shift;
     my $userid  = shift;
 
     $self -> clear_error();
 
-    my $addh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"tellus_articles"}."`
-                                            (creator_id, created, queue_id, queued, type_id, updated, state, article)
+    my $addh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"tellus_messages"}."`
+                                            (creator_id, created, queue_id, queued, type_id, updated, state, message)
                                             VALUES(?, UNIX_TIMESTAMP(), ?, UNIX_TIMESTAMP(), ?, UNIX_TIMESTAMP(), 'new', ?)");
-    my $rows = $addh -> execute($userid, $article -> {"queue"}, $article -> {"type"}, $article -> {"article"});
-    return $self -> self_error("Unable to perform article insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
-    return $self -> self_error("Article insert failed, no rows inserted") if($rows eq "0E0");
+    my $rows = $addh -> execute($userid, $message -> {"queue"}, $message -> {"type"}, $message -> {"message"});
+    return $self -> self_error("Unable to perform message insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("Message insert failed, no rows inserted") if($rows eq "0E0");
 
     # MYSQL: This ties to MySQL, but is more reliable that last_insert_id in general.
     #        Try to find a decent solution for this mess...
@@ -273,62 +272,62 @@ sub add_article {
     #       There, why couldn't they bloody /say/ that?!
     my $newid = $self -> {"dbh"} -> {"mysql_insertid"};
 
-    return $self -> self_error("Unable to obtain id for new article row")
+    return $self -> self_error("Unable to obtain id for new message row")
         if(!$newid);
 
-    # At this point the article is in the system and waiting in a queue.
+    # At this point the message is in the system and waiting in a queue.
     return $newid;
 }
 
 
-## @method $ set_article_status($articleid, $state)
-# Set the state for the specified article. This updates the article's state to the specified
+## @method $ set_message_status($messageid, $state)
+# Set the state for the specified message. This updates the message's state to the specified
 # value, and changes its 'updated' timestamp.
 #
-# @param articleid The ID of the tellus article to update
-# @param state     The new state to set or the article
-# @return A reference to a hash containing the article data on success, undef on error
-sub set_article_status {
+# @param messageid The ID of the tellus message to update
+# @param state     The new state to set or the message
+# @return A reference to a hash containing the message data on success, undef on error
+sub set_message_status {
     my $self      = shift;
-    my $articleid = shift;
+    my $messageid = shift;
     my $state     = shift;
 
     $self -> clear_error();
 
-    my $seth = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"tellus_articles"}."`
+    my $seth = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"tellus_messages"}."`
                                             SET `state` = ?, `updated` = UNIX_TIMESTAMP()
                                             WHERE `id` = ?");
-    my $result = $seth -> execute($state, $articleid);
-    return $self -> self_error("Unable to update article state: ".$self -> {"dbh"} -> errstr) if(!$result);
-    return $self -> self_error("Article state update failed: no rows updated.") if($result eq "0E0");
+    my $result = $seth -> execute($state, $messageid);
+    return $self -> self_error("Unable to update message state: ".$self -> {"dbh"} -> errstr) if(!$result);
+    return $self -> self_error("Message state update failed: no rows updated.") if($result eq "0E0");
 
-    return $self -> get_article($articleid);
+    return $self -> get_message($messageid);
 }
 
 
-## @method $ set_article_queue($articleid, $queueid)
-# Set the queue for the specified article. This updates the article's queue to the specified
+## @method $ set_message_queue($messageid, $queueid)
+# Set the queue for the specified message. This updates the message's queue to the specified
 # value, and changes its 'queued' and 'updated' timestamps. Note that the caller should
 # probably notify the target queue owners of this change, as this function will not do that.
 #
-# @param articleid The ID of the tellus article to update
-# @param queueid   The ID of the new queue to set or the article
-# @return A reference to a hash containing the article data on success, undef on error
-sub set_article_queue {
+# @param messageid The ID of the tellus message to update
+# @param queueid   The ID of the new queue to set or the message
+# @return A reference to a hash containing the message data on success, undef on error
+sub set_message_queue {
     my $self      = shift;
-    my $articleid = shift;
+    my $messageid = shift;
     my $queueid   = shift;
 
     $self -> clear_error();
 
-    my $seth = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"tellus_articles"}."`
+    my $seth = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"tellus_messages"}."`
                                             SET `queue_id` = ?, `queued` = UNIX_TIMESTAMP(), `updated` = UNIX_TIMESTAMP()
                                             WHERE `id` = ?");
-    my $result = $seth -> execute($queueid, $articleid);
-    return $self -> self_error("Unable to update article queue: ".$self -> {"dbh"} -> errstr) if(!$result);
-    return $self -> self_error("Article queue update failed: no rows updated.") if($result eq "0E0");
+    my $result = $seth -> execute($queueid, $messageid);
+    return $self -> self_error("Unable to update message queue: ".$self -> {"dbh"} -> errstr) if(!$result);
+    return $self -> self_error("Message queue update failed: no rows updated.") if($result eq "0E0");
 
-    return $self -> get_article($articleid);
+    return $self -> get_message($messageid);
 }
 
 

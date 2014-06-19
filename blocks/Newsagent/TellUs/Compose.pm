@@ -20,7 +20,7 @@
 package Newsagent::TellUs::Compose;
 
 use strict;
-use base qw(Newsagent::TellUs); # This class extends the Article block class
+use base qw(Newsagent::TellUs); # This class extends the TellUs block class
 use v5.12;
 
 # ============================================================================
@@ -57,7 +57,7 @@ sub _generate_compose {
     return ($self -> {"template"} -> replace_langvar("TELLUS_FORM_TITLE"),
             $self -> {"template"} -> load_template("tellus/compose/compose.tem", {"***errorbox***"  => $error,
                                                                                   "***form_url***"  => $self -> build_url(block => "tellus", pathinfo => ["add"]),
-                                                                                  "***article***"   => $args -> {"article"},
+                                                                                  "***message***"   => $args -> {"message"},
                                                                                   "***queueopts***" => $self -> {"template"} -> build_optionlist($queues, $args -> {"queue"}),
                                                                                   "***typeopts***"  => $self -> {"template"} -> build_optionlist($types , $args -> {"type"}),
                                                                                   "***ckeconfig***" => $ckeconfig,
@@ -67,8 +67,8 @@ sub _generate_compose {
 
 ## @method private @ _generate_success()
 # Generate a success page to send to the user. This creates a message box telling the
-# user that their article has been added - this is needed to ensure that users get a
-# confirmation, but it isn't generated inside _add_article() or _validate_article() so
+# user that their message has been added - this is needed to ensure that users get a
+# confirmation, but it isn't generated inside _add_message() or _validate_message() so
 # that page refreshes don't submit multiple copies.
 #
 # @return The page title, content, and meta refresh strings.
@@ -93,18 +93,18 @@ sub _generate_success {
 # ============================================================================
 #  Addition functions
 
-## @method private @ _add_article()
-# Add a Tell Us article to the system. This validates and processes the values submitted by
+## @method private @ _add_message()
+# Add a Tell Us message to the system. This validates and processes the values submitted by
 # the user in the compose form, and stores the result in the database.
 #
 # @return Three values: the page title, the content to show in the page, and the extra
 #         css and javascript directives to place in the header.
-sub _add_article {
+sub _add_message {
     my $self  = shift;
     my $error = "";
     my $args  = {};
 
-    ($error, $args) = $self -> _validate_article();
+    ($error, $args) = $self -> _validate_message();
     return $self -> _generate_compose($args, $error);
 }
 
@@ -123,7 +123,7 @@ sub page_display {
 
     # Exit with a permission error unless the user has permission to compose
     if(!$self -> check_permission("tellus")) {
-        $self -> log("error:compose:permission", "User does not have permission to compose articles");
+        $self -> log("error:compose:permission", "User does not have permission to compose messages");
 
         my $userbar = $self -> {"module"} -> load_module("Newsagent::Userbar");
         my $message = $self -> {"template"} -> message_box("{L_PERMISSION_FAILED_TITLE}",
@@ -163,7 +163,7 @@ sub page_display {
             ($title, $content, $extrahead) = $self -> _generate_compose();
         } else {
             given($pathinfo[0]) {
-                when("add")      { ($title, $content, $extrahead) = $self -> _add_article(); }
+                when("add")      { ($title, $content, $extrahead) = $self -> _add_message(); }
                 when("success")  { ($title, $content, $extrahead) = $self -> _generate_success(); }
                 default {
                     ($title, $content, $extrahead) = $self -> _generate_compose();

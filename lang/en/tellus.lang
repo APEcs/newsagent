@@ -8,7 +8,7 @@ TELLUS_NEW      = Unread
 TELLUS_VIEWED   = Read
 TELLUS_REJECTED = Rejected
 
-TELLUS_ARTICLE  = Tell Us!
+TELLUS_MESSAGE  = Tell Us!
 TELLUS_TYPE     = Message type:
 TELLUS_QUEUE    = Initial queue:
 TELLUS_DESC     = Message:
