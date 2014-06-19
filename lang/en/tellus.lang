@@ -25,3 +25,15 @@ TELLUS_EMAIL_QUEUE     = Queue
 TELLUS_EMAIL_TYPE      = Type
 TELLUS_EMAIL_SUMMARY   = Message extract
 TELLUS_EMAIL_MANAGE    = To create a Newsagent article from this message, move it to another queue, or reject the message you should log into the queue management interface here
+
+TELLUS_QLIST_TITLE       = Tell Us Messages
+TELLUS_QLIST_QLIST       = Queues
+TELLUS_QLIST_NAME        = Queue
+TELLUS_QLIST_NEW         = Unread messages
+TELLUS_QLIST_READ        = Read messages
+TELLUS_QLIST_ALL         = Total
+TELLUS_QLIST_MESSAGES    = Messages
+TELLUS_QLIST_SETQUEUE    = Change queue
+TELLUS_QLIST_MAKEARTICLE = Create Newsagent article from this message
+TELLUS_QLIST_REJECT      = Reject (author is notified of this)
+TELLUS_QLIST_DELETE      = Delete

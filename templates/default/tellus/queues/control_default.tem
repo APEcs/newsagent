@@ -1,0 +1,6 @@
+<ul class="controls">
+    <li><div class="control requeue" id="queuebtn-m***id***"  onclick="change_queue('***id***');"   title="{L_TELLUS_QLIST_SETQUEUE}"></div></li>
+    <li><div class="control promote" id="prombtn-m***id***"   onclick="make_article('***id***');"   title="{L_TELLUS_QLIST_MAKEARTICLE}"></div></li>
+    <li><div class="control reject"  id="rejectbtn-m***id***" onclick="reject_article('***id***');" title="{L_TELLUS_QLIST_REJECT}"></div></li>
+    <li><div class="control delete"  id="deletebtn-m***id***" onclick="delete_article('***id***');" title="{L_TELLUS_QLIST_DELETE}"></div></li>
+</ul>
