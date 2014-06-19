@@ -1,0 +1,1 @@
+            <li id="user-tuqueues" title="{L_USERBAR_TELLUS_QUEUES}"><a href="***url-tuqueue***" class="item"><img class="controlicon" src="{V_[templatepath]}userbar/images/***mode***.png" alt="tellusqueues" /></a></li>

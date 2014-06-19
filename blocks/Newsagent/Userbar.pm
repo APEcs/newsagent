@@ -24,6 +24,7 @@ package Newsagent::Userbar;
 use strict;
 use base qw(Newsagent);
 use Newsagent::System::Article;
+use Newsagent::System::TellUs;
 use v5.12;
 
 sub new {
@@ -37,7 +38,14 @@ sub new {
                                                              logger   => $self -> {"logger"},
                                                              roles    => $self -> {"system"} -> {"roles"},
                                                              metadata => $self -> {"system"} -> {"metadata"})
-        or return Webperl::SystemModule::set_error("Compose initialisation failed: ".$SystemModule::errstr);
+        or return Webperl::SystemModule::set_error("Article initialisation failed: ".$SystemModule::errstr);
+
+    $self -> {"tellus"} = Newsagent::System::TellUs -> new(dbh      => $self -> {"dbh"},
+                                                           settings => $self -> {"settings"},
+                                                           logger   => $self -> {"logger"},
+                                                           roles    => $self -> {"system"} -> {"roles"},
+                                                           metadata => $self -> {"system"} -> {"metadata"})
+        or return Webperl::SystemModule::set_error("TellUs initialisation failed: ".$SystemModule::errstr);
 
     return $self;
 }
@@ -110,7 +118,7 @@ sub block_display {
                                       params   => {});
 
     # Initialise fragments to sane "logged out" defaults.
-    my ($siteadmin, $msglist, $compose, $userprofile, $presets, $docs, $tellus) =
+    my ($siteadmin, $msglist, $compose, $userprofile, $presets, $docs, $tellus, $tuqueues) =
         ($self -> {"template"} -> load_template("userbar/siteadmin_disabled.tem"),
          $self -> {"template"} -> load_template("userbar/msglist_disabled.tem"),
          $self -> {"template"} -> load_template("userbar/compose_disabled.tem"),
@@ -118,6 +126,7 @@ sub block_display {
          $self -> {"template"} -> load_template("userbar/presets_disabled.tem"),
          $self -> {"template"} -> load_template("userbar/doclink_disabled.tem"),
          $self -> {"template"} -> load_template("userbar/tellus_disabled.tem"),
+         $self -> {"template"} -> load_template("userbar/tuqueues_disabled.tem"),
         );
 
     # Is documentation available?
@@ -139,10 +148,27 @@ sub block_display {
         $siteadmin = $self -> {"template"} -> load_template("userbar/siteadmin_enabled.tem", {"***url-admin***"   => $self -> build_url(block => "admin"   , pathinfo => [])})
             if($self -> check_permission("siteadmin"));
 
-        $tellus = $self -> {"template"} -> load_template("userbar/tellus_enabled.tem"      , {"***tellus_url***"  => $self -> build_url(block => "tellus"  , pathinfo => [])})
+        $tellus = $self -> {"template"} -> load_template("userbar/tellus_enabled.tem"      , {"***url-tellus***"  => $self -> build_url(block => "tellus"  , pathinfo => [])})
             if($self -> check_permission("tellus"));
 
         $presets = $self -> _build_preset_list($user -> {"user_id"});
+
+        # Determine whether the user has any TellUs queues they can manage
+        my $queues = $self -> {"tellus"} -> get_queues($user -> {"user_id"}, "manage");
+        if($queues && scalar(@{$queues})) {
+            # User has queues, do any have new messages?
+            my $hasnew = 0;
+            foreach my $queue (@{$queues}) {
+                my $stats = $self -> {"tellus"} -> get_queue_stats($queue -> {"value"});
+                if($stats -> {"new"}) {
+                    $hasnew = 1;
+                    last;
+                }
+            }
+
+            $tuqueues = $self -> {"template"} -> load_template("userbar/tuqueues_enabled.tem", {"***url-tuqueue***" => $self -> build_url(block => "queues", pathinfo => []),
+                                                                                                "***mode***"        => ($hasnew ? "tuqueues_new" : "tuqueues")});
+        }
 
         # User is logged in, so actually reflect their current options and state
         $userprofile = $self -> {"template"} -> load_template("userbar/profile_loggedin.tem", {"***realname***"    => $user -> {"fullname"},
@@ -160,6 +186,7 @@ sub block_display {
                                                                           "***presets***"    => $presets,
                                                                           "***compose***"    => $compose,
                                                                           "***msglist***"    => $msglist,
+                                                                          "***tuqueues***"   => $tuqueues,
                                                                           "***doclink***"    => $docs,
                                                                           "***profile***"    => $userprofile});
 }
