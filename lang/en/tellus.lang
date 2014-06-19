@@ -28,6 +28,7 @@ TELLUS_EMAIL_MANAGE    = To create a Newsagent article from this message, move i
 
 TELLUS_QLIST_TITLE       = Tell Us Messages
 TELLUS_QLIST_QLIST       = Queues
+TELLUS_QLIST_NOQUEUES    = No queues available
 TELLUS_QLIST_NAME        = Queue
 TELLUS_QLIST_NEW         = Unread messages
 TELLUS_QLIST_READ        = Read messages

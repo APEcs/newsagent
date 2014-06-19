@@ -64,6 +64,47 @@ sub _build_pagination {
 }
 
 
+## @method private $ _build_queue_list($queueidm $userid)
+# Generate the list of queues and their statistics.
+#
+# @param queueid The currently active queue ID.
+# @param userid  The ID of the user listing the queues.
+# @return A string containing the queue list
+sub _build_queue_list {
+    my $self    = shift;
+    my $queueid = shift;
+    my $userid  = shift;
+    my $result  = "";
+
+    # First get the list of queues the user can manage
+    my $queues = $self -> {"tellus"} -> get_queues($userid, "manage");
+
+    # Now go through the queues fetching their stats and building table rows
+    foreach my $queue (@{$queues}) {
+        my $stats = $self -> {"tellus"} -> get_queue_stats($queue -> {"value"});
+
+        # If the queue is active, it needs highlighting as such
+        my $highlight = [ ($queueid == $queue -> {"value"} ? "active" : "") ];
+
+        # The highlight may also need to be updated depending on the stats (queues with new messages get highlighted)
+        push(@{$highlight}, "hasnew") if($stats -> {"new"});
+
+        $result .= $self -> {"template"} -> load_template("tellus/queues/queue.tem", {"***highlight***" => join(" ", @{$highlight}),
+                                                                                    "***name***"      => $queue -> {"name"},
+                                                                                    "***new***"       => $stats -> {"new"}    || "0",
+                                                                                    "***read***"      => $stats -> {"viewed"} || "0",
+                                                                                    "***all***"       => $stats -> {"total"}  || "0",
+                                                          });
+    }
+
+    # Fallback for users with no queues.
+    $result = $self -> {"template"} -> load_template("tellus/queues/noqueues.tem")
+        if(!$result);
+
+    return $result;
+}
+
+
 ## @method private $ _build_message_row($message, $now)
 # Generate the article list row for the specified message.
 #
@@ -75,7 +116,7 @@ sub _build_article_row {
     my $article = shift;
     my $now     = shift;
 
-    return $self -> {"template"} -> load_template("tellus/list/row.tem", {
+    return $self -> {"template"} -> load_template("tellus/queues/row.tem", {
                                                   });
 }
 
@@ -89,6 +130,8 @@ sub _generate_articlelist {
     my $self     = shift;
     my $queue    = shift;
     my $pagenum  = shift || 1;
+
+
 
 }
 
@@ -128,7 +171,7 @@ sub page_display {
             }
         }
 
-        $extrahead .= $self -> {"template"} -> load_template("tellus/list/extrahead.tem");
+        $extrahead .= $self -> {"template"} -> load_template("tellus/queues/extrahead.tem");
         return $self -> generate_newsagent_page($title, $content, $extrahead, "list");
     }
 }
