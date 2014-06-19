@@ -6,9 +6,9 @@
             <table class="queues">
                 <thead>
                     <tr><th>{L_TELLUS_QUEUE_NAME}</th>
-                        <th>{L_TELLUS_QUEUE_NEW}</th>
-                        <th>{L_TELLUS_QUEUE_READ}</th>
-                        <th>{L_TELLUS_QUEUE_ALL}</th>
+                        <th><img src="src="{V_[templatepath]}images/tellus/queuenew.png"  width="16" height="16" title="{L_TELLUS_QUEUE_NEW}" /></th>
+                        <th><img src="src="{V_[templatepath]}images/tellus/queueread.png" width="16" height="16" title="{L_TELLUS_QUEUE_READ}" /></th>
+                        <th><img src="src="{V_[templatepath]}images/tellus/queueall.png"  width="16" height="16" title="{L_TELLUS_QUEUE_ALL}" /></th>
                     </tr>
                 </thead>
                 <tbody>
