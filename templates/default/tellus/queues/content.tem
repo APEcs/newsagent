@@ -4,12 +4,16 @@
         <div id="queuebrowser">
             <h3>{L_TELLUS_QUEUELIST}</h3>
             <table class="queues">
-                <tr><th>{L_TELLUS_QUEUE_NAME}</th>
-                    <th>{L_TELLUS_QUEUE_NEW}</th>
-                    <th>{L_TELLUS_QUEUE_READ}</th>
-                    <th>{L_TELLUS_QUEUE_ALL}</th>
-                </tr>
+                <thead>
+                    <tr><th>{L_TELLUS_QUEUE_NAME}</th>
+                        <th>{L_TELLUS_QUEUE_NEW}</th>
+                        <th>{L_TELLUS_QUEUE_READ}</th>
+                        <th>{L_TELLUS_QUEUE_ALL}</th>
+                    </tr>
+                </thead>
+                <tbody>
 ***queues***
+                </tbody>
             </table>
         </div>
         <div id="messagebrowser">

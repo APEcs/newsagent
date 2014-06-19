@@ -1,0 +1,11 @@
+<tr id="msgrow-***id***">
+    <td class="type ***typeclass***" title="***typeinfo***"><div class="***typeclass***">&nbsp;</div></td>
+    <td class="summary ***modeclass***"><div class="summary"><a href="***editurl***">***summary***</a></div>
+                        <ul class="info"><li class="info">{L_TELLUS_QLIST_BY}: ***realname*** &lt;<a href="mailto:***email***">***email***</a>&gt;</li>
+                                         ***extrainfo***
+                        </ul>
+    </td>
+    <td class="controls">
+***controls***
+    </td>
+</tr>
