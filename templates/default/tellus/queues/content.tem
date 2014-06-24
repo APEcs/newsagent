@@ -22,7 +22,7 @@ window.addEvent('domready', function() {
             <div id="queuebrowser">
 ***queues***
             </div>
-            <div style="clear: both"></div>
+            <div class="clear"></div>
         </div>
     </div>
 </div>
