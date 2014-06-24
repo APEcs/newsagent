@@ -14,12 +14,11 @@
 
 #queuebrowser {
     width: 180px;
-    float: left;
 }
 
 #messagebrowser {
     width: 910px;
-    margin-left: 200px;
+    float: right;
 }
 
 table.listtable {

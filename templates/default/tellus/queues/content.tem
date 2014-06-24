@@ -11,9 +11,6 @@ window.addEvent('domready', function() {
     <div class="shadowbox">
         <h2>{L_TELLUS_QLIST_TITLE}</h2>
         <div class="sbcontent">
-            <div id="queuebrowser">
-***queues***
-            </div>
             <div id="messagebrowser">
                 <table class="listtable">
                    <tbody>
@@ -22,6 +19,10 @@ window.addEvent('domready', function() {
                 </table>
 ***paginate***
             </div>
+            <div id="queuebrowser">
+***queues***
+            </div>
+            <div style="clear: both"></div>
         </div>
     </div>
 </div>
