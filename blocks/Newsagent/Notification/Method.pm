@@ -331,16 +331,16 @@ sub generate_notification_state {
         my $title = $message || $state;
 
         if($state eq "pending") {
-            $title = $self -> {"template"} -> load_template("articlelist/pending.tem", {"***send_mode***" => $send_mode,
+            $title = $self -> {"template"} -> load_template("article/list/pending.tem", {"***send_mode***" => $send_mode,
                                                                                         "***send_after***" => $self -> {"template"} -> format_time($send_after)});
         }
 
-        return $self -> {"template"} -> load_template("articlelist/status.tem", {"***name***"     => $self -> {"method_name"},
-                                                                                 "***id***"       => $self -> {"method_id"},
-                                                                                 "***status***"   => $state,
-                                                                                 "***statemsg***" => "{L_METHOD_STATE_".uc($state)."}",
-                                                                                 "***date***"     => $self -> {"template"} -> fancy_time($timestamp),
-                                                                                 "***title***"    => $title,
+        return $self -> {"template"} -> load_template("article/list/status.tem", {"***name***"     => $self -> {"method_name"},
+                                                                                  "***id***"       => $self -> {"method_id"},
+                                                                                  "***status***"   => $state,
+                                                                                  "***statemsg***" => "{L_METHOD_STATE_".uc($state)."}",
+                                                                                  "***date***"     => $self -> {"template"} -> fancy_time($timestamp),
+                                                                                  "***title***"    => $title,
                                                       });
     }
     return "";
