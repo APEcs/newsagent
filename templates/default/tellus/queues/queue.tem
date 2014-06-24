@@ -1,5 +1,5 @@
 <div class="queue ***highlight***">
     <div class="queuebox">
-         <div class="queuetitle ***hasnew***">***name***</div>
+         <div class="queuetitle" id="queue-***idname***">***namenew***</div>
     </div>
 </div>

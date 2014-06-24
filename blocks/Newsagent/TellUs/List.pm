@@ -113,11 +113,16 @@ sub _build_queue_list {
         # The highlight may also need to be updated depending on the stats (queues with new messages get highlighted)
         push(@{$highlight}, "hasnew") if($stats -> {"new"});
 
+        my $namenew = $queue -> {"name"};
+        $namenew .= " (".$stats -> {"new"}.")" if($stats -> {"new"});
+
         $result .= $self -> {"template"} -> load_template("tellus/queues/queue.tem", {"***highlight***" => join(" ", @{$highlight}),
-                                                                                    "***name***"      => $queue -> {"name"},
-                                                                                    "***new***"       => $stats -> {"new"}    || "0",
-                                                                                    "***read***"      => $stats -> {"viewed"} || "0",
-                                                                                    "***all***"       => $stats -> {"total"}  || "0",
+                                                                                      "***idname***"    => lc($queue -> {"name"}),
+                                                                                      "***name***"      => $queue -> {"name"},
+                                                                                      "***namenew***"   => $namenew,
+                                                                                      "***new***"       => $stats -> {"new"}    || "0",
+                                                                                      "***read***"      => $stats -> {"viewed"} || "0",
+                                                                                      "***all***"       => $stats -> {"total"}  || "0",
                                                           });
     }
 
@@ -144,10 +149,12 @@ sub _build_message_row {
     $summary = $self -> truncate_text($summary, 120);
 
     return $self -> {"template"} -> load_template("tellus/queues/row.tem", {"***id***"        => $message -> {"id"},
+                                                                            "***adddate***"   => $self -> {"template"} -> fancy_time($message -> {"created"}),
                                                                             "***realname***"  => $message -> {"realname"},
                                                                             "***email***"     => $message -> {"email"},
                                                                             "***summary***"   => $summary,
                                                                             "***typeclass***" => lc($message -> {"name"}),
+                                                                            "***typeinfo***"  => $message -> {"name"},
                                                                             "***extrainfo***" => "",
                                                                             "***controls***"  => $self -> {"template"} -> load_template("tellus/queues/control_default.tem", {"***id***" => $message -> {"id"}})
 
@@ -181,9 +188,12 @@ sub _generate_messagelist {
     }
 
     return ($self -> {"template"} -> replace_langvar("TELLUS_QLIST_TITLE"),
-            $self -> {"template"} -> load_template("tellus/queues/content.tem", {"***queues***"   => $queuelist,
-                                                                                 "***messages***" => $body,
-                                                                                 "***paginate***" => $paginate,
+            $self -> {"template"} -> load_template("tellus/queues/content.tem", {"***queues***"    => $queuelist,
+                                                                                 "***messages***"  => $body,
+                                                                                 "***paginate***"  => $paginate,
+                                                                                 "***mlist-url***" => $self -> build_url(block    => "queues",
+                                                                                                                         params   => [],
+                                                                                                                         pathinfo => [])
                                                    }));
 }
 

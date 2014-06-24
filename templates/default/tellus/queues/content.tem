@@ -1,16 +1,27 @@
-<div id="queuelist" class="shadowbox">
-    <h2>{L_TELLUS_QLIST_TITLE}</h2>
-    <div class="sbcontent">
-        <div id="queuebrowser">
+<script type="text/javascript">
+var mlisturl = "***mlist-url***";
+
+window.addEvent('domready', function() {
+    $$("table.listtable li.info a").each(function(elem) {
+        elem.addEvent("click", function(event) { event.stopPropagation(); });
+    });
+});
+</script>
+<div id="queuelist">
+    <div class="shadowbox">
+        <h2>{L_TELLUS_QLIST_TITLE}</h2>
+        <div class="sbcontent">
+            <div id="queuebrowser">
 ***queues***
-        </div>
-        <div id="messagebrowser">
-            <table class="listtable">
-                <tbody>
+            </div>
+            <div id="messagebrowser">
+                <table class="listtable">
+                   <tbody>
 ***messages***
-                </tbody>
-            </table>
+                   </tbody>
+                </table>
 ***paginate***
+            </div>
         </div>
     </div>
 </div>

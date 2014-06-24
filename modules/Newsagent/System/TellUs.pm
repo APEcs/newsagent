@@ -229,7 +229,7 @@ sub get_queue_messages {
                                             WHERE `a`.`queue_id` = ?
                                             AND `a`.`state` IN ($modes)
                                             $types
-                                            ORDER BY `a`.`created`
+                                            ORDER BY `a`.`created` DESC
                                             $limit");
     $geth -> execute($settings -> {"queueid"})
         or return $self -> self_error("Unable to execute queue query: ".$self -> {"dbh"} -> errstr);
