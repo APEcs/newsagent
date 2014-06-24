@@ -220,13 +220,13 @@ sub get_queue_messages {
     $limit = " LIMIT ".$settings -> {"offset"}.",".$settings -> {"count"}
         if(defined($settings -> {"offset"}) && $settings -> {"count"});
 
-    my $geth = $self -> {"dbh"} -> prepare("SELECT `a`.`creator_id`, `a`.`created`, `a`.`queue_id`, `a`.`queued`, `a`.`updated`, `a`.`type_id`, `a`.`state`, `u`.`user_id`, `u`.`username`, `u`.`realname`, `u`.`email`, `t`.`name`
+    my $geth = $self -> {"dbh"} -> prepare("SELECT `a`.*, `u`.`user_id`, `u`.`username`, `u`.`realname`, `u`.`email`, `t`.`name`
                                             FROM `".$self -> {"settings"} -> {"database"} -> {"tellus_messages"}."` AS `a`
                                             LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `u`
                                                 ON `u`.`user_id` = `a`.`creator_id`
                                             LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"tellus_types"}."` AS `t`
                                                 ON `t`.`id` = `a`.`type_id`
-                                            WHERE `q`.`queue_id` = ?
+                                            WHERE `a`.`queue_id` = ?
                                             AND `a`.`state` IN ($modes)
                                             $types
                                             ORDER BY `a`.`created`

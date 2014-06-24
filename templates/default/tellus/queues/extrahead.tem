@@ -1,0 +1,5 @@
+    <!-- editor replacement -->
+    <script type="text/javascript" src="{V_[scriptpath]}ckeditor/ckeditor.js"></script>
+    <script type="text/javascript" src="{V_[commonpath]}cke_configs/basic_open.js"></script>
+
+    <link href="{V_[templatepath]}css/tellus.css" rel="stylesheet" />

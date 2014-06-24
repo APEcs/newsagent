@@ -5,3 +5,74 @@
     margin: 0px auto;
     width: 1130px;
 }
+
+#queuelist {
+    padding-top: 40px;
+    margin: 0px auto;
+    width: 1130px;
+}
+
+#queuebrowser {
+    width: 180px;
+    float: left;
+}
+
+#messagebrowser {
+    width: 930px;
+    float: left;
+}
+
+table.listtable tr:last-child td {
+    border-bottom: none;
+}
+
+table.listtable tr td.mode {
+    width: 22px;
+}
+
+table.listtable tr td.mode div {
+    background-image: url('../images/mode_sprites.png');
+    background-repeat: no-repeat;
+    background-position: 0px 0px;
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+}
+
+table.listtable tr td.feed ul {
+    list-style: none;
+    margin: 0px;
+    padding: 0px;
+}
+
+table.listtable tr td.controls {
+    width: 125px;
+    padding: 0px;
+}
+
+table.listtable tr td.controls ul.controls {
+    display: none;
+    float: right;
+}
+
+table.listtable tr:hover td.controls ul.controls {
+    display: inline-block;
+}
+
+table.listtable td.summary div.summary {
+    white-space: normal; /* There's very little else that can reasonably be done to prevent very long subject lines from
+                          * breaking the control buttons, other than allowing them to wrap as needed. */
+}
+
+table.listtable td.summary ul.info {
+    font-size: 10px;
+    color: #666;
+    margin: 0px;
+    padding: 0px;
+}
+
+table.listtable td.summary ul.info li {
+    padding: 0px;
+    list-style-type: none;
+    display: inline;
+}

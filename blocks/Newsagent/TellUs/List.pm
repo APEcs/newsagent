@@ -37,7 +37,8 @@ sub _get_messagelist_settings {
     my $pagenum  = shift;
     my $settings = {"count" => $self -> {"settings"} -> {"config"} -> {"Article::List:count"},
                     "pagenum"       => 1,
-                    "show_rejected" => 0
+                    "show_rejected" => 0,
+                    "queueid"       => $queueid,
     };
 
     $settings -> {"pagenum"} = $pagenum if(defined($pagenum) && $pagenum =~ /^\d+$/ && $pagenum > 0);
@@ -139,7 +140,17 @@ sub _build_message_row {
     my $message = shift;
     my $now     = shift;
 
-    return $self -> {"template"} -> load_template("tellus/queues/row.tem", {
+    my $summary = $self -> {"template"} -> html_strip($message -> {"message"});
+    $summary = $self -> truncate_text($summary, 120);
+
+    return $self -> {"template"} -> load_template("tellus/queues/row.tem", {"***id***"        => $message -> {"id"},
+                                                                            "***realname***"  => $message -> {"realname"},
+                                                                            "***email***"     => $message -> {"email"},
+                                                                            "***summary***"   => $summary,
+                                                                            "***typeclass***" => lc($message -> {"name"}),
+                                                                            "***extrainfo***" => "",
+                                                                            "***controls***"  => $self -> {"template"} -> load_template("tellus/queues/control_default.tem", {"***id***" => $message -> {"id"}})
+
                                                   });
 }
 
@@ -206,9 +217,9 @@ sub page_display {
         my @pathinfo = $self -> {"cgi"} -> param('pathinfo');
 
         given($pathinfo[1]) {
-            when("page") { ($title, $content) = $self -> _generate_queues($pathinfo[0], $pathinfo[2]); }
+            when("page") { ($title, $content) = $self -> _generate_messagelist($pathinfo[0], $pathinfo[2]); }
             default {
-                ($title, $content) = $self -> _generate_queues($pathinfo[0], 1);
+                ($title, $content) = $self -> _generate_messagelist($pathinfo[0], 1);
             }
         }
 

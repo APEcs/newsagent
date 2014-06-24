@@ -1,6 +1,5 @@
-<tr class="***highlight***">
-    <td class="name">***name***</td>
-    <td class="new">***new***</td>
-    <td class="read">***read***</td>
-    <td class="all">***all***</td>
-</tr>
+<div class="queue ***highlight***">
+    <div class="queuebox">
+         <div class="queuetitle ***hasnew***">***name***</div>
+    </div>
+</div>

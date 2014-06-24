@@ -2,22 +2,9 @@
     <h2>{L_TELLUS_QLIST_TITLE}</h2>
     <div class="sbcontent">
         <div id="queuebrowser">
-            <h3>{L_TELLUS_QLIST}</h3>
-            <table class="queues">
-                <thead>
-                    <tr><th>{L_TELLUS_QLIST_NAME}</th>
-                        <th><img src="src="{V_[templatepath]}images/tellus/queuenew.png"  width="16" height="16" title="{L_TELLUS_QLIST_NEW}" /></th>
-                        <th><img src="src="{V_[templatepath]}images/tellus/queueread.png" width="16" height="16" title="{L_TELLUS_QLIST_READ}" /></th>
-                        <th><img src="src="{V_[templatepath]}images/tellus/queueall.png"  width="16" height="16" title="{L_TELLUS_QLIST_ALL}" /></th>
-                    </tr>
-                </thead>
-                <tbody>
 ***queues***
-                </tbody>
-            </table>
         </div>
         <div id="messagebrowser">
-            <h3>{L_TELLUS_QLIST_MESSAGES}</h3>
             <table class="listtable">
                 <tbody>
 ***messages***
