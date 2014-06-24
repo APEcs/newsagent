@@ -138,8 +138,8 @@ sub active_queue {
         or return $self -> self_error("Unable to execute queue query: ".$self -> {"dbh"} -> errstr);
 
     # If the queue data has been found, and the user has access to it, return the data
-    my $queue = $queueh -> fetchrow_hashref();
-    return $queue if($queue && $self -> {"roles"} -> user_has_capability($queue -> {"metadata_id"}, $userid, "tellus.manage"));
+    my $queuedata = $queueh -> fetchrow_hashref();
+    return $queuedata if($queue && $self -> {"roles"} -> user_has_capability($queuedata -> {"metadata_id"}, $userid, "tellus.manage"));
 
     # queue is bad/user doesn't have access, so fetch the queues the user does have access to
     my $queues = $self -> get_queues($userid, "manage")
@@ -234,7 +234,22 @@ sub get_queue_messages {
     $geth -> execute($settings -> {"queueid"})
         or return $self -> self_error("Unable to execute queue query: ".$self -> {"dbh"} -> errstr);
 
-    return $geth -> fetchall_arrayref({});
+    my $messages = $geth -> fetchall_arrayref({});
+
+    # Now find out how many entries there are without limiting, this can be done rather faster and smaller
+    my $counth = $self -> {"dbh"} -> prepare("SELECT COUNT(*)
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {"tellus_messages"}."` AS `a`
+                                              WHERE `a`.`queue_id` = ?
+                                              AND `a`.`state` IN ($modes)
+                                              $types");
+    $counth -> execute($settings -> {"queueid"})
+        or return $self -> self_error("Unable to execute queue count query: ".$self -> {"dbh"} -> errstr);
+
+    my $count = $counth -> fetchrow_arrayref() || [ 0 ];
+
+    return {"messages" => $messages,
+            "metadata" => { "count" => $count -> [0]}
+           };
 }
 
 

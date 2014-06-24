@@ -21,8 +21,9 @@ package Newsagent::TellUs::List;
 
 use strict;
 use base qw(Newsagent::TellUs); # This class extends the Newsagent TellUs class
+use POSIX qw(ceil);
 use v5.12;
-
+use Data::Dumper;
 
 ## @method private $ _get_messagelist_settings($year, $month, $pagenum)
 # Build the settings used to fetch the message list and build the message list
@@ -32,13 +33,13 @@ use v5.12;
 # @param pagenum The page of results the user is looking at.
 # @return A reference to a hash of settings to use for the article list
 sub _get_messagelist_settings {
-    my $self     = shift;
-    my $queueid  = shift;
-    my $pagenum  = shift;
-    my $settings = {"count" => $self -> {"settings"} -> {"config"} -> {"Article::List:count"},
-                    "pagenum"       => 1,
-                    "show_rejected" => 0,
-                    "queueid"       => $queueid,
+    my $self      = shift;
+    my $queueid   = shift;
+    my $pagenum   = shift;
+    my $settings  = {"count" => $self -> {"settings"} -> {"config"} -> {"Article::List:count"},
+                     "pagenum"       => 1,
+                     "show_rejected" => 0,
+                     "queueid"       => $queueid,
     };
 
     $settings -> {"pagenum"} = $pagenum if(defined($pagenum) && $pagenum =~ /^\d+$/ && $pagenum > 0);
@@ -182,9 +183,15 @@ sub _generate_messagelist {
         my $settings  = $self -> _get_messagelist_settings($queuedata -> {"id"}, $pagenum);
 
         my $messages = $self -> {"tellus"} -> get_queue_messages($settings);
-        foreach my $message (@{$messages}) {
+        foreach my $message (@{$messages -> {"messages"}}) {
             $body .= $self -> _build_message_row($message, $now);
         }
+
+        my $maxpage = ceil($messages -> {"metadata"} -> {"count"} / $settings -> {"count"});
+        $paginate = $self -> _build_pagination({ maxpage => $maxpage,
+                                                 pagenum => $settings -> {"pagenum"},
+                                                 queue   => lc($queuedata -> {"name"}),
+                                               });
     }
 
     return ($self -> {"template"} -> replace_langvar("TELLUS_QLIST_TITLE"),
