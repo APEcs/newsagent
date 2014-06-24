@@ -187,6 +187,9 @@ sub _generate_messagelist {
             $body .= $self -> _build_message_row($message, $now);
         }
 
+        $body = $self -> {"template"} -> load_template("tellus/queues/norows.tem")
+            if(!$body);
+
         my $maxpage = ceil($messages -> {"metadata"} -> {"count"} / $settings -> {"count"});
         $paginate = $self -> _build_pagination({ maxpage => $maxpage,
                                                  pagenum => $settings -> {"pagenum"},
