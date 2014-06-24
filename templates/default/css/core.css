@@ -326,3 +326,7 @@ li.pagebox.active {
 img.workspin {
     opacity: 0;
 }
+
+div.clear {
+    clear: both;
+}

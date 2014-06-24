@@ -28,10 +28,6 @@
     padding-top: 5px;
 }
 
-div.clear {
-    clear: both;
-}
-
 div.fancy-select {
     max-height: 64px;
     max-width: 300px;
