@@ -22,9 +22,9 @@ package Newsagent::Article::Compose;
 use strict;
 use base qw(Newsagent::Article); # This class extends the Article block class
 use v5.12;
-
+use Newsagent::System::TellUs;
 use Newsagent::System::Matrix;
-
+use Webperl::Utils qw(is_defined_numeric);
 
 # ============================================================================
 #  Content generators
@@ -125,6 +125,20 @@ sub _generate_compose {
 
     # Default the summary inclusion
     $args -> {"full_summary"} = 1 if(!defined($args -> {"full_summary"}));
+
+    # load a tellus message as the default text if appropriate
+    my $msgid = is_defined_numeric($self -> {"cgi"}, "tellusid");
+    if($msgid) {
+        my $tellus = Newsagent::System::TellUs -> new(dbh      => $self -> {"dbh"},
+                                                      settings => $self -> {"settings"},
+                                                      logger   => $self -> {"logger"},
+                                                      roles    => $self -> {"system"} -> {"roles"},
+                                                      metadata => $self -> {"system"} -> {"metadata"});
+        if($tellus) {
+            my $message = $tellus -> get_message($msgid);
+            $args -> {"article"} = $message -> {"message"} if($message);
+        }
+    }
 
     # permission-based access to image button
     my $ckeconfig = $self -> check_permission('freeimg') ? "image_open.js" : "basic_open.js";
