@@ -4,6 +4,7 @@ images/
 !templates/default/images
 !templates/default/userbar/images
 !templates/default/js/lightface/images
+!templates/default/js/selectctrl/css/images
 config/site.cfg
 ckeditor
 testharness.pl
