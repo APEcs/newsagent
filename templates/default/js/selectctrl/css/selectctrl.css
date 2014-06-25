@@ -1,0 +1,79 @@
+.selctrl {
+	display: inline-block;
+	zoom: 1; /* zoom and *display = ie7 hack for display:inline-block */
+	*display: inline;
+    vertical-align: baseline;
+	margin: 0 2px;
+	outline: none;
+	cursor: pointer;
+	text-align: center;
+	text-decoration: none;
+	font: 14px/100% Arial, Helvetica, sans-serif;
+    font-weight: bold;
+	padding: .5em 1em .5em;
+	text-shadow: 0 1px 1px rgba(0,0,0,.3);
+	-webkit-border-radius: 3px;
+	-moz-border-radius: 3px;
+	border-radius: 3px;
+	-webkit-box-shadow: 0 1px 2px rgba(0,0,0,.2);
+	-moz-box-shadow: 0 1px 2px rgba(0,0,0,.2);
+	box-shadow: 0 1px 2px rgba(0,0,0,.2);
+    color: #444;
+    border: solid 1px #b1b1b1;
+}
+
+.selctrl:hover {
+    color: #444;
+    border: solid 1px #b1b1b1;
+
+    background-color: #cdcdcd; /* Fallback */
+    background-image: -ms-linear-gradient(top, #eeeeee, #c9c9c9); /* IE10 */
+    background-image: -moz-linear-gradient(top, #eeeeee, #c9c9c9); /* Firefox */
+    background-image: -o-linear-gradient(top, #eeeeee, #c9c9c9); /* Opera */
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#eeeeee), to(#c9c9c9)); /* old Webkit */
+    background-image: -webkit-linear-gradient(top, #eeeeee, #c9c9c9); /* new Webkit */
+    background-image: linear-gradient(top, #eeeeee, #c9c9c9); /* proposed W3C Markup */
+	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#eeeeee', endColorstr='#c9c9c9');
+}
+
+
+.selctrl-mode {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: url('images/mode_sprites.png');
+    background-repeat: no-repeat;
+    background-position: 0px 0px;
+}
+
+.selctrl-arr {
+    display: inline-block;
+    width: 7px;
+    height: 16px;
+    background-image: url('images/menuarr.png');
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+
+.selctrl-menu {
+	position: absolute;
+	z-index: 1000;
+	top: 18px;
+	left: 0;
+    max-height: 100px;
+    overflow: auto;
+	list-style: none;
+	background-color: #FFF;
+	border-top: 1px solid #ccc;
+	border-left: 3px solid #ccc;
+	border-right: 1px solid #000;
+	border-bottom: 1px solid #000;
+}
+
+.selctrl-menu li {
+	padding: 0px 3px;
+}
+
+.selctrl-menu li:hover,
+	background-color: #C8DAF7;
+}

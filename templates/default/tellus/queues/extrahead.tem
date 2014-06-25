@@ -2,3 +2,5 @@
     <script type="text/javascript" src="{V_[jspath]}tellus.js"></script>
 
     <link href="{V_[templatepath]}css/tellus.css" rel="stylesheet" />
+
+    <link href="{V_[jspath]}selectctrl/css/selectctrl.css" rel="stylesheet" />
