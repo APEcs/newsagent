@@ -61,19 +61,19 @@
 	top: 18px;
 	left: 0;
     max-height: 100px;
+    width: 120px;
     overflow: auto;
 	list-style: none;
 	background-color: #FFF;
-	border-top: 1px solid #ccc;
-	border-left: 3px solid #ccc;
-	border-right: 1px solid #000;
-	border-bottom: 1px solid #000;
+    border: solid 1px #b1b1b1;
+    margin: 0px;
+    padding: 5px 0px;
 }
 
 .selctrl-menu li {
-	padding: 0px 3px;
+	padding: 2px 1em;
 }
 
-.selctrl-menu li:hover,
+.selctrl-menu li:hover {
 	background-color: #C8DAF7;
 }

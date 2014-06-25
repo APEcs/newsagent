@@ -35,8 +35,9 @@ TELLUS_QLIST_NEW         = Unread messages
 TELLUS_QLIST_READ        = Read messages
 TELLUS_QLIST_ALL         = Total
 TELLUS_QLIST_MESSAGES    = Messages
-TELLUS_QLIST_SELALL      = Select all
-TELLUS_QLIST_SELNONE     = Select none
+TELLUS_QLIST_SELALL      = All
+TELLUS_QLIST_SELNONE     = None
+TELLUS_QLIST_SELNEW      = Unread
 
 TELLUS_QLIST_ADDED       = Added
 TELLUS_QLIST_BY          = by

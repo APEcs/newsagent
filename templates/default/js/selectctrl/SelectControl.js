@@ -4,11 +4,11 @@ var SelectControl = new Class(
     Implements: [Options, Events],
 
     options: {
-        checkClass: 'input.selctrl-opt'
-
+        checkClass: 'input.selctrl-opt',
+		offset: { x: 0, y: 0 }
     },
 
-    initialise: function(element, options)
+    initialize: function(element, options)
     {
         this.setOptions(options);
 
@@ -27,11 +27,15 @@ var SelectControl = new Class(
         if(!this.menu) return;
 
         this.menu.dispose();                      // remove from the dom
-        this.menu.addClass('selectctrl-menu');    // ensture the menu has the right class
+        this.menu.addClass('selctrl-menu');    // ensture the menu has the right class
         this.menu.setStyle('display', 'none');    // make sure the menu is hidden
-        this.menu.inject.(this.element, 'after'); // and put it back in place
 
+        var offset = this.options.offset;
+		var position = this.element.getCoordinates();
+		this.menu.setStyles({'top': position.top + position.height + offset.y,
+			                 'left': position.left + offset.x });
 
+        this.menu.inject(this.element, 'after'); // and put it back in place
 
     }
 });
