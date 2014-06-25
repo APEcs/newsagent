@@ -5,6 +5,7 @@ window.addEvent('domready', function() {
     $$("table.listtable li.info a").each(function(elem) {
         elem.addEvent("click", function(event) { event.stopPropagation(); });
     });
+    var selects = new SelectControl('select-ctrl');
 });
 </script>
 <div id="queuelist">
