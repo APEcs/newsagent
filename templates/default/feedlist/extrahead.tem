@@ -2,5 +2,5 @@
     <script type="text/javascript" src="{V_[jspath]}feedlist.js"></script>
     <link href="{V_[templatepath]}css/feedlist.css" rel="stylesheet" />
 
-    <script src="{V_[templatepath]}MultiSelect/Source/MultiSelect.js" type="text/javascript"></script>
-    <link href="{V_[templatepath]}MultiSelect/css/MultiSelect.css" rel="stylesheet" />
+    <script src="{V_[jspath]}MultiSelect/Source/MultiSelect.js" type="text/javascript"></script>
+    <link href="{V_[jspath]}MultiSelect/css/MultiSelect.css" rel="stylesheet" />
