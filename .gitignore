@@ -6,10 +6,10 @@ images/
 config/site.cfg
 ckeditor
 testharness.pl
-templates/default/datepicker
 .emacs.desktop
 .emacs.desktop.lock
-templates/default/MultiSelect
+templates/default/js/datepicker
+templates/default/js/MultiSelect
 templates/default/js/twitter-text.js
 templates/default/js_*
 modules/Net
