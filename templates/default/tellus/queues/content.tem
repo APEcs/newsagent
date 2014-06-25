@@ -12,6 +12,14 @@ window.addEvent('domready', function() {
         <h2>{L_TELLUS_QLIST_TITLE}</h2>
         <div class="sbcontent">
             <div id="messagebrowser">
+                <div id="msgops">
+                    <div id="selctrl">
+                        <ul>
+                            <li id="selall">{L_TELLUS_QLIST_SELALL}</li>
+                            <li id="selnone" value="{L_TELLUS_QLIST_SELNONE}</li>
+                        </ul>
+                    </div>
+                </div>
                 <table class="listtable">
                    <tbody>
 ***messages***
