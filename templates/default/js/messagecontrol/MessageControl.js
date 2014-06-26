@@ -39,22 +39,32 @@ var MessageControl = new Class(
         this.menu.inject(this.element, 'after'); // and put it back in place
 
         // Enable menu toggle
-        this.element.addEvents({ 'click': function() {
-                                     if(this.menu.hasClass("open")) {
-                                         this.toggleMenu('close');
-                                     } else {
-                                         this.toggleMenu('open');
-                                     }
-                                 }.bind(this),
-                                 'mouseenter': function() { this.action = 'open'; }.bind(this),
-                                 'mouseleave': function() { this.action = 'close'; }.bind(this),
-                                 'keydown': function(event) {
-                                     if(event.key == 'space' || event.key == 'down' || event.key == 'up') {
-                                         this.action = 'close';
-                                         this.toggleMenu('open');
-                                     }
-                                 }.bind(this)
-                               });
+        this.move.addEvents({ 'click': function() {
+                                  if(this.menu.hasClass("open")) {
+                                      this.toggleMenu('close');
+                                  } else {
+                                      this.toggleMenu('open');
+                                  }
+                              }.bind(this),
+                              'mouseenter': function() { this.action = 'open'; }.bind(this),
+                              'mouseleave': function() { this.action = 'close'; }.bind(this),
+                              'keydown': function(event) {
+                                  if(event.key == 'space' || event.key == 'down' || event.key == 'up') {
+                                      this.action = 'close';
+                                      this.toggleMenu('open');
+                                  }
+                              }.bind(this)
+                            });
+
+        // Set up menu options
+        this.menu.getChildren('li').each(function(element) {
+            element.addEvents({ click: function(event) { this.fireEvent('moveMsg', [ event.target.get('data-msgctrl-queue'), this.selectedMsgs() ]);
+                                                         this.toggleMenu('close');
+                                                       }.bind(this),
+                                'mouseenter': function() { this.action = 'open'; }.bind(this),
+                                'mouseleave': function() { this.action = 'close'; }.bind(this)
+                              });
+        }, this);
 
         // clicks elsewhere in the document should close the menu
         document.addEvents({ 'click': function() {
@@ -76,6 +86,13 @@ var MessageControl = new Class(
         $$(this.options.checkClass).each(function(element) {
             element.addEvent('change', function() { this.updateVis(); }.bind(this));
         }, this);
+
+        // Fire events when buttons are clicked
+        this.reject = this.element.getFirst('li.msgctrl-reject');
+        this.del    = this.element.getFirst('li.msgctrl-delete');
+
+        if(this.reject) this.reject.addEvent('click', function() { this.fireEvent('rejectMsg', [this.selectedMsgs()]); }.bind(this));
+        if(this.del) this.del.addEvent('click', function() { this.fireEvent('deleteMsg', [this.selectedMsgs()]); }.bind(this));
 
         this.updateVis();
     },
@@ -112,5 +129,14 @@ var MessageControl = new Class(
 		var position = this.element.getCoordinates();
 		this.menu.setStyles({'top': position.top + position.height + offset.y,
 			                 'left': position.left + offset.x });
+    },
+
+    selectedMsgs: function()
+    {
+        var checked = $$(this.options.checkClass).filter(function(box) { return box.get('checked'); });
+        var vals = new Array();
+
+        checked.each(function(element) { vals.push(element.get('value')); });
+        return vals;
     }
 });

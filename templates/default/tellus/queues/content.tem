@@ -10,7 +10,9 @@ window.addEvent('domready', function() {
     });
 
     // set up the control menu
-    controls = new MessageControl('message-controls');
+    controls = new MessageControl('message-controls', {onMoveMsg: function(dest, vals) {
+                                                                      console.log("Got move to "+dest+" vals is "+vals);
+                                                       }});
 
     // set up the select menu
     selects = new SelectControl('select-ctrl', {controlObj: controls});
