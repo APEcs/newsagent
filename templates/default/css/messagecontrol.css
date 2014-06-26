@@ -1,4 +1,10 @@
-.selctrl {
+ul.msgctrl {
+    display: inline-block;
+    padding: 0px;
+    margin: 0px;
+}
+
+ul.msgctrl li {
 	display: inline-block;
 	zoom: 1; /* zoom and *display = ie7 hack for display:inline-block */
 	*display: inline;
@@ -10,7 +16,7 @@
 	text-decoration: none;
 	font: 14px/100% Arial, Helvetica, sans-serif;
     font-weight: bold;
-	padding: 7px 14px;
+	padding: 6px 14px;
 	text-shadow: 0 1px 1px rgba(0,0,0,.3);
 	-webkit-border-radius: 3px;
 	-moz-border-radius: 3px;
@@ -20,9 +26,10 @@
 	box-shadow: 0 1px 2px rgba(0,0,0,.2);
     color: #444;
     border: solid 1px #b1b1b1;
+	list-style: none;
 }
 
-.selctrl:hover {
+ul.msgctrl li:hover {
     color: #444;
     border: solid 1px #b1b1b1;
 
@@ -34,47 +41,4 @@
     background-image: -webkit-linear-gradient(top, #eeeeee, #c9c9c9); /* new Webkit */
     background-image: linear-gradient(top, #eeeeee, #c9c9c9); /* proposed W3C Markup */
 	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#eeeeee', endColorstr='#c9c9c9');
-}
-
-
-.selctrl-mode {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    background-image: url('images/mode_sprites.png');
-    background-repeat: no-repeat;
-    background-position: 0px 0px;
-}
-
-.selctrl-arr {
-    display: inline-block;
-    width: 7px;
-    height: 16px;
-    background-image: url('images/menuarr.png');
-    background-repeat: no-repeat;
-    background-position: center center;
-}
-
-.selctrl-menu {
-	position: absolute;
-	z-index: 1000;
-	top: 18px;
-	left: 0;
-    max-height: 100px;
-    width: 120px;
-    overflow: auto;
-	list-style: none;
-	background-color: #FFF;
-    border: solid 1px #b1b1b1;
-    margin: 0px;
-    padding: 5px 0px;
-}
-
-.selctrl-menu li {
-	padding: 2px 1em;
-    cursor: pointer;
-}
-
-.selctrl-menu li:hover {
-	background-color: #C8DAF7;
 }

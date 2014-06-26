@@ -99,7 +99,7 @@ sub get_queues {
     my $access  = shift;
     my $entries = [];
 
-    $access = [ $access ] if(!ref($access) eq "ARRAY");
+    $access = [ $access ] if(ref($access) ne "ARRAY");
 
     $self -> clear_error();
 
