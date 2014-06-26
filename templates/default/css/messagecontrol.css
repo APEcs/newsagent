@@ -9,7 +9,7 @@ ul.msgctrl li {
 	zoom: 1; /* zoom and *display = ie7 hack for display:inline-block */
 	*display: inline;
     vertical-align: baseline;
-	margin: 0 2px;
+	margin: 0px;
 	outline: none;
 	cursor: pointer;
 	text-align: center;
@@ -18,20 +18,32 @@ ul.msgctrl li {
     font-weight: bold;
 	padding: 6px 14px;
 	text-shadow: 0 1px 1px rgba(0,0,0,.3);
-	-webkit-border-radius: 3px;
-	-moz-border-radius: 3px;
-	border-radius: 3px;
 	-webkit-box-shadow: 0 1px 2px rgba(0,0,0,.2);
 	-moz-box-shadow: 0 1px 2px rgba(0,0,0,.2);
 	box-shadow: 0 1px 2px rgba(0,0,0,.2);
     color: #444;
     border: solid 1px #b1b1b1;
+    border-right: none;
 	list-style: none;
 }
 
+ul.msgctrl li:first-child {
+	-webkit-border-radius: 3px 0px 0px 3px;
+	-moz-border-radius: 3px 0px 0px 3px;
+	border-radius: 3px 0px 0px 3px;
+}
+
+
+ul.msgctrl li:last-child {
+	-webkit-border-radius: 0px 3px 3px 0px;
+	-moz-border-radius: 0px 3px 3px 0px;
+	border-radius: 0px 3px 3px 0px;
+    border-right: solid 1px #b1b1b1;
+}
+
+
 ul.msgctrl li:hover {
     color: #444;
-    border: solid 1px #b1b1b1;
 
     background-color: #cdcdcd; /* Fallback */
     background-image: -ms-linear-gradient(top, #eeeeee, #c9c9c9); /* IE10 */

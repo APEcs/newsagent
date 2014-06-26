@@ -14,15 +14,17 @@ window.addEvent('domready', function() {
         <h2>{L_TELLUS_QLIST_TITLE}</h2>
         <div class="sbcontent">
             <div id="messagebrowser">
-                <div id="msgops"><div id="select-ctrl" class="selctrl">
+                <div id="msgops">
+                    <div id="select-ctrl" class="selctrl" style="float: left">
                         <span class="selctrl-mode">&nbsp;</span>
                         <span class="selctrl-arr">&nbsp;</span>
                         <ul>
                             <li class="selctrl-opt" data-selctrl-mode="all">{L_TELLUS_QLIST_SELALL}</li><li class="selctrl-opt" data-selctrl-mode="none">{L_TELLUS_QLIST_SELNONE}</li><li class="selctrl-opt" data-selctrl-mode="new">{L_TELLUS_QLIST_SELNEW}</li>
                         </ul>
-                    </div><ul id="message-controls" class="msgctrl">
+                    </div>
+                    <ul id="message-controls" class="msgctrl" style="margin-left: 3em">
                         <!-**targets**->
-                        <li id="msgctrl-move"><img src="{V_[templatepath]}images/tellus/movequeue.png" width="16" height="16" alt="move" title="{L_TELLUS_QLIST_SETQUEUE}" /></li><li id="msgctrl-reject"><img src="{V_[templatepath]}images/tellus/reject.png" width="16" height="16" alt="reject" title="{L_TELLUS_QLIST_REJECT}" /></li><li id="msgctrl-delete"><img src="{V_[templatepath]}images/tellus/delete.png" width="16" height="16" alt="delete" title="{L_TELLUS_QLIST_DELETE}" /></li>
+                        <li id="msgctrl-move" title="{L_TELLUS_QLIST_SETQUEUE}"><img src="{V_[templatepath]}images/tellus/movequeue.png" width="16" height="16" alt="move" /></li><li id="msgctrl-reject" title="{L_TELLUS_QLIST_REJECT}"><img src="{V_[templatepath]}images/tellus/reject.png" width="16" height="16" alt="reject" /></li><li id="msgctrl-delete" title="{L_TELLUS_QLIST_DELETE}"><img src="{V_[templatepath]}images/tellus/delete.png" width="16" height="16" alt="delete" /></li>
                     </ul>
                 </div>
                 <table class="listtable">
