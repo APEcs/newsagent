@@ -57,3 +57,27 @@ ul.msgctrl li:hover {
     background-image: linear-gradient(top, #eeeeee, #c9c9c9); /* proposed W3C Markup */
 	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#eeeeee', endColorstr='#c9c9c9');
 }
+
+.msgctrl-menu {
+	position: absolute;
+	z-index: 1000;
+	top: 18px;
+	left: 0;
+    max-height: 100px;
+    width: 120px;
+    overflow: auto;
+	list-style: none;
+	background-color: #FFF;
+    border: solid 1px #b1b1b1;
+    margin: 0px;
+    padding: 5px 0px;
+}
+
+.msgctrl-menu li {
+	padding: 2px 1em;
+    cursor: pointer;
+}
+
+.msgctrl-menu li:hover {
+	background-color: #C8DAF7;
+}

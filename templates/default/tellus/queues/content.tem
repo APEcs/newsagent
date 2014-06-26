@@ -9,11 +9,11 @@ window.addEvent('domready', function() {
         elem.addEvent("click", function(event) { event.stopPropagation(); });
     });
 
-    // set up the select menu
-    selects = new SelectControl('select-ctrl');
-
     // set up the control menu
-    //controls = new MessageControl('message-controls');
+    controls = new MessageControl('message-controls');
+
+    // set up the select menu
+    selects = new SelectControl('select-ctrl', {controlObj: controls});
 });
 </script>
 <div id="queuelist">
@@ -30,7 +30,7 @@ window.addEvent('domready', function() {
                         </ul>
                     </div>
                     <ul id="message-controls" class="msgctrl">
-                        ***targets***<li id="msgctrl-reject" title="{L_TELLUS_QLIST_REJECT}"><img src="{V_[templatepath]}images/tellus/reject.png" width="16" height="16" alt="reject" /></li><li id="msgctrl-delete" title="{L_TELLUS_QLIST_DELETE}"><img src="{V_[templatepath]}images/tellus/delete.png" width="16" height="16" alt="delete" /></li>
+                        ***targets***<li class="msgctrl-reject" title="{L_TELLUS_QLIST_REJECT}"><img src="{V_[templatepath]}images/tellus/reject.png" width="16" height="16" alt="reject" /></li><li class="msgctrl-delete" title="{L_TELLUS_QLIST_DELETE}"><img src="{V_[templatepath]}images/tellus/delete.png" width="16" height="16" alt="delete" /></li>
                     </ul>
                 </div>
                 <table class="listtable">
