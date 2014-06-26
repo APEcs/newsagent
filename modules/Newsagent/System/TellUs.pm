@@ -83,18 +83,23 @@ sub get_types {
 # Fetch the list of queues defined in the system the user can perform the requested
 # action in.
 #
-# @param userid The ID of the user to fetch the authorised queue list for
-# @param access The operation the user wants to perform. Should be one of:
+# Supported access options are:
 # - 'additem' add items to this queue (implies it is visible to the user, but existing
 #             items in the list may not be
 # - 'moveto' user can move items into this queue (without necessarily being able to view)
 # - 'manage' has full access to the queue, can view and reject/delete items.
+#
+# @param userid The ID of the user to fetch the authorised queue list for
+# @param access The operation the user wants to perform. If this is a reference to an
+#               array, if the user has any of the listed access the queue is included.
 # @return A reference to a list of queues the user has access to.
 sub get_queues {
     my $self    = shift;
     my $userid  = shift;
     my $access  = shift;
     my $entries = [];
+
+    $access = [ $access ] if(!ref($access) eq "ARRAY");
 
     $self -> clear_error();
 
@@ -104,10 +109,13 @@ sub get_queues {
         or return $self -> self_error("Unable to execute queue query: ".$self -> {"dbh"} -> errstr);
 
     while(my $queue = $queueh -> fetchrow_hashref()) {
-        # Only add the queue to the result list if the user has the required capability
-        if($self -> {"roles"} -> user_has_capability($queue -> {"metadata_id"}, $userid, "tellus.$access")) {
-            $queue -> {"value"} = $queue -> {"id"};
-            push(@{$entries}, $queue);
+        foreach my $capability (@{$access}) {
+            # Only add the queue to the result list if the user has the required capability
+            if($self -> {"roles"} -> user_has_capability($queue -> {"metadata_id"}, $userid, "tellus.$capability")) {
+                $queue -> {"value"} = $queue -> {"id"};
+                push(@{$entries}, $queue);
+                last;
+            }
         }
     }
 
