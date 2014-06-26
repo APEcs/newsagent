@@ -135,6 +135,39 @@ sub _build_queue_list {
 }
 
 
+## @method private $ _build_move_targetlist($userid, $current)
+# Generate the dropdown selector from which the user can select
+# a target queue.
+#
+# @param userid  The ID of the current user.
+# @param current A reference to a hash containing the current
+#                queue details.
+# @return A string containing the target queue list.
+sub _build_move_targetlist {
+    my $self    = shift;
+    my $userid  = shift;
+    my $current = shift;
+
+    # Fetch the list of queue the user can manage or move messages to
+    my $queues = $self -> {"tellus"} -> get_queues($userid, ['moveto', 'manage'])
+        or return $self -> {"template"} -> load_template("tellus/queues/notargets.tem");
+
+    my $queuelist = "";
+    foreach my $queue (@{$queues}) {
+        # Skip the current queue
+        next if($queue -> {"id"} == $current -> {"id"});
+
+        $queuelist .= $self -> {"template"} -> load_template("tellus/queues/target.tem", {"***id***"   => $queue -> {"id"},
+                                                                                          "***name***" => $queue -> {"name"}});
+    }
+
+    return $self -> {"template"} -> load_template("tellus/queues/notargets.tem")
+        if(!$queuelist);
+
+    return $self -> {"template"} -> load_template("tellus/queues/targetlist.tem", {"***targets***" => $queuelist});
+}
+
+
 ## @method private $ _build_message_row($message, $now)
 # Generate the message list row for the specified message.
 #
@@ -175,7 +208,7 @@ sub _generate_messagelist {
     my $pagenum   = shift || 1;
     my $userid    = $self -> {"session"} -> get_session_userid();
     my $now       = time();
-    my ($body, $queuelist, $paginate) = ("", "", "");
+    my ($body, $queuelist, $paginate, $targets) = ("", "", "", "");
 
     my $queuedata = $self -> {"tellus"} -> active_queue($queue, $userid);
     if($queuedata) {
@@ -196,12 +229,15 @@ sub _generate_messagelist {
                                                  pagenum => $settings -> {"pagenum"},
                                                  queue   => lc($queuedata -> {"name"}),
                                                });
+
+        my $targets = $self -> _build_move_targetlist($userid, $queuedata);
     }
 
     return ($self -> {"template"} -> replace_langvar("TELLUS_QLIST_TITLE"),
             $self -> {"template"} -> load_template("tellus/queues/content.tem", {"***queues***"    => $queuelist,
                                                                                  "***messages***"  => $body,
                                                                                  "***paginate***"  => $paginate,
+                                                                                 "***targets***"   => $targets,
                                                                                  "***mlist-url***" => $self -> build_url(block    => "queues",
                                                                                                                          params   => [],
                                                                                                                          pathinfo => [])
