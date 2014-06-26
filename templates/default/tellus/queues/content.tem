@@ -1,11 +1,12 @@
 <script type="text/javascript">
 var mlisturl = "***mlist-url***";
+var selects;
 
 window.addEvent('domready', function() {
     $$("table.listtable li.info a").each(function(elem) {
         elem.addEvent("click", function(event) { event.stopPropagation(); });
     });
-    var selects = new SelectControl('select-ctrl');
+    selects = new SelectControl('select-ctrl');
 });
 </script>
 <div id="queuelist">
@@ -18,9 +19,9 @@ window.addEvent('domready', function() {
                         <span class="selctrl-mode">&nbsp;</span>
                         <span class="selctrl-arr">&nbsp;</span>
                         <ul>
-                            <li class="selctrl-all">{L_TELLUS_QLIST_SELALL}</li>
-                            <li class="selctrl-none">{L_TELLUS_QLIST_SELNONE}</li>
-                            <li class="selctrl-new">{L_TELLUS_QLIST_SELNEW}</li>
+                            <li class="selctrl-opt" data-selctrl-mode="all">{L_TELLUS_QLIST_SELALL}</li>
+                            <li class="selctrl-opt" data-selctrl-mode="none">{L_TELLUS_QLIST_SELNONE}</li>
+                            <li class="selctrl-opt" data-selctrl-mode="new">{L_TELLUS_QLIST_SELNEW}</li>
                         </ul>
                     </div>
                 </div>

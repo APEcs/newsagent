@@ -5,6 +5,8 @@ var SelectControl = new Class(
 
     options: {
         checkClass: 'input.selctrl-opt',
+        newClass: 'new',
+        readClass: 'read',
 		offset: { x: 0, y: 0 }
     },
 
@@ -62,6 +64,17 @@ var SelectControl = new Class(
                                  }.bind(this)
                                });
 
+        // Set up menu options
+        this.menu.getChildren('li').each(function(element) {
+            element.addEvents({ click: function(event) { this.updateBoxes(event.target.get('data-selctrl-mode'));
+                                                         this.toggleMenu('close');
+                                                       }.bind(this),
+                                'mouseenter': function() { this.action = 'open'; }.bind(this),
+                                'mouseleave': function() { this.action = 'close'; }.bind(this)
+                              });
+        }, this);
+
+
         // clicks elsewhere in the document should close the menu
         document.addEvents({ 'click': function() {
                                  if (this.action == 'close') {
@@ -102,6 +115,26 @@ var SelectControl = new Class(
                 this.mode.setStyle('background-position', '-32px 0px');
             }
         }
+    },
+
+    updateBoxes: function(mode)
+    {
+        switch(mode) {
+            case "all": $$(this.options.checkClass).each(function(element) {
+                                                             element.set('checked', true);
+                                                         });
+                break;
+            case "none": $$(this.options.checkClass).each(function(element) {
+                                                              element.set('checked', false);
+                                                          });
+                break;
+            case "new": $$(this.options.checkClass).each(function(element) {
+                                                              element.set('checked', element.hasClass(this.options.newClass));
+                                                         }, this);
+                break;
+        }
+
+        this.updateMode();
     },
 
     toggleMenu: function(mode)

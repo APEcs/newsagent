@@ -72,6 +72,7 @@
 
 .selctrl-menu li {
 	padding: 2px 1em;
+    cursor: pointer;
 }
 
 .selctrl-menu li:hover {

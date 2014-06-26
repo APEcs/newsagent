@@ -156,6 +156,7 @@ sub _build_message_row {
                                                                             "***summary***"   => $summary,
                                                                             "***typeclass***" => lc($message -> {"name"}),
                                                                             "***typeinfo***"  => $message -> {"name"},
+                                                                            "***modeclass***" => $message -> {"state"},
                                                                             "***extrainfo***" => "",
                                                                             "***controls***"  => $self -> {"template"} -> load_template("tellus/queues/control_default.tem", {"***id***" => $message -> {"id"}})
 
