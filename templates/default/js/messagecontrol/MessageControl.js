@@ -56,6 +56,22 @@ var MessageControl = new Class(
                                  }.bind(this)
                                });
 
+        // clicks elsewhere in the document should close the menu
+        document.addEvents({ 'click': function() {
+                                 if (this.action == 'close') {
+                                     this.toggleMenu('close');
+                                 }
+                             }.bind(this),
+                             'keydown': function(event) {
+                                 if (event.key == 'esc') {
+                                     this.toggleMenu('close');
+                                 }
+                                 if (this.menu.hasClass('open') && (event.key == 'down' || event.key == 'up')) {
+                                     event.stop();
+                                 }
+                             }.bind(this)
+                           });
+
         // Update the visibility when any checkboxes are changed
         $$(this.options.checkClass).each(function(element) {
             element.addEvent('change', function() { this.updateVis(); }.bind(this));
@@ -70,7 +86,6 @@ var MessageControl = new Class(
         if(checked.length && this.element.getStyle('visibility') == 'hidden') {
             this.element.fade('in');
         } else if(!checked.length && this.element.getStyle('visibility') == 'visible') {
-     //       toggleMenu('close');
             this.element.fade('out');
         }
     },
