@@ -113,6 +113,7 @@ sub get_queues {
             # Only add the queue to the result list if the user has the required capability
             if($self -> {"roles"} -> user_has_capability($queue -> {"metadata_id"}, $userid, "tellus.$capability")) {
                 $queue -> {"value"} = $queue -> {"id"};
+
                 push(@{$entries}, $queue);
                 last;
             }

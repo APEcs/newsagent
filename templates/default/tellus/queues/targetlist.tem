@@ -1,0 +1,6 @@
+<!-- THIS TEMPLATE MUST NOT END IN A NEWLINE! -->
+<li id="msgctrl-move" title="{L_TELLUS_QLIST_SETQUEUE}"><img src="{V_[templatepath]}images/tellus/movequeue.png" width="16" height="16" alt="move" />
+<ul>
+***targets***
+</ul>
+</li>

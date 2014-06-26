@@ -160,6 +160,7 @@ sub _build_move_targetlist {
         $queuelist .= $self -> {"template"} -> load_template("tellus/queues/target.tem", {"***id***"   => $queue -> {"id"},
                                                                                           "***name***" => $queue -> {"name"}});
     }
+    print STDERR "queuelist is $queuelist";
 
     return $self -> {"template"} -> load_template("tellus/queues/notargets.tem")
         if(!$queuelist);
@@ -230,7 +231,7 @@ sub _generate_messagelist {
                                                  queue   => lc($queuedata -> {"name"}),
                                                });
 
-        my $targets = $self -> _build_move_targetlist($userid, $queuedata);
+        $targets = $self -> _build_move_targetlist($userid, $queuedata);
     }
 
     return ($self -> {"template"} -> replace_langvar("TELLUS_QLIST_TITLE"),
