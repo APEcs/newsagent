@@ -5,3 +5,6 @@
 
     <link href="{V_[jspath]}selectctrl/css/selectctrl.css" rel="stylesheet" />
     <script type="text/javascript" src="{V_[jspath]}selectctrl/SelectControl.js"></script>
+
+    <link href="{V_[jspath]}messagecontrol/css/messagecontrol.css" rel="stylesheet" />
+    <script type="text/javascript" src="{V_[jspath]}messagecontrol/MessageControl.js"></script>
