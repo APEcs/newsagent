@@ -1,3 +1,6 @@
+<script type="text/javascript">
+var mlisturl = "***mlist-url***";
+</script>
 <div id="queuelist">
     <div class="shadowbox">
         <h2>{L_TELLUS_QLIST_TITLE}</h2>

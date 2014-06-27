@@ -22,7 +22,7 @@ package Newsagent::System::TellUs;
 use strict;
 use base qw(Webperl::SystemModule); # This class extends the Newsagent block class
 use v5.12;
-use Webperl::Utils(hash_or_hashref);
+use Webperl::Utils qw(hash_or_hashref);
 
 # ============================================================================
 #  Constructor
@@ -100,7 +100,7 @@ sub move_allowed {
 
     # Get the metadata id for the queue
     my $mdh = $self -> {"dbh"} -> prepare("SELECT `q`.`metadata_id`
-                                           FROM `".$self -> {"settings"} -> {"database"} -> {"tellus_messages"}."` AS `m`
+                                           FROM `".$self -> {"settings"} -> {"database"} -> {"tellus_messages"}."` AS `m`,
                                                 `".$self -> {"settings"} -> {"database"} -> {"tellus_queues"}."` AS `q`
                                            WHERE `q`.`id` = `m`.`queue_id`
                                            AND `m`.`id` = ?");

@@ -23,7 +23,9 @@ use strict;
 use base qw(Newsagent::TellUs); # This class extends the Newsagent TellUs class
 use POSIX qw(ceil);
 use v5.12;
+use Webperl::Utils qw(is_defined_numeric);
 use Data::Dumper;
+
 
 ## @method private $ _get_messagelist_settings($year, $month, $pagenum)
 # Build the settings used to fetch the message list and build the message list
@@ -273,7 +275,23 @@ sub _build_api_move_response {
             if(!$self -> {"tellus"} -> move_allowed($id, $userid))
     }
 
+    # now do the move
+    foreach my $id (@idlist) {
+        # Moved messages are always reset to new
+        $self -> {"tellus"} -> set_message_status($id, "new")
+            or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"tellus"} -> errstr()}));
 
+        # Move into the new queue
+        $self -> {"tellus"} -> set_message_queue($id, $destid)
+            or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"tellus"} -> errstr()}));
+
+        # notify the queue owner.
+        $self -> _notify_add_queue($id);
+    }
+
+    return {"result" => {"moved" => "yes",
+                         "ids"   => \@idlist}};
+}
 
 # ============================================================================
 #  Interface functions
@@ -298,10 +316,10 @@ sub page_display {
     if(defined($apiop)) {
         # API call - dispatch to appropriate handler.
         given($apiop) {
-            when("move") { return $self -> api_html_response($self -> _build_api_move_response()); }
+            when("move") { return $self -> api_response($self -> _build_api_move_response()); }
             default {
-                return $self -> api_html_response($self -> api_errorhash('bad_op',
-                                                                         $self -> {"template"} -> replace_langvar("API_BAD_OP")))
+                return $self -> api__response($self -> api_errorhash('bad_op',
+                                                                     $self -> {"template"} -> replace_langvar("API_BAD_OP")))
             }
         }
     } else {

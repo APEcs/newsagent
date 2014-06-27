@@ -1,4 +1,3 @@
-var mlisturl = "***mlist-url***";
 var selects;
 var controls;
 
