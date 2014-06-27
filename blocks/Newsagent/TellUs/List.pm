@@ -251,6 +251,34 @@ sub _generate_messagelist {
 # ============================================================================
 #  API functions
 
+sub _build_api_move_success {
+    my $self    = shift;
+    my $messids = shift;
+    my $userid  = shift;
+    my $queuelist = [ ];
+
+    my $queues = $self -> {"tellus"} -> get_queues($userid, "manage");
+
+    # Now go through the queues fetching their stats and building table rows
+    foreach my $queue (@{$queues}) {
+        my $stats = $self -> {"tellus"} -> get_queue_stats($queue -> {"value"});
+
+        my $namenew = $queue -> {"name"};
+        $namenew .= " (".$stats -> {"new"}.")" if($stats -> {"new"});
+
+        push(@{$queuelist}, {"name"   => lc($queue -> {"name"}),
+                             "value"  => $namenew,
+                             "hasnew" => $stats -> {"new"}});
+    }
+
+    return {"result" => {"moved" => "yes",
+                         "messages" => { "message" => $messids },
+                         "queues" => {"queue" => $queuelist }
+                        }
+           };
+}
+
+
 sub _build_api_move_response {
     my $self   = shift;
     my $userid = $self -> {"session"} -> get_session_userid();
@@ -289,8 +317,7 @@ sub _build_api_move_response {
         $self -> _notify_add_queue($id);
     }
 
-    return {"result" => {"moved" => "yes",
-                         "ids"   => \@idlist}};
+    return $self -> _build_api_move_success(\@idlist, $userid);
 }
 
 # ============================================================================
