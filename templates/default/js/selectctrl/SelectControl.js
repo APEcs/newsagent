@@ -135,7 +135,7 @@ var SelectControl = new Class(
         }
 
         this.updateMode();
-        if(this.options.controlObj) this.options.controlObj.updateVis();
+        this.fireEvent('update', this.element);
     },
 
     toggleMenu: function(mode)

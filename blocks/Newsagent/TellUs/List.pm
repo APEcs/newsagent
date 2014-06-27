@@ -247,6 +247,35 @@ sub _generate_messagelist {
 
 
 # ============================================================================
+#  API functions
+
+sub _build_api_move_response {
+    my $self   = shift;
+    my $userid = $self -> {"session"} -> get_session_userid();
+
+    my $destid = is_defined_numeric($self -> {"cgi"}, "dest");
+    my $msgids = $self -> {"cgi"} -> param("msgids");
+
+    # Does the user have permission to move items to this queue?
+    my $destqueue = $self -> {"tellus"} -> moveto_allowed($destid, $userid);
+    return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"tellus"} -> errstr()}))
+        if(!$destqueue);
+    return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_TELLUS_QLIST_ERR_NOMOVETOPERM}"}))
+        if(!$destqueue -> {"id"});
+
+    # User has permission to move to the queue; does user have permission to move the messages?
+    # First we need to know which messages. This magic will extract comma separated numbers from the list...
+    my @idlist = $msgids =~ /(\d+)(?:,|$)/g;
+
+    # This will bail if any of the messages can't be moved. Note that this *does not* move anything
+    foreach my $id (@idlist) {
+        return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_TELLUS_QLIST_ERR_NOMOVEPERM}"}))
+            if(!$self -> {"tellus"} -> move_allowed($id, $userid))
+    }
+
+
+
+# ============================================================================
 #  Interface functions
 
 ## @method $ page_display()
@@ -261,11 +290,15 @@ sub page_display {
     my $error = $self -> check_login();
     return $error if($error);
 
+    # permissions are checked within the various API and generation functions, there
+    # is no single global 'queue manage' permission.
+
     # Is this an API call, or a normal page operation?
     my $apiop = $self -> is_api_operation();
     if(defined($apiop)) {
         # API call - dispatch to appropriate handler.
         given($apiop) {
+            when("move") { return $self -> api_html_response($self -> _build_api_move_response()); }
             default {
                 return $self -> api_html_response($self -> api_errorhash('bad_op',
                                                                          $self -> {"template"} -> replace_langvar("API_BAD_OP")))

@@ -22,6 +22,7 @@ package Newsagent::System::TellUs;
 use strict;
 use base qw(Webperl::SystemModule); # This class extends the Newsagent block class
 use v5.12;
+use Webperl::Utils(hash_or_hashref);
 
 # ============================================================================
 #  Constructor
@@ -53,6 +54,67 @@ sub new {
 
 
 # ============================================================================
+#  Permission support
+
+## @method $ moveto_allowed($queuid, $userid)
+# Given a queue id, determine whether the user has permission to move messages
+# into the queue.
+#
+# @param queueid The ID of the destination queue
+# @param userid  The ID of the user.
+# @return A reference to a hash containing the queue data on success, an
+#         empty hashref if the user does not have permission, undef on error.
+sub moveto_allowed {
+    my $self    = shift;
+    my $queueid = shift;
+    my $userid  = shift;
+
+    $self -> clear_error();
+
+    # first check that the queue is valid
+    my $queue = $self -> get_queue(id => $queueid)
+        or return undef;
+
+    # Now check access: users can move to queues they have moveto or manage access to
+    return $queue
+        if($self -> {"roles"} -> user_has_capability($queue -> {"metadata_id"}, $userid, "tellus.manage") ||
+           $self -> {"roles"} -> user_has_capability($queue -> {"metadata_id"}, $userid, "tellus.moveto"));
+
+    return {};
+}
+
+
+## @method $ move_allowed($msgid, $userid)
+# Determine whether the user has manage access to the queue the selected message
+# is in.
+#
+# @param msgid  The ID of the message the user is trying to move.
+# @param userid the user attempting to move the message.
+# @return true if the user can move the message, undef otherwise.
+sub move_allowed {
+    my $self   = shift;
+    my $msgid  = shift;
+    my $userid = shift;
+
+    $self -> clear_error();
+
+    # Get the metadata id for the queue
+    my $mdh = $self -> {"dbh"} -> prepare("SELECT `q`.`metadata_id`
+                                           FROM `".$self -> {"settings"} -> {"database"} -> {"tellus_messages"}."` AS `m`
+                                                `".$self -> {"settings"} -> {"database"} -> {"tellus_queues"}."` AS `q`
+                                           WHERE `q`.`id` = `m`.`queue_id`
+                                           AND `m`.`id` = ?");
+    $mdh -> execute($msgid)
+        or return $self -> self_error("Unable to execute metadata query: ".$self -> {"dbh"} -> errstr);
+
+    my $metadata = $mdh -> fetchrow_arrayref()
+        or return $self -> self_error("Unable to fetch metadata id for message $msgid");
+
+    return $self -> {"roles"} -> user_has_capability($metadata -> [0], $userid, "tellus.manage");
+}
+
+
+# ============================================================================
 #  Data access
 
 ## @method $ get_types()
@@ -76,6 +138,46 @@ sub get_types {
     }
 
     return $entries;
+}
+
+
+## @method $ get_queue($args)
+# Obtain the data for teh quested queue. Note that this does not determine whether
+# the user actually has permission to do anything with the queue, it just fetches
+# its information from the database.
+#
+# Value arguments are:
+# - id: search for the queue by id
+# - name: search for the queue by name
+# Only one may be specified at a time.
+#
+# @param args A hash, or reference to a hash, of arguments.
+# @return A reference to a hash containing the queue data on success, undef on error.
+sub get_queue {
+    my $self = shift;
+    my $args = hash_or_hashref(@_);
+
+    $self -> clear_error();
+
+    my ($where, $param);
+    if($args -> {"id"}) {
+        $where = "`id` = ?";
+        $param = $args -> {"id"};
+    } elsif($args -> {"name"}) {
+        $where = "`name` LIKE ?";
+        $param = $args -> {"name"};
+    } else {
+        return $self -> self_error("no valid argument specified in call to get_queue()");
+    }
+
+    my $queueh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"tellus_queues"}."`
+                                              WHERE $where
+                                              LIMIT 1");
+    $queueh -> execute($param)
+        or return $self -> self_error("Unable to execute queue query: ".$self -> {"dbh"} -> errstr);
+
+    return $queueh -> fetchrow_hashref()
+        or $self -> self_error("Request for non-existent queue $param");
 }
 
 
