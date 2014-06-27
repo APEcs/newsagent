@@ -23,7 +23,18 @@ function move_messages(destqueue, messageids)
 
                                 // No error, we have a response
                                 } else {
-                                    console.log("Got "+respText);
+                                    var queues = respXML.getElementsByTagName("queue");
+                                    Array.each(queues, function(queue) {
+                                                   var name = queue.getAttribute("name");
+                                                   var node = $("queue-"+name);
+                                                   node.set('html', queue.getAttribute("value"));
+
+                                                   if(queue.getAttribute("hasnew") > 0) {
+                                                       node.getParent().getParent().addClass("hasnew");
+                                                   } else {
+                                                       node.getParent().getParent().removeClass("hasnew");
+                                                   }
+                                               });
                                 }
                             }
                           });
