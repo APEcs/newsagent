@@ -251,6 +251,23 @@ sub _generate_messagelist {
 # ============================================================================
 #  API functions
 
+
+sub _build_api_view_respose {
+    my $self   = shift;
+    my $userid = shift;
+
+    # determine which message the user is attempting to view.
+
+}
+
+
+## @method private $ _build_api_move_success($messids, $userid)
+# Generate a hash containing the success information for a (potentially multi-message)
+# move request.
+#
+# @param messids A reference to an array of message ID numbers.
+# @param userid  The ID of the user who made the request.
+# @return A reference to a hash containing the result information.
 sub _build_api_move_success {
     my $self    = shift;
     my $messids = shift;
@@ -279,6 +296,10 @@ sub _build_api_move_success {
 }
 
 
+## @method private $ _build_api_move_response()
+# Perform a move of any selected messages to a destination queue.
+#
+# @return A reference to an API response hash to return to the user.
 sub _build_api_move_response {
     my $self   = shift;
     my $userid = $self -> {"session"} -> get_session_userid();
@@ -320,6 +341,7 @@ sub _build_api_move_response {
     return $self -> _build_api_move_success(\@idlist, $userid);
 }
 
+
 # ============================================================================
 #  Interface functions
 
@@ -345,8 +367,8 @@ sub page_display {
         given($apiop) {
             when("move") { return $self -> api_response($self -> _build_api_move_response()); }
             default {
-                return $self -> api__response($self -> api_errorhash('bad_op',
-                                                                     $self -> {"template"} -> replace_langvar("API_BAD_OP")))
+                return $self -> api_html_response($self -> api_errorhash('bad_op',
+                                                                         $self -> {"template"} -> replace_langvar("API_BAD_OP")))
             }
         }
     } else {

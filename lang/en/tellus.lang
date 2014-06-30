@@ -48,3 +48,5 @@ TELLUS_QLIST_DELETE      = Delete
 
 TELLUS_QLIST_ERR_NOMOVETOPERM = You do not have permission to move messages to the selected queue.
 TELLUS_QLIST_ERR_NOMOVEPERM   = You do not have permission to move one or more selected messages.
+
+TELLUS_QLIST_POP_CANCEL  = Close

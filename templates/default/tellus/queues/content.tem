@@ -1,5 +1,8 @@
 <script type="text/javascript">
-var mlisturl = "***mlist-url***";
+mlisturl       = "***mlist-url***";
+spinner_imgurl = '{V_[templatepath]}images/spinner.gif';
+messages = { "cancel": "{L_TELLUS_QLIST_POP_CANCEL}"
+};
 </script>
 <div id="queuelist">
     <div class="shadowbox">

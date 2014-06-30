@@ -54,6 +54,44 @@ function move_messages(destqueue, messageids)
 }
 
 
+function view_message(element)
+{
+    var msgid = element.getParent().get('id').substr(7);
+
+    var req = new Request.HTML({ url: api_request_path("queues", "view", basepath),
+                                 method: 'post',
+                                 onRequest: function() {
+                                     $('movespin').fade('in');
+                                 },
+                                 onSuccess: function(respTree, respElems, respHTML) {
+                                     var err = respHTML.match(/^<div id="apierror"/);
+
+                                     if(err) {
+                                         $('errboxmsg').set('html', respHTML);
+                                         errbox.open();
+
+                                     // No error, content should be form.
+                                     } else {
+                                         var buttons  = [ { title: respElems[0].get('title'), color: 'blue', event: function() {  } },
+                                                          { title: messages['cancel'] , color: 'blue', event: function() { popbox.close(); popbox.footer.empty(); }} ];
+
+                                         $('poptitle').set('text', respElems[0].get('title'));
+                                         $('popbody').empty().adopt(respElems);
+                                         popbox.setButtons(buttons);
+                                         new Element("img", {'id': 'popspinner',
+                                                             'src': spinner_url,
+                                                             width: 16,
+                                                             height: 16,
+                                                             'class': 'workspin'}).inject(popbox.footer, 'top');
+                                         popbox.open();
+                                     }
+                                     $('movespin').fade('out');
+                                 }
+                               });
+    req.post({'id': msgid});
+}
+
+
 window.addEvent('domready', function() {
     // Enable queue selection
     $$('div.queuetitle').each(function(element) { setup_queue_link(element) });
@@ -61,6 +99,10 @@ window.addEvent('domready', function() {
     // Allow URLs in information to be clickable
     $$("table.listtable li.info a").each(function(elem) {
         elem.addEvent("click", function(event) { event.stopPropagation(); });
+    });
+
+    $$("table.listtable td.summary").each(function(elem) {
+        elem.addEvent("click", function(event) { view_message(elem); });
     });
 
     // set up the control menu
