@@ -14,9 +14,12 @@ var mlisturl = "***mlist-url***";
                             <li class="selctrl-opt" data-selctrl-mode="all">{L_TELLUS_QLIST_SELALL}</li><li class="selctrl-opt" data-selctrl-mode="none">{L_TELLUS_QLIST_SELNONE}</li><li class="selctrl-opt" data-selctrl-mode="new">{L_TELLUS_QLIST_SELNEW}</li>
                         </ul>
                     </div>
-                    <ul id="message-controls" class="msgctrl">
-                        ***targets***<li class="msgctrl-reject" title="{L_TELLUS_QLIST_REJECT}"><img src="{V_[templatepath]}images/tellus/reject.png" width="16" height="16" alt="reject" /></li><li class="msgctrl-delete" title="{L_TELLUS_QLIST_DELETE}"><img src="{V_[templatepath]}images/tellus/delete.png" width="16" height="16" alt="delete" /></li>
-                    </ul>
+                    <div id="controls-box">
+                        <img id="movespin" src="{V_[templatepath]}images/spinner.gif" width="16" height="16" alt="working" class="workspin" />
+                        <ul id="message-controls" class="msgctrl">
+                            ***targets***<li class="msgctrl-reject" title="{L_TELLUS_QLIST_REJECT}"><img src="{V_[templatepath]}images/tellus/reject.png" width="16" height="16" alt="reject" /></li><li class="msgctrl-delete" title="{L_TELLUS_QLIST_DELETE}"><img src="{V_[templatepath]}images/tellus/delete.png" width="16" height="16" alt="delete" /></li>
+                        </ul>
+                    </div>
                 </div>
                 <table class="listtable">
                    <tbody>

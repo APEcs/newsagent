@@ -15,6 +15,9 @@ function setup_queue_link(element)
 function move_messages(destqueue, messageids)
 {
     var req = new Request({ url: api_request_path("queues", "move", basepath),
+                            onRequest: function() {
+                                $('movespin').fade('in');
+                            },
                             onSuccess: function(respText, respXML) {
                                 var err = respXML.getElementsByTagName("error")[0];
                                 if(err) {
@@ -35,7 +38,15 @@ function move_messages(destqueue, messageids)
                                                        node.getParent().getParent().removeClass("hasnew");
                                                    }
                                                });
+
+                                    var msgids = respXML.getElementsByTagName("message");
+                                    Array.each(msgids, function(message) {
+                                                   var id = message.get('text');
+                                                   var elem = $('msgrow-'+id);
+                                                   if(elem) elem.dissolve().get('reveal').chain(function() { elem.destroy(); });
+                                               });
                                 }
+                                $('movespin').fade('out');
                             }
                           });
     req.post({dest: destqueue,

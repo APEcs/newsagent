@@ -193,3 +193,7 @@ div.queue.active .queuebox .queuetitle {
 div.queue.hasnew .queuebox .queuetitle {
     font-weight: bold;
 }
+
+div#controls-box {
+    margin-left: 8em;
+}
