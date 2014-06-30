@@ -72,11 +72,14 @@ function view_message(element)
 
                                      // No error, content should be form.
                                      } else {
-                                         var buttons  = [ { title: respElems[0].get('title'), color: 'blue', event: function() {  } },
-                                                          { title: messages['cancel'] , color: 'blue', event: function() { popbox.close(); popbox.footer.empty(); }} ];
+                                         var buttons  = [ { title: messages['promote'], color: 'blue', event: function() { popbox.close(); promote_message(element); } },
+                                                          { title: messages['reject'] , color: 'red' , event: function() { popbox.close(); reject_message(element);  } },
+                                                          { title: messages['delete'] , color: 'red' , event: function() { popbox.close(); delete_message(element);  } },
+                                                          { title: messages['cancel'] , color: 'blue', event: function() { popbox.close(); popbox.footer.empty();    } }
+                                                        ];
 
-                                         $('poptitle').set('text', respElems[0].get('title'));
-                                         $('popbody').empty().adopt(respElems);
+                                         $('poptitle').set('text', messages['view']);
+                                         $('popbody').empty().set('html', respHTML);
                                          popbox.setButtons(buttons);
                                          new Element("img", {'id': 'popspinner',
                                                              'src': spinner_url,

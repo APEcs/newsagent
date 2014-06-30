@@ -251,13 +251,23 @@ sub _generate_messagelist {
 # ============================================================================
 #  API functions
 
-
-sub _build_api_view_respose {
+sub _build_api_view_response {
     my $self   = shift;
-    my $userid = shift;
+    my $userid = $self -> {"session"} -> get_session_userid();
 
     # determine which message the user is attempting to view.
+    my $msgid = is_defined_numeric($self -> {"cgi"}, "id")
+        or $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_TELLUS_QLIST_ERR_NOMSGID}"}));
 
+    my $message = $self -> {"tellus"} -> get_message($msgid)
+        or $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"tellus"} -> errstr()}));
+
+    # does the user have permission to view the message ( = manage on its current queue)
+    return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_TELLUS_QLIST_ERR_NOVIEWPERM}"}))
+        unless($self -> check_permission("tellus.manage", $message -> {"metadata_id"}, $userid));
+
+    # User has permission, return the message text
+    return $self -> {"template"} -> load_template("tellus/queues/viewmsg.tem", {"***message***" => $message -> {"message"}});
 }
 
 
@@ -366,6 +376,7 @@ sub page_display {
         # API call - dispatch to appropriate handler.
         given($apiop) {
             when("move") { return $self -> api_response($self -> _build_api_move_response()); }
+            when("view") { return $self -> api_html_response($self -> _build_api_view_response()); }
             default {
                 return $self -> api_html_response($self -> api_errorhash('bad_op',
                                                                          $self -> {"template"} -> replace_langvar("API_BAD_OP")))

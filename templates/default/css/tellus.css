@@ -197,3 +197,9 @@ div.queue.hasnew .queuebox .queuetitle {
 div#controls-box {
     margin-left: 8em;
 }
+
+div.msgview {
+    border: 1px inset grey;
+    background-color: white;
+    padding: 5px;
+}

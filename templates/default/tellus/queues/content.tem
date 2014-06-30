@@ -1,7 +1,11 @@
 <script type="text/javascript">
 mlisturl       = "***mlist-url***";
 spinner_imgurl = '{V_[templatepath]}images/spinner.gif';
-messages = { "cancel": "{L_TELLUS_QLIST_POP_CANCEL}"
+messages = { "promote": "{L_TELLUS_QLIST_MAKEARTICLE}",
+              "reject": "{L_TELLUS_QLIST_REJECT}",
+              "delete": "{L_TELLUS_QLIST_DELETE}",
+              "cancel": "{L_TELLUS_QLIST_POP_CANCEL}",
+                "view": "{L_TELLUS_QLIST_MSGVIEW}"
 };
 </script>
 <div id="queuelist">

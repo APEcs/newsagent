@@ -42,11 +42,14 @@ TELLUS_QLIST_SELNEW      = Unread
 TELLUS_QLIST_ADDED       = Added
 TELLUS_QLIST_BY          = by
 TELLUS_QLIST_SETQUEUE    = Change queue
-TELLUS_QLIST_MAKEARTICLE = Create Newsagent article from this message
-TELLUS_QLIST_REJECT      = Reject (author is notified of this)
+TELLUS_QLIST_MAKEARTICLE = Create article
+TELLUS_QLIST_REJECT      = Reject
 TELLUS_QLIST_DELETE      = Delete
+TELLUS_QLIST_MSGVIEW     = View message
 
 TELLUS_QLIST_ERR_NOMOVETOPERM = You do not have permission to move messages to the selected queue.
 TELLUS_QLIST_ERR_NOMOVEPERM   = You do not have permission to move one or more selected messages.
+TELLUS_QLIST_ERR_NOMSGID      = No message ID specified.
+TELLUS_QLIST_ERR_NOVIEWPERM   = You do not have permission to view this message.
 
 TELLUS_QLIST_POP_CANCEL  = Close

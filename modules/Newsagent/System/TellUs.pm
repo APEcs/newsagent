@@ -405,7 +405,7 @@ sub get_message {
 
     $self -> clear_error();
 
-    my $geth = $self -> {"dbh"} -> prepare("SELECT `a`.*, `u`.`user_id`, `u`.`username`, `u`.`realname`, `u`.`email`, `t`.`name` AS `typename`, `q`.`name` AS `queuename`
+    my $geth = $self -> {"dbh"} -> prepare("SELECT `a`.*, `u`.`user_id`, `u`.`username`, `u`.`realname`, `u`.`email`, `t`.`name` AS `typename`, `q`.`name` AS `queuename`, `q`.`metadata_id`
                                             FROM `".$self -> {"settings"} -> {"database"} -> {"tellus_messages"}."` AS `a`
                                             LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `u`
                                                 ON `u`.`user_id` = `a`.`creator_id`

@@ -80,6 +80,44 @@
 	color: #d9eef7;
 }
 
+/* red */
+.button.red {
+	color: #d9eef7;
+	border: solid 1px #a30000;
+
+    background-color: #cc0015; /* Fallback */
+    background-image: -ms-linear-gradient(top, #ed0034, #A60000); /* IE10 */
+    background-image: -moz-linear-gradient(top, #ed0034, #A60000); /* Firefox */
+    background-image: -o-linear-gradient(top, #ed0034, #A60000); /* Opera */
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#ed0034), to(#A60000)); /* old Webkit */
+    background-image: -webkit-linear-gradient(top, #ed0034, #A60000); /* new Webkit */
+    background-image: linear-gradient(top, #ed0034, #A60000); /* proposed W3C Markup */
+	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#ed0034', endColorstr='#A60000');
+}
+.button.red:hover {
+    background-color: #ad0000; /* Fallback */
+    background-image: -ms-linear-gradient(top, #cc0000, #8f0000); /* IE10 */
+    background-image: -moz-linear-gradient(top, #cc0000, #8f0000); /* Firefox */
+    background-image: -o-linear-gradient(top, #cc0000, #8f0000); /* Opera */
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#cc0000), to(#8f0000)); /* old Webkit */
+    background-image: -webkit-linear-gradient(top, #cc0000, #8f0000); /* new Webkit */
+    background-image: linear-gradient(top, #cc0000, #8f0000); /* proposed W3C Markup */
+	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#cc0000', endColorstr='#8f0000');
+}
+.button.red:active {
+    background-color: #80bed6; /* Fallback */
+    background-image: -ms-linear-gradient(top, #A60000, #ed0034); /* IE10 */
+    background-image: -moz-linear-gradient(top, #A60000, #ed0034); /* Firefox */
+    background-image: -o-linear-gradient(top, #A60000, #ed0034); /* Opera */
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#A60000), to(#ed0034)); /* old Webkit */
+    background-image: -webkit-linear-gradient(top, #A60000, #ed0034); /* new Webkit */
+    background-image: linear-gradient(top, #A60000, #ed0034); /* proposed W3C Markup */
+	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#A60000', endColorstr='#ed0034');
+}
+.button.red a {
+	color: #d9eef7;
+}
+
 /* disabled */
 .button.disabled {
     color: #555;
