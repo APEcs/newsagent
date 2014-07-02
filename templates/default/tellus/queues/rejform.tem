@@ -1,0 +1,2 @@
+<div>{L_TELLUS_QLIST_REJFORM}</div>
+<textarea style="width: 100%" name="message" id="rej-msg" rows="8" cols="80"></textarea>

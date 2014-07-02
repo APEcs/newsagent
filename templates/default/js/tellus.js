@@ -159,6 +159,44 @@ function delete_messages(messageids)
 }
 
 
+
+function reject_messages(messageids)
+{
+    var req = new Request.HTML({ url: api_request_path("queues", "checkrej", basepath),
+                                 method: 'post',
+                                 onRequest: function() {
+                                     $('movespin').fade('in');
+                                 },
+                                 onSuccess: function(respTree, respElems, respHTML) {
+                                     var err = respHTML.match(/^<div id="apierror"/);
+
+                                     if(err) {
+                                         $('errboxmsg').set('html', respHTML);
+                                         errbox.open();
+
+                                     // No error, content should be form.
+                                     } else {
+                                         var buttons  = [ { title: messages['reject'] , color: 'red' , event: function() { popbox.close(); doreject_messages(messageids); } },
+                                                          { title: messages['cancel'] , color: 'blue', event: function() { popbox.close(); popbox.footer.empty();         } }
+                                                   ];
+
+                                         $('poptitle').set('text', messages['rejtitle']);
+                                         $('popbody').empty().set('html', respHTML);
+                                         popbox.setButtons(buttons);
+                                         new Element("img", {'id': 'popspinner',
+                                                             'src': spinner_url,
+                                                             width: 16,
+                                                             height: 16,
+                                                             'class': 'workspin'}).inject(popbox.footer, 'top');
+                                         popbox.open();
+                                     }
+                                     $('movespin').fade('out');
+                                 }
+                               });
+    req.post({msgids: messageids.join(",")});
+}
+
+
 /** Handle the request to promote a message to a Newsagent article.
  *
  * @param messageid The ID of the the message to promote.

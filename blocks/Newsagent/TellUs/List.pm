@@ -433,6 +433,25 @@ sub _build_api_delete_response {
 }
 
 
+## @method private $ _build_api_checkrej_response()
+# Determine whether the user can reject the selected messages, and send
+# back the reject form if so.
+#
+# @return A reference to an API response hash to return to the user.
+sub _build_api_checkrej_response {
+    my $self   = shift;
+    my $userid = $self -> {"session"} -> get_session_userid();
+
+    my $msgids = $self -> {"cgi"} -> param("msgids");
+
+    # Check whether the user has permission to delete the messages
+    my $idlist = $self -> _update_messagelist_allowed($msgids, $userid)
+        or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_TELLUS_QLIST_ERR_NOREJPERM}"}));
+
+    return $self -> {"template"} -> load_template("tellus/queues/rejform.tem");
+}
+
+
 # ============================================================================
 #  Interface functions
 
@@ -456,10 +475,11 @@ sub page_display {
     if(defined($apiop)) {
         # API call - dispatch to appropriate handler.
         given($apiop) {
-            when("delete") { return $self -> api_response($self -> _build_api_delete_response()); }
-            when("move")   { return $self -> api_response($self -> _build_api_move_response()); }
-            when("queues") { return $self -> api_response($self -> _build_api_queuelist_response()); }
-            when("view")   { return $self -> api_html_response($self -> _build_api_view_response()); }
+            when("checkrej") { return $self -> api_response($self -> _build_api_checkrej_response()); }
+            when("delete")   { return $self -> api_response($self -> _build_api_delete_response()); }
+            when("move")     { return $self -> api_response($self -> _build_api_move_response()); }
+            when("queues")   { return $self -> api_response($self -> _build_api_queuelist_response()); }
+            when("view")     { return $self -> api_html_response($self -> _build_api_view_response()); }
             default {
                 return $self -> api_html_response($self -> api_errorhash('bad_op',
                                                                          $self -> {"template"} -> replace_langvar("API_BAD_OP")))
