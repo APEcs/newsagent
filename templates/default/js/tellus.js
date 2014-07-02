@@ -54,6 +54,40 @@ function move_messages(destqueue, messageids)
 }
 
 
+function refresh_queuelist()
+{
+    var req = new Request({ url: api_request_path("queues", "queues", basepath),
+                            onRequest: function() {
+                                $('movespin').fade('in');
+                            },
+                            onSuccess: function(respText, respXML) {
+                                var err = respXML.getElementsByTagName("error")[0];
+                                if(err) {
+                                    $('errboxmsg').set('html', '<p class="error">'+err.getAttribute('info')+'</p>');
+                                    errbox.open();
+
+                                // No error, we have a response
+                                } else {
+                                    var queues = respXML.getElementsByTagName("queue");
+                                    Array.each(queues, function(queue) {
+                                                   var name = queue.getAttribute("name");
+                                                   var node = $("queue-"+name);
+                                                   node.set('html', queue.getAttribute("value"));
+
+                                                   if(queue.getAttribute("hasnew") > 0) {
+                                                       node.getParent().getParent().addClass("hasnew");
+                                                   } else {
+                                                       node.getParent().getParent().removeClass("hasnew");
+                                                   }
+                                               });
+                                }
+                                $('movespin').fade('out');
+                            }
+                          });
+    req.post();
+}
+
+
 function view_message(element)
 {
     var msgid = element.getParent().get('id').substr(7);
@@ -72,6 +106,7 @@ function view_message(element)
 
                                      // No error, content should be form.
                                      } else {
+                                         element.removeClass("new");
                                          var buttons  = [ { title: messages['promote'], color: 'blue', event: function() { popbox.close(); promote_message(element); } },
                                                           { title: messages['reject'] , color: 'red' , event: function() { popbox.close(); reject_message(element);  } },
                                                           { title: messages['delete'] , color: 'red' , event: function() { popbox.close(); delete_message(element);  } },
@@ -89,6 +124,7 @@ function view_message(element)
                                          popbox.open();
                                      }
                                      $('movespin').fade('out');
+                                     refresh_queuelist();
                                  }
                                });
     req.post({'id': msgid});

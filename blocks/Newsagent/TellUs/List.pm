@@ -266,8 +266,34 @@ sub _build_api_view_response {
     return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_TELLUS_QLIST_ERR_NOVIEWPERM}"}))
         unless($self -> check_permission("tellus.manage", $message -> {"metadata_id"}, $userid));
 
+    # mark the message as read
+    $self -> {"tellus"} -> set_message_status($msgid, "read");
+
     # User has permission, return the message text
     return $self -> {"template"} -> load_template("tellus/queues/viewmsg.tem", {"***message***" => $message -> {"message"}});
+}
+
+
+sub _build_api_queuelist_response {
+    my $self = shift;
+    my $userid = $self -> {"session"} -> get_session_userid();
+    my $queuelist = [ ];
+
+    my $queues = $self -> {"tellus"} -> get_queues($userid, "manage");
+
+    # Now go through the queues fetching their stats and building table rows
+    foreach my $queue (@{$queues}) {
+        my $stats = $self -> {"tellus"} -> get_queue_stats($queue -> {"value"});
+
+        my $namenew = $queue -> {"name"};
+        $namenew .= " (".$stats -> {"new"}.")" if($stats -> {"new"});
+
+        push(@{$queuelist}, {"name"   => lc($queue -> {"name"}),
+                             "value"  => $namenew,
+                             "hasnew" => $stats -> {"new"}});
+    }
+
+    return {"result" => {"queues" => {"queue" => $queuelist}}};
 }
 
 
@@ -375,8 +401,9 @@ sub page_display {
     if(defined($apiop)) {
         # API call - dispatch to appropriate handler.
         given($apiop) {
-            when("move") { return $self -> api_response($self -> _build_api_move_response()); }
-            when("view") { return $self -> api_html_response($self -> _build_api_view_response()); }
+            when("move")   { return $self -> api_response($self -> _build_api_move_response()); }
+            when("queues") { return $self -> api_response($self -> _build_api_queuelist_response()); }
+            when("view")   { return $self -> api_html_response($self -> _build_api_view_response()); }
             default {
                 return $self -> api_html_response($self -> api_errorhash('bad_op',
                                                                          $self -> {"template"} -> replace_langvar("API_BAD_OP")))
