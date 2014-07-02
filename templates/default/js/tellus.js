@@ -48,6 +48,25 @@ function update_queue_list(queues)
 }
 
 
+/** Remove the specified messages from the list of messages shown for the
+ *  queue. This takes an array of message XML elements, each one containing
+ *  the ID of a message to remove, and removes the messages with those IDs
+ *  from the message list shown to the user (if they exist)
+ *
+ * @param messages An array of XML message elements.
+ */
+function update_message_list(messages)
+{
+    Array.each(msgids, function(message) {
+                   var id = message.get('text');
+                   var elem = $('msgrow-'+id);
+                   // dissolve doesn't really play nice with table rows, but
+                   // the effect is better than simply snapping them out.
+                   if(elem) elem.dissolve().get('reveal').chain(function() { elem.destroy(); });
+               });
+}
+
+
 /** Update the list of queues to show the current counts of new messages.
  *  This asks the server for an updated list of queues, and modifies the
  *  queue list in the page to reflect the new data.
@@ -99,13 +118,7 @@ function move_messages(destqueue, messageids)
                                 // No error, we have a response
                                 } else {
                                     update_queue_list(respXML.getElementsByTagName("queue"));
-
-                                    var msgids = respXML.getElementsByTagName("message");
-                                    Array.each(msgids, function(message) {
-                                                   var id = message.get('text');
-                                                   var elem = $('msgrow-'+id);
-                                                   if(elem) elem.dissolve().get('reveal').chain(function() { elem.destroy(); });
-                                               });
+                                    update_message_list(respXML.getElementsByTagName("message"));
                                 }
                                 $('movespin').fade('out');
                             }
@@ -115,15 +128,43 @@ function move_messages(destqueue, messageids)
 }
 
 
-/** Handle the request to promote a message to a Newsagent article. This takes
- *  the element of the message list the user clicked on the promote option for
- *  and uses its ID to identify which message to promote.
+/** Handle the request to delete messages from this queue. This takes
+ *  an array of message ids to delete. After asking the server to delete
+ *  the messages, if all is successful, it will  update the queue list
+ *  and remove the messages from the current queue view.
  *
- * @param element The element representing the message to promote.
+ * @param messageids An array of message ids to move.
  */
-function promote_message(element)
+function delete_messages(messageids)
 {
-    var msgid = element.getParent().get('id').substr(7);
+    var req = new Request({ url: api_request_path("queues", "delete", basepath),
+                            onRequest: function() {
+                                $('movespin').fade('in');
+                            },
+                            onSuccess: function(respText, respXML) {
+                                var err = respXML.getElementsByTagName("error")[0];
+                                if(err) {
+                                    $('errboxmsg').set('html', '<p class="error">'+err.getAttribute('info')+'</p>');
+                                    errbox.open();
+
+                                // No error, we have a response
+                                } else {
+                                    update_queue_list(respXML.getElementsByTagName("queue"));
+                                    update_message_list(respXML.getElementsByTagName("message"));
+                                }
+                                $('movespin').fade('out');
+                            }
+                          });
+    req.post({msgids: messageids.join(",")});
+}
+
+
+/** Handle the request to promote a message to a Newsagent article.
+ *
+ * @param messageid The ID of the the message to promote.
+ */
+function promote_message(msgid)
+{
     var uri = new URI(composeurl);
     uri.setData('tellusid', msgid);
 
@@ -156,9 +197,11 @@ function view_message(element)
                                      // No error, content should be form.
                                      } else {
                                          element.removeClass("new");
-                                         var buttons  = [ { title: messages['promote'], color: 'blue', event: function() { popbox.close(); promote_message(element); } },
-                                                          { title: messages['reject'] , color: 'red' , event: function() { popbox.close(); reject_message(element);  } },
-                                                          { title: messages['delete'] , color: 'red' , event: function() { popbox.close(); delete_message(element);  } },
+                                         var msgid = element.getParent().get('id').substr(7);
+
+                                         var buttons  = [ { title: messages['promote'], color: 'blue', event: function() { popbox.close(); promote_message(msgid); } },
+                                                          { title: messages['reject'] , color: 'red' , event: function() { popbox.close(); reject_messages([msgid]);  } },
+                                                          { title: messages['delete'] , color: 'red' , event: function() { popbox.close(); delete_messages([msgid]);  } },
                                                           { title: messages['cancel'] , color: 'blue', event: function() { popbox.close(); popbox.footer.empty();    } }
                                                         ];
 
@@ -195,7 +238,9 @@ window.addEvent('domready', function() {
     });
 
     // set up the control menu
-    controls = new MessageControl('message-controls', {onMoveMsg: function(dest, vals) { move_messages(dest, vals); }
+    controls = new MessageControl('message-controls', {onMoveMsg: function(dest, vals) { move_messages(dest, vals); },
+                                                       onRejectMsg: function(vals) { reject_messages(vals); },
+                                                       onDeleteMsg: function(vals) { delete_messages(vals); }
                                                       });
 
     // set up the select menu. Changes in this menu need to trigger visibility
