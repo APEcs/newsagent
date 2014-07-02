@@ -237,13 +237,16 @@ sub _generate_messagelist {
     }
 
     return ($self -> {"template"} -> replace_langvar("TELLUS_QLIST_TITLE"),
-            $self -> {"template"} -> load_template("tellus/queues/content.tem", {"***queues***"    => $queuelist,
-                                                                                 "***messages***"  => $body,
-                                                                                 "***paginate***"  => $paginate,
-                                                                                 "***targets***"   => $targets,
-                                                                                 "***mlist-url***" => $self -> build_url(block    => "queues",
-                                                                                                                         params   => [],
-                                                                                                                         pathinfo => [])
+            $self -> {"template"} -> load_template("tellus/queues/content.tem", {"***queues***"      => $queuelist,
+                                                                                 "***messages***"    => $body,
+                                                                                 "***paginate***"    => $paginate,
+                                                                                 "***targets***"     => $targets,
+                                                                                 "***compose-url***" => $self -> build_url(block    => "compose",
+                                                                                                                           params   => [],
+                                                                                                                           pathinfo => []),
+                                                                                 "***mlist-url***"   => $self -> build_url(block    => "queues",
+                                                                                                                           params   => [],
+                                                                                                                           pathinfo => [])
                                                    }));
 }
 

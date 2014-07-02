@@ -88,6 +88,28 @@ function move_messages(destqueue, messageids)
 }
 
 
+/** Handle the request to promote a message to a Newsagent article. This takes
+ *  the element of the message list the user clicked on the promote option for
+ *  and uses its ID to identify which message to promote.
+ *
+ * @param element The element representing the message to promote.
+ */
+function promote_message(element)
+{
+    var msgid = element.getParent().get('id').substr(7);
+    var uri = new URI(composeurl);
+    uri.setData('tellusid', msgid);
+
+    location.href = uri.toString();
+}
+
+
+/** Open a popup window containing the message selected. This takes the element of
+ *  the message list the user clicked on and opens a popup window containing the
+ *  text of the message, with options to promote, reject, or delete it.
+ *
+ * @param element The element representing the message to show.
+ */
 function view_message(element)
 {
     var msgid = element.getParent().get('id').substr(7);

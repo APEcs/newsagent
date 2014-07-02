@@ -1,5 +1,6 @@
 <script type="text/javascript">
 mlisturl       = "***mlist-url***";
+composeurl     = "***compose-url***";
 spinner_imgurl = '{V_[templatepath]}images/spinner.gif';
 messages = { "promote": "{L_TELLUS_QLIST_MAKEARTICLE}",
               "reject": "{L_TELLUS_QLIST_REJECT}",
