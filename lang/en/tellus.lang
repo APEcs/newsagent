@@ -55,5 +55,6 @@ TELLUS_QLIST_ERR_NOMSGID      = No message ID specified.
 TELLUS_QLIST_ERR_NOVIEWPERM   = You do not have permission to view this message.
 TELLUS_QLIST_ERR_NODELPERM    = You do not have permission to delete one or more selected messages.
 TELLUS_QLIST_ERR_NOREJPERM    = You do not have permission to reject one or more selected messages.
+TELLUS_QLIST_ERR_BADREASON    = Rejection reason
 
 TELLUS_QLIST_POP_CANCEL  = Close

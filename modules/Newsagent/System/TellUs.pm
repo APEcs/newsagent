@@ -459,9 +459,9 @@ sub add_message {
     $self -> clear_error();
 
     my $addh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"tellus_messages"}."`
-                                            (creator_id, created, queue_id, queued, type_id, updated, state, message)
-                                            VALUES(?, UNIX_TIMESTAMP(), ?, UNIX_TIMESTAMP(), ?, UNIX_TIMESTAMP(), 'new', ?)");
-    my $rows = $addh -> execute($userid, $message -> {"queue"}, $message -> {"type"}, $message -> {"message"});
+                                            (creator_id, created, queue_id, queued, type_id, updated, updated_by, state, reason, message)
+                                            VALUES(?, UNIX_TIMESTAMP(), ?, UNIX_TIMESTAMP(), ?, UNIX_TIMESTAMP(), ?, 'new', 'created', ?)");
+    my $rows = $addh -> execute($userid, $message -> {"queue"}, $message -> {"type"}, $userid, $message -> {"message"});
     return $self -> self_error("Unable to perform message insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Message insert failed, no rows inserted") if($rows eq "0E0");
 
@@ -481,7 +481,7 @@ sub add_message {
 }
 
 
-## @method $ set_message_status($messageid, $state)
+## @method $ set_message_status($messageid, $userid, $state, $reason)
 # Set the state for the specified message. This updates the message's state to the specified
 # value, and changes its 'updated' timestamp.
 #
@@ -491,14 +491,16 @@ sub add_message {
 sub set_message_status {
     my $self      = shift;
     my $messageid = shift;
+    my $userid    = shift;
     my $state     = shift;
+    my $reason    = shift || "";
 
     $self -> clear_error();
 
     my $seth = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"tellus_messages"}."`
-                                            SET `state` = ?, `updated` = UNIX_TIMESTAMP()
+                                            SET `state` = ?, `updated` = UNIX_TIMESTAMP(), `updated_by` = ?, `reason` = ?
                                             WHERE `id` = ?");
-    my $result = $seth -> execute($state, $messageid);
+    my $result = $seth -> execute($state, $userid, $reason, $messageid);
     return $self -> self_error("Unable to update message state: ".$self -> {"dbh"} -> errstr) if(!$result);
     return $self -> self_error("Message state update failed: no rows updated.") if($result eq "0E0");
 
@@ -506,25 +508,27 @@ sub set_message_status {
 }
 
 
-## @method $ set_message_queue($messageid, $queueid)
+## @method $ set_message_queue($messageid, $userid, $queueid)
 # Set the queue for the specified message. This updates the message's queue to the specified
 # value, and changes its 'queued' and 'updated' timestamps. Note that the caller should
 # probably notify the target queue owners of this change, as this function will not do that.
 #
 # @param messageid The ID of the tellus message to update
+# @param userid    The ID of the user moving the message.
 # @param queueid   The ID of the new queue to set or the message
 # @return A reference to a hash containing the message data on success, undef on error
 sub set_message_queue {
     my $self      = shift;
     my $messageid = shift;
+    my $userid    = shift;
     my $queueid   = shift;
 
     $self -> clear_error();
 
     my $seth = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"tellus_messages"}."`
-                                            SET `queue_id` = ?, `queued` = UNIX_TIMESTAMP(), `updated` = UNIX_TIMESTAMP()
+                                            SET `queue_id` = ?, `queued` = UNIX_TIMESTAMP(), `updated` = UNIX_TIMESTAMP(), `updated_by` = ?
                                             WHERE `id` = ?");
-    my $result = $seth -> execute($queueid, $messageid);
+    my $result = $seth -> execute($queueid, $userid, $messageid);
     return $self -> self_error("Unable to update message queue: ".$self -> {"dbh"} -> errstr) if(!$result);
     return $self -> self_error("Message queue update failed: no rows updated.") if($result eq "0E0");
 

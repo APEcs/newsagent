@@ -463,6 +463,36 @@ sub _build_api_checkrej_response {
 }
 
 
+sub _build_api_reject_response {
+    my $self   = shift;
+    my $userid = $self -> {"session"} -> get_session_userid();
+
+    my $msgids = $self -> {"cgi"} -> param("msgids");
+    ($reason, $error) = $self -> validate_string("reason", {"required" => 0,
+                                                            "nicename" => $self -> {"template"} -> replace_langvar("TELLUS_QLIST_ERR_BADREASON")});
+    return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $error}))
+        if($error);
+
+    # rejcheck will have checked the message ids. And relying on that would be really stupid: check
+    # all the messages again to make sure the user really has permission to reject them.
+    my $idlist = $self -> _update_messagelist_allowed($msgids, $userid)
+        or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_TELLUS_QLIST_ERR_NOREJPERM}"}));
+
+    foreach my $id (@{$idlist}) {
+        $self -> log("tellus:manage", "Setting status of message '$id' to rejected, message '$reason'.");
+
+        # Reject!
+        $self -> {"tellus"} -> set_message_status($id, "rejected")
+            or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"tellus"} -> errstr()}));
+
+        $self -> _notify_reject($id, $userid, $reason)
+            if($reason);
+    }
+
+    return $self -> _build_api_update_success($idlist, $userid);
+}
+
+
 # ============================================================================
 #  Interface functions
 
