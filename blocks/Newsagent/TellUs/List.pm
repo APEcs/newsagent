@@ -283,6 +283,11 @@ sub _generate_messagelist {
 # ============================================================================
 #  API functions
 
+## @method private $ _build_api_view_response()
+# Generate the HTML to send back to the user in response to to a message view
+# request.
+#
+# @return The HTML to return to the user.
 sub _build_api_view_response {
     my $self   = shift;
     my $userid = $self -> {"session"} -> get_session_userid();
@@ -306,6 +311,12 @@ sub _build_api_view_response {
 }
 
 
+## @method private $ _build_api_queuelist_response()
+# Generate an API response listing the queues the user has access to manage, the
+# text to show ad the queue name in ther interface, the internal queue name, and
+# whether the queue has new messages in it.
+#
+# @return A reference to a hash containing the API response.
 sub _build_api_queuelist_response {
     my $self = shift;
     my $userid = $self -> {"session"} -> get_session_userid();
