@@ -123,7 +123,7 @@ sub page_display {
 
     # Exit with a permission error unless the user has permission to compose
     if(!$self -> check_permission("tellus")) {
-        $self -> log("error:compose:permission", "User does not have permission to compose messages");
+        $self -> log("error:tellus:permission", "User does not have permission to compose messages");
 
         my $userbar = $self -> {"module"} -> load_module("Newsagent::Userbar");
         my $message = $self -> {"template"} -> message_box("{L_PERMISSION_FAILED_TITLE}",

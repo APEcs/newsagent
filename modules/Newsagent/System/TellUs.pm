@@ -84,33 +84,24 @@ sub moveto_allowed {
 }
 
 
-## @method $ move_allowed($msgid, $userid)
+## @method $ update_allowed($msgid, $userid)
 # Determine whether the user has manage access to the queue the selected message
 # is in.
 #
 # @param msgid  The ID of the message the user is trying to move.
 # @param userid the user attempting to move the message.
 # @return true if the user can move the message, undef otherwise.
-sub move_allowed {
+sub update_allowed {
     my $self   = shift;
     my $msgid  = shift;
     my $userid = shift;
 
     $self -> clear_error();
 
-    # Get the metadata id for the queue
-    my $mdh = $self -> {"dbh"} -> prepare("SELECT `q`.`metadata_id`
-                                           FROM `".$self -> {"settings"} -> {"database"} -> {"tellus_messages"}."` AS `m`,
-                                                `".$self -> {"settings"} -> {"database"} -> {"tellus_queues"}."` AS `q`
-                                           WHERE `q`.`id` = `m`.`queue_id`
-                                           AND `m`.`id` = ?");
-    $mdh -> execute($msgid)
-        or return $self -> self_error("Unable to execute metadata query: ".$self -> {"dbh"} -> errstr);
+    my $metadata_id = $self -> get_message_metadata($msgid)
+        or return undef;
 
-    my $metadata = $mdh -> fetchrow_arrayref()
-        or return $self -> self_error("Unable to fetch metadata id for message $msgid");
-
-    return $self -> {"roles"} -> user_has_capability($metadata -> [0], $userid, "tellus.manage");
+    return $self -> {"roles"} -> user_has_capability($metadata_id, $userid, "tellus.manage");
 }
 
 
@@ -419,6 +410,34 @@ sub get_message {
 
     return $geth -> fetchrow_hashref()
         or $self -> self_error("Request for non-existent message with ID $messageid");
+}
+
+
+## @method $ get_message_metadata($messageid)
+# Obtain the metadata ID for the queue containing the specified message.
+#
+# @param messageid The ID of the message to fetch the metadata ID for.
+# @return A reference to a hash containing the message data on success, undef
+#         on error
+sub get_message_metadata {
+    my $self      = shift;
+    my $messageid = shift;
+
+    $self -> clear_error();
+
+    # Get the metadata id for the queue based on the message
+    my $mdh = $self -> {"dbh"} -> prepare("SELECT `q`.`metadata_id`
+                                           FROM `".$self -> {"settings"} -> {"database"} -> {"tellus_messages"}."` AS `m`,
+                                                `".$self -> {"settings"} -> {"database"} -> {"tellus_queues"}."` AS `q`
+                                           WHERE `q`.`id` = `m`.`queue_id`
+                                           AND `m`.`id` = ?");
+    $mdh -> execute($messageid)
+        or return $self -> self_error("Unable to execute metadata query: ".$self -> {"dbh"} -> errstr);
+
+    my $metadata = $mdh -> fetchrow_arrayref()
+        or return $self -> self_error("Unable to fetch metadata id for message $messageid");
+
+    return $metadata -> [0];
 }
 
 

@@ -57,7 +57,7 @@ function update_queue_list(queues)
  */
 function update_message_list(messages)
 {
-    Array.each(msgids, function(message) {
+    Array.each(messages, function(message) {
                    var id = message.get('text');
                    var elem = $('msgrow-'+id);
                    // dissolve doesn't really play nice with table rows, but

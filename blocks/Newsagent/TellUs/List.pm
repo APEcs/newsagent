@@ -51,6 +51,35 @@ sub _get_messagelist_settings {
 }
 
 
+## @method private $ _update_messagelist_allowed($msgids, $userid)
+# Determine whether the user has permission to update the messages with the
+# specified IDs. The user must have update permission for *ALL* the specified
+# messages, or this will assume Shenanigans Are Afoot and deny permission to
+# all the messages.
+#
+# @param msgids A string containing a comma separated list of message IDs
+# @param userid The ID of the user to check update permission for
+# @return A reference to an array of message IDs to update on success, undef
+#         if the user does not have permission to update one or more of
+#         the specified messages.
+sub _update_messagelist_allowed {
+    my $self   = shift;
+    my $msgids = shift;
+    my $userid = shift;
+
+    # Extract the message IDs from the list. This will junk any entries that are not pure digits separated by commas.
+    my @idlist = $msgids =~ /(\d+)(?:,|$)/g;
+
+    # This will bail if any of the messages can't be deleted. Note that this *does not* delete anything
+    foreach my $id (@idlist) {
+        return undef
+            if(!$self -> {"tellus"} -> update_allowed($id, $userid))
+    }
+
+    return \@idlist;
+}
+
+
 # ============================================================================
 #  Content generators
 
@@ -300,14 +329,14 @@ sub _build_api_queuelist_response {
 }
 
 
-## @method private $ _build_api_move_success($messids, $userid)
+## @method private $ _build_api_update_success($messids, $userid)
 # Generate a hash containing the success information for a (potentially multi-message)
-# move request.
+# move, reject, or delete request.
 #
 # @param messids A reference to an array of message ID numbers.
 # @param userid  The ID of the user who made the request.
 # @return A reference to a hash containing the result information.
-sub _build_api_move_success {
+sub _build_api_update_success {
     my $self    = shift;
     my $messids = shift;
     my $userid  = shift;
@@ -327,9 +356,9 @@ sub _build_api_move_success {
                              "hasnew" => $stats -> {"new"}});
     }
 
-    return {"result" => {"moved" => "yes",
+    return {"result" => {"updated"  => "yes",
                          "messages" => { "message" => $messids },
-                         "queues" => {"queue" => $queuelist }
+                         "queues"   => {"queue" => $queuelist }
                         }
            };
 }
@@ -354,17 +383,13 @@ sub _build_api_move_response {
         if(!$destqueue -> {"id"});
 
     # User has permission to move to the queue; does user have permission to move the messages?
-    # First we need to know which messages. This magic will extract comma separated numbers from the list...
-    my @idlist = $msgids =~ /(\d+)(?:,|$)/g;
-
-    # This will bail if any of the messages can't be moved. Note that this *does not* move anything
-    foreach my $id (@idlist) {
-        return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_TELLUS_QLIST_ERR_NOMOVEPERM}"}))
-            if(!$self -> {"tellus"} -> move_allowed($id, $userid))
-    }
+    my $idlist = $self -> _update_messagelist_allowed($msgids, $userid)
+        or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_TELLUS_QLIST_ERR_NOMOVEPERM}"}));
 
     # now do the move
-    foreach my $id (@idlist) {
+    foreach my $id (@{$idlist}) {
+        $self -> log("tellus:manage", "Moving message '$id' to queue $destid.");
+
         # Moved messages are always reset to new
         $self -> {"tellus"} -> set_message_status($id, "new")
             or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"tellus"} -> errstr()}));
@@ -377,7 +402,34 @@ sub _build_api_move_response {
         $self -> _notify_add_queue($id);
     }
 
-    return $self -> _build_api_move_success(\@idlist, $userid);
+    return $self -> _build_api_update_success($idlist, $userid);
+}
+
+
+## @method private $ _build_api_delete_response()
+# Perform a delete of any selected messages.
+#
+# @return A reference to an API response hash to return to the user.
+sub _build_api_delete_response {
+    my $self   = shift;
+    my $userid = $self -> {"session"} -> get_session_userid();
+
+    my $msgids = $self -> {"cgi"} -> param("msgids");
+
+    # Check whether the user has permission to delete the messages
+    my $idlist = $self -> _update_messagelist_allowed($msgids, $userid)
+        or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_TELLUS_QLIST_ERR_NODELPERM}"}));
+
+    # now do the delete
+    foreach my $id (@{$idlist}) {
+        $self -> log("tellus:manage", "Setting status of message '$id' to deleted.");
+
+        # Messages are never really deleted, they just get the appropriate state
+        $self -> {"tellus"} -> set_message_status($id, "deleted")
+            or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"tellus"} -> errstr()}));
+    }
+
+    return $self -> _build_api_update_success($idlist, $userid);
 }
 
 
@@ -404,6 +456,7 @@ sub page_display {
     if(defined($apiop)) {
         # API call - dispatch to appropriate handler.
         given($apiop) {
+            when("delete") { return $self -> api_response($self -> _build_api_delete_response()); }
             when("move")   { return $self -> api_response($self -> _build_api_move_response()); }
             when("queues") { return $self -> api_response($self -> _build_api_queuelist_response()); }
             when("view")   { return $self -> api_html_response($self -> _build_api_view_response()); }

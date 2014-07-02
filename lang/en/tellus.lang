@@ -51,5 +51,6 @@ TELLUS_QLIST_ERR_NOMOVETOPERM = You do not have permission to move messages to t
 TELLUS_QLIST_ERR_NOMOVEPERM   = You do not have permission to move one or more selected messages.
 TELLUS_QLIST_ERR_NOMSGID      = No message ID specified.
 TELLUS_QLIST_ERR_NOVIEWPERM   = You do not have permission to view this message.
+TELLUS_QLIST_ERR_NODELPERM    = You do not have permission to delete one or more selected messages.
 
 TELLUS_QLIST_POP_CANCEL  = Close
