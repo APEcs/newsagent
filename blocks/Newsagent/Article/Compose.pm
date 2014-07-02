@@ -136,7 +136,10 @@ sub _generate_compose {
                                                       metadata => $self -> {"system"} -> {"metadata"});
         if($tellus) {
             my $message = $tellus -> get_message($msgid);
-            $args -> {"article"} = $message -> {"message"} if($message);
+
+            # If the message is valid, and the user has manage permission on its queue, use it as the default text.
+            $args -> {"article"} = $message -> {"message"}
+                if($message && $self -> check_permission('tellus.manage', $message -> {"metadata_id"}));
         }
     }
 
