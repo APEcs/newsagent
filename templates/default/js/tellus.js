@@ -176,8 +176,8 @@ function reject_messages(messageids)
 
                                      // No error, content should be form.
                                      } else {
-                                         var buttons  = [ { title: messages['reject'] , color: 'red' , event: function() { popbox.close(); doreject_messages(messageids); } },
-                                                          { title: messages['cancel'] , color: 'blue', event: function() { popbox.close(); popbox.footer.empty();         } }
+                                         var buttons  = [ { title: messages['reject'] , color: 'red' , event: function() { popbox.close(); do_reject_messages(messageids); } },
+                                                          { title: messages['cancel'] , color: 'blue', event: function() { popbox.close(); popbox.footer.empty();          } }
                                                    ];
 
                                          $('poptitle').set('text', messages['rejtitle']);
@@ -194,6 +194,43 @@ function reject_messages(messageids)
                                  }
                                });
     req.post({msgids: messageids.join(",")});
+}
+
+
+/** Ask the server to mark a list of messages as rejected, potentially emailing
+ *  the message author with a user-supplied rejection message.
+ *
+ * @param messageids An array of message ids to reject.
+ */
+function do_reject_messages(messageids)
+{
+    var req = new Request({ url: api_request_path("queues", "reject", basepath),
+                            onRequest: function() {
+                                $('movespin').fade('in');
+                            },
+                            onSuccess: function(respText, respXML) {
+                                var err = respXML.getElementsByTagName("error")[0];
+                                if(err) {
+                                    $('errboxmsg').set('html', '<p class="error">'+err.getAttribute('info')+'</p>');
+                                    errbox.open();
+
+                                // No error, we have a response
+                                } else {
+                                    update_queue_list(respXML.getElementsByTagName("queue"));
+                                    update_message_list(respXML.getElementsByTagName("message"));
+                                }
+                                $('movespin').fade('out');
+                            }
+                          });
+
+    var reasontext = "";
+    var reasonfield = $('rej-msg');
+    if(reasonfield) {
+        reasontext = reasonfield.get('value');
+    }
+
+    req.post({msgids: messageids.join(","),
+              reason: reasontext});
 }
 
 
