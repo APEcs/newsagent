@@ -12,6 +12,40 @@ function setup_queue_link(element)
 }
 
 
+function refresh_queuelist()
+{
+    var req = new Request({ url: api_request_path("queues", "queues", basepath),
+                            onRequest: function() {
+                                $('movespin').fade('in');
+                            },
+                            onSuccess: function(respText, respXML) {
+                                var err = respXML.getElementsByTagName("error")[0];
+                                if(err) {
+                                    $('errboxmsg').set('html', '<p class="error">'+err.getAttribute('info')+'</p>');
+                                    errbox.open();
+
+                                // No error, we have a response
+                                } else {
+                                    var queues = respXML.getElementsByTagName("queue");
+                                    Array.each(queues, function(queue) {
+                                                   var name = queue.getAttribute("name");
+                                                   var node = $("queue-"+name);
+                                                   node.set('html', queue.getAttribute("value"));
+
+                                                   if(queue.getAttribute("hasnew") > 0) {
+                                                       node.getParent().getParent().addClass("hasnew");
+                                                   } else {
+                                                       node.getParent().getParent().removeClass("hasnew");
+                                                   }
+                                               });
+                                }
+                                $('movespin').fade('out');
+                            }
+                          });
+    req.post();
+}
+
+
 function move_messages(destqueue, messageids)
 {
     var req = new Request({ url: api_request_path("queues", "move", basepath),
@@ -51,40 +85,6 @@ function move_messages(destqueue, messageids)
                           });
     req.post({dest: destqueue,
               msgids: messageids.join(",")});
-}
-
-
-function refresh_queuelist()
-{
-    var req = new Request({ url: api_request_path("queues", "queues", basepath),
-                            onRequest: function() {
-                                $('movespin').fade('in');
-                            },
-                            onSuccess: function(respText, respXML) {
-                                var err = respXML.getElementsByTagName("error")[0];
-                                if(err) {
-                                    $('errboxmsg').set('html', '<p class="error">'+err.getAttribute('info')+'</p>');
-                                    errbox.open();
-
-                                // No error, we have a response
-                                } else {
-                                    var queues = respXML.getElementsByTagName("queue");
-                                    Array.each(queues, function(queue) {
-                                                   var name = queue.getAttribute("name");
-                                                   var node = $("queue-"+name);
-                                                   node.set('html', queue.getAttribute("value"));
-
-                                                   if(queue.getAttribute("hasnew") > 0) {
-                                                       node.getParent().getParent().addClass("hasnew");
-                                                   } else {
-                                                       node.getParent().getParent().removeClass("hasnew");
-                                                   }
-                                               });
-                                }
-                                $('movespin').fade('out');
-                            }
-                          });
-    req.post();
 }
 
 
