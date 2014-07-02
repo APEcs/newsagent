@@ -1,6 +1,11 @@
 var selects;
 var controls;
 
+/** Add a click handler to the specified queue list element to switch
+ *  the queue view to a different queue.
+ *
+ * @param element The element to attach the click event handler to.
+ */
 function setup_queue_link(element)
 {
     element.addEvent("click", function(event) {
@@ -12,6 +17,41 @@ function setup_queue_link(element)
 }
 
 
+/** Update the queue list shown on the page based on the array of XML
+ *  elements provided. This goes through the elements in the specified
+ *  list and uses the 'name', 'value' and 'hasnew' attributes to
+ *  update the list of queues shown to the user.
+ *
+ * @param queues An array of XML queue elements.
+ */
+function update_queue_list(queues)
+{
+    // Go through the list of queue elements, and update the
+    // text and new status for each queue shown to the user.
+    Array.each(queues, function(queue) {
+                   var name = queue.getAttribute("name");
+                   var node = $("queue-"+name);
+
+                   // It's possible that the list from the server includes a queue
+                   // not currently in the page (no element exists for it), so only
+                   // try updating if the queue element exists.
+                   if(node) {
+                       node.set('html', queue.getAttribute("value"));
+
+                       if(queue.getAttribute("hasnew") > 0) {
+                           node.getParent().getParent().addClass("hasnew");
+                       } else {
+                           node.getParent().getParent().removeClass("hasnew");
+                       }
+                   }
+               });
+}
+
+
+/** Update the list of queues to show the current counts of new messages.
+ *  This asks the server for an updated list of queues, and modifies the
+ *  queue list in the page to reflect the new data.
+ */
 function refresh_queuelist()
 {
     var req = new Request({ url: api_request_path("queues", "queues", basepath),
@@ -26,18 +66,7 @@ function refresh_queuelist()
 
                                 // No error, we have a response
                                 } else {
-                                    var queues = respXML.getElementsByTagName("queue");
-                                    Array.each(queues, function(queue) {
-                                                   var name = queue.getAttribute("name");
-                                                   var node = $("queue-"+name);
-                                                   node.set('html', queue.getAttribute("value"));
-
-                                                   if(queue.getAttribute("hasnew") > 0) {
-                                                       node.getParent().getParent().addClass("hasnew");
-                                                   } else {
-                                                       node.getParent().getParent().removeClass("hasnew");
-                                                   }
-                                               });
+                                    update_queue_list(respXML.getElementsByTagName("queue"));
                                 }
                                 $('movespin').fade('out');
                             }
@@ -46,6 +75,15 @@ function refresh_queuelist()
 }
 
 
+/** Handle the request to move messages into a different queue. This takes
+ *  a destination queue id and an array of message ids to move. After
+ *  asking the server to move the messages, if all is successful, it will
+ *  update the queue list and remove the messages from the current queue
+ *  view.
+ *
+ * @param destqueue  The ID of the queue the message(s) should be moved to.
+ * @param messageids An array of message ids to move.
+ */
 function move_messages(destqueue, messageids)
 {
     var req = new Request({ url: api_request_path("queues", "move", basepath),
@@ -60,18 +98,7 @@ function move_messages(destqueue, messageids)
 
                                 // No error, we have a response
                                 } else {
-                                    var queues = respXML.getElementsByTagName("queue");
-                                    Array.each(queues, function(queue) {
-                                                   var name = queue.getAttribute("name");
-                                                   var node = $("queue-"+name);
-                                                   node.set('html', queue.getAttribute("value"));
-
-                                                   if(queue.getAttribute("hasnew") > 0) {
-                                                       node.getParent().getParent().addClass("hasnew");
-                                                   } else {
-                                                       node.getParent().getParent().removeClass("hasnew");
-                                                   }
-                                               });
+                                    update_queue_list(respXML.getElementsByTagName("queue"));
 
                                     var msgids = respXML.getElementsByTagName("message");
                                     Array.each(msgids, function(message) {
@@ -155,13 +182,14 @@ function view_message(element)
 
 window.addEvent('domready', function() {
     // Enable queue selection
-    $$('div.queuetitle').each(function(element) { setup_queue_link(element) });
+    $$('div.queuetitle').each(function(element) { setup_queue_link(element); });
 
     // Allow URLs in information to be clickable
     $$("table.listtable li.info a").each(function(elem) {
         elem.addEvent("click", function(event) { event.stopPropagation(); });
     });
 
+    // Attach message viewer handlers to clicks on summary rows.
     $$("table.listtable td.summary").each(function(elem) {
         elem.addEvent("click", function(event) { view_message(elem); });
     });
