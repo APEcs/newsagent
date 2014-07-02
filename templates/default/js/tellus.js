@@ -133,7 +133,7 @@ function move_messages(destqueue, messageids)
  *  the messages, if all is successful, it will  update the queue list
  *  and remove the messages from the current queue view.
  *
- * @param messageids An array of message ids to move.
+ * @param messageids An array of message ids to delete.
  */
 function delete_messages(messageids)
 {
@@ -159,7 +159,15 @@ function delete_messages(messageids)
 }
 
 
-
+/** Handle the request to reject messages from this queue. This takes
+ *  an array of message ids to reject and checks with the server whether
+ *  the user has permission to reject them. If the user does, a form
+ *  is shown in a popup that lets the user enter a rejection message to
+ *  send to the message author(s). Note that this does not do the reject;
+ *  do_reject_messages() will handle that.
+ *
+ * @param messageids An array of message ids to delete.
+ */
 function reject_messages(messageids)
 {
     var req = new Request.HTML({ url: api_request_path("queues", "checkrej", basepath),
