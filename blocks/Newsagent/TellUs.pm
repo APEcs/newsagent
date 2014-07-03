@@ -237,7 +237,7 @@ sub _notify_add_queue {
     $summary = $self -> truncate_text($summary, 240);
     $summary =~ s/^/> /gm;
 
-    $self -> log("tellus.add", "Sending new queued message notifications to ".join(",", @{$recipients}));
+    $self -> log("tellus:add", "Sending new queued message notifications to ".join(",", @{$recipients}));
 
     my $status =  $self -> {"messages"} -> queue_message(subject => $self -> {"template"} -> replace_langvar("TELLUS_EMAIL_MSGSUB", {"***queue***" => $message -> {"queuename"}} ),
                                                          message => $self -> {"template"} -> load_template("tellus/email/newqueuemsg.tem",
