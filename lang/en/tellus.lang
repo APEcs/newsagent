@@ -30,6 +30,10 @@ TELLUS_EMAIL_MOVESUB   = [Newsagent] Your message has been moved
 TELLUS_EMAIL_MOVEMSG   = A Tell Us message you added to Newsagent has been moved to a new queue by ***movename*** <***movemail***>.
 TELLUS_EMAIL_MOVEQUEUE = The message has been placed in the queue
 
+TELLUS_EMAIL_REJSUB    = [Newsagent] Your message has not been accepted
+TELLUS_EMAIL_REJECTED  = A queue manager has decided not to use a Tell Us message you added to Newsagent at this time. ***rejname*** <***rejemail***> provided the following information regarding this decision:
+TELLUS_EMAIL_RETRY     = If you feel this decision is incorrect, please try adding your message again with any additional information you feel may make it more likely to be used, or contact the queue manager for more information.
+
 TELLUS_QLIST_TITLE       = Tell Us Messages
 TELLUS_QLIST_QLIST       = Queues
 TELLUS_QLIST_NOQUEUES    = No queues available

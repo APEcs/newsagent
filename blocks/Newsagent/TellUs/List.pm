@@ -488,7 +488,7 @@ sub _build_api_reject_response {
         $self -> log("tellus:manage", "Setting status of message '$id' to rejected, message '$reason'.");
 
         # Reject!
-        $self -> {"tellus"} -> set_message_status($id, $userid, "rejected")
+        $self -> {"tellus"} -> set_message_status($id, $userid, "rejected", $reason)
             or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"tellus"} -> errstr()}));
 
         $self -> _notify_reject($id, $reason)
@@ -522,10 +522,11 @@ sub page_display {
     if(defined($apiop)) {
         # API call - dispatch to appropriate handler.
         given($apiop) {
-            when("checkrej") { return $self -> api_response($self -> _build_api_checkrej_response()); }
+            when("checkrej") { return $self -> api_html_response($self -> _build_api_checkrej_response()); }
             when("delete")   { return $self -> api_response($self -> _build_api_delete_response()); }
             when("move")     { return $self -> api_response($self -> _build_api_move_response()); }
             when("queues")   { return $self -> api_response($self -> _build_api_queuelist_response()); }
+            when("reject")   { return $self -> api_response($self -> _build_api_reject_response()); }
             when("view")     { return $self -> api_html_response($self -> _build_api_view_response()); }
             default {
                 return $self -> api_html_response($self -> api_errorhash('bad_op',

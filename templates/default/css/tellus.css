@@ -203,3 +203,7 @@ div.msgview {
     background-color: white;
     padding: 5px;
 }
+
+textarea#rej-msg {
+    margin-top: 0.5em;
+}
