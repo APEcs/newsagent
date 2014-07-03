@@ -205,7 +205,7 @@ var LightFace = new Class({
         return this;
     },
 
-    open: function(fast) {
+    open: function(fast, focusObj) {
         if(!this.isOpen) {
             this.overlay[fast ? "setStyles" : "tween"]("opacity", 0.4);
             this.overlay.setStyle("visibility", 'visible');
@@ -214,16 +214,20 @@ var LightFace = new Class({
             this.fireEvent("open");
             this._attachEvents();
             (function() {
-                this._setFocus();
+                this._setFocus(focusObj);
             }).bind(this).delay(this.options.fadeDuration + 10);
             this.isOpen = true;
         }
         return this;
     },
 
-    _setFocus: function() {
+    _setFocus: function(focusObj) {
         this.focusNode.setAttribute("tabIndex", 0);
-        this.focusNode.focus();
+        if(!focusObj) {
+            this.focusNode.focus();
+        } else {
+            focusObj.focus();
+        }
     },
 
     // Show and hide overlay

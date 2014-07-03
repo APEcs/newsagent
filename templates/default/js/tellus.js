@@ -259,7 +259,7 @@ function reject_messages(messageids)
                                                              width: 16,
                                                              height: 16,
                                                              'class': 'workspin'}).inject(popbox.footer, 'top');
-                                         popbox.open();
+                                         popbox.open(false, $('rej-msg'));
                                      }
                                      $('movespin').fade('out');
                                  }
