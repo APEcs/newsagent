@@ -62,7 +62,14 @@ function update_message_list(messages)
                    var elem = $('msgrow-'+id);
                    // dissolve doesn't really play nice with table rows, but
                    // the effect is better than simply snapping them out.
-                   if(elem) elem.dissolve().get('reveal').chain(function() { elem.destroy(); });
+                   if(elem) elem.dissolve().get('reveal').chain(function() {
+                                                                    elem.destroy();
+                                                                    // Update the control buttons. This is a PITA as it means these
+                                                                    // two calls happen for each removed message, but as each remove
+                                                                    // is done separately, there's not a great deal can be done.
+                                                                    selects.updateMode();
+                                                                    controls.updateVis();
+                                                                });
                });
 }
 
