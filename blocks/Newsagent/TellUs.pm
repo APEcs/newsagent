@@ -262,4 +262,48 @@ sub _notify_add_queue {
 }
 
 
+## @method private $ _notify_move_queue($messageid)
+# Send a notification to the creator of the specified message telling them that
+# their message has been moved to another queue. Note that this should be called
+# *after* the message has been moved so that it can pick up the new queue data.
+#
+# @param messageid The ID of the message moved to a news queue.
+# @return true on success, undef on error.
+sub _notify_move_queue {
+    my $self      = shift;
+    my $messageid = shift;
+
+    $self -> clear_error();
+
+    # Get the current user's info
+    my $user = $self -> {"session"} -> get_user_byid();
+
+    # Get the message information, that will contain almost all the information needed for the email
+    my $message = $self -> {"tellus"} -> get_message($messageid)
+        or return $self -> self_error("Unable to fetch message data: ".$self -> {"tellus"} -> errstr());
+
+    my $summary = $self -> {"template"} -> html_strip($message -> {"message"});
+    $summary = $self -> truncate_text($summary, 240);
+    $summary =~ s/^/> /gm;
+
+    $self -> log("tellus:move", "Sending message move notifications to ".$message -> {"email"});
+
+    my $status =  $self -> {"messages"} -> queue_message(subject => $self -> {"template"} -> replace_langvar("TELLUS_EMAIL_MOVESUB"),
+                                                         message => $self -> {"template"} -> load_template("tellus/email/movemsg.tem",
+                                                                                                           {"***movename***"   => $user -> {"realname"},
+                                                                                                            "***movemail***"   => $user -> {"email"},
+                                                                                                            "***fullname***"   => $message -> {"realname"},
+                                                                                                            "***email***"      => $message -> {"email"},
+                                                                                                            "***queuename***"  => $message -> {"queuename"},
+                                                                                                            "***typename***"   => $message -> {"typename"},
+                                                                                                            "***summary***"    => $summary
+                                                                                                           }),
+                                                         recipients       => [ $message -> {"creator_id"} ],
+                                                         send_immediately => 1);
+    return $self -> self_error("Unable to send queue move notification: $status")
+        if($status);
+
+    return 1;
+}
+
 1;

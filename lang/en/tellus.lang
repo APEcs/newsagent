@@ -26,6 +26,10 @@ TELLUS_EMAIL_TYPE      = Type
 TELLUS_EMAIL_SUMMARY   = Message extract
 TELLUS_EMAIL_MANAGE    = To create a Newsagent article from this message, move it to another queue, or reject the message you should log into the queue management interface here
 
+TELLUS_EMAIL_MOVESUB   = [Newsagent] Your message has been moved
+TELLUS_EMAIL_MOVEMSG   = A Tell Us message you added to Newsagent has been moved to a new queue by ***movename*** <***movemail***>.
+TELLUS_EMAIL_MOVEQUEUE = The message has been placed in the queue
+
 TELLUS_QLIST_TITLE       = Tell Us Messages
 TELLUS_QLIST_QLIST       = Queues
 TELLUS_QLIST_NOQUEUES    = No queues available
