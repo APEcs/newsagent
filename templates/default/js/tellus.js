@@ -60,6 +60,7 @@ function update_remove_messages(messages)
     Array.each(messages, function(message) {
                    var id = message.get('text');
                    var elem = $('msgrow-'+id);
+
                    // dissolve doesn't really play nice with table rows, but
                    // the effect is better than simply snapping them out.
                    if(elem) elem.dissolve().get('reveal').chain(function() {
@@ -74,6 +75,12 @@ function update_remove_messages(messages)
 }
 
 
+/** Remove the new status from the selected messages. This takes an array of
+ *  XML elements, each one containing the ID of a message to mark as read,
+ *  and removes the 'new' status from the message if it has it.
+ *
+ * @param messages An array of XML message elements.
+ */
 function update_read_messages(messages)
 {
     Array.each(messages, function(message) {
@@ -153,6 +160,13 @@ function move_messages(destqueue, messageids)
 }
 
 
+/** Handle the request to mark the selected messages as read. This takes
+ *  an array of message ids to mark. After asking the server to mark
+ *  the messages as read, it will  update the queue list and remove the
+ *  'new' status from the selected messages in the current queue view.
+ *
+ * @param messageids An array of message ids to mark as read.
+ */
 function mark_messages(messageids)
 {
     var req = new Request({ url: api_request_path("queues", "setread", basepath),
