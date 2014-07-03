@@ -191,7 +191,6 @@ sub _build_move_targetlist {
         $queuelist .= $self -> {"template"} -> load_template("tellus/queues/target.tem", {"***id***"   => $queue -> {"id"},
                                                                                           "***name***" => $queue -> {"name"}});
     }
-    print STDERR "queuelist is $queuelist";
 
     return $self -> {"template"} -> load_template("tellus/queues/notargets.tem")
         if(!$queuelist);
@@ -304,7 +303,7 @@ sub _build_api_view_response {
         unless($self -> check_permission("tellus.manage", $message -> {"metadata_id"}, $userid));
 
     # mark the message as read
-    $self -> {"tellus"} -> set_message_status($msgid, "read");
+    $self -> {"tellus"} -> set_message_status($msgid, $userid, "read");
 
     # User has permission, return the message text
     return $self -> {"template"} -> load_template("tellus/queues/viewmsg.tem", {"***message***" => $message -> {"message"}});
@@ -402,15 +401,18 @@ sub _build_api_move_response {
         $self -> log("tellus:manage", "Moving message '$id' to queue $destid.");
 
         # Moved messages are always reset to new
-        $self -> {"tellus"} -> set_message_status($id, "new")
+        $self -> {"tellus"} -> set_message_status($id, $userid, "new")
             or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"tellus"} -> errstr()}));
 
         # Move into the new queue
-        $self -> {"tellus"} -> set_message_queue($id, $destid)
+        $self -> {"tellus"} -> set_message_queue($id, $userid, $destid)
             or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"tellus"} -> errstr()}));
 
         # notify the queue owner.
         $self -> _notify_add_queue($id);
+
+        # notify the message creator
+        $self -> _notify_move_queue($id, $destid);
     }
 
     return $self -> _build_api_update_success($idlist, $userid);
@@ -436,7 +438,7 @@ sub _build_api_delete_response {
         $self -> log("tellus:manage", "Setting status of message '$id' to deleted.");
 
         # Messages are never really deleted, they just get the appropriate state
-        $self -> {"tellus"} -> set_message_status($id, "deleted")
+        $self -> {"tellus"} -> set_message_status($id, $userid, "deleted")
             or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"tellus"} -> errstr()}));
     }
 
@@ -463,13 +465,17 @@ sub _build_api_checkrej_response {
 }
 
 
+# @method private $ _build_api_reject_response()
+# Reject the selected messages.
+#
+# @return A reference to an API response hash to return to the user.
 sub _build_api_reject_response {
     my $self   = shift;
     my $userid = $self -> {"session"} -> get_session_userid();
 
     my $msgids = $self -> {"cgi"} -> param("msgids");
-    ($reason, $error) = $self -> validate_string("reason", {"required" => 0,
-                                                            "nicename" => $self -> {"template"} -> replace_langvar("TELLUS_QLIST_ERR_BADREASON")});
+    my ($reason, $error) = $self -> validate_string("reason", {"required" => 0,
+                                                               "nicename" => $self -> {"template"} -> replace_langvar("TELLUS_QLIST_ERR_BADREASON")});
     return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $error}))
         if($error);
 
@@ -482,10 +488,10 @@ sub _build_api_reject_response {
         $self -> log("tellus:manage", "Setting status of message '$id' to rejected, message '$reason'.");
 
         # Reject!
-        $self -> {"tellus"} -> set_message_status($id, "rejected")
+        $self -> {"tellus"} -> set_message_status($id, $userid, "rejected")
             or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"tellus"} -> errstr()}));
 
-        $self -> _notify_reject($id, $userid, $reason)
+        $self -> _notify_reject($id, $reason)
             if($reason);
     }
 
