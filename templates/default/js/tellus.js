@@ -287,6 +287,13 @@ function view_message(element)
                                      // No error, content should be form.
                                      } else {
                                          element.removeClass("new");
+
+                                         // Need to remove the new from the checkbox, too
+                                         var check = element.getParent().getElementsByClassName('selctrl-opt');
+                                         if(check && check[0]) {
+                                             check[0].removeClass("new");
+                                         }
+
                                          var msgid = element.getParent().get('id').substr(7);
 
                                          var buttons  = [ { title: messages['promote'], color: 'blue', event: function() { popbox.close(); promote_message(msgid); } },

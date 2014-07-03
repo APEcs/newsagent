@@ -20,7 +20,10 @@ messages = { "promote": "{L_TELLUS_QLIST_MAKEARTICLE}",
                         <span class="selctrl-mode">&nbsp;</span>
                         <span class="selctrl-arr">&nbsp;</span>
                         <ul>
-                            <li class="selctrl-opt" data-selctrl-mode="all">{L_TELLUS_QLIST_SELALL}</li><li class="selctrl-opt" data-selctrl-mode="none">{L_TELLUS_QLIST_SELNONE}</li><li class="selctrl-opt" data-selctrl-mode="new">{L_TELLUS_QLIST_SELNEW}</li>
+                            <li class="selctrl-opt" data-selctrl-mode="all">{L_TELLUS_QLIST_SELALL}</li><!--
+                         --><li class="selctrl-opt" data-selctrl-mode="none">{L_TELLUS_QLIST_SELNONE}</li><!--
+                         --><li class="selctrl-opt" data-selctrl-mode="new">{L_TELLUS_QLIST_SELNEW}</li><!--
+                         --><li class="selctrl-opt" data-selctrl-mode="read">{L_TELLUS_QLIST_SELREAD}</li>
                         </ul>
                     </div>
                     <div id="controls-box">

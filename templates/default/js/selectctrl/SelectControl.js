@@ -132,7 +132,11 @@ var SelectControl = new Class(
                                                               element.set('checked', element.hasClass(this.options.newClass));
                                                          }, this);
                 break;
-        }
+            case "read": $$(this.options.checkClass).each(function(element) {
+                                                              element.set('checked', !element.hasClass(this.options.newClass));
+                                                         }, this);
+                break;
+       }
 
         this.updateMode();
         this.fireEvent('update', this.element);
