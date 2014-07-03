@@ -23,13 +23,17 @@ messages = { "promote": "{L_TELLUS_QLIST_MAKEARTICLE}",
                             <li class="selctrl-opt" data-selctrl-mode="all">{L_TELLUS_QLIST_SELALL}</li><!--
                          --><li class="selctrl-opt" data-selctrl-mode="none">{L_TELLUS_QLIST_SELNONE}</li><!--
                          --><li class="selctrl-opt" data-selctrl-mode="new">{L_TELLUS_QLIST_SELNEW}</li><!--
-                         --><li class="selctrl-opt" data-selctrl-mode="read">{L_TELLUS_QLIST_SELREAD}</li>
-                        </ul>
+                         --><li class="selctrl-opt" data-selctrl-mode="read">{L_TELLUS_QLIST_SELREAD}</li><!--
+                         ***typeopts***
+                     --></ul>
                     </div>
                     <div id="controls-box">
                         <img id="movespin" src="{V_[templatepath]}images/spinner.gif" width="16" height="16" alt="working" class="workspin" />
                         <ul id="message-controls" class="msgctrl">
-                            ***targets***<li class="msgctrl-reject" title="{L_TELLUS_QLIST_REJECT}"><img src="{V_[templatepath]}images/tellus/reject.png" width="16" height="16" alt="reject" /></li><li class="msgctrl-delete" title="{L_TELLUS_QLIST_DELETE}"><img src="{V_[templatepath]}images/tellus/delete.png" width="16" height="16" alt="delete" /></li>
+                            ***targets***<!--
+                         --><li class="msgctrl-mark"   title="{L_TELLUS_QLIST_MARKREAD}"><img src="{V_[templatepath]}images/tellus/markread.png" width="16" height="16" alt="markread" /></li><!--
+                         --><li class="msgctrl-reject" title="{L_TELLUS_QLIST_REJECT}"><img src="{V_[templatepath]}images/tellus/reject.png" width="16" height="16" alt="reject" /></li><!--
+                         --><li class="msgctrl-delete" title="{L_TELLUS_QLIST_DELETE}"><img src="{V_[templatepath]}images/tellus/delete.png" width="16" height="16" alt="delete" /></li>
                         </ul>
                     </div>
                 </div>

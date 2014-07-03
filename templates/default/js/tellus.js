@@ -55,7 +55,7 @@ function update_queue_list(queues)
  *
  * @param messages An array of XML message elements.
  */
-function update_message_list(messages)
+function update_remove_messages(messages)
 {
     Array.each(messages, function(message) {
                    var id = message.get('text');
@@ -71,6 +71,24 @@ function update_message_list(messages)
                                                                     controls.updateVis();
                                                                 });
                });
+}
+
+
+function update_read_messages(messages)
+{
+    Array.each(messages, function(message) {
+                   var id = message.get('text');
+                   var rowelem = $('msgrow-'+id);
+
+                   // Remove the new class from the ckeckbox and summary
+                   rowelem.getElementsByClassName('selctrl-opt')[0].removeClass('new');
+                   rowelem.getElementsByClassName('summary')[0].removeClass('new');
+
+                   // May as well untick the checkbox, too
+                   rowelem.getElementsByClassName('selctrl-opt')[0].set('checked', false);
+               });
+    selects.updateMode();
+    controls.updateVis();
 }
 
 
@@ -125,13 +143,37 @@ function move_messages(destqueue, messageids)
                                 // No error, we have a response
                                 } else {
                                     update_queue_list(respXML.getElementsByTagName("queue"));
-                                    update_message_list(respXML.getElementsByTagName("message"));
+                                    update_remove_messages(respXML.getElementsByTagName("message"));
                                 }
                                 $('movespin').fade('out');
                             }
                           });
     req.post({dest: destqueue,
               msgids: messageids.join(",")});
+}
+
+
+function mark_messages(messageids)
+{
+    var req = new Request({ url: api_request_path("queues", "setread", basepath),
+                            onRequest: function() {
+                                $('movespin').fade('in');
+                            },
+                            onSuccess: function(respText, respXML) {
+                                var err = respXML.getElementsByTagName("error")[0];
+                                if(err) {
+                                    $('errboxmsg').set('html', '<p class="error">'+err.getAttribute('info')+'</p>');
+                                    errbox.open();
+
+                                // No error, we have a response
+                                } else {
+                                    update_queue_list(respXML.getElementsByTagName("queue"));
+                                    update_read_messages(respXML.getElementsByTagName("message"));
+                                }
+                                $('movespin').fade('out');
+                            }
+                          });
+    req.post({msgids: messageids.join(",")});
 }
 
 
@@ -157,7 +199,7 @@ function delete_messages(messageids)
                                 // No error, we have a response
                                 } else {
                                     update_queue_list(respXML.getElementsByTagName("queue"));
-                                    update_message_list(respXML.getElementsByTagName("message"));
+                                    update_remove_messages(respXML.getElementsByTagName("message"));
                                 }
                                 $('movespin').fade('out');
                             }
@@ -232,7 +274,7 @@ function do_reject_messages(messageids)
                                 // No error, we have a response
                                 } else {
                                     update_queue_list(respXML.getElementsByTagName("queue"));
-                                    update_message_list(respXML.getElementsByTagName("message"));
+                                    update_remove_messages(respXML.getElementsByTagName("message"));
                                 }
                                 $('movespin').fade('out');
                             }
@@ -335,9 +377,10 @@ window.addEvent('domready', function() {
     });
 
     // set up the control menu
-    controls = new MessageControl('message-controls', {onMoveMsg: function(dest, vals) { move_messages(dest, vals); },
-                                                       onRejectMsg: function(vals) { reject_messages(vals); },
-                                                       onDeleteMsg: function(vals) { delete_messages(vals); }
+    controls = new MessageControl('message-controls', {    onMoveMsg: function(dest, vals) { move_messages(dest, vals); },
+                                                       onMarkReadMsg: function(vals) { mark_messages(vals); },
+                                                         onRejectMsg: function(vals) { reject_messages(vals); },
+                                                         onDeleteMsg: function(vals) { delete_messages(vals); }
                                                       });
 
     // set up the select menu. Changes in this menu need to trigger visibility

@@ -120,6 +120,27 @@ sub _build_pagination {
 }
 
 
+## @method private $ _build_typeopts()
+# Generate the list of message types supported by the system for inclusion in the
+# selection menu.
+#
+# @return A string containing the system message type list.
+sub _build_typeopts {
+    my $self     = shift;
+    my $typeopts = "";
+
+    my $types = $self -> {"tellus"} -> get_types()
+        or return "";
+
+    foreach my $type (@{$types}) {
+        $typeopts .= $self -> {"template"} -> load_template("tellus/queues/typeopt.tem", {"***type***"     => lc($type -> {"name"}),
+                                                                                          "***typename***" => $type -> {"name"}});
+    }
+
+    return $typeopts;
+}
+
+
 ## @method private $ _build_queue_list($queueidm $userid)
 # Generate the list of queues and their statistics.
 #
@@ -239,7 +260,7 @@ sub _generate_messagelist {
     my $pagenum   = shift || 1;
     my $userid    = $self -> {"session"} -> get_session_userid();
     my $now       = time();
-    my ($body, $queuelist, $paginate, $targets) = ("", "", "", "");
+    my ($body, $queuelist, $paginate, $targets, $typeopts) = ("", "", "", "", "");
 
     my $queuedata = $self -> {"tellus"} -> active_queue($queue, $userid);
     if($queuedata) {
@@ -262,6 +283,8 @@ sub _generate_messagelist {
                                                });
 
         $targets = $self -> _build_move_targetlist($userid, $queuedata);
+
+        $typeopts = $self -> _build_typeopts();
     }
 
     return ($self -> {"template"} -> replace_langvar("TELLUS_QLIST_TITLE"),
@@ -269,6 +292,7 @@ sub _generate_messagelist {
                                                                                  "***messages***"    => $body,
                                                                                  "***paginate***"    => $paginate,
                                                                                  "***targets***"     => $targets,
+                                                                                 "***typeopts***"    => $typeopts,
                                                                                  "***compose-url***" => $self -> build_url(block    => "compose",
                                                                                                                            params   => [],
                                                                                                                            pathinfo => []),
@@ -446,6 +470,33 @@ sub _build_api_delete_response {
 }
 
 
+## @method private $ _build_api_setread_response()
+# Mark the selected messages as read.
+#
+# @return A reference to an API response hash to return to the user.
+sub _build_api_setread_response {
+    my $self   = shift;
+    my $userid = $self -> {"session"} -> get_session_userid();
+
+    my $msgids = $self -> {"cgi"} -> param("msgids");
+
+    # Check whether the user has permission to delete the messages
+    my $idlist = $self -> _update_messagelist_allowed($msgids, $userid)
+        or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_TELLUS_QLIST_ERR_NOVIEWPERM}"}));
+
+    # now do the delete
+    foreach my $id (@{$idlist}) {
+        $self -> log("tellus:manage", "Setting status of message '$id' to read.");
+
+        # Messages are never really deleted, they just get the appropriate state
+        $self -> {"tellus"} -> set_message_status($id, $userid, "read")
+            or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"tellus"} -> errstr()}));
+    }
+
+    return $self -> _build_api_update_success($idlist, $userid);
+}
+
+
 ## @method private $ _build_api_checkrej_response()
 # Determine whether the user can reject the selected messages, and send
 # back the reject form if so.
@@ -527,6 +578,7 @@ sub page_display {
             when("move")     { return $self -> api_response($self -> _build_api_move_response()); }
             when("queues")   { return $self -> api_response($self -> _build_api_queuelist_response()); }
             when("reject")   { return $self -> api_response($self -> _build_api_reject_response()); }
+            when("setread")  { return $self -> api_response($self -> _build_api_setread_response()); }
             when("view")     { return $self -> api_html_response($self -> _build_api_view_response()); }
             default {
                 return $self -> api_html_response($self -> api_errorhash('bad_op',

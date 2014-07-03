@@ -66,7 +66,7 @@ var SelectControl = new Class(
 
         // Set up menu options
         this.menu.getChildren('li').each(function(element) {
-            element.addEvents({ click: function(event) { this.updateBoxes(event.target.get('data-selctrl-mode'));
+            element.addEvents({ click: function(event) { this.updateBoxes(event.target);
                                                          this.toggleMenu('close');
                                                        }.bind(this),
                                 'mouseenter': function() { this.action = 'open'; }.bind(this),
@@ -117,26 +117,36 @@ var SelectControl = new Class(
         }
     },
 
-    updateBoxes: function(mode)
+    updateBoxes: function(element)
     {
-        switch(mode) {
-            case "all": $$(this.options.checkClass).each(function(element) {
-                                                             element.set('checked', true);
-                                                         });
-                break;
-            case "none": $$(this.options.checkClass).each(function(element) {
-                                                              element.set('checked', false);
-                                                          });
-                break;
-            case "new": $$(this.options.checkClass).each(function(element) {
-                                                              element.set('checked', element.hasClass(this.options.newClass));
-                                                         }, this);
-                break;
-            case "read": $$(this.options.checkClass).each(function(element) {
-                                                              element.set('checked', !element.hasClass(this.options.newClass));
-                                                         }, this);
-                break;
-       }
+        var mode = element.get('data-selctrl-mode');
+        if(mode) {
+            switch(mode) {
+                case "all": $$(this.options.checkClass).each(function(element) {
+                                                                 element.set('checked', true);
+                                                             });
+                    break;
+                case "none": $$(this.options.checkClass).each(function(element) {
+                                                                  element.set('checked', false);
+                                                              });
+                    break;
+                case "new": $$(this.options.checkClass).each(function(element) {
+                                                                 element.set('checked', element.hasClass(this.options.newClass));
+                                                             }, this);
+                    break;
+                case "read": $$(this.options.checkClass).each(function(element) {
+                                                                  element.set('checked', !element.hasClass(this.options.newClass));
+                                                              }, this);
+                    break;
+            }
+        } else {
+            var type = element.get('data-selctrl-type');
+
+            $$(this.options.checkClass).each(function(element) {
+                                                 var typeelem = element.getParent('tr').getElementsByClassName('type')[0];
+                                                 element.set('checked', typeelem.hasClass(type));
+                                             });
+        }
 
         this.updateMode();
         this.fireEvent('update', this.element);

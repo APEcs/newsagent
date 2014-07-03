@@ -52,6 +52,7 @@ TELLUS_QLIST_ADDED       = Added
 TELLUS_QLIST_BY          = by
 TELLUS_QLIST_SETQUEUE    = Change queue
 TELLUS_QLIST_MAKEARTICLE = Create article
+TELLUS_QLIST_MARKREAD    = Mark as read
 TELLUS_QLIST_REJECT      = Reject
 TELLUS_QLIST_DELETE      = Delete
 TELLUS_QLIST_MSGVIEW     = View message

@@ -88,11 +88,13 @@ var MessageControl = new Class(
         }, this);
 
         // Fire events when buttons are clicked
+        this.mark   = this.element.getFirst('li.msgctrl-mark');
         this.reject = this.element.getFirst('li.msgctrl-reject');
         this.del    = this.element.getFirst('li.msgctrl-delete');
 
+        if(this.mark)   this.mark.addEvent('click', function() { this.fireEvent('markReadMsg', [this.selectedMsgs()]); }.bind(this));
         if(this.reject) this.reject.addEvent('click', function() { this.fireEvent('rejectMsg', [this.selectedMsgs()]); }.bind(this));
-        if(this.del) this.del.addEvent('click', function() { this.fireEvent('deleteMsg', [this.selectedMsgs()]); }.bind(this));
+        if(this.del)    this.del.addEvent('click', function() { this.fireEvent('deleteMsg', [this.selectedMsgs()]); }.bind(this));
 
         this.updateVis();
     },
