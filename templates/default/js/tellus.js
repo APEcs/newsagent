@@ -314,6 +314,8 @@ function promote_message(msgid)
     var uri = new URI(composeurl);
     uri.setData('tellusid', msgid);
 
+    // Send the browser to the compose page, with the message ID as an argument.
+    // This may be suboptimal, as there's no obvious immediate update.
     location.href = uri.toString();
 }
 
