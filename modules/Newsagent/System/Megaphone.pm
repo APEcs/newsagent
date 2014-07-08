@@ -155,14 +155,14 @@ sub _notify_author {
 
     my $status = "";
     foreach my $row (@{$result}) {
-        $status .= $self -> {"template"} -> load_template("cron/notify_email_row.tem", {"***name***"    => $row -> {"name"},
+        $status .= $self -> {"template"} -> load_template("article/cron/notify_email_row.tem", {"***name***"    => $row -> {"name"},
                                                                                         "***state***"   => $row -> {"state"},
                                                                                         "***message***" => $row -> {"message"} || "No errors reported",
                                                           });
     }
 
     $status =  $self -> {"messages"} -> queue_message(subject => $self -> {"template"} -> replace_langvar("CRON_NOTIFY_STATUS", {"***article***" => $article -> {"title"}}),
-                                                      message => $self -> {"template"} -> load_template("cron/notify_email.tem",
+                                                      message => $self -> {"template"} -> load_template("article/cron/notify_email.tem",
                                                                                                         {"***article***"  => $article -> {"title"},
                                                                                                          "***status***"   => $status,
                                                                                                          "***realname***" => $author -> {"fullname"},
