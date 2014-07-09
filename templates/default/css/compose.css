@@ -3,12 +3,12 @@
 #composeform {
     padding-top: 40px;
     margin: 0px auto;
-    width: 1130px;
+    width: 95%;
 }
 
 #leftcol {
     float: left;
-    width: 800px;
+    width: 67%;
     margin: 0px;
     padding: 0px;
 }
@@ -21,7 +21,7 @@
 
 #settings {
     float: right;
-    width: 300px;
+    width: 30%;
 }
 
 .textwrapper {
