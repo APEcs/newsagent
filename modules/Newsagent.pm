@@ -215,7 +215,8 @@ sub check_login {
     if($self -> {"session"} -> anonymous_session()) {
         $self -> log("error:anonymous", "Redirecting anonymous user to login form");
 
-        print $self -> {"cgi"} -> redirect($self -> build_login_url());
+        print $self -> {"cgi"} -> redirect(-uri => $self -> build_login_url(),
+                                           -cookie => $self -> {"session"} -> session_cookies());
         exit;
 
     # Otherwise, permissions need to be checked
