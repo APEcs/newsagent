@@ -80,3 +80,7 @@ ul.msgctrl li:hover {
 .msgctrl-menu li:hover {
 	background-color: #C8DAF7;
 }
+
+.msgctrl-selected {
+    background-color: #FAEBB1;
+}

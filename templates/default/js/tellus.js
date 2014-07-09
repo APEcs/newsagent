@@ -401,6 +401,6 @@ window.addEvent('domready', function() {
 
     // set up the select menu. Changes in this menu need to trigger visibility
     // checks in the controls box.
-    selects = new SelectControl('select-ctrl', {onUpdate: function() { controls.updateVis(); }});
+    selects = new SelectControl('select-ctrl', {onUpdate: function() { controls.updateVis(); controls.updateSelected(); }});
 
 });

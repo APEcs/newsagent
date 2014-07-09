@@ -5,6 +5,7 @@ var MessageControl = new Class(
 
     options: {
         checkClass: 'input.selctrl-opt',
+        selClass: 'msgctrl-selected',
 		offset: { x: 0, y: 0 }
     },
 
@@ -84,7 +85,10 @@ var MessageControl = new Class(
 
         // Update the visibility when any checkboxes are changed
         $$(this.options.checkClass).each(function(element) {
-            element.addEvent('change', function() { this.updateVis(); }.bind(this));
+            element.addEvent('change', function(event) {
+                                 this.updateSelected(event.target);
+                                 this.updateVis();
+                             }.bind(this));
         }, this);
 
         // Fire events when buttons are clicked
@@ -106,6 +110,24 @@ var MessageControl = new Class(
             this.element.fade('in');
         } else if(!checked.length && this.element.getStyle('visibility') == 'visible') {
             this.element.fade('out');
+        }
+    },
+
+    updateSelected: function(element) {
+
+        // If called with an element, update just that element
+        if(element) {
+            var row = element.getParent('tr');
+
+            if(element.get('checked')) {
+                row.addClass(this.options.selClass);
+            } else {
+                row.removeClass(this.options.selClass);
+            }
+
+        // Otherwise, UPDATE ALL THE ELEMENTS
+        } else {
+            $$(this.options.checkClass).each(function(elem) { this.updateSelected(elem); }, this);
         }
     },
 
