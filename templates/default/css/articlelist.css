@@ -3,7 +3,7 @@
 #articlelist {
     margin: 0px auto;
     margin-top: 40px;
-    width: 980px;
+    width: 95%;
 }
 
 table.listtable {
@@ -100,6 +100,7 @@ table.listtable td.title ul.info {
     color: #666;
     margin: 0px;
     padding: 0px;
+    white-space: normal;
 }
 
 table.listtable td.title ul.info li {

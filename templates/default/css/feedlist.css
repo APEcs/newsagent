@@ -3,12 +3,12 @@
 #feedpage {
     padding-top: 40px;
     margin: 0px auto;
-    width: 980px;
+    width: 98%;
 }
 
 #feeds {
     float: left;
-    width: 650px;
+    width: 67%;
     margin: 0px;
     padding: 0px;
 }
@@ -21,7 +21,7 @@
 
 #feedgen {
     float: right;
-    width: 300px;
+    width: 30%;
 }
 
 table.listtable {

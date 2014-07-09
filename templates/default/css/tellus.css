@@ -3,21 +3,21 @@
 #tellusform {
     padding-top: 40px;
     margin: 0px auto;
-    width: 980px;
+    width: 95%;
 }
 
 #queuelist {
     padding-top: 40px;
     margin: 0px auto;
-    width: 980px;
+    width: 95%;
 }
 
 #queuebrowser {
-    width: 180px;
+    width: 18%;
 }
 
 #messagebrowser {
-    width: 760px;
+    width: 76%;
     float: right;
 }
 
