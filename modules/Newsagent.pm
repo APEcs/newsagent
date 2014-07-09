@@ -215,6 +215,9 @@ sub check_login {
     if($self -> {"session"} -> anonymous_session()) {
         $self -> log("error:anonymous", "Redirecting anonymous user to login form");
 
+        # Need to set the cookies during the redirect, otherwise the current anon
+        # session is lost, and a new one is made by the login form access, losing
+        # the session data in the process.
         print $self -> {"cgi"} -> redirect(-uri => $self -> build_login_url(),
                                            -cookie => $self -> {"session"} -> session_cookies());
         exit;
