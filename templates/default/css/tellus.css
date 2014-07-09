@@ -3,13 +3,13 @@
 #tellusform {
     padding-top: 40px;
     margin: 0px auto;
-    width: 1130px;
+    width: 980px;
 }
 
 #queuelist {
     padding-top: 40px;
     margin: 0px auto;
-    width: 1130px;
+    width: 980px;
 }
 
 #queuebrowser {
@@ -17,7 +17,7 @@
 }
 
 #messagebrowser {
-    width: 910px;
+    width: 760px;
     float: right;
 }
 

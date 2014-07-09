@@ -3,12 +3,12 @@
 #feedpage {
     padding-top: 40px;
     margin: 0px auto;
-    width: 1130px;
+    width: 980px;
 }
 
 #feeds {
     float: left;
-    width: 800px;
+    width: 650px;
     margin: 0px;
     padding: 0px;
 }
