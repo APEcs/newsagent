@@ -310,7 +310,7 @@ sub get_queue_messages {
 
     $self -> clear_error();
 
-    my $modes = "'new', 'read'";
+    my $modes = "'new', 'read', 'promoted'";
     $modes .= ",'rejected'" if($settings -> {"show_rejected"});
 
     my $types = "";

@@ -1,4 +1,4 @@
-<tr id="msgrow-***id***">
+<tr id="msgrow-***id***" class="***modeclass***">
     <td class="type ***typeclass***" title="***typeinfo***"><div class="***typeclass***">&nbsp;</div></td>
     <td class="checkbox"><input type="checkbox" class="selctrl-opt ***modeclass***" name="msgtick" value="***id***" /></td>
     <td class="summary ***modeclass***"><div class="summary">***summary***</div>

@@ -311,12 +311,28 @@ function do_reject_messages(messageids)
  */
 function promote_message(msgid)
 {
-    var uri = new URI(composeurl);
-    uri.setData('tellusid', msgid);
+    var req = new Request({ url: api_request_path("queues", "promote", basepath),
+                            onRequest: function() {
+                                $('movespin').fade('in');
+                            },
+                            onSuccess: function(respText, respXML) {
+                                var err = respXML.getElementsByTagName("error")[0];
+                                if(err) {
+                                    $('errboxmsg').set('html', '<p class="error">'+err.getAttribute('info')+'</p>');
+                                    errbox.open();
 
-    // Send the browser to the compose page, with the message ID as an argument.
-    // This may be suboptimal, as there's no obvious immediate update.
-    location.href = uri.toString();
+                                // No error, we have a response
+                                } else {
+                                    var uri = new URI(composeurl);
+                                    uri.setData('tellusid', msgid);
+
+                                    // Send the browser to the compose page, with the message ID as an argument.
+                                    // This may be suboptimal, as there's no obvious immediate update.
+                                    location.href = uri.toString();
+                                }
+                            }
+                          });
+    req.post({'msgid': msgid});
 }
 
 

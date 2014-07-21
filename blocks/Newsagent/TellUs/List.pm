@@ -443,6 +443,31 @@ sub _build_api_move_response {
 }
 
 
+## @method private $ _build_api_promote_response()
+# Mark the message specified in the query as being promoted. This is
+# used to allow messages that have been promoted into full articles
+# to be marked for later reference.
+#
+# @return A reference to an API response hash to return to the user.
+sub _build_api_promote_response {
+    my $self   = shift;
+    my $userid = $self -> {"session"} -> get_session_userid();
+    my $msgid  = $self -> {"cgi"} -> param("msgid");
+
+    # Check whether the user has permission to delete the messages
+    $self -> {"tellus"} -> update_allowed($msgid, $userid)
+        or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_TELLUS_QLIST_ERR_NOPROMPERM}"}));
+
+    $self -> log("tellus:manage", "Setting status of message '$msgid' to promoted.");
+
+    # Messages are never really deleted, they just get the appropriate state
+    $self -> {"tellus"} -> set_message_status($msgid, $userid, "promoted")
+        or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"tellus"} -> errstr()}));
+
+    return {"result" => {"updated"  => "yes" } };
+}
+
+
 ## @method private $ _build_api_delete_response()
 # Perform a delete of any selected messages.
 #
@@ -579,6 +604,7 @@ sub page_display {
             when("queues")   { return $self -> api_response($self -> _build_api_queuelist_response()); }
             when("reject")   { return $self -> api_response($self -> _build_api_reject_response()); }
             when("setread")  { return $self -> api_response($self -> _build_api_setread_response()); }
+            when("promote")  { return $self -> api_response($self -> _build_api_promote_response()); }
             when("view")     { return $self -> api_html_response($self -> _build_api_view_response()); }
             default {
                 return $self -> api_html_response($self -> api_errorhash('bad_op',

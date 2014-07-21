@@ -145,6 +145,10 @@ table.listtable td.summary.new {
     font-weight: bold;
 }
 
+table.listtable tr.promoted {
+    background-color: #DFFFCD;
+}
+
 table.listtable td.summary div.summary {
     white-space: normal; /* There's very little else that can reasonably be done to prevent very long subject lines from
                           * breaking the control buttons, other than allowing them to wrap as needed. */

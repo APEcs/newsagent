@@ -82,5 +82,5 @@ ul.msgctrl li:hover {
 }
 
 .msgctrl-selected {
-    background-color: #FAEBB1;
+    background-color: #FAEBB1 !important;
 }
