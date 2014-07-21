@@ -35,7 +35,7 @@ dl.input > dd > input[type="radio"] {
 
 #leftcol dl.input > dd > input[type="text"],
 #leftcol dl.input > dd > textarea.fillwide {
-    width: 772px;
+    width: 100%;
 }
 
 #leftcol dl.input > dd > input[type="text"].twocol,

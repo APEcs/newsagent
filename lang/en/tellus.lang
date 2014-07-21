@@ -58,6 +58,7 @@ TELLUS_QLIST_MAKEARTICLE = Create article
 TELLUS_QLIST_MARKREAD    = Mark as read
 TELLUS_QLIST_REJECT      = Reject
 TELLUS_QLIST_DELETE      = Delete
+TELLUS_QLIST_EMAIL       = Email author
 TELLUS_QLIST_MSGVIEW     = View message
 TELLUS_QLIST_REJTITLE    = Reject messages
 TELLUS_QLIST_REJFORM     = You are about to reject one or more Tell Us messages. If you want to send a rejection notification to the message author, you can enter some appropriate text in the box below. The same notification will be sent to the author of each rejected message. If you do not want to send a rejection notification, leave the text box empty.

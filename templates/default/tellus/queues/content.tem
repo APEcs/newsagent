@@ -7,7 +7,8 @@ messages = { "promote": "{L_TELLUS_QLIST_MAKEARTICLE}",
             "rejtitle": "{L_TELLUS_QLIST_REJTITLE}",
               "delete": "{L_TELLUS_QLIST_DELETE}",
               "cancel": "{L_TELLUS_QLIST_POP_CANCEL}",
-                "view": "{L_TELLUS_QLIST_MSGVIEW}"
+                "view": "{L_TELLUS_QLIST_MSGVIEW}",
+               "email": "{L_TELLUS_QLIST_EMAIL}"
 };
 </script>
 <div id="queuelist">

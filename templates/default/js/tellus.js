@@ -320,6 +320,23 @@ function promote_message(msgid)
 }
 
 
+/** Handle requests to email the author of a specific message
+ *
+ * @param msgid The ID of the message to contact the author of.
+ */
+function email_creator(msgid)
+{
+    var elem = $('msgrow-'+msgid);
+    if(elem) {
+        var link = elem.getElementsByClassName('email')[0];
+
+        if(link) {
+            location.href = link.get('href');
+        }
+    }
+}
+
+
 /** Open a popup window containing the message selected. This takes the element of
  *  the message list the user clicked on and opens a popup window containing the
  *  text of the message, with options to promote, reject, or delete it.
@@ -355,6 +372,7 @@ function view_message(element)
                                          var msgid = element.getParent().get('id').substr(7);
 
                                          var buttons  = [ { title: messages['promote'], color: 'blue', event: function() { popbox.close(); promote_message(msgid); } },
+                                                          { title: messages['email']  , color: 'blue', event: function() { email_creator(msgid); } },
                                                           { title: messages['reject'] , color: 'red' , event: function() { popbox.close(); reject_messages([msgid]);  } },
                                                           { title: messages['delete'] , color: 'red' , event: function() { popbox.close(); delete_messages([msgid]);  } },
                                                           { title: messages['cancel'] , color: 'blue', event: function() { popbox.close(); popbox.footer.empty();    } }
