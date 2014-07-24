@@ -119,7 +119,7 @@ sub get_types {
     $self -> clear_error();
 
     my $typeh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"tellus_types"}."`
-                                             ORDER BY name");
+                                             ORDER BY `position`");
     $typeh -> execute()
         or return $self -> self_error("Unable to execute type query: ".$self -> {"dbh"} -> errstr);
 
@@ -197,7 +197,7 @@ sub get_queues {
     $self -> clear_error();
 
     my $queueh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"tellus_queues"}."`
-                                              ORDER BY `name`");
+                                              ORDER BY `position`, `name`");
     $queueh -> execute()
         or return $self -> self_error("Unable to execute queue query: ".$self -> {"dbh"} -> errstr);
 
