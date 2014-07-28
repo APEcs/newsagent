@@ -69,7 +69,7 @@ sub new {
                                   "name"  => "{L_COMPOSE_RELNEXT}" },
                                  {"value" => "after",
                                   "name"  => "{L_COMPOSE_RELAFTER}" },
-                                 {"value" => "draft",
+                                 {"value" => "nldraft",
                                   "name"  => "{L_COMPOSE_RELNONE}" },
                                ];
 
@@ -406,6 +406,88 @@ sub _validate_summary_text {
 }
 
 
+## @method private _validate_standard_release($args, $userid)
+# Check whether the values specified for the standard release options are
+# valid, and record them if they are.
+#
+# @param args   A reference to a hash to store validated data in.
+# @param userid The ID of the user submitting the form.
+# @return empty string on success, otherwise an error string.
+sub _validate_standard_release {
+    my $self   = shift;
+    my $args   = shift;
+    my $userid = shift;
+    my ($errors, $error) = ("", "");
+
+    # Get the list of feeds the user has selected and has access to
+    $error = $self -> _validate_feeds_levels($args, $userid);
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+
+    ($args -> {"release_mode"}, $error) = $self -> validate_options("mode", {"required" => 1,
+                                                                             "default"  => "visible",
+                                                                             "source"   => $self -> {"relops"},
+                                                                             "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_RELEASE")});
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+
+    if($args -> {"release_mode"} eq "timed") {
+        ($args -> {"release_time"}, $error) = $self -> validate_numeric("rtimestamp", {"required" => $args -> {"release_mode"} eq "timed",
+                                                                                       "default"  => 0,
+                                                                                       "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_RELDATE")});
+        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+    } elsif($args -> {"release_mode"} eq "preset") {
+        ($args -> {"preset"}, $error) = $self -> validate_string("preset", {"required" => 1,
+                                                                            "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_PRESETNAME"),
+                                                                            "minlen"   => 8,
+                                                                            "maxlen"   => 80});
+        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+    }
+
+    ($args -> {"sticky"}, $error) = $self -> validate_options("sticky", {"required" => 0,
+                                                                         "source"   => $self -> {"stickyops"},
+                                                                         "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_STICKY")});
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+
+    $args -> {"full_summary"} = (defined($self -> {"cgi"} -> param("full_summary")) && $self -> {"cgi"} -> param("full_summary")) ? 1 : 0;
+
+    return $errors;
+}
+
+
+## @method private _validate_schedule_release($args, $userid)
+# Check whether the values specified for the schedule release options are
+# valid, and record them if they are.
+#
+# @param args   A reference to a hash to store validated data in.
+# @param userid The ID of the user submitting the form.
+# @return empty string on success, otherwise an error string.
+sub _validate_schedule_release {
+    my $self   = shift;
+    my $args   = shift;
+    my $userid = shift;
+    my ($errors, $error) = ("", "");
+
+    my $schedules = $self -> {"article"} -> get_user_schedule_sections($userid);
+    return $self -> {"template"} -> replace_langvar("COMPOSE_SCHEDULE_NONE")
+        if(!$schedules || !scalar(keys(%{$schedules})));
+
+    ($args -> {"schedule"}, $error) = $self -> validate_options("schedule", {"required" => 1,
+                                                                             "source"   => $schedules -> {"_schedules"},
+                                                                             "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_SCHEDULE")});
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+
+    # Can only validate, or even check, the section if the schedule is valid
+    if($args -> {"schedule"}) {
+        ($args -> {"section"}, $error) = $self -> validate_options("section", {"required" => 1,
+                                                                              "source"   => $schedules -> {"id_".$args -> {"schedule"}} -> {"sections"},
+                                                                              "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_SECTION")});
+         $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+    }
+
+    $args -> {"priority"} = is_defined_numeric($self -> {"cgi"}, "priority");
+
+}
+
+
 ## @method private $ _validate_article_fields($args, $userid)
 # Validate the contents of the fields in the article form. This will validate the
 # fields, and perform any background file-wrangling operations necessary to deal
@@ -461,40 +543,11 @@ sub _validate_article_fields {
 
     # Release mode 0 is "standard" release - potentially with timed delay.
     if($args -> {"relmode"} == 0) {
+        $errors .= $self -> _validate_standard_release($args, $userid);
 
-        # Get the list of feeds the user has selected and has access to
-        $error = $self -> _validate_feeds_levels($args, $userid);
-        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
-
-        ($args -> {"release_mode"}, $error) = $self -> validate_options("mode", {"required" => 1,
-                                                                                 "default"  => "visible",
-                                                                                 "source"   => $self -> {"relops"},
-                                                                                 "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_RELEASE")});
-        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
-
-        if($args -> {"release_mode"} eq "timed") {
-            ($args -> {"release_time"}, $error) = $self -> validate_numeric("rtimestamp", {"required" => $args -> {"release_mode"} eq "timed",
-                                                                                           "default"  => 0,
-                                                                                           "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_RELDATE")});
-            $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
-        } elsif($args -> {"release_mode"} eq "preset") {
-            ($args -> {"preset"}, $error) = $self -> validate_string("preset", {"required" => 1,
-                                                                                "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_PRESETNAME"),
-                                                                                "minlen"   => 8,
-                                                                                "maxlen"   => 80});
-            $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
-        }
-
-        ($args -> {"sticky"}, $error) = $self -> validate_options("sticky", {"required" => 0,
-                                                                             "source"   => $self -> {"stickyops"},
-                                                                             "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_STICKY")});
-        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
-
-        $args -> {"full_summary"} = (defined($self -> {"cgi"} -> param("full_summary")) && $self -> {"cgi"} -> param("full_summary")) ? 1 : 0;
-
-    # Release mode 1 is "batch" release.
+    # Release mode 1 is "schedule/newsletter" release.
     } elsif($args -> {"relmode"} == 1) {
-        # FIXME: validate batch fields
+        $errors .= $self -> _validate_schedule_release($args, $userid);
     }
 
     # Handle confirmation suppression

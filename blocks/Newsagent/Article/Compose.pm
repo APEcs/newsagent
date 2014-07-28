@@ -25,7 +25,7 @@ use v5.12;
 use Newsagent::System::TellUs;
 use Newsagent::System::Matrix;
 use Webperl::Utils qw(is_defined_numeric);
-
+use Data::Dumper;
 # ============================================================================
 #  Content generators
 
@@ -72,7 +72,7 @@ sub _generate_compose {
         my $schedmode    = $self -> {"template"} -> build_optionlist($self -> {"schedrelops"}, $args -> {"schedule_mode"});
         my $schedrelease = $self -> {"template"} -> format_time($args -> {"stimestamp"}, "%d/%m/%Y %H:%M")
             if($args -> {"stimestamp"});
-
+        print STDERR "Schedule:".Dumper($schedules);
         my $scheddata = "";
         $args -> {"section"} = "" if(!$args -> {"section"});
         foreach my $id (sort(keys(%{$schedules}))) {
@@ -89,7 +89,7 @@ sub _generate_compose {
                                                                                               "***schedule_mode***"     => $schedmode,
                                                                                               "***schedule_date_fmt***" => $schedrelease,
                                                                                               "***stimestamp***"        => $args -> {"stimestamp"} || 0,
-                                                                                              "***priority***"          => $args -> {"priority"} || 2,
+                                                                                              "***priority***"          => $args -> {"priority"} || 3,
                                                                                               "***scheduledata***"      => $scheddata,
                                                              });
     }

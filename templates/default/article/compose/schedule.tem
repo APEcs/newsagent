@@ -41,11 +41,11 @@
                     <input type="hidden" name="stimestamp" id="stimestamp" value="***stimestamp***" />
                     <script type="text/javascript">
                         window.addEvent('domready', function() {
-                            var levels = new Array("{L_COMPOSE_PRI_LOWEST}", "{L_COMPOSE_PRI_LOW}", "{L_COMPOSE_PRI_NORM}", "{L_COMPOSE_PRI_HIGH}", "{L_COMPOSE_PRI_HIGHEST}");
+                            var levels = new Array("INVALID", "{L_COMPOSE_PRI_LOWEST}", "{L_COMPOSE_PRI_LOW}", "{L_COMPOSE_PRI_NORM}", "{L_COMPOSE_PRI_HIGH}", "{L_COMPOSE_PRI_HIGHEST}");
                             var slider = $('prislider');
 
                             new Slider(slider, slider.getElement('.slideknob'), {
-                                range: [0, 4],
+                                range: [1, 5],
                                 initialStep: ***priority***,
                                 onChange: function(value) {
                                     $('priname').set('text', levels[value]);
