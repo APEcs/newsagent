@@ -22,6 +22,7 @@ package Newsagent::Article;
 use strict;
 use base qw(Newsagent); # This class extends the Newsagent block class
 use Newsagent::System::Feed;
+use Newsagent::System::Schedule;
 use Newsagent::System::Article;
 use Newsagent::System::NotificationQueue;
 use File::Basename;
@@ -478,6 +479,7 @@ sub _validate_schedule_release {
     return $self -> {"template"} -> replace_langvar("COMPOSE_SCHEDULE_NONE")
         if(!$schedules || !scalar(keys(%{$schedules})));
 
+    # Schedule will be the schedule ID number
     ($args -> {"schedule"}, $error) = $self -> validate_options("schedule", {"required" => 1,
                                                                              "source"   => $schedules -> {"_schedules"},
                                                                              "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_SCHEDULE")});
@@ -485,6 +487,7 @@ sub _validate_schedule_release {
 
     # Can only validate, or even check, the section if the schedule is valid
     if($args -> {"schedule"}) {
+        # Section is the section ID number
         ($args -> {"section"}, $error) = $self -> validate_options("section", {"required" => 1,
                                                                                "source"   => $schedules -> {"id_".$args -> {"schedule"}} -> {"sections"},
                                                                                "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_SECTION")});

@@ -127,12 +127,12 @@ sub get_schedule_byid {
 
     $self -> clear_error();
 
-    my $shedh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"schedules"}."`
-                                             WHERE `id` = ?");
-    $shedh -> execute($id)
+    my $schedh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"schedules"}."`
+                                              WHERE `id` = ?");
+    $schedh -> execute($id)
         or return $self -> self_error("Unable to execute schedule lookup query: ".$self -> {"dbh"} -> errstr);
 
-    return $shedh -> fetchrow_hashref()
+    return $schedh -> fetchrow_hashref()
         or return $self -> self_error("Request for non-existant schedule $id");
 }
 
@@ -190,5 +190,85 @@ sub get_section {
     return $section;
 }
 
+
+# ============================================================================
+#  Digesting
+
+
+## @method $ get_digest($id)
+# Given a digest ID, fetch the data for the digest with that id.
+#
+# @param id The ID of the digest to fetch the data for.
+# @return A reference to a hash containing the digest data on success,
+#         undef on error or if the digest does not exist.
+sub get_digest {
+    my $self = shift;
+    my $id   = shift;
+
+    $self -> clear_error();
+
+    my $digesth = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"digests"}."`
+                                               WHERE `id` = ?");
+    $digesth -> execute($id)
+        or return $self -> self_error("Unable to execute digest lookup query: ".$self -> {"dbh"} -> errstr);
+
+    return $digesth -> fetchrow_hashref()
+        or return $self -> self_error("Request for non-existant digest $id");
+}
+
+
+## @method $ get_digest_section($id)
+# Given a digest section ID, return the data for the section, and the digest it
+# is part of.
+#
+# @note This DOES NOT fetch the data for the source schedule/section.
+#
+# @param id The ID of the digest section to fetch the data for.
+# @return A reference to the digest section data (with the digest in a key
+#         called "digest") on success, undef on error/bad section
+sub get_digest_section {
+    my $self = shift;
+    my $id   = shift;
+
+    $self -> clear_error();
+
+    my $secth = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"digest_sections"}."`
+                                             WHERE `id` = ?");
+    $secth -> execute($id)
+        or return $self -> self_error("Unable to execute section lookup query: ".$self -> {"dbh"} -> errstr);
+
+    my $section = $secth -> fetchrow_hashref()
+        or return $self -> self_error("Request for non-existant section $id");
+
+    # Pull the digest data in
+    $section -> {"digest"} = $self -> get_digest($section -> {"digest_id"})
+        or return undef;
+
+    return $section;
+}
+
+
+# ============================================================================
+#  Relation control
+
+
+sub add_section_relation {
+    my $self       = shift;
+    my $articleid  = shift;
+    my $scheduleid = shift;
+    my $sectionid  = shift;
+    my $priority   = shift;
+
+    $self -> clear_error();
+
+    my $secth = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"articlesection"}."`
+                                             (`article_id`, `schedule_id`, `section_id`, `priority`)
+                                             VALUES(?, ?, ?, ?)");
+    my $rows = $secth -> execute($articleid, $scheduleid, $sectionid, $priority);
+    return $self -> self_error("Unable to perform article section relation insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("Article section relation insert failed, no rows inserted") if($rows eq "0E0");
+
+    return 1;
+}
 
 1;

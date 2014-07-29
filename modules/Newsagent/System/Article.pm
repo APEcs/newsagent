@@ -827,7 +827,7 @@ sub add_article {
 
     # While newsletter articles need schedule/section
     } else {
-        $self -> {"schedule"} -> add_section_relation($newid, $article -> {"schedule"}, $article -> {"section"})
+        $self -> {"schedule"} -> add_section_relation($newid, $article -> {"schedule"}, $article -> {"section"}, $article -> {"priority"})
             or return $self -> self_error($self -> {"schedule"} -> errstr());
     }
 
@@ -1616,7 +1616,7 @@ sub _get_article_section {
 
     # First need to fetch the section ID information based on whether the article has been digested
     my $table = $digested ? $self -> {"settings"} -> {"database"} -> {"articledigest"}
-                          : $self -> {"settings"} -> {"database"} -> {"articlesection"}
+                          : $self -> {"settings"} -> {"database"} -> {"articlesection"};
 
     my $secth = $self -> {"dbh"} -> prepare("SELECT * FROM `$table`
                                              WHERE `article_id` = ?");
@@ -1624,7 +1624,7 @@ sub _get_article_section {
         or return $self -> self_error("Unable to execute article section query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
 
     my $section = $secth -> fetchrow_hashref()
-        or return $self -> self_error("No section data specifeid for article $id");
+        or return $self -> self_error("No section data specifeid for article ".$article -> {"id"});
 
     # If its digested, pull the digest information, and the base section/schedule
     if($digested) {
