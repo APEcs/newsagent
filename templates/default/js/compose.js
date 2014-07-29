@@ -580,6 +580,7 @@ function confirm_submit()
         var levels   = $$('input[name=level]:checked').length;
         var publish  = $('comp-release').getSelected().get("value");
         var pubname  = $('preset').get('value');
+        var relmode  = $('relmode').get('value');
 
         var buttons  = [ { title: confirm_messages['cancel'] , color: 'blue', event: function() { popbox.close(); popbox.footer.empty(); }} ];
 
@@ -599,7 +600,8 @@ function confirm_submit()
         // If at least one level has been specified, and either the summary or full text have been set,
         // the article is almost certainly going to be accepted by the system so show the "this is where
         // the message will appear" stuff and the confirm button.
-        if(feeds && levels && (summary.length || fulltext.length) && (publish != 'preset' || pubname.length)) {
+        if(((relmode == 0 && feeds && levels) || relmode == 1) &&
+           (summary.length || fulltext.length) && (publish != 'preset' || pubname.length)) {
             bodytext.adopt(
                 confirm_preset(publish == 'preset'),
                 confirm_levels(),

@@ -34,8 +34,8 @@ window.addEvent('domready', function() {
 
     CKEDITOR.replace('comp-desc', { customConfig: '{V_[commonpath]}cke_configs/***ckeconfig***' });
 
-    var settingPane = new TabPane('relmode-tabs', {onChange: function(select) { $('relmode').set('value', select); } }, ***relmode***);
-    var filesPane   = new TabPane('file-tabs');
+    settingPane = new TabPane('relmode-tabs', {onChange: function(select) { $('relmode').set('value', select); } }, ***relmode***);
+    filesPane   = new TabPane('file-tabs');
 
     $$('select.fancyselect').fancySelect({showText: false, autoHide: true});
 
