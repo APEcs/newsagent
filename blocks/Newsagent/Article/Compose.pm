@@ -65,7 +65,7 @@ sub _generate_compose {
         if($args -> {"release_time"});
 
     # Which schedules and sections can the user post to?
-    my $schedules  = $self -> {"article"} -> get_user_schedule_sections($userid);
+    my $schedules  = $self -> {"schedule"} -> get_user_schedule_sections($userid);
     my $schedblock = $self -> {"template"} -> load_template("article/compose/schedule_noaccess.tem"); # default to 'none of them'
     if($schedules && scalar(keys(%{$schedules}))) {
         my $schedlist    = $self -> {"template"} -> build_optionlist($schedules -> {"_schedules"}, $args -> {"schedule"});

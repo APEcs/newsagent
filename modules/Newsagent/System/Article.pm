@@ -150,70 +150,6 @@ sub get_user_levels {
 }
 
 
-## @method $ get_user_schedule_sections($userid)
-# Fetch a list of the shedules and schedule sections the user has access to
-# post messages in. This goes through the scheduled release settings and
-# the sections for the same, and generates a hash containing the lists of
-# each that the user can post to.
-#
-# @param userid The ID of the user to get the schedules and sections for.
-# @return A reference to a hash containing the schedule and section data on
-#         success, undef on error.
-sub get_user_schedule_sections {
-    my $self   = shift;
-    my $userid = shift;
-
-    $self -> clear_error();
-
-    # What we're /actually/ interested in here is which sections the user
-    # can post message to, the schedules they can post to come along as a
-    # resuslt of that information. So we need to traverse the list of sections
-    # recording which ones the user has permission to post to, and then
-    # pull in the data for the schedules later as a side-effect.
-
-    my $sectionh = $self -> {"dbh"} -> prepare("SELECT sec.id, sec.metadata_id, sec.name, sec.schedule_id, sch.name AS schedule_name, sch.schedule
-                                                FROM ".$self -> {"settings"} -> {"database"} -> {"schedule_sections"}." AS sec,
-                                                     ".$self -> {"settings"} -> {"database"} -> {"schedules"}." AS sch
-                                                WHERE sch.id = sec.schedule_id
-                                                ORDER BY sch.name, sec.sort_order");
-    $sectionh -> execute()
-        or return $self -> self_error("Unable to execute section lookup query: ".$self -> {"dbh"} -> errstr);
-
-    my $result = {};
-    while(my $section = $sectionh -> fetchrow_hashref()) {
-        if($self -> {"roles"} -> user_has_capability($section -> {"metadata_id"}, $userid, "schedule")) {
-            # Store the section name and id.
-            push(@{$result -> {"id_".$section -> {"schedule_id"}} -> {"sections"}},
-                 {"value" => $section -> {"id"},
-                  "name"  => $section -> {"name"}});
-
-            # And set the schedule fields if needed.
-            if(!$result -> {"id_".$section -> {"schedule_id"}} -> {"schedule_name"}) {
-                $result -> {"id_".$section -> {"schedule_id"}} -> {"schedule_name"} = $section -> {"schedule_name"};
-
-                # Work out when the next two runs of the schedule are
-                my $cron = DateTime::Event::Cron -> new($section -> {"schedule"});
-                my $next_time = undef;
-                for(my $i = 0; $i < 2; ++$i) {
-                    $next_time = $cron -> next($next_time);
-                    push(@{$result -> {"id_".$section -> {"schedule_id"}} -> {"next_run"}}, $next_time -> epoch);
-                }
-
-                # And store the cron for later user in the view
-                $result -> {"id_".$section -> {"schedule_id"}} -> {"schedule"} = $section -> {"schedule"};
-            }
-        }
-    }
-
-    foreach my $id (sort(keys(%{$result}))) {
-        push(@{$result -> {"_schedules"}}, {"value" => substr($id, 3),
-                                            "name"  => $result -> {$id} -> {"schedule_name"}});
-    }
-
-    return $result;
-}
-
-
 ## @method $ get_file_images()
 # Obtain a list of all images currently stored in the system. This generates
 # a list of images suitable for presenting the user with a dropdown from
@@ -691,15 +627,23 @@ sub get_article {
     # convert the status to a mode
     $article -> {"relmode"} = $self -> {"relmode_lookup"} -> {$article -> {"release_mode"}};
 
-    # Add the feed data to the article data
-    $feedh -> execute($article -> {"id"})
-        or return $self -> self_error("Unable to execute article feed query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
-    $article -> {"feeds"} = $feedh -> fetchall_arrayref({});
+    # For normal articles, pull in feed and level information
+    if($article -> {"relmode"} == 0) {
+        # Add the feed data to the article data
+        $feedh -> execute($article -> {"id"})
+            or return $self -> self_error("Unable to execute article feed query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
+        $article -> {"feeds"} = $feedh -> fetchall_arrayref({});
 
-    # Add the level data to the article data
-    $levelh -> execute($article -> {"id"})
-        or return $self -> self_error("Unable to execute article level query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
-    $article -> {"levels"} = $levelh -> fetchall_arrayref({});
+        # Add the level data to the article data
+        $levelh -> execute($article -> {"id"})
+            or return $self -> self_error("Unable to execute article level query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
+        $article -> {"levels"} = $levelh -> fetchall_arrayref({});
+
+    # for newsletter articles, pull in the section data
+    } else {
+        $self -> _get_article_section($article, $article -> {"release_mode"} eq "used")
+            or return undef;
+    }
 
     # And add the image data
     $imageh -> execute($article -> {"id"})
@@ -810,15 +754,16 @@ sub store_image {
 #                _validate_article_fields() function.
 # @param userid  The ID of the user creating this article.
 # @param previd  The ID of a previous revision of the article.
-# @param mode    'article' (the default) or 'newsletter'. If the latter, the article
-#                should not have feed or level information set.
+# @param mode    0 to indicate a normal article (the default) or 1 to indicate a
+#                newsletter article. If the latter, the article should not have feed
+#                or level information set, but it must have schedule and section info.
 # @return The ID of the new article on success, undef on error.
 sub add_article {
     my $self    = shift;
     my $article = shift;
     my $userid  = shift;
     my $previd  = shift;
-    my $mode    = shift || 'article';
+    my $mode    = shift || 0;
 
     $self -> clear_error();
 
@@ -831,7 +776,7 @@ sub add_article {
     }
 
     # Make a new metadata context to attach to the article
-    my $metadataid = $self -> _create_article_metadata($article -> {"feeds"}, $mode)
+    my $metadataid = $self -> _create_article_metadata($article -> {"feeds"}, $article -> {"section"}, $mode)
         or return $self -> self_error("Unable to create new metadata context: ".$self -> {"metadata"} -> errstr());
 
     # Fix up release time
@@ -872,11 +817,19 @@ sub add_article {
     $self -> _add_image_relation($newid, $article -> {"images"} -> {"b"} -> {"img"}, 1) or return undef
         if($article -> {"images"} -> {"b"} -> {"img"});
 
-    $self -> {"feed"} -> add_feed_relations($newid, $article -> {"feeds"})
-        or return undef;
+    # Normal articles need feed and level relations
+    if($mode == 0) {
+        $self -> {"feed"} -> add_feed_relations($newid, $article -> {"feeds"})
+            or return $self -> self_error($self -> {"feed"} -> errstr());
 
-    $self -> _add_level_relations($newid, $article -> {"levels"})
-        or return undef;
+        $self -> _add_level_relations($newid, $article -> {"levels"})
+            or return undef;
+
+    # While newsletter articles need schedule/section
+    } else {
+        $self -> {"schedule"} -> add_section_relation($newid, $article -> {"schedule"}, $article -> {"section"})
+            or return $self -> self_error($self -> {"schedule"} -> errstr());
+    }
 
     # Attach to the metadata context
     $self -> {"metadata"} -> attach($metadataid)
@@ -1651,6 +1604,43 @@ sub _article_mode_control {
     }
 
     return "`article`.`release_mode` IN (".join(",", @markers).")";
+}
+
+
+sub _get_article_section {
+    my $self     = shift;
+    my $article  = shift;
+    my $digested = shift;
+
+    $self -> clear_error();
+
+    # First need to fetch the section ID information based on whether the article has been digested
+    my $table = $digested ? $self -> {"settings"} -> {"database"} -> {"articledigest"}
+                          : $self -> {"settings"} -> {"database"} -> {"articlesection"}
+
+    my $secth = $self -> {"dbh"} -> prepare("SELECT * FROM `$table`
+                                             WHERE `article_id` = ?");
+    $secth -> execute($article -> {"id"})
+        or return $self -> self_error("Unable to execute article section query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
+
+    my $section = $secth -> fetchrow_hashref()
+        or return $self -> self_error("No section data specifeid for article $id");
+
+    # If its digested, pull the digest information, and the base section/schedule
+    if($digested) {
+        $article -> {"digest_section"} = $self -> {"schedule"} -> get_digest_section($section -> {"section_id"})
+            or return $self -> self_error($self -> {"schedule"} -> errstr());
+
+        $article -> {"section"} = $self -> {"schedule"} -> get_section($article -> {"digest_section"} -> {"section_id"})
+            or return $self -> self_error($self -> {"schedule"} -> errstr());
+
+    # Otherwise just pull the section/schedule.
+    } else {
+        $article -> {"section"} = $self -> {"schedule"} -> get_section($section -> {"section_id"})
+            or return $self -> self_error($self -> {"schedule"} -> errstr());
+    }
+
+    return 1;
 }
 
 1;

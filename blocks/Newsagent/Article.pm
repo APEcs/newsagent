@@ -50,7 +50,15 @@ sub new {
                                                        metadata => $self -> {"system"} -> {"metadata"})
         or return Webperl::SystemModule::set_error("Article initialisation failed: ".$Webperl::SystemModule::errstr);
 
+    $self -> {"schedule"} = Newsagent::System::Schedule -> new(dbh      => $self -> {"dbh"},
+                                                               settings => $self -> {"settings"},
+                                                               logger   => $self -> {"logger"},
+                                                               roles    => $self -> {"system"} -> {"roles"},
+                                                               metadata => $self -> {"system"} -> {"metadata"})
+        or return Webperl::SystemModule::set_error("Article initialisation failed: ".$Webperl::SystemModule::errstr);
+
     $self -> {"article"} = Newsagent::System::Article -> new(feed     => $self -> {"feed"},
+                                                             schedule => $self -> {"schedule"},
                                                              dbh      => $self -> {"dbh"},
                                                              settings => $self -> {"settings"},
                                                              logger   => $self -> {"logger"},
@@ -478,13 +486,29 @@ sub _validate_schedule_release {
     # Can only validate, or even check, the section if the schedule is valid
     if($args -> {"schedule"}) {
         ($args -> {"section"}, $error) = $self -> validate_options("section", {"required" => 1,
-                                                                              "source"   => $schedules -> {"id_".$args -> {"schedule"}} -> {"sections"},
-                                                                              "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_SECTION")});
+                                                                               "source"   => $schedules -> {"id_".$args -> {"schedule"}} -> {"sections"},
+                                                                               "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_SECTION")});
          $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
     }
 
+    # Priority values are 1 to 5 inclusive
     $args -> {"priority"} = is_defined_numeric($self -> {"cgi"}, "priority");
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => "{L_COMPOSE_ERR_PRIORITY}"})
+        if(!$args || $args < 1 || $args > 5);
 
+    ($args -> {"release_mode"}, $error) = $self -> validate_options("schedule_mode", {"required" => 1,
+                                                                                      "source"   => $self -> {"schedrelops"},
+                                                                                      "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_RELEASE")});
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+
+    if($args -> {"release_mode"} eq "after") {
+        ($args -> {"release_time"}, $error) = $self -> validate_numeric("stimestamp", {"required" => $args -> {"release_mode"} eq "after",
+                                                                                       "default"  => 0,
+                                                                                       "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_RELAFTER")});
+        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+    }
+
+    return $errors;
 }
 
 
@@ -633,7 +657,7 @@ sub _validate_article {
         }
     }
 
-    my $aid = $self -> {"article"} -> add_article($args, $userid, $articleid)
+    my $aid = $self -> {"article"} -> add_article($args, $userid, $articleid, $args -> {"relmode"})
         or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
                                                                                    "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
                                                                                                                                              {"***error***" => $self -> {"article"} -> errstr()
