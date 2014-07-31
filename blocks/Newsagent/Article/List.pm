@@ -285,8 +285,13 @@ sub _build_article_row {
     }
 
     my $feeds = "";
-    foreach my $feed (@{$article -> {"feeds"}}) {
-        $feeds .= $self -> {"template"} -> load_template("article/list/feed.tem", {"***desc***" => $feed -> {"description"}});
+    if($article -> {"relmode"} == 0) {
+        foreach my $feed (@{$article -> {"feeds"}}) {
+            $feeds .= $self -> {"template"} -> load_template("article/list/feed.tem", {"***desc***" => $feed -> {"description"}});
+        }
+    } else {
+        $feeds = $self -> {"template"} -> load_template("article/list/newsletter.tem", {"***schedule***" => $article -> {"section"} -> {"schedule"} -> {"name"},
+                                                                                        "***section***"  => $article -> {"section"} -> {"name"}});
     }
 
     return $self -> {"template"} -> load_template("article/list/row.tem", {"***modeclass***" => $article -> {"release_mode"},

@@ -18,6 +18,8 @@ ALIST_FILTER_RELTIME_PASSED = Released
 ALIST_FILTER_RELNONE        = Draft
 ALIST_FILTER_RELEDIT        = Edited
 ALIST_FILTER_RELTEMPLATES   = Templates
+ALIST_FILTER_RELNEWSNEXT    = Newsletter (next)
+ALIST_FILTER_RELNEWSAFTER   = Newsletter (timed)
 
 ALIST_CTRLEDIT       = Edit this article
 ALIST_CTRLCLONE      = Clone this article
@@ -41,3 +43,5 @@ ALIST_MORE           = More...
 
 ALIST_MODE           = Mode
 ALIST_SENDTIME       = Send after
+
+ALIST_NEWSLETTER     = Newsletter

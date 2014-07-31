@@ -30,7 +30,7 @@ use File::Copy;
 use File::Type;
 use Digest;
 use Webperl::Utils qw(path_join hash_or_hashref);
-
+use Data::Dumper;
 # ============================================================================
 #  Constructor
 
@@ -486,18 +486,26 @@ sub get_user_articles {
         # Does the user have edit access to this article?
         if($self -> {"roles"} -> user_has_capability($article -> {"metadata_id"}, $userid, "edit")) {
 
-            # Fetch the feed information. This has to happen even if the article will not actually
-            # be stored, because the feeds available needs to be recorded
-            $feedh -> execute($article -> {"id"})
-                or return $self -> self_error("Unable to execute article feed query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
+            # convert the status to a mode
+            $article -> {"relmode"} = $self -> {"relmode_lookup"} -> {$article -> {"release_mode"}};
 
-            $article -> {"feeds"} = $feedh -> fetchall_arrayref({});
+            if($article -> {"relmode"} == 0) {
+                # Fetch the feed information. This has to happen even if the article will not actually
+                # be stored, because the feeds available needs to be recorded
+                $feedh -> execute($article -> {"id"})
+                    or return $self -> self_error("Unable to execute article feed query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
 
-            # Regardless of whether this article will be included in the list, we need
-            # to record its feeds as feeds the user has access to
-            foreach my $feed (@{$article -> {"feeds"}}) {
-                $feeds -> {$feed -> {"id"}} = $feed
-                    if(!$feeds -> {$feed -> {"id"}});
+                $article -> {"feeds"} = $feedh -> fetchall_arrayref({});
+
+                # Regardless of whether this article will be included in the list, we need
+                # to record its feeds as feeds the user has access to
+                foreach my $feed (@{$article -> {"feeds"}}) {
+                    $feeds -> {$feed -> {"id"}} = $feed
+                        if(!$feeds -> {$feed -> {"id"}});
+                }
+            } else {
+                $self -> _get_article_section($article, $article -> {"release_mode"} eq "used")
+                    or return undef;
             }
 
             # And store the user information if needed
@@ -766,7 +774,7 @@ sub add_article {
     my $mode    = shift || 0;
 
     $self -> clear_error();
-
+    print STDERR "Article: ".Dumper($article);
     # Add urls to the database
     foreach my $id (keys(%{$article -> {"images"}})) {
         if($article -> {"images"} -> {$id} -> {"mode"} eq "url") {
@@ -1342,30 +1350,51 @@ sub _get_level_byname {
 }
 
 
-## @method private $ _create_article_metadata($feeds)
+## @method private $ _create_article_metadata($feeds, $sectionid, $mode)
 # Create a metadata context to attach to the article specified. This will determine
-# whether the article can be attached to a single feed's metadata, or whether it
-# needs to be attached to the root.
+# whether the article can be attached to a single feed's metadata, whether it can
+# be attached to a schedule's metadata, or whether it needs to be attached to the
+# root.
 #
-# @param feeds A reference to an array of IDs for feeds the article has been posted in.
+# @param feeds     A reference to an array of IDs for feeds the article has been posted in.
+# @param sectionid The ID of the schedule section the article is being added to.
+# @param mode      0 indicates the article is a normal article, 1 indicates it is a
+#                  newsletter article.
 # @return The new metadata context ID on success, undef otherwise.
 sub _create_article_metadata {
-    my $self  = shift;
-    my $feeds = shift;
+    my $self      = shift;
+    my $feeds     = shift;
+    my $sectionid = shift;
+    my $mode      = shift;
 
     $self -> clear_error();
 
-    # A single feed allows the article to be added to that feed's tree.
-    if(scalar(@{$feeds}) == 1) {
-        my $feed = $self -> {"feed"} -> get_feed_byid($feeds -> [0])
-            or return undef;
+    # Normal article with feeds available?
+    if($mode == 0 && $feeds) {
 
-        return $self -> {"metadata"} -> create($feed -> {"metadata_id"});
+        # A single feed allows the article to be added to that feed's tree.
+        if(scalar(@{$feeds}) == 1) {
+            my $feed = $self -> {"feed"} -> get_feed_byid($feeds -> [0])
+                or return $self -> self_error($self -> {"feed"} -> errstr());
 
-    # Multiple feeds mean that the article can not be attached to any single feed's metadata
-    # tree. Instead it has to descend from a defined context (probably the root).
+            return $self -> {"metadata"} -> create($feed -> {"metadata_id"});
+
+            # Multiple feeds mean that the article can not be attached to any single feed's metadata
+            # tree. Instead it has to descend from a defined context (probably the root).
+        } else {
+            return $self -> {"metadata"} -> create($self -> {"settings"} -> {"config"} -> {"Article:multifeed_context_parent"})
+        }
+
+    # Newsletter article with a section?
+    } elsif($mode == 1 && $sectionid) {
+        my $section = $self -> {"schedule"} -> get_section($sectionid)
+            or return $self -> self_error($self -> {"schedule"} -> errstr());
+
+        return $self -> {"metadata"} -> create($section -> {"metadata_id"});
+
+    # Something gone wrong, fall back on the default
     } else {
-        return $self -> {"metadata"} -> create($self -> {"settings"} -> {"config"} -> {"Article:multifeed_context_parent"})
+        return $self -> {"metadata"} -> create($self -> {"settings"} -> {"config"} -> {"Article:multifeed_context_parent"});
     }
 }
 

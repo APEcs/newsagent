@@ -132,6 +132,10 @@ sub new {
                                  "desc"  => "{L_ALIST_FILTER_RELEDIT}"},
                                 {"name"  => "preset",
                                  "desc"  => "{L_ALIST_FILTER_RELTEMPLATES}"},
+                                {"name"  => "next",
+                                 "desc"  => "{L_ALIST_FILTER_RELNEWSNEXT}"},
+                                {"name"  => "after",
+                                 "desc"  => "{L_ALIST_FILTER_RELNEWSAFTER}"},
                                ];
 
     $self -> {"imgops"} = [ {"value" => "none",
@@ -475,7 +479,7 @@ sub _validate_schedule_release {
     my $userid = shift;
     my ($errors, $error) = ("", "");
 
-    my $schedules = $self -> {"article"} -> get_user_schedule_sections($userid);
+    my $schedules = $self -> {"schedule"} -> get_user_schedule_sections($userid);
     return $self -> {"template"} -> replace_langvar("COMPOSE_SCHEDULE_NONE")
         if(!$schedules || !scalar(keys(%{$schedules})));
 
@@ -495,9 +499,13 @@ sub _validate_schedule_release {
     }
 
     # Priority values are 1 to 5 inclusive
-    $args -> {"priority"} = is_defined_numeric($self -> {"cgi"}, "priority");
-    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => "{L_COMPOSE_ERR_PRIORITY}"})
-        if(!$args || $args < 1 || $args > 5);
+    ($args -> {"priority"}, $error) = $self -> validate_numeric("priority", {"required" => 1,
+                                                                             "default"  => 0,
+                                                                             "min"      => 1,
+                                                                             "max"      => 5,
+                                                                             "intonly"  => 1,
+                                                                             "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_PRIORITY")});
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
     ($args -> {"release_mode"}, $error) = $self -> validate_options("schedule_mode", {"required" => 1,
                                                                                       "source"   => $self -> {"schedrelops"},
