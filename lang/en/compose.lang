@@ -16,8 +16,8 @@ COMPOSE_IMAGEA     = Lead Image
 COMPOSE_IMAGEB     = Article Image
 
 COMPOSE_PUBLICATION = Publication options
-COMPOSE_FEED   = Show in feed
-COMPOSE_LEVEL  = Visibility levels
+COMPOSE_FEED        = Show in feed
+COMPOSE_LEVEL       = Visibility levels
 
 COMPOSE_RELEASE   = Publish
 COMPOSE_RELNOW    = Immediately
@@ -55,7 +55,9 @@ COMPOSE_RELNEXT     = In next publication
 COMPOSE_RELLATER    = After the specified time
 COMPOSE_RELAFTER    = Publish at or after
 
-COMPOSE_SUBMIT  = Create article
+COMPOSE_SHED_MANUAL = Manual release required
+
+COMPOSE_SUBMIT   = Create article
 COMPOSE_FAILED   = Unable to create new article, the following errors were encountered:
 
 COMPOSE_ARTICLE  = Article

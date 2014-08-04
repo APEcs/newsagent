@@ -93,11 +93,15 @@ sub get_user_schedule_sections {
                 $result -> {"id_".$section -> {"schedule_id"}} -> {"schedule_name"} = $section -> {"schedule_name"};
 
                 # Work out when the next two runs of the schedule are
-                my $cron = DateTime::Event::Cron -> new($section -> {"schedule"});
-                my $next_time = undef;
-                for(my $i = 0; $i < 2; ++$i) {
-                    $next_time = $cron -> next($next_time);
-                    push(@{$result -> {"id_".$section -> {"schedule_id"}} -> {"next_run"}}, $next_time -> epoch);
+                if($section -> {"schedule"}) {
+                    my $cron = DateTime::Event::Cron -> new($section -> {"schedule"});
+                    my $next_time = undef;
+                    for(my $i = 0; $i < 2; ++$i) {
+                        $next_time = $cron -> next($next_time);
+                        push(@{$result -> {"id_".$section -> {"schedule_id"}} -> {"next_run"}}, $next_time -> epoch);
+                    }
+                } else {
+                    $result -> {"id_".$section -> {"schedule_id"}} -> {"next_run"} = [ "", "" ];
                 }
 
                 # And store the cron for later user in the view
