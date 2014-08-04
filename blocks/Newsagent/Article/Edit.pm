@@ -246,10 +246,19 @@ sub _generate_edit {
             if($args -> {"release_time"});
 
         my $scheddata = "";
+        my $nextdata;
         $args -> {"section"} = "" if(!$args -> {"section"});
         foreach my $id (sort(keys(%{$schedules}))) {
             next unless($id =~ /^id_/);
-            $scheddata .= '"'.$id.'": { next: ['.join(",", map { '"'.$self -> {"template"} -> format_time($_).'"' } @{$schedules -> {$id} -> {"next_run"}}).'],';
+
+            if($schedules -> {$id} -> {"next_run"} -> [0]) {
+                $nextdata = join(",", map { '"'.$self -> {"template"} -> format_time($_).'"' } @{$schedules -> {$id} -> {"next_run"}});
+            } else {
+                $nextdata = '"'.$self -> {"template"} -> replace_langvar("COMPOSE_SHED_MANUAL").'",'.
+                            '"'.$self -> {"template"} -> replace_langvar("COMPOSE_SHED_MANUAL").'"';
+            }
+
+            $scheddata .= '"'.$id.'": { next: ['.$nextdata.'],';
             $scheddata .= '"sections": ['.join(",",
                                                map {
                                                    '{ "value": "'. $_ -> {"value"}.'", "name": "'.$_ -> {"name"}.'", "selected": '.($_ -> {"value"} eq $args -> {"section"} && $id eq ("id_".$args -> {"schedule"}) ? 'true' : 'false').'}'
