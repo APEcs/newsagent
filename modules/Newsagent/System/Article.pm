@@ -1657,17 +1657,21 @@ sub _get_article_section {
 
     # If its digested, pull the digest information, and the base section/schedule
     if($digested) {
-        $article -> {"digest_section"} = $self -> {"schedule"} -> get_digest_section($section -> {"section_id"})
+        $article -> {"digest_section_data"} = $self -> {"schedule"} -> get_digest_section($section -> {"section_id"})
             or return $self -> self_error($self -> {"schedule"} -> errstr());
 
-        $article -> {"section"} = $self -> {"schedule"} -> get_section($article -> {"digest_section"} -> {"section_id"})
+        $article -> {"section_data"} = $self -> {"schedule"} -> get_section($article -> {"digest_section"} -> {"section_id"})
             or return $self -> self_error($self -> {"schedule"} -> errstr());
 
     # Otherwise just pull the section/schedule.
     } else {
-        $article -> {"section"} = $self -> {"schedule"} -> get_section($section -> {"section_id"})
+        $article -> {"section_data"} = $self -> {"schedule"} -> get_section($section -> {"section_id"})
             or return $self -> self_error($self -> {"schedule"} -> errstr());
     }
+
+    # Copy out the IDs into a consistent format for edit
+    $article -> {"section"}  = $article -> {"section_data"} -> {"id"};
+    $article -> {"schedule"} = $article -> {"section_data"} -> {"schedule"} -> {"id"};
 
     return 1;
 }

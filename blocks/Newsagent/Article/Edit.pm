@@ -190,8 +190,8 @@ sub _generate_edit {
     return ($article, $message) unless(ref($article) eq "HASH");
 
     # Convert the levels and image data in the article into something easier to use
-    $article -> {"levels"} = $self -> _fixup_levels($article -> {"levels"});
-    $article -> {"images"} = $self -> _fixup_images($article -> {"images"});
+    $article -> {"levels"}  = $self -> _fixup_levels($article -> {"levels"});
+    $article -> {"images"}  = $self -> _fixup_images($article -> {"images"});
 
     # Convert the sticky data into something the dropdown can use
     $self -> _fixup_sticky($article);
@@ -241,27 +241,26 @@ sub _generate_edit {
     my $schedblock = $self -> {"template"} -> load_template("article/compose/schedule_noaccess.tem"); # default to 'none of them'
     if($schedules && scalar(keys(%{$schedules}))) {
         my $schedlist    = $self -> {"template"} -> build_optionlist($schedules -> {"_schedules"}, $args -> {"schedule"});
-        my $schedmode    = $self -> {"template"} -> build_optionlist($self -> {"schedrelops"}, $args -> {"schedule_mode"});
-        my $schedrelease = $self -> {"template"} -> format_time($args -> {"stimestamp"}, "%d/%m/%Y %H:%M")
-            if($args -> {"stimestamp"});
+        my $schedmode    = $self -> {"template"} -> build_optionlist($self -> {"schedrelops"}, $args -> {"release_mode"});
+        my $schedrelease = $self -> {"template"} -> format_time($args -> {"release_time"}, "%d/%m/%Y %H:%M")
+            if($args -> {"release_time"});
 
         my $scheddata = "";
         $args -> {"section"} = "" if(!$args -> {"section"});
         foreach my $id (sort(keys(%{$schedules}))) {
             next unless($id =~ /^id_/);
-
             $scheddata .= '"'.$id.'": { next: ['.join(",", map { '"'.$self -> {"template"} -> format_time($_).'"' } @{$schedules -> {$id} -> {"next_run"}}).'],';
             $scheddata .= '"sections": ['.join(",",
                                                map {
-                                                   '{ "value": "'. $_ -> {"value"}.'", "name": "'.$_ -> {"name"}.'", "selected": '.($_ -> {"value"} eq $args -> {"section"} && $id eq $args -> {"schedule"} ? 'true' : 'false').'}'
+                                                   '{ "value": "'. $_ -> {"value"}.'", "name": "'.$_ -> {"name"}.'", "selected": '.($_ -> {"value"} eq $args -> {"section"} && $id eq ("id_".$args -> {"schedule"}) ? 'true' : 'false').'}'
                                                } @{$schedules -> {$id} -> {"sections"}}).']},';
         }
 
         $schedblock = $self -> {"template"} -> load_template("article/compose/schedule.tem", {"***schedule***"          => $schedlist,
                                                                                               "***schedule_mode***"     => $schedmode,
                                                                                               "***schedule_date_fmt***" => $schedrelease,
-                                                                                              "***stimestamp***"        => $args -> {"stimestamp"} || 0,
-                                                                                              "***priority***"          => $args -> {"priority"} || 2,
+                                                                                              "***stimestamp***"        => $args -> {"release_time"} || 0,
+                                                                                              "***priority***"          => $args -> {"priority"} || 3,
                                                                                               "***scheduledata***"      => $scheddata,
                                                              });
     }

@@ -10,6 +10,8 @@ ALIST_RELNONE        = Draft article (never released)
 ALIST_RELEDIT        = Edited (not publicly visible)
 ALIST_RELDELETED     = Deleted
 ALIST_RELTEMPLATE    = Template: ***preset***
+ALIST_RELNEWSNEXT    = Released in next newsletter
+ALIST_RELNEWSAFTER   = Released after ***afterdate***
 
 ALIST_FILTER_RELHIDDEN      = Hidden
 ALIST_FILTER_RELNOW         = Published
@@ -45,3 +47,4 @@ ALIST_MODE           = Mode
 ALIST_SENDTIME       = Send after
 
 ALIST_NEWSLETTER     = Newsletter
+ALIST_NEWSSECT       = Section

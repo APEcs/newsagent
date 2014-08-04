@@ -81,7 +81,7 @@ sub _generate_compose {
             $scheddata .= '"'.$id.'": { next: ['.join(",", map { '"'.$self -> {"template"} -> format_time($_).'"' } @{$schedules -> {$id} -> {"next_run"}}).'],';
             $scheddata .= '"sections": ['.join(",",
                                                map {
-                                                   '{ "value": "'. $_ -> {"value"}.'", "name": "'.$_ -> {"name"}.'", "selected": '.($_ -> {"value"} eq $args -> {"section"} && $id eq $args -> {"schedule"} ? 'true' : 'false').'}'
+                                                   '{ "value": "'. $_ -> {"value"}.'", "name": "'.$_ -> {"name"}.'", "selected": '.($_ -> {"value"} eq $args -> {"section"} && $id eq ("id_".$args -> {"schedule"}) ? 'true' : 'false').'}'
                                                } @{$schedules -> {$id} -> {"sections"}}).']},';
         }
 

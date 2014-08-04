@@ -118,6 +118,8 @@ sub new {
                               "edited"   => "{L_ALIST_RELEDIT}",
                               "deleted"  => "{L_ALIST_RELDELETED}",
                               "preset"   => "{L_ALIST_RELTEMPLATE}",
+                              "next"     => "{L_ALIST_RELNEWSNEXT}",
+                              "after"    => "{L_ALIST_RELNEWSAFTER}",
                             };
 
     $self -> {"filtermodes"} = [{"name"  => "hidden",

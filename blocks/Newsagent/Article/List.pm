@@ -290,13 +290,14 @@ sub _build_article_row {
             $feeds .= $self -> {"template"} -> load_template("article/list/feed.tem", {"***desc***" => $feed -> {"description"}});
         }
     } else {
-        $feeds = $self -> {"template"} -> load_template("article/list/newsletter.tem", {"***schedule***" => $article -> {"section"} -> {"schedule"} -> {"name"},
-                                                                                        "***section***"  => $article -> {"section"} -> {"name"}});
+        $feeds = $self -> {"template"} -> load_template("article/list/newsletter.tem", {"***schedule***" => $article -> {"section_data"} -> {"schedule"} -> {"name"},
+                                                                                        "***section***"  => $article -> {"section_data"} -> {"name"}});
     }
 
     return $self -> {"template"} -> load_template("article/list/row.tem", {"***modeclass***" => $article -> {"release_mode"},
                                                                            "***modeinfo***"  => $self -> {"relmodes"} -> {$article -> {"release_mode"}},
                                                                            "***date***"      => $self -> {"template"} -> fancy_time($article -> {"release_time"}, 0, 1),
+                                                                           "***afterdate***" => $self -> {"template"} -> format_time($article -> {"release_time"}),
                                                                            "***feeds***"     => $feeds,
                                                                            "***title***"     => $article -> {"title"} || $self -> {"template"} -> format_time($article -> {"release_time"}),
                                                                            "***action***"    => $action,
