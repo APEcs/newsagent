@@ -24,7 +24,6 @@ use base qw(Webperl::SystemModule); # This class extends the Newsagent block cla
 use v5.12;
 
 use DateTime;
-use DateTime::Event::Cron;
 use File::Path qw(make_path);
 use File::Copy;
 use File::Type;

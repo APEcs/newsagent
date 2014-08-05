@@ -249,7 +249,7 @@ sub _build_message_row {
 }
 
 
-## @method private @ _generate_queues($queue, $pagenum)
+## @method private @ _generate_messagelist($queue, $pagenum)
 # Generate the contents of a page listing the queues messages the user has
 # permission to edit.
 #

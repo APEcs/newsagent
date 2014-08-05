@@ -22,8 +22,32 @@ package Newsagent::Article::List;
 use strict;
 use base qw(Newsagent::Article); # This class extends the Newsagent block class
 use Webperl::Utils qw(is_defined_numeric);
+use DateTime::Event::Cron;
 use POSIX qw(ceil);
 use v5.12;
+
+# ============================================================================
+#  General support
+
+## @method private $ _release_time($article)
+# Generate a string describing when the specified article is likely to be released.
+#
+# @param article A reference to a hash containing the article data.
+# @return A string describing the release time for the article.
+sub _release_time {
+    my $self = shift;
+    my $article = shift;
+
+    # Does the schedule for the article has a defined release schedule?
+    if($article -> {"schedule_data"} -> {"schedule"} -> {"schedule"}) {
+        my $cron = DateTime::Event::Cron -> new($article -> {"schedule_data"} -> {"schedule"} -> {"schedule"});
+
+    } else {
+
+        return $self -> {"template"} -> replace_langvar("COMPOSE_SHED_MANUAL");
+    }
+}
+
 
 # ============================================================================
 #  Validation/input
@@ -285,18 +309,23 @@ sub _build_article_row {
     }
 
     my $feeds = "";
+    my $reldate;
+
     if($article -> {"relmode"} == 0) {
         foreach my $feed (@{$article -> {"feeds"}}) {
             $feeds .= $self -> {"template"} -> load_template("article/list/feed.tem", {"***desc***" => $feed -> {"description"}});
         }
+        $reldate = $self -> {"template"} -> fancy_time($article -> {"release_time"}, 0, 1);
     } else {
         $feeds = $self -> {"template"} -> load_template("article/list/newsletter.tem", {"***schedule***" => $article -> {"section_data"} -> {"schedule"} -> {"name"},
                                                                                         "***section***"  => $article -> {"section_data"} -> {"name"}});
+        $reldate = $self -> _release_time($article);
     }
+
 
     return $self -> {"template"} -> load_template("article/list/row.tem", {"***modeclass***" => $article -> {"release_mode"},
                                                                            "***modeinfo***"  => $self -> {"relmodes"} -> {$article -> {"release_mode"}},
-                                                                           "***date***"      => $self -> {"template"} -> fancy_time($article -> {"release_time"}, 0, 1),
+                                                                           "***date***"      => $reldate,
                                                                            "***afterdate***" => $self -> {"template"} -> format_time($article -> {"release_time"}),
                                                                            "***feeds***"     => $feeds,
                                                                            "***title***"     => $article -> {"title"} || $self -> {"template"} -> format_time($article -> {"release_time"}),
@@ -450,7 +479,7 @@ sub page_display {
     # Note that this should never actually happen - all users should have compose
     # permission of some kind - but this is here to make really sure of that.
     if(!$self -> check_permission("listarticles")) {
-        $self -> log("error:compose:permission", "User does not have permission to list articles");
+        $self -> log("error:article:permission", "User does not have permission to list articles");
 
         my $userbar = $self -> {"module"} -> load_module("Newsagent::Userbar");
         my $message = $self -> {"template"} -> message_box("{L_PERMISSION_FAILED_TITLE}",
@@ -461,7 +490,7 @@ sub page_display {
                                                            "errorcore",
                                                            [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
                                                               "colour"  => "blue",
-                                                              "action"  => "location.href='".$self -> build_url(block => "compose", pathinfo => [])."'"} ]);
+                                                              "action"  => "location.href='".$self -> build_url(block => "feeds", pathinfo => [])."'"} ]);
 
         return $self -> {"template"} -> load_template("error/general.tem",
                                                       {"***title***"     => "{L_PERMISSION_FAILED_TITLE}",

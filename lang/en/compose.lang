@@ -55,7 +55,7 @@ COMPOSE_RELNEXT     = In next publication
 COMPOSE_RELLATER    = After the specified time
 COMPOSE_RELAFTER    = Publish at or after
 
-COMPOSE_SHED_MANUAL = Manual release required
+COMPOSE_SHED_MANUAL = Manual release
 
 COMPOSE_SUBMIT   = Create article
 COMPOSE_FAILED   = Unable to create new article, the following errors were encountered:

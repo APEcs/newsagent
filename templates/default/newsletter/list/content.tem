@@ -1,0 +1,18 @@
+<div id="newsletlist">
+    <div class="shadowbox">
+        <h2>{L_NEWSLETTER_LIST_TITLE}</h2>
+        <div class="sbcontent">
+            <div id="messagebrowser">
+                <table class="listtable">
+                   <tbody>
+***messages***
+                   </tbody>
+                </table>
+            </div>
+            <div id="newsletbrowser">
+***newslets***
+            </div>
+            <div class="clear"></div>
+        </div>
+    </div>
+</div>

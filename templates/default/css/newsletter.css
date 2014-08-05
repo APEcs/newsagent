@@ -1,0 +1,30 @@
+#newsletlist {
+    padding-top: 40px;
+    margin: 0px auto;
+    width: 95%;
+}
+
+#newsletbrowser {
+    width: 18%;
+}
+
+#messagebrowser {
+    width: 76%;
+    float: right;
+}
+
+table.listtable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table.listtable tr td {
+    border-bottom: 1px solid #ddd;
+    padding: 7px 3px;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+table.listtable tr:last-child td {
+    border-bottom: none;
+}

@@ -20,6 +20,7 @@
 package Newsagent::System::Schedule;
 
 use strict;
+use DateTime::Event::Cron;
 use base qw(Webperl::SystemModule); # This class extends the Newsagent block class
 use v5.12;
 
