@@ -241,7 +241,7 @@ sub active_queue {
 
     # If the queue data has been found, and the user has access to it, return the data
     my $queuedata = $queueh -> fetchrow_hashref();
-    return $queuedata if($queue && $self -> {"roles"} -> user_has_capability($queuedata -> {"metadata_id"}, $userid, "tellus.manage"));
+    return $queuedata if($queuedata && $self -> {"roles"} -> user_has_capability($queuedata -> {"metadata_id"}, $userid, "tellus.manage"));
 
     # queue is bad/user doesn't have access, so fetch the queues the user does have access to
     my $queues = $self -> get_queues($userid, "manage")
