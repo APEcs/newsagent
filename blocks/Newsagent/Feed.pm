@@ -58,7 +58,8 @@ sub new {
                                                              settings => $self -> {"settings"},
                                                              logger   => $self -> {"logger"},
                                                              roles    => $self -> {"system"} -> {"roles"},
-                                                             metadata => $self -> {"system"} -> {"metadata"})
+                                                             metadata => $self -> {"system"} -> {"metadata"},
+                                                             userdata => $self -> {"system"} -> {"userdata"})
         or return Webperl::SystemModule::set_error("Article initialisation failed: ".$SystemModule::errstr);
 
     return $self;

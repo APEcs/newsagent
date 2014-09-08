@@ -369,6 +369,8 @@ sub get_feed_articles {
                 $article -> {"images"} -> [$image -> {"order"}] = $image;
             }
 
+            # Fetch the year info
+            $article -> {"acyear"} = $self -> {"userdata"} -> get_year_data($article -> {"created"});
         }
     } # if(scalar(@{$articles})) {
 

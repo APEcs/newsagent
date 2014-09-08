@@ -157,6 +157,7 @@ sub generate_feed {
                                                                                 "***feeds***"       => $feeds,
                                                                                 "***extra***"       => $extra,
                                                                                 "***date***"        => $pubdate,
+                                                                                "***acyear***"      => $result -> {"acyear"} ? $result -> {"acyear"} -> {"start_year"} : "",
                                                                                 "***guid***"        => $self -> build_url(fullurl  => 1,
                                                                                                                           block    => "view",
                                                                                                                           pathinfo => [ "article", $result -> {"id"}]),

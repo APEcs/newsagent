@@ -150,6 +150,29 @@ sub get_valid_years {
 }
 
 
+## @method $ get_year_data($date)
+# Given a date, attempt to locate the academic year the specified date falls in.
+#
+# @param date The date to locate the year for
+# @return A reference to a hash containing the year data.
+sub get_year_data {
+    my $self = shift;
+    my $date = shift;
+
+    $self -> clear_error();
+
+    my $query = $self -> {"udata_dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"userdata"} -> {"acyears"}."`
+                                                   WHERE start_semester1 < ?
+                                                   ORDER BY start_semester1 DESC
+                                                   LIMIT 1");
+    $query -> execute($date)
+        or return $self -> self_error("Unable to execute academic year lookup: ".$self -> {"udata_dbh"} -> errstr);
+
+    return $query -> fetchrow_hashref() ||
+        $self -> self_error("Unable to find academic year for date $date");
+}
+
+
 ## @method private $ _add_multiparam($settings, $params, $table, $field, $type, $mode)
 # Construct a potentially multi-parameter where clause based on the spcified settings.
 # This creates a where clause that compares the specified table and field to each
