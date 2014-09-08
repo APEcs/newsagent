@@ -20,6 +20,7 @@
 package Newsagent::TellUs::List;
 
 use strict;
+use experimental 'smartmatch';
 use base qw(Newsagent::TellUs); # This class extends the Newsagent TellUs class
 use POSIX qw(ceil);
 use v5.12;

@@ -20,6 +20,7 @@
 package Newsagent::Article::List;
 
 use strict;
+use experimental 'smartmatch';
 use base qw(Newsagent::Article); # This class extends the Newsagent block class
 use Webperl::Utils qw(is_defined_numeric);
 use DateTime::Event::Cron;

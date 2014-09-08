@@ -20,6 +20,7 @@
 package Newsagent::System::Article;
 
 use strict;
+use experimental 'smartmatch';
 use base qw(Webperl::SystemModule); # This class extends the Newsagent block class
 use v5.12;
 

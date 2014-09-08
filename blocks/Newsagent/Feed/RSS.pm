@@ -20,6 +20,7 @@
 package Newsagent::Feed::RSS;
 
 use strict;
+use experimental 'smartmatch';
 use base qw(Newsagent::Feed); # This class extends the Newsagent Feed class
 use Newsagent::System::Article;
 use Encode;

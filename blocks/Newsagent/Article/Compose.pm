@@ -20,6 +20,7 @@
 package Newsagent::Article::Compose;
 
 use strict;
+use experimental 'smartmatch';
 use base qw(Newsagent::Article); # This class extends the Article block class
 use v5.12;
 use Newsagent::System::TellUs;
