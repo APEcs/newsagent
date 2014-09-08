@@ -196,6 +196,133 @@ sub get_section {
 }
 
 
+## @method $ active_newsletter($newsid, $userid)
+# Obtain the data for the active newsletter. If no ID  is provided, or the user
+# does not have schedule access to the newsletter or any of its sections, this
+# will choose the first newsletter the user has schedule access to (in
+# alphabetical order) and return the data for that.
+#
+# @param newsletter The name of the active newsletter.
+# @param userid     The ID of the user fetching the newsletter data.
+# @return A reference to a hash containing the newsletter data to use as the active newsletter.
+sub active_newsletter {
+    my $self   = shift;
+    my $newsid = shift;
+    my $userid = shift;
+
+    $self -> clear_error();
+
+    # Determine whether the user can access the newsletter. If this
+    # returns undef or a filled in hashref, it can be returned.
+    my $newsletter = $self -> get_user_newsletter($newsid, $userid);
+    return $newsletter if(!defined($newsletter) || $newsletter -> {"id"});
+
+    # Get here and the user does not have access to the requested newsletter. Find the
+    # first newsletter the user does have access to.
+    my $newsh = $self -> {"dbh"} -> prepare("SELECT `id`
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"schedules"}."`
+                                             ORDER BY `name`");
+    $newsh -> execute()
+        or return $self -> self_error("Unable to execute schedule query: ".$self -> {"dbh"} -> errstr);
+
+    while(my $row = $newsh -> fetchrow_arrayref()) {
+        # check the user's access to the newsletter or its sections
+        $newsletter = $self -> get_user_newsletter($row -> [0], $userid);
+        return $newsletter if(!defined($newsletter) || $newsletter -> {"id"});
+    }
+
+    return $self -> self_error("User does not have any access to any newsletters");
+}
+
+
+## @method $ get_user_newsletter($newsid, $userid)
+# Determine whether the user has schedule access to the specified
+# newsletter, or one of the sections within the newsletter.
+#
+# @param newsid The ID of the newsletter to fetch
+# @param userid The Id of the user requesting access.
+# @return A reference to a hash containing the newsletter on success,
+#         a reference to an empty hash if the user does not have access,
+#         undef on error.
+sub get_user_newsletter {
+    my $self   = shift;
+    my $newsid = shift;
+    my $userid = shift;
+
+    $self -> clear_error();
+
+    # Try to locate the requested schedule
+    my $schedh = $self -> {"dbh"} -> prepare("SELECT *
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {"schedules"}."`
+                                              WHERE id = ?");
+    $schedh -> execute($newsid)
+        or return $self -> self_error("Unable to execute newsletter query: ".$self -> {"dbh"} -> errstr);
+
+    # If the newsletter information has been found, determine whether the user has schedule access to
+    # it, or a section inside it
+    my $newsletter = $schedh -> fetchrow_hashref();
+    if($newsletter) {
+        # simple case: user has schedule access to the newsletter and all sections
+        return $newsletter
+            if($self -> {"roles"} -> user_has_capability($newsletter -> {"metadata_id"}, $userid, "schedule"));
+
+        # user doesn't have simple access, check access to sections of this newsletter
+        my $secth = $self -> {"dbh"} -> prepare("SELECT `metadata_id`
+                                                 FROM `".$self -> {"settings"} -> {"database"} -> {"schedule_sections"}."`
+                                                 WHERE `schedule_id` = ?");
+        $secth -> execute($newsletter -> {"id"})
+            or return $self -> self_error("Unable to execute section query: ".$self -> {"dbh"} -> errstr);
+
+        while(my $section = $secth -> fetchrow_arrayref()) {
+            # If the user has schedule capability on the section, they can access the newsletter
+            return $newsletter
+                if($self -> {"roles"} -> user_has_capability($section -> [0], $userid, "schedule"));
+        }
+    }
+
+    return {};
+}
+
+
+
+sub get_newslettter_messages {
+    my $self    = shift;
+    my $newsid  = shift;
+    my $userid  = shift;
+    my $getnext = shift;
+    my $mindate = shift;
+
+    $self -> clear_error();
+
+    # First get all the sections, ordered by the order they appear in the
+    # newsletter.
+    my $secth = $self -> {"dbh"} -> prepare("SELECT *
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"schedule_sections"}."`
+                                             WHERE `schedule_id` = ?
+                                             ORDER BY `sort_order`");
+    $secth -> execute($newsid)
+        or return $self -> self_error("Unable to execute section query: ".$self -> {"dbh"} -> errstr);
+
+    my $sections = $secth -> fetchall_arrayref({})
+        or return $self -> self_error("Unable to fetch results for section query");
+
+    return $self -> self_error("No sections defined for newsletter $newsid")
+        if(!scalar(@{$sections}));
+
+    # Go through the sections, working out which ones the user can edit, and
+    # fetching the messages for the sections
+    foreach my $section (@{$sections}) {
+        $section -> {"editable"} = $self -> {"roles"} -> user_has_capability($section -> [0], $userid, "schedule");
+
+        # Fetch the messages even if the user can't edit the section, so they can
+        # see the content in context
+        $section -> {"messages"} = $self -> _fetch_section_messages($newsid, $section -> {"id"}, $getnext, $mindate);
+    }
+
+    return $sections;
+}
+
+
 # ============================================================================
 #  Digesting
 
@@ -274,6 +401,38 @@ sub add_section_relation {
     return $self -> self_error("Article section relation insert failed, no rows inserted") if($rows eq "0E0");
 
     return 1;
+}
+
+
+# ============================================================================
+#  Internal implementation
+
+sub _fetch_section_message_summaries {
+    my $self    = shift;
+    my $shedid  = shift;
+    my $secid   = shift;
+    my $getnext = shift;
+    my $mindate = shift;
+    my $maxdate = shift;
+    my $filter  = "";
+
+    $filter  = "AND `a`.`release_mode` = 'next'"    if($getnext);
+    $filter .= "AND `a`.`release_date` > $mindate"  if($mindate && $mindate =~ /^\d+$/);
+    $filter .= "AND `a`.`release_date` <= $maxdate" if($maxdate && $maxdate =~ /^\d+$/);
+
+    # Pull out the messages ordered as set by the user
+    my $messh = $self -> {"dbh"} -> prepare("SELECT `a`.`title`, `a`.`summary`, `a`.`release_mode`, `a`.`release_date`
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"articlesection"}."` AS `s`,
+                                                  `".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `a`
+                                             WHERE `s`.`schedule_id` = ?
+                                             AND `s`.`section_id` = ?
+                                             $filter
+                                             ORDER BY `s`.`sort_order`");
+    $messh -> execute($shedid, $secid)
+        or return $self -> self_error("Unable to execute message list lookup: ".$self -> {"dbh"} -> errstr());
+
+
+
 }
 
 1;

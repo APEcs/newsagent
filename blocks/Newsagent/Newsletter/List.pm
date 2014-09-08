@@ -27,6 +27,38 @@ use POSIX qw(ceil);
 use v5.12;
 
 
+# ============================================================================
+#  Content generators
+
+## @method private $ _build_newsletter_list($schedules, $active)
+# Generate a list of divs that can be used to select the newsletter to edit.
+#
+# @param schedules A reference to a hash containing the schedule data.
+# @param active    A reference to a hash containing the active newsletter information.
+# @return A string containing the newsletter list.
+sub _build_newsletter_list {
+    my $self      = shift;
+    my $schedules = shift;
+    my $active    = shift;
+    my $result    = "";
+
+    foreach my $newslet (@{$schedules -> {"_schedules"}}) {
+        my $highlight = ($newlet -> {"value"} == $active -> {"id"}) ? "active" : "";
+
+        $result .= $self -> {"template"} -> load_template("newsletter/list/newsletter.tem", {"***highlight***" => $highlight,
+                                                                                             "***id***"        => $newslet -> {"id"},
+                                                                                             "***name***"      => $newslet -> {"name"}});
+    }
+
+    # Fallback for users with no newsletters.
+    $result = $self -> {"template"} -> load_template("newsletter/list/nonewsletter.tem")
+        if(!$result);
+
+    return $result;
+}
+
+
+
 ## @method private @ _generate_newsletterlist($newsid)
 # Generate the contents of a page listing the messages in the specified newsletter.
 #
@@ -35,28 +67,31 @@ sub _generate_newsletterlist {
     my $self   = shift;
     my $newsid = shift;
     my $userid = $self -> {"session"} -> get_session_userid();
-    my ($newsletlist, $usedmsg, $availmsg) = ("", "");
+    my ($newsletlist, $usedmsg, $availmsg, $sections) = ("", "", "", []);
 
     # Fetch the list of schedules and sections the user can edit
     my $schedules  = $self -> {"schedule"} -> get_user_schedule_sections($userid);
 
     # And get the newsletter the user has selected
-    my $newsletter = $self -> _active_newsletter($newsid, $userid);
+    my $newsletter = $self -> {"schedule"} -> active_newsletter($newsid, $userid);
 
     # If a newsletter is selected, build the page
     if($newsletter) {
-        $newsletlist = $self -> _build_newsletter_list($newletlist, $userid);
+        $newsletlist = $self -> _build_newsletter_list($schedules, $newsletter);
 
-        my $settings = $self -> _get_newsletter_settings($newsletter -> {"id"});
+        # Fetch the messages set for the current message
+        my $messages = $self -> {"schedule"} -> get_newslettter_messages($newsletter -> {"id"}, $userid);
+        foreach my $section (@{$messages}) {
+            my $contents = "";
 
-        my $messages = $self -> _get_newslettter_messages($settings);
-        foreach my $message (@{$messages -> {"used"}}) {
-            $usedmsg  .= _build_used_message($message);
+            # build the list of messages inside the current section
+            foreach my $message (@{$section -> {"messages"}}) {
+                $contents .= _build_message($message, 'used');
+            }
+
+            $usedmsg .= $self -> {"template"} -> load_template("newsletter/list/section.tem", {"***title***"    => $section -> {"name"},
+                                                                                               "***messages***" => $contents});
         }
-        foreach my $message (@{$messages -> {"avail"}}) {
-            $availmsg .= _build_used_message($message);
-        }
-
     }
 
     return ($self -> {"template"} -> replace_langvar("NEWSLETTER_LIST_TITLE"),
