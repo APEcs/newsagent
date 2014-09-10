@@ -371,7 +371,7 @@ sub get_feed_articles {
             }
 
             # Fetch the year info
-            $article -> {"acyear"} = $self -> {"userdata"} -> get_year_data($article -> {"created"});
+            $article -> {"acyear"} = $self -> {"userdata"} -> get_year_data($article -> {"release_time"});
         }
     } # if(scalar(@{$articles})) {
 
