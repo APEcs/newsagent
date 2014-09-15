@@ -27,7 +27,7 @@ use v5.12;
 use Webperl::Utils qw(path_join);
 use Net::Twitter::Lite::WithAPIv1_1;
 use Scalar::Util qw(blessed);
-
+use HTML::Entities;
 
 ## @cmethod Newsagent::Notification::Method::Twitter new(%args)
 # Create a new Twitter object. This will create an object
@@ -238,7 +238,7 @@ sub _build_status {
         $text .= $url;
     }
 
-    return $text;
+    return decode_entities($text);
 }
 
 
@@ -335,8 +335,9 @@ sub generate_compose {
     my $args = shift;
     my $user = shift;
 
+    # Note: there should be no need to clean the HTML here, as it should already be clean
     return $self -> {"template"} -> load_template("Notification/Method/Twitter/compose.tem", {"***twitter-mode***" => $self -> {"template"} -> build_optionlist($self -> {"twittermodes"}, $args -> {"methods"} -> {"Twitter"} -> {"mode"}),
-                                                                                              "***twitter-text***" => $self -> {"template"} -> html_clean($args -> {"methods"} -> {"Twitter"} -> {"tweet"}),
+                                                                                              "***twitter-text***" => $args -> {"methods"} -> {"Twitter"} -> {"tweet"},
                                                                                               "***twitter-auto***" => $self -> {"template"} -> build_optionlist($self -> {"twitterauto"}, $args -> {"methods"} -> {"Twitter"} -> {"auto"}),
                                                   });
 }
