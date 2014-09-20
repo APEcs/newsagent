@@ -237,7 +237,7 @@ sub convert_img {
     my $attrs = shift;
 
     my ($src) = $attrs =~ /src=["'](.*?)["']/;
-    return "img: $src" || "";
+    return "img: $src\n" || "";
 }
 
 1;
