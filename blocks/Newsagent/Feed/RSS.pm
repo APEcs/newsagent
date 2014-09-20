@@ -226,6 +226,8 @@ sub html_strip {
     my $formatter = HTML::FormatText -> new(leftmargin => 0, rightmargin => 50000);
     $text = $formatter -> format($tree);
 
+    $test =~ s/(img: [^\s]+?) /$1\n/g;
+
     my $bar = "-" x 80;
     $text =~ s/-{80,}/$bar/g;
 
