@@ -228,7 +228,7 @@ sub _process_progplan {
         $$tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"ac".$progplan."s"}."` AS `a$progplan`";
         $$tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"user_".$progplan."s"}."` AS `u$progplan`";
         $$where  .= "AND" if($where);
-        $$where  .= " `u$progplan`.`student_id` = `u`.`id` AND `a$progplan`.`id` = `u$progplan`.`plan_id` ";
+        $$where  .= " `u$progplan`.`student_id` = `u`.`id` AND `a$progplan`.`id` = `u$progplan`.`$progplan_id` ";
         $$where  .= "AND `u$progplan`.`active` = 1 "; # only include active records.
         if(defined($yearid)) {
             $$where .= "AND `u$progplan`.`year_id` = ? ";
