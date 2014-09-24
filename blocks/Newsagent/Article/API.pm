@@ -20,6 +20,7 @@
 package Newsagent::Article::API;
 
 use strict;
+use experimental 'smartmatch';
 use base qw(Newsagent::Article); # This class extends the Newsagent article class
 use Webperl::Utils qw(is_defined_numeric);
 use v5.12;

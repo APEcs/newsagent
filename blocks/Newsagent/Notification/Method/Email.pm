@@ -21,6 +21,7 @@
 package Newsagent::Notification::Method::Email;
 
 use strict;
+use experimental 'smartmatch';
 use base qw(Newsagent::Notification::Method); # This class is a Method module
 use Digest::MD5 qw(md5_hex);
 use Email::Valid;
