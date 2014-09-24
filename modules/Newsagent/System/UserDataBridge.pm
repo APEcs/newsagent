@@ -417,6 +417,7 @@ sub get_user_addresses {
         push(@emails, $row -> [0]);
     }
 
+    print STDERR "Got ".scalar(@emails)." addresses.";
     return \@emails;
 }
 

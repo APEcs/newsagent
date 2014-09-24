@@ -328,16 +328,20 @@ sub get_recipient_count {
     if($self -> set_config($settings)) {
         foreach my $arghash (@{$self -> {"args"}}) {
             if($arghash -> {"cc"}) {
-                $self -> _parse_recipients_addrlist($recips -> {"cc"} , $arghash -> {"cc"});
+                $self -> _parse_recipients_addrlist($recips -> {"cc"} , $arghash -> {"cc"})
+                    or return undef;
 
             } elsif($arghash -> {"bcc"}) {
-                $self -> _parse_recipients_addrlist($recips -> {"bcc"} , $arghash -> {"bcc"});
+                $self -> _parse_recipients_addrlist($recips -> {"bcc"} , $arghash -> {"bcc"})
+                    or return undef;
 
             } elsif($arghash -> {"destlist"} && $arghash -> {"destlist"} =~ /^b?cc$/)  {
-                $self -> _parse_recipients_database($recips -> {$arghash -> {"destlist"}}, $arghash);
+                $self -> _parse_recipients_database($recips -> {$arghash -> {"destlist"}}, $arghash)
+                    or return undef;
 
             } else {
-                $self -> _parse_recipients_database($recips -> {"bcc"}, $arghash);
+                $self -> _parse_recipients_database($recips -> {"bcc"}, $arghash)
+                    or return undef;
             }
         }
 
