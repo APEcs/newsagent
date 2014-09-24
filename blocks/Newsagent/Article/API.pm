@@ -100,7 +100,7 @@ sub _build_rcount_response {
         foreach my $recip (@{$recipmeth -> {"methods"} -> {$method}}) {
             $recip -> {"recipient_count"} = $methods -> {$method} -> get_recipient_count($recip -> {"settings"});
             return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $methods -> {$method} -> errstr()}))
-                if(!defined($recip -> {"recipient_count"}) || $recip -> {"recipient_count"} == -1);
+                if(!defined($recip -> {"recipient_count"}));
 
             push(@{$output -> {"response"} -> {"recipient"}}, { id           => $recip -> {"recipient_id"}."-".$recip -> {"method_id"},
                                                                 method_id    => $recip -> {"method_id"},
