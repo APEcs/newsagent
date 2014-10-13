@@ -3,7 +3,7 @@
       <link>***link***</link>
       <description><![CDATA[***description***]]></description>
       <pubDate>***date***</pubDate>
-      <guid>***guid***</guid>
+      <guid isPermaLink="false">***guid***</guid>
       <author>***email*** (***name***)</author>
       <newsagent:gravatar>https://gravatar.com/avatar/***gravhash***</newsagent:gravatar>
       <newsagent:feeds>***feeds***</newsagent:feeds>
