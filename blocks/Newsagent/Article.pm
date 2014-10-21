@@ -628,41 +628,55 @@ sub _validate_article {
         if($errors);
 
     # If an articleid has been specified, this is an edit - update the status of the previous article if it's not a clone
-    if($articleid && !$args -> {"clone"}) {
-        my $article = $self -> {"article"} -> get_article($articleid)
-            or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
-                                                                                       "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
-                                                                                                                                                 {"***error***" => $self -> {"article"} -> errstr()
-                                                                                                                                                 })
-                                                              }), $args);
-
-        # Do not update the preset status, unless the new and old preset names match
-        if($article -> {"release_mode"} ne "preset" ||
-           ($article -> {"preset"} && $args -> {"preset"} && lc($article -> {"preset"}) eq lc($args -> {"preset"}))) {
-            $self -> {"article"} -> set_article_status($articleid, $userid, "edited", $article -> {"release_mode"} eq "timed")
+    my $updateid;
+    if($articleid) {
+        # At this point, the articleid is not needed when cloning
+        if($args -> {"clone"}) {
+            $articleid = undef;
+        } else {
+            my $article = $self -> {"article"} -> get_article($articleid)
                 or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
                                                                                            "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
                                                                                                                                                      {"***error***" => $self -> {"article"} -> errstr()
                                                                                                                                                      })
                                                                   }), $args);
-        }
 
-        # Do not bother cancelling notifications for draft or preset
-        if($article -> {"release_mode"} ne "draft" && $article -> {"release_mode"} ne "preset") {
+            # Do not update the preset status, unless the new and old preset names match
+            if($article -> {"release_mode"} ne "preset" ||
+               ($articleid -> {"preset"} && $args -> {"preset"} && lc($article -> {"preset"}) eq lc($args -> {"preset"}))) {
+                $self -> {"article"} -> set_article_status($articleid, $userid, "edited", $article -> {"release_mode"} eq "timed")
+                    or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
+                                                                                               "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
+                                                                                                                                                         {"***error***" => $self -> {"article"} -> errstr()
+                                                                                                                                                     })
+                                                                      }), $args);
+            }
+
+            # Do not bother cancelling notifications for draft or preset
+            if($article -> {"release_mode"} ne "draft" && $article -> {"release_mode"} ne "preset") {
             $self -> {"queue"} -> cancel_notifications($articleid)
                 or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
                                                                                            "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
                                                                                                                                                      {"***error***" => $self -> {"queue"} -> errstr()
                                                                                                                                                      })
                                                                   }), $args);
-        }
+            }
 
-        if($args -> {"minor_edit"}) {
-            $args -> {"release_time"} = $article -> {"release_time"};
+            if($args -> {"minor_edit"}) {
+                $args -> {"release_time"} = $article -> {"release_time"};
+            }
+
+            # Move the old article to a new ID, so the edit can replace the old one.
+            $updateid = $self -> {"article"} -> renumber_article($articleid)
+                or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
+                                                                                           "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
+                                                                                                                                                     {"***error***" => $self -> {"queue"} -> errstr()
+                                                                                                                                                     })
+                                                              }), $args);
         }
     }
 
-    my $aid = $self -> {"article"} -> add_article($args, $userid, $articleid, $args -> {"relmode"})
+    my $aid = $self -> {"article"} -> add_article($args, $userid, $updateid, $args -> {"relmode"}, $articleid)
         or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
                                                                                    "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
                                                                                                                                              {"***error***" => $self -> {"article"} -> errstr()

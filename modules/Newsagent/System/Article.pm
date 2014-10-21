@@ -31,6 +31,7 @@ use File::Type;
 use Digest;
 use Webperl::Utils qw(path_join hash_or_hashref);
 use Data::Dumper;
+
 # ============================================================================
 #  Constructor
 
@@ -767,6 +768,8 @@ sub store_image {
 # @param mode    0 to indicate a normal article (the default) or 1 to indicate a
 #                newsletter article. If the latter, the article should not have feed
 #                or level information set, but it must have schedule and section info.
+# @param newid   The ID to give the new article on creation. If not set, the next
+#                available ID is used.
 # @return The ID of the new article on success, undef on error.
 sub add_article {
     my $self    = shift;
@@ -774,9 +777,10 @@ sub add_article {
     my $userid  = shift;
     my $previd  = shift;
     my $mode    = shift || 0;
+    my $newid   = shift;
 
     $self -> clear_error();
-    print STDERR "Article: ".Dumper($article);
+
     # Add urls to the database
     foreach my $id (keys(%{$article -> {"images"}})) {
         if($article -> {"images"} -> {$id} -> {"mode"} eq "url") {
@@ -803,9 +807,9 @@ sub add_article {
 
     # Add the article itself
     my $addh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"articles"}."`
-                                            (previous_id, metadata_id, creator_id, created, title, summary, article, preset, release_mode, release_time, updated, updated_id, sticky_until, is_sticky, full_summary)
-                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    my $rows = $addh -> execute($previd, $metadataid, $userid, $now, $article -> {"title"}, $article -> {"summary"}, $article -> {"article"}, $article -> {"preset"}, $article -> {"release_mode"}, $article -> {"release_time"}, $now, $userid, $sticky_until, $is_sticky, $full_summary);
+                                            (id, previous_id, metadata_id, creator_id, created, title, summary, article, preset, release_mode, release_time, updated, updated_id, sticky_until, is_sticky, full_summary)
+                                            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    my $rows = $addh -> execute($newid, $previd, $metadataid, $userid, $now, $article -> {"title"}, $article -> {"summary"}, $article -> {"article"}, $article -> {"preset"}, $article -> {"release_mode"}, $article -> {"release_time"}, $now, $userid, $sticky_until, $is_sticky, $full_summary);
     return $self -> self_error("Unable to perform article insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Article insert failed, no rows inserted") if($rows eq "0E0");
 
@@ -815,7 +819,8 @@ sub add_article {
     #       about what this will contain if the insert fails. In fact, DBD::mysql calls
     #       libmysql's mysql_insert_id(), which returns 0 on error (last insert failed).
     #       There, why couldn't they bloody /say/ that?!
-    my $newid = $self -> {"dbh"} -> {"mysql_insertid"};
+    $newid = $self -> {"dbh"} -> {"mysql_insertid"}
+        if(!$newid);
 
     return $self -> self_error("Unable to obtain id for new article row")
         if(!$newid);
@@ -837,7 +842,7 @@ sub add_article {
 
     # While newsletter articles need schedule/section
     } else {
-        $self -> {"schedule"} -> add_section_relation($newid, $article -> {"schedule"}, $article -> {"section"}, $article -> {"priority"})
+        $self -> {"schedule"} -> add_section_relation($newid, $article -> {"schedule"}, $article -> {"section"})
             or return $self -> self_error($self -> {"schedule"} -> errstr());
     }
 
@@ -969,6 +974,58 @@ sub update_article_inplace {
         if($newsettings -> {"images"} -> {"b"} -> {"url"});
 
     return 1;
+}
+
+
+## @method $ renumber_article($articleid)
+# Move the specified article to the end of the articles table. Given an article ID,
+# this attempts to change the article and all associated relations and hangers-on
+# so that its ID is the next available ID in the article table. This is used as
+# part of the editing process to allow the specified articleid to be reused.
+#
+# @param articleid The ID of the article to move
+# @return The ID the article has been moved to on success, undef on error.
+sub renumber_article {
+    my $self      = shift;
+    my $articleid = shift;
+
+    $self -> clear_error();
+
+    # duplicate the article at the end of the table (we can't literally move
+    # it, as there are potential race conditions around using the ID directly)
+    my $moveh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"articles"}."`
+                                            (previous_id, metadata_id, creator_id, created, title, summary, article, preset, release_mode, release_time, updated, updated_id, sticky_until, is_sticky, full_summary)
+                                                SELECT previous_id, metadata_id, creator_id, created, title, summary, article, preset, release_mode, release_time, updated, updated_id, sticky_until, is_sticky, full_summary
+                                                FROM `".$self -> {"settings"} -> {"database"} -> {"articles"}."`
+                                                WHERE id = ?");
+    my $rows = $moveh -> execute($articleid);
+    return $self -> self_error("Unable to perform article move: ". $self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("Article move failed, no rows inserted") if($rows eq "0E0");
+
+    # Get the new ID
+    my $newid = $self -> {"dbh"} -> {"mysql_insertid"}
+        or return $self -> self_error("Unable to obtain id for new article row");
+
+    # Update the relation IDs
+    $self -> _change_article_relation($articleid, $newid, 'articlefeeds')
+        or return undef;
+    $self -> _change_article_relation($articleid, $newid, 'articleimages')
+        or return undef;
+    $self -> _change_article_relation($articleid, $newid, 'articlelevels')
+        or return undef;
+    $self -> _change_article_relation($articleid, $newid, 'article_notify')
+        or return undef;
+    $self -> _change_article_relation($articleid, $newid, 'articlesection')
+        or return undef;
+
+    # Get here and the duplicate has been made, so remove the original
+    my $remh = $self -> {"dbh"} -> prepare("DELETE FROM `".$self -> {"settings"} -> {"database"} -> {"articles"}."`
+                                            WHERE id = ?");
+    $rows = $remh -> execute($articleid);
+    return $self -> self_error("Unable to perform article move cleanup: ". $self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("Article move cleanup failed, no rows inserted") if($rows eq "0E0");
+
+    return $newid;
 }
 
 
@@ -1675,6 +1732,24 @@ sub _get_article_section {
     $article -> {"section"}  = $article -> {"section_data"} -> {"id"};
     $article -> {"schedule"} = $article -> {"section_data"} -> {"schedule"} -> {"id"};
     $article -> {"priority"} = $section -> {"priority"};
+
+    return 1;
+}
+
+
+sub _change_article_relation {
+    my $self = shift;
+    my $oldid = shift;
+    my $newid = shift;
+    my $table = shift;
+
+    $self -> clear_error();
+
+    my $moveh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {$table}."`
+                                             SET `article_id` = ?
+                                             WHERE `article_id` = ?");
+    $moveh -> execute($newid, $oldid)
+        or return $self -> self_error("Unable to perform '$table' relation update: ".$self -> {"dbh"} -> errstr);
 
     return 1;
 }
