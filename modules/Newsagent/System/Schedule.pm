@@ -389,14 +389,28 @@ sub add_section_relation {
     my $articleid  = shift;
     my $scheduleid = shift;
     my $sectionid  = shift;
-    my $priority   = shift;
+    my $position   = shift;
 
     $self -> clear_error();
 
+    # If there is no position set, work out the next one
+    if(!defined($position)) {
+        my $posh = $self -> {"dbh"} -> prepare("SELECT MAX(`sort_order`)
+                                                FROM `".$self -> {"settings"} -> {"database"} -> {"articlesection"}."`
+                                                WHERE `schedule_id` = ?
+                                                AND `section_id` = ?");
+        $posh -> execute($scheduleid, $sectionid)
+            or return $self -> self_error("Unable to perform article section position lookup: ". $self -> {"dbh"} -> errstr);
+
+        my $posrow = $posh -> fetchrow_arrayref();
+        $position = $posrow ? $posrow -> [0] + 1 : 1;
+    }
+
+    # And do the insert
     my $secth = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"articlesection"}."`
-                                             (`article_id`, `schedule_id`, `section_id`, `priority`)
+                                             (`article_id`, `schedule_id`, `section_id`, `sort_order`)
                                              VALUES(?, ?, ?, ?)");
-    my $rows = $secth -> execute($articleid, $scheduleid, $sectionid, $priority);
+    my $rows = $secth -> execute($articleid, $scheduleid, $sectionid, $position);
     return $self -> self_error("Unable to perform article section relation insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Article section relation insert failed, no rows inserted") if($rows eq "0E0");
 
@@ -428,11 +442,7 @@ sub _fetch_section_message_summaries {
                                              AND `s`.`section_id` = ?
                                              $filter
                                              ORDER BY `s`.`sort_order`");
-    $messh -> execute($shedid, $secid)
-        or return $self -> self_error("Unable to execute message list lookup: ".$self -> {"dbh"} -> errstr());
-
-
-
+    $messh -> execute($shedid, $secid);
 }
 
 1;
