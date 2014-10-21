@@ -501,15 +501,6 @@ sub _validate_schedule_release {
          $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
     }
 
-    # Priority values are 1 to 5 inclusive
-    ($args -> {"priority"}, $error) = $self -> validate_numeric("priority", {"required" => 1,
-                                                                             "default"  => 0,
-                                                                             "min"      => 1,
-                                                                             "max"      => 5,
-                                                                             "intonly"  => 1,
-                                                                             "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_PRIORITY")});
-    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
-
     ($args -> {"release_mode"}, $error) = $self -> validate_options("schedule_mode", {"required" => 1,
                                                                                       "source"   => $self -> {"schedrelops"},
                                                                                       "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_RELEASE")});
