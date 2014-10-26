@@ -22,6 +22,7 @@
 package Newsagent::Userbar;
 
 use strict;
+use experimental qw(smartmatch);
 use base qw(Newsagent);
 use Newsagent::System::Article;
 use Newsagent::System::TellUs;

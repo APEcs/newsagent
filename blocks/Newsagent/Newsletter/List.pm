@@ -20,12 +20,12 @@
 package Newsagent::Newsletter::List;
 
 use strict;
+use experimental qw(smartmatch);
 use base qw(Newsagent::Article); # This class extends the Newsagent block class
 use Webperl::Utils qw(is_defined_numeric);
-use DateTime::Event::Cron;
 use POSIX qw(ceil);
 use v5.12;
-
+use Data::Dumper;
 
 # ============================================================================
 #  Content generators
@@ -43,11 +43,12 @@ sub _build_newsletter_list {
     my $result    = "";
 
     foreach my $newslet (@{$schedules -> {"_schedules"}}) {
-        my $highlight = ($newlet -> {"value"} == $active -> {"id"}) ? "active" : "";
+        my $highlight = ($newslet -> {"value"} eq $active -> {"name"}) ? "active" : "";
 
         $result .= $self -> {"template"} -> load_template("newsletter/list/newsletter.tem", {"***highlight***" => $highlight,
-                                                                                             "***id***"        => $newslet -> {"id"},
-                                                                                             "***name***"      => $newslet -> {"name"}});
+                                                                                             "***id***"        => $newslet -> {"value"},
+                                                                                             "***name***"      => $newslet -> {"name"},
+                                                                                             "***mode***"      => $newslet -> {"mode"}});
     }
 
     # Fallback for users with no newsletters.
@@ -67,7 +68,7 @@ sub _generate_newsletterlist {
     my $self   = shift;
     my $newsid = shift;
     my $userid = $self -> {"session"} -> get_session_userid();
-    my ($newsletlist, $usedmsg, $availmsg, $sections) = ("", "", "", []);
+    my ($newsletlist, $msglist, $controls, $intro, $sections, $usenext, $seldate) = ("", "", "", "", [], 1, undef);
 
     # Fetch the list of schedules and sections the user can edit
     my $schedules  = $self -> {"schedule"} -> get_user_schedule_sections($userid);
@@ -79,25 +80,48 @@ sub _generate_newsletterlist {
     if($newsletter) {
         $newsletlist = $self -> _build_newsletter_list($schedules, $newsletter);
 
+        my ($mindate, $maxdate) = $self -> {"schedule"} -> get_newsletter_daterange($newsletter, $seldate);
+
         # Fetch the messages set for the current message
-        my $messages = $self -> {"schedule"} -> get_newslettter_messages($newsletter -> {"id"}, $userid);
+        my $messages = $self -> {"schedule"} -> get_newsletter_messages($newsletter -> {"id"}, $userid, $usenext, $mindate, $maxdate);
         foreach my $section (@{$messages}) {
             my $contents = "";
 
             # build the list of messages inside the current section
             foreach my $message (@{$section -> {"messages"}}) {
-                $contents .= _build_message($message, 'used');
+                my $title = $message -> {"title"} || $self -> {"template"} -> format_time($message -> {"release_time"});
+
+                $contents .= $self -> {"template"} -> load_template("newsletter/list/message.tem", {"***msgid***" => $message -> {"id"},
+                                                                                                    "***subject***" => $title,
+                                                                                                    "***summary***" => $message -> {"summary"}});
             }
 
-            $usedmsg .= $self -> {"template"} -> load_template("newsletter/list/section.tem", {"***title***"    => $section -> {"name"},
-                                                                                               "***messages***" => $contents});
+            $msglist .= $self -> {"template"} -> load_template("newsletter/list/section.tem", {"***title***"    => $section -> {"name"},
+                                                                                               "***messages***" => $contents,
+                                                                                               "***schedule***" => $newsletter -> {"id"},
+                                                                                               "***section***"  => $section -> {"id"},
+                                                                                               "***editable***" => $section -> {"editable"} ? "edit" : "noedit"
+                                                               });
         }
+
+    }
+
+    if(!$newsletter -> {"schedule"}) {
+        $intro    = "";
+        $controls = $self -> {"template"} -> load_template("newsletter/list/control-manual.tem", { "***schedule***" => $newsletter -> {"id"}, });
+    } else {
+        $controls = $self -> {"template"} -> load_template("newsletter/list/control-auto.tem", { "***schedule***" => $newsletter -> {"id"}, });
     }
 
     return ($self -> {"template"} -> replace_langvar("NEWSLETTER_LIST_TITLE"),
-            $self -> {"template"} -> load_template("newsletter/list/content.tem", {"***mewslets***" => $newsletlist,
-                                                                                   "***usedmsg***"  => $usedmsg,
-                                                                                   "***availmsg***" => $availmsg,
+            $self -> {"template"} -> load_template("newsletter/list/content.tem", {"***newslets***"  => $newsletlist,
+                                                                                   "***messages***"  => $msglist,
+                                                                                   "***intro***"     => $intro,
+                                                                                   "***controls***"  => $controls,
+                                                                                   "***nlist-url***" => $self -> build_url(block    => "newsletters",
+                                                                                                                           params   => [],
+                                                                                                                           pathinfo => [])
+                                                   }));
 
 }
 
@@ -121,7 +145,7 @@ sub page_display {
     # this could be deduced by checking the user's permissions against all newsletters,
     # but that'll take longer than needed.
     if(!$self -> check_permission("newsletter.list")) {
-        $self -> log("error:article:permission", "User does not have permission to list newsletters");
+        $self -> log("error:newsletter:permission", "User does not have permission to list newsletters");
 
         my $userbar = $self -> {"module"} -> load_module("Newsagent::Userbar");
         my $message = $self -> {"template"} -> message_box("{L_PERMISSION_FAILED_TITLE}",

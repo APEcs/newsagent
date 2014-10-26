@@ -1,13 +1,24 @@
+<script type="text/javascript">
+nlisturl = "***nlist-url***";
+
+window.addEvent('domready', function() {
+    sortlist = new Sortables('#messagebrowser div.edit ul', {
+		clone: true,
+		revert: true,
+		opacity: 0.5
+	});
+
+    sortlist.removeItems($$('#messagebrowser div.edit ul li.dummy'));
+});
+</script>
 <div id="newsletlist">
     <div class="shadowbox">
         <h2>{L_NEWSLETTER_LIST_TITLE}</h2>
         <div class="sbcontent">
             <div id="messagebrowser">
-                <table class="listtable">
-                   <tbody>
+
+***controls***
 ***messages***
-                   </tbody>
-                </table>
             </div>
             <div id="newsletbrowser">
 ***newslets***

@@ -98,6 +98,7 @@ sub _generate_compose {
                                                                                               "***schedule_mode***"     => $schedmode,
                                                                                               "***schedule_date_fmt***" => $schedrelease,
                                                                                               "***stimestamp***"        => $args -> {"stimestamp"} || 0,
+                                                                                              "***sort_order***"        => 0,
                                                                                               "***priority***"          => $args -> {"priority"} || 3,
                                                                                               "***scheduledata***"      => $scheddata,
                                                              });

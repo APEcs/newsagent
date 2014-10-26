@@ -23,6 +23,7 @@ use strict;
 use DateTime::Event::Cron;
 use base qw(Webperl::SystemModule); # This class extends the Newsagent block class
 use v5.12;
+use Data::Dumper;
 
 ## @cmethod $ new(%args)
 # Create a new Schedule object to manage tag allocation and lookup.
@@ -73,11 +74,11 @@ sub get_user_schedule_sections {
     # recording which ones the user has permission to post to, and then
     # pull in the data for the schedules later as a side-effect.
 
-    my $sectionh = $self -> {"dbh"} -> prepare("SELECT sec.id, sec.metadata_id, sec.name, sec.schedule_id, sch.name AS schedule_name, sch.schedule
+    my $sectionh = $self -> {"dbh"} -> prepare("SELECT sec.id, sec.metadata_id, sec.name, sec.schedule_id, sch.name AS schedule_name, sch.description AS schedule_desc, sch.schedule
                                                 FROM ".$self -> {"settings"} -> {"database"} -> {"schedule_sections"}." AS sec,
                                                      ".$self -> {"settings"} -> {"database"} -> {"schedules"}." AS sch
                                                 WHERE sch.id = sec.schedule_id
-                                                ORDER BY sch.name, sec.sort_order");
+                                                ORDER BY sch.description, sec.sort_order");
     $sectionh -> execute()
         or return $self -> self_error("Unable to execute section lookup query: ".$self -> {"dbh"} -> errstr);
 
@@ -92,6 +93,7 @@ sub get_user_schedule_sections {
             # And set the schedule fields if needed.
             if(!$result -> {"id_".$section -> {"schedule_id"}} -> {"schedule_name"}) {
                 $result -> {"id_".$section -> {"schedule_id"}} -> {"schedule_name"} = $section -> {"schedule_name"};
+                $result -> {"id_".$section -> {"schedule_id"}} -> {"schedule_desc"} = $section -> {"schedule_desc"};
 
                 # Work out when the next two runs of the schedule are
                 if($section -> {"schedule"}) {
@@ -101,8 +103,11 @@ sub get_user_schedule_sections {
                         $next_time = $cron -> next($next_time);
                         push(@{$result -> {"id_".$section -> {"schedule_id"}} -> {"next_run"}}, $next_time -> epoch);
                     }
+
+                    $result -> {"id_".$section -> {"schedule_id"}} -> {"schedule_mode"} = "auto";
                 } else {
                     $result -> {"id_".$section -> {"schedule_id"}} -> {"next_run"} = [ "", "" ];
+                    $result -> {"id_".$section -> {"schedule_id"}} -> {"schedule_mode"} = "manual";
                 }
 
                 # And store the cron for later user in the view
@@ -111,9 +116,10 @@ sub get_user_schedule_sections {
         }
     }
 
-    foreach my $id (sort(keys(%{$result}))) {
-        push(@{$result -> {"_schedules"}}, {"value" => substr($id, 3),
-                                            "name"  => $result -> {$id} -> {"schedule_name"}});
+    foreach my $id (sort {$result -> {$a} -> {"schedule_description"} cmp $result -> {$b} -> {"schedule_description"}} keys(%{$result})) {
+        push(@{$result -> {"_schedules"}}, {"value" => $result -> {$id} -> {"schedule_name"},
+                                            "name"  => $result -> {$id} -> {"schedule_desc"},
+                                            "mode"  => $result -> {$id} -> {"schedule_mode"}});
     }
 
     return $result;
@@ -196,30 +202,30 @@ sub get_section {
 }
 
 
-## @method $ active_newsletter($newsid, $userid)
-# Obtain the data for the active newsletter. If no ID  is provided, or the user
+## @method $ active_newsletter($newsname, $userid)
+# Obtain the data for the active newsletter. If no ID is provided, or the user
 # does not have schedule access to the newsletter or any of its sections, this
 # will choose the first newsletter the user has schedule access to (in
 # alphabetical order) and return the data for that.
 #
-# @param newsletter The name of the active newsletter.
-# @param userid     The ID of the user fetching the newsletter data.
+# @param newsname The name of the active newsletter.
+# @param userid   The ID of the user fetching the newsletter data.
 # @return A reference to a hash containing the newsletter data to use as the active newsletter.
 sub active_newsletter {
-    my $self   = shift;
-    my $newsid = shift;
-    my $userid = shift;
+    my $self     = shift;
+    my $newsname = shift;
+    my $userid   = shift;
 
     $self -> clear_error();
 
     # Determine whether the user can access the newsletter. If this
     # returns undef or a filled in hashref, it can be returned.
-    my $newsletter = $self -> get_user_newsletter($newsid, $userid);
+    my $newsletter = $self -> get_user_newsletter($newsname, $userid);
     return $newsletter if(!defined($newsletter) || $newsletter -> {"id"});
 
     # Get here and the user does not have access to the requested newsletter. Find the
     # first newsletter the user does have access to.
-    my $newsh = $self -> {"dbh"} -> prepare("SELECT `id`
+    my $newsh = $self -> {"dbh"} -> prepare("SELECT `name`
                                              FROM `".$self -> {"settings"} -> {"database"} -> {"schedules"}."`
                                              ORDER BY `name`");
     $newsh -> execute()
@@ -235,18 +241,18 @@ sub active_newsletter {
 }
 
 
-## @method $ get_user_newsletter($newsid, $userid)
+## @method $ get_user_newsletter($newsname, $userid)
 # Determine whether the user has schedule access to the specified
 # newsletter, or one of the sections within the newsletter.
 #
-# @param newsid The ID of the newsletter to fetch
+# @param newsname The ID of the newsletter to fetch
 # @param userid The Id of the user requesting access.
 # @return A reference to a hash containing the newsletter on success,
 #         a reference to an empty hash if the user does not have access,
 #         undef on error.
 sub get_user_newsletter {
     my $self   = shift;
-    my $newsid = shift;
+    my $newsname = shift;
     my $userid = shift;
 
     $self -> clear_error();
@@ -254,8 +260,8 @@ sub get_user_newsletter {
     # Try to locate the requested schedule
     my $schedh = $self -> {"dbh"} -> prepare("SELECT *
                                               FROM `".$self -> {"settings"} -> {"database"} -> {"schedules"}."`
-                                              WHERE id = ?");
-    $schedh -> execute($newsid)
+                                              WHERE `name` LIKE ?");
+    $schedh -> execute($newsname)
         or return $self -> self_error("Unable to execute newsletter query: ".$self -> {"dbh"} -> errstr);
 
     # If the newsletter information has been found, determine whether the user has schedule access to
@@ -284,13 +290,45 @@ sub get_user_newsletter {
 }
 
 
+## @method @ get_newsletter_daterange($newsletter, $checkdate)
+# Determine the date range for a given newsletter issue. This attempts
+# to work out, based on the schedule set in the specified newsletter
+# and an optional start date, when the current issue will be released, and
+# when the previous issue should have been released. If the newsletter
+# has no schedule - it is manual release - this can't produce a range.
+#
+# @param newsletter A reference to a hash containing the newsletter data.
+# @param checkdate  An optional unix timestamp to use. The end time is
+#                   taken as the issue date that follows this timestamp,
+#                   and the start is the issue date that prceeds it. If
+#                   not set, this defaults to the current time.
+# @return An array of two values: the previous issue release date, and
+#         the next issue release date, both as unix timestamps. If the
+#         newsletter is a manual release, this returns undefs
+sub get_newsletter_daterange {
+    my $self       = shift;
+    my $newsletter = shift;
+    my $checkdate  = shift || time();
 
-sub get_newslettter_messages {
+    if($newsletter -> {"schedule"}) {
+        my $cron = DateTime::Event::Cron -> new($newsletter -> {"schedule"});
+        my $next_time = $cron -> next(DateTime -> from_epoch(epoch => $checkdate));
+        my $prev_time = $cron -> previous($next_time);
+
+        return ($prev_time -> epoch(), $next_time -> epoch());
+    } else {
+        return (undef, undef);
+    }
+}
+
+
+sub get_newsletter_messages {
     my $self    = shift;
     my $newsid  = shift;
     my $userid  = shift;
     my $getnext = shift;
     my $mindate = shift;
+    my $maxdate = shift;
 
     $self -> clear_error();
 
@@ -312,11 +350,11 @@ sub get_newslettter_messages {
     # Go through the sections, working out which ones the user can edit, and
     # fetching the messages for the sections
     foreach my $section (@{$sections}) {
-        $section -> {"editable"} = $self -> {"roles"} -> user_has_capability($section -> [0], $userid, "schedule");
+        $section -> {"editable"} = $self -> {"roles"} -> user_has_capability($section -> {"metadata_id"}, $userid, "schedule");
 
         # Fetch the messages even if the user can't edit the section, so they can
         # see the content in context
-        $section -> {"messages"} = $self -> _fetch_section_messages($newsid, $section -> {"id"}, $getnext, $mindate);
+        $section -> {"messages"} = $self -> _fetch_section_message_summaries($newsid, $section -> {"id"}, $getnext, $mindate, $maxdate);
     }
 
     return $sections;
@@ -383,34 +421,48 @@ sub get_digest_section {
 # ============================================================================
 #  Relation control
 
-
+## @method $ add_section_relation($articleid, $scheduleid, $sectionid, $sort_order)
+# Greate a relation between the specified article and the provided section of a schedule.
+#
+# @param articleid  The ID of the article to set up the relation for.
+# @param scheduleid The ID of the schedule the article should be part of.
+# @param sectionid  The ID of the section in the schefule to add the article to.
+# @param sort_order The position in the section to add the article at. If this is
+#                   omitted or zero, the article is added at the end of the section.
+#                   Note that multiple articles may have the same sort_order, and
+#                   no reordering of surrounding articles is done.
+# @return true on success, undef on error.
 sub add_section_relation {
     my $self       = shift;
     my $articleid  = shift;
     my $scheduleid = shift;
     my $sectionid  = shift;
-    my $position   = shift;
+    my $sort_order = shift;
 
     $self -> clear_error();
 
-    # If there is no position set, work out the next one
-    if(!defined($position)) {
+    # If there is no sort_order set, work out the next one.
+    # NOTE: this is potentially vulnerable to atomicity violation problems: the
+    # max value determined here could have changed by the time the code gets
+    # to the insert. However, in this case, that's not a significant problem
+    # as articles sharing sort_order values is safe (or at least non-calamitous)
+    if(!$sort_order) {
         my $posh = $self -> {"dbh"} -> prepare("SELECT MAX(`sort_order`)
                                                 FROM `".$self -> {"settings"} -> {"database"} -> {"articlesection"}."`
                                                 WHERE `schedule_id` = ?
                                                 AND `section_id` = ?");
         $posh -> execute($scheduleid, $sectionid)
-            or return $self -> self_error("Unable to perform article section position lookup: ". $self -> {"dbh"} -> errstr);
+            or return $self -> self_error("Unable to perform article section sort_order lookup: ". $self -> {"dbh"} -> errstr);
 
         my $posrow = $posh -> fetchrow_arrayref();
-        $position = $posrow ? $posrow -> [0] + 1 : 1;
+        $sort_order = $posrow ? $posrow -> [0] + 1 : 1;
     }
 
     # And do the insert
     my $secth = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"articlesection"}."`
                                              (`article_id`, `schedule_id`, `section_id`, `sort_order`)
                                              VALUES(?, ?, ?, ?)");
-    my $rows = $secth -> execute($articleid, $scheduleid, $sectionid, $position);
+    my $rows = $secth -> execute($articleid, $scheduleid, $sectionid, $sort_order);
     return $self -> self_error("Unable to perform article section relation insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Article section relation insert failed, no rows inserted") if($rows eq "0E0");
 
@@ -423,26 +475,38 @@ sub add_section_relation {
 
 sub _fetch_section_message_summaries {
     my $self    = shift;
-    my $shedid  = shift;
+    my $schedid  = shift;
     my $secid   = shift;
     my $getnext = shift;
     my $mindate = shift;
     my $maxdate = shift;
     my $filter  = "";
 
-    $filter  = "AND `a`.`release_mode` = 'next'"    if($getnext);
-    $filter .= "AND `a`.`release_date` > $mindate"  if($mindate && $mindate =~ /^\d+$/);
-    $filter .= "AND `a`.`release_date` <= $maxdate" if($maxdate && $maxdate =~ /^\d+$/);
+    if($getnext) {
+        $filter  = " AND (`a`.`release_mode` = 'next' OR `a`.`release_mode` = 'after')";
+    } else {
+        $filter  = " AND (`a`.`release_mode` = 'after')";
+    }
+
+    $filter .= " AND `a`.`release_time` > $mindate"  if($mindate && $mindate =~ /^\d+$/);
+    $filter .= " AND `a`.`release_time` <= $maxdate" if($maxdate && $maxdate =~ /^\d+$/);
+
+    my $query = "SELECT `a`.`id`, `a`.`title`, `a`.`summary`, `a`.`release_mode`, `a`.`release_time`
+                 FROM `".$self -> {"settings"} -> {"database"} -> {"articlesection"}."` AS `s`,
+                      `".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `a`
+                 WHERE `a`.`id` = `s`.`article_id`
+                 AND `s`.`schedule_id` = ?
+                 AND `s`.`section_id` = ?
+                 $filter
+                 ORDER BY `s`.`sort_order`";
+    print STDERR Dumper([$query, $schedid, $secid]);
 
     # Pull out the messages ordered as set by the user
-    my $messh = $self -> {"dbh"} -> prepare("SELECT `a`.`title`, `a`.`summary`, `a`.`release_mode`, `a`.`release_date`
-                                             FROM `".$self -> {"settings"} -> {"database"} -> {"articlesection"}."` AS `s`,
-                                                  `".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `a`
-                                             WHERE `s`.`schedule_id` = ?
-                                             AND `s`.`section_id` = ?
-                                             $filter
-                                             ORDER BY `s`.`sort_order`");
-    $messh -> execute($shedid, $secid);
+    my $messh = $self -> {"dbh"} -> prepare($query);
+    $messh -> execute($schedid, $secid)
+        or return $self -> self_error("Unable to perform section article lookup: ". $self -> {"dbh"} -> errstr);
+
+    return $messh -> fetchall_arrayref({});
 }
 
 1;

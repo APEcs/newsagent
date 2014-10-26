@@ -25,6 +25,7 @@
                         <dd><input class="fillwide datepick" type="text" name="schedule_date" id="schedule_date" size="16" maxlength="16" value="***schedule_date_fmt***" /></dd>
                     </dl>
                     <input type="hidden" name="stimestamp" id="stimestamp" value="***stimestamp***" />
+                    <input type="hidden" name="sort_order" id="sort_order" value="***sort_order***" />
                     <script type="text/javascript">
                         var schedule_data = { ***scheduledata*** };
                     </script>

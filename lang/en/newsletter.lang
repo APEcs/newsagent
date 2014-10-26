@@ -1,2 +1,8 @@
 
 NEWSLETTER_LIST_TITLE = Newsletter Editor
+NEWSLETTER_PREVIEW    = Preview this issue
+NEWSLETTER_PUBLISH    = Publish this issue
+
+NEWSLETTER_TYPE        = Type:
+NEWSLETTER_TYPE_MANUAL = Manual (click 'publish' to release this issue)
+NEWSLETTER_TYPE_AUTO   = Automatic

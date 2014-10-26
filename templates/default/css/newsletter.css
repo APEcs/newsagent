@@ -1,3 +1,5 @@
+@charset "utf-8";
+
 #newsletlist {
     padding-top: 40px;
     margin: 0px auto;
@@ -27,4 +29,142 @@ table.listtable tr td {
 
 table.listtable tr:last-child td {
     border-bottom: none;
+}
+
+
+div.newsletter {
+    padding-left: 14px;
+}
+
+div.newsletter.active {
+    padding-left: 10px;
+    border-left: 4px solid #dd4b39;
+}
+
+div.newsletter .newsbox {
+    padding: 6px 0px;
+    cursor: pointer;
+}
+
+div.newsletter .newsbox:hover {
+    background: #eee;
+}
+
+div.newsletter .newsbox .newstitle {
+    padding-left: 6px;
+}
+
+div.newsletter .newsbox .newstitle .mode {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    background-image: url("../images/newsletter/newsmodes.png");
+    background-repeat: no-repeat;
+    background-position: 0px 0px;
+}
+
+div.newsletter .newsbox .newstitle .mode.manual {
+    background-position: -16px 0px;
+}
+
+div.newsletter .newsbox .newstitle .mode.warn {
+    background-position: -32px 0px;
+}
+
+div.newsletter.active .newsbox .newstitle {
+    color: #dd4439;
+}
+
+#messagebrowser div.edit ul li {
+    cursor: move;
+}
+
+li.dummy {
+    cursor: inherit;
+}
+
+#messagebrowser div.section h3 {
+    border-bottom: 1px #555 dotted;
+}
+
+#messagebrowser div ul.section {
+    font-size: 10px;
+    margin: 0px;
+    padding: 0px;
+    white-space: normal;
+}
+
+#messagebrowser div ul.section div.summary {
+    color: #666;
+}
+
+#messagebrowser div ul.section li {
+    list-style-type: none;
+    border-bottom: 1px solid #ddd;
+    padding: 7px 3px;
+}
+
+#messagebrowser div ul.section li:last-child {
+    border-bottom: none;
+}
+
+div#controls-box {
+    margin-bottom: 4px;
+}
+
+ul.msgctrl {
+    display: inline-block;
+    padding: 0px;
+    margin: 0px;
+}
+
+ul.msgctrl li {
+	display: inline-block;
+	zoom: 1; /* zoom and *display = ie7 hack for display:inline-block */
+	*display: inline;
+    vertical-align: baseline;
+	margin: 0px;
+	outline: none;
+	cursor: pointer;
+	text-align: center;
+	text-decoration: none;
+	font: 14px/100% Arial, Helvetica, sans-serif;
+    font-weight: bold;
+	padding: 6px 14px;
+	text-shadow: 0 1px 1px rgba(0,0,0,.3);
+	-webkit-box-shadow: 0 1px 2px rgba(0,0,0,.2);
+	-moz-box-shadow: 0 1px 2px rgba(0,0,0,.2);
+	box-shadow: 0 1px 2px rgba(0,0,0,.2);
+    color: #444;
+    border: solid 1px #b1b1b1;
+    border-right: none;
+	list-style: none;
+}
+
+ul.msgctrl li:first-child {
+	-webkit-border-radius: 3px 0px 0px 3px;
+	-moz-border-radius: 3px 0px 0px 3px;
+	border-radius: 3px 0px 0px 3px;
+}
+
+
+ul.msgctrl li:last-child {
+	-webkit-border-radius: 0px 3px 3px 0px;
+	-moz-border-radius: 0px 3px 3px 0px;
+	border-radius: 0px 3px 3px 0px;
+    border-right: solid 1px #b1b1b1;
+}
+
+
+ul.msgctrl li:hover {
+    color: #444;
+
+    background-color: #cdcdcd; /* Fallback */
+    background-image: -ms-linear-gradient(top, #eeeeee, #c9c9c9); /* IE10 */
+    background-image: -moz-linear-gradient(top, #eeeeee, #c9c9c9); /* Firefox */
+    background-image: -o-linear-gradient(top, #eeeeee, #c9c9c9); /* Opera */
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#eeeeee), to(#c9c9c9)); /* old Webkit */
+    background-image: -webkit-linear-gradient(top, #eeeeee, #c9c9c9); /* new Webkit */
+    background-image: linear-gradient(top, #eeeeee, #c9c9c9); /* proposed W3C Markup */
+	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#eeeeee', endColorstr='#c9c9c9');
 }

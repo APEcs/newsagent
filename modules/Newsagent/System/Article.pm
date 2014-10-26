@@ -842,7 +842,7 @@ sub add_article {
 
     # While newsletter articles need schedule/section
     } else {
-        $self -> {"schedule"} -> add_section_relation($newid, $article -> {"schedule"}, $article -> {"section"})
+        $self -> {"schedule"} -> add_section_relation($newid, $article -> {"schedule"}, $article -> {"section"}, $article -> {"sort_order"})
             or return $self -> self_error($self -> {"schedule"} -> errstr());
     }
 
@@ -1729,9 +1729,9 @@ sub _get_article_section {
     }
 
     # Copy out the IDs into a consistent format for edit
-    $article -> {"section"}  = $article -> {"section_data"} -> {"id"};
-    $article -> {"schedule"} = $article -> {"section_data"} -> {"schedule"} -> {"id"};
-    $article -> {"priority"} = $section -> {"priority"};
+    $article -> {"section"}    = $article -> {"section_data"} -> {"id"};
+    $article -> {"schedule"}   = $article -> {"section_data"} -> {"schedule"} -> {"id"};
+    $article -> {"sort_order"} = $section -> {"sort_order"};
 
     return 1;
 }

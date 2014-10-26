@@ -270,7 +270,7 @@ sub _generate_edit {
                                                                                               "***schedule_mode***"     => $schedmode,
                                                                                               "***schedule_date_fmt***" => $schedrelease,
                                                                                               "***stimestamp***"        => $args -> {"release_time"} || 0,
-                                                                                              "***priority***"          => $args -> {"priority"} || 3,
+                                                                                              "***sort_order***"        => $args -> {"sort_order"} || 0,
                                                                                               "***scheduledata***"      => $scheddata,
                                                              });
     }

@@ -513,6 +513,13 @@ sub _validate_schedule_release {
         $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
     }
 
+    # Generally this will only be set during editing
+    ($args -> {"sort_order"}, $error) = $self -> validate_numeric("sort_order", {"required" => 0,
+                                                                                 "default"  => 0,
+                                                                                 "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_SORTORDER")});
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+
+
     return $errors;
 }
 
@@ -643,7 +650,7 @@ sub _validate_article {
 
             # Do not update the preset status, unless the new and old preset names match
             if($article -> {"release_mode"} ne "preset" ||
-               ($articleid -> {"preset"} && $args -> {"preset"} && lc($article -> {"preset"}) eq lc($args -> {"preset"}))) {
+               ($article -> {"preset"} && $args -> {"preset"} && lc($article -> {"preset"}) eq lc($args -> {"preset"}))) {
                 $self -> {"article"} -> set_article_status($articleid, $userid, "edited", $article -> {"release_mode"} eq "timed")
                     or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
                                                                                                "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
