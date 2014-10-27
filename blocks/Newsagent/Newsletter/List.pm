@@ -44,11 +44,13 @@ sub _build_newsletter_list {
 
     foreach my $newslet (@{$schedules -> {"_schedules"}}) {
         my $highlight = ($newslet -> {"value"} eq $active -> {"name"}) ? "active" : "";
+        my $title = $self -> {"template"} -> replace_langvar("NEWSLETTER_MODE_".uc($newslet -> {"mode"}), {"***name***" => $newslet -> {"name"}});
 
         $result .= $self -> {"template"} -> load_template("newsletter/list/newsletter.tem", {"***highlight***" => $highlight,
                                                                                              "***id***"        => $newslet -> {"value"},
                                                                                              "***name***"      => $newslet -> {"name"},
-                                                                                             "***mode***"      => $newslet -> {"mode"}});
+                                                                                             "***mode***"      => $newslet -> {"mode"},
+                                                                                             "***title***"     => $title,});
     }
 
     # Fallback for users with no newsletters.

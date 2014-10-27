@@ -1,5 +1,5 @@
 <div class="newsletter ***highlight***">
     <div class="newsbox">
-         <div class="newstitle" id="news-***id***"><span class="mode ***mode***"></span> ***name***</div>
+         <div class="newstitle" id="news-***id***" title="***title***"><span class="mode ***mode***"></span> ***name***</div>
     </div>
 </div>

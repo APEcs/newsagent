@@ -6,3 +6,7 @@ NEWSLETTER_PUBLISH    = Publish this issue
 NEWSLETTER_TYPE        = Type:
 NEWSLETTER_TYPE_MANUAL = Manual (click 'publish' to release this issue)
 NEWSLETTER_TYPE_AUTO   = Automatic
+
+NEWSLETTER_MODE_MANUAL = Manual release newsletter '***name***'
+NEWSLETTER_MODE_AUTO   = Automatic release newsletter '***name***'
+NEWSLETTER_MODE_ALERT  = Blocked automatic release, requires attention.

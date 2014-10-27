@@ -1,4 +1,5 @@
     <script type="text/javascript" src="{V_[jspath]}api.js"></script>
+    <script type="text/javascript" src="{V_[jspath]}CustomSortable.js"></script>
     <script type="text/javascript" src="{V_[jspath]}newsletter.js"></script>
 
     <link href="{V_[templatepath]}css/newsletter.css" rel="stylesheet" />

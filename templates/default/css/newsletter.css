@@ -91,6 +91,7 @@ li.dummy {
     font-size: 10px;
     margin: 0px;
     padding: 0px;
+    padding-bottom: 3px;
     white-space: normal;
 }
 
@@ -167,4 +168,8 @@ ul.msgctrl li:hover {
     background-image: -webkit-linear-gradient(top, #eeeeee, #c9c9c9); /* new Webkit */
     background-image: linear-gradient(top, #eeeeee, #c9c9c9); /* proposed W3C Markup */
 	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#eeeeee', endColorstr='#c9c9c9');
+}
+
+.droppable {
+    border: 1px dotted #F92 !important;
 }
