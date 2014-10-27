@@ -1,5 +1,8 @@
 <script type="text/javascript">
 nlisturl = "***nlist-url***";
+messages = { saving:  "{L_NEWSLETTER_LIST_SAVING}",
+             saved:   "{L_NEWSLETTER_LIST_SAVED}"
+};
 </script>
 <div id="newsletlist">
     <div class="shadowbox">

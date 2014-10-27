@@ -173,3 +173,8 @@ ul.msgctrl li:hover {
 .droppable {
     border: 1px dotted #F92 !important;
 }
+
+#statebox {
+    display: inline;
+    color: #777;
+}

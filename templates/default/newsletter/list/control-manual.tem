@@ -3,5 +3,5 @@
                      --><li class="msgctrl-preview" title="{L_NEWSLETTER_PREVIEW}"><img src="{V_[templatepath]}images/newsletter/preview.png" width="16" height="16" alt="preview" /></li><!--
                      --><li class="msgctrl-publish" title="{L_NEWSLETTER_PUBLISH}"><img src="{V_[templatepath]}images/newsletter/publish.png" width="16" height="16" alt="publish" /></li><!--
                     --></ul>
-                    <img id="movespin" src="{V_[templatepath]}images/spinner.gif" width="16" height="16" alt="working" class="workspin" />
+                    <div id="statebox"><img id="statespin" src="{V_[templatepath]}images/spinner.gif" width="16" height="16" alt="working" class="workspin" /> <span id="statemsg"></span></div>
                 </div>

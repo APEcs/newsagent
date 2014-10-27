@@ -128,6 +128,16 @@ sub _generate_newsletterlist {
 }
 
 
+sub _build_sortorder_response {
+    my $self = shift;
+
+    my $sortinfo = $self -> {"cgi"} -> param("sortinfo");
+    print STDERR $sortinfo;
+
+    return { "result" => { "status" => "Saved sort" } };
+}
+
+
 # ============================================================================
 #  Interface functions
 
@@ -173,9 +183,10 @@ sub page_display {
     if(defined($apiop)) {
         # API call - dispatch to appropriate handler.
         given($apiop) {
+            when("sortorder") { $self -> api_response($self -> _build_sortorder_response()); }
             default {
-                return $self -> api_html_response($self -> api_errorhash('bad_op',
-                                                                         $self -> {"template"} -> replace_langvar("API_BAD_OP")))
+                return $self -> api_response($self -> api_errorhash('bad_op',
+                                                                    $self -> {"template"} -> replace_langvar("API_BAD_OP")))
             }
         }
     } else {

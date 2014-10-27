@@ -10,3 +10,6 @@ NEWSLETTER_TYPE_AUTO   = Automatic
 NEWSLETTER_MODE_MANUAL = Manual release newsletter '***name***'
 NEWSLETTER_MODE_AUTO   = Automatic release newsletter '***name***'
 NEWSLETTER_MODE_ALERT  = Blocked automatic release, requires attention.
+
+NEWSLETTER_LIST_SAVING = Saving article order
+NEWSLETTER_LIST_SAVED  = Article order saved
