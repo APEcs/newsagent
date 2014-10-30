@@ -194,6 +194,12 @@ sub new {
             title => 1,
             '*'   => 0,
         },
+        p => {
+            class => 1,
+            style => 1,
+            title => 1,
+            '*'   => 0,
+        },
         img => {
             src    => 1,
             class  => 1,
