@@ -1729,9 +1729,10 @@ sub _get_article_section {
     }
 
     # Copy out the IDs into a consistent format for edit
-    $article -> {"section"}    = $article -> {"section_data"} -> {"id"};
-    $article -> {"schedule"}   = $article -> {"section_data"} -> {"schedule"} -> {"id"};
-    $article -> {"sort_order"} = $section -> {"sort_order"};
+    $article -> {"section"}     = $article -> {"section_data"} -> {"id"};
+    $article -> {"schedule"}    = $article -> {"section_data"} -> {"schedule"} -> {"name"};
+    $article -> {"schedule_id"} = $article -> {"section_data"} -> {"schedule"} -> {"id"};
+    $article -> {"sort_order"}  = $section -> {"sort_order"};
 
     return 1;
 }

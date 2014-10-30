@@ -509,7 +509,7 @@ sub _validate_schedule_release {
 
         # Section is the section ID number
         ($args -> {"section"}, $error) = $self -> validate_options("section", {"required" => 1,
-                                                                               "source"   => $schedules -> {"id_".$args -> {"schedule"}} -> {"sections"},
+                                                                               "source"   => $schedules -> {"id_".$args -> {"schedule_id"}} -> {"sections"},
                                                                                "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_SECTION")});
         $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
     }

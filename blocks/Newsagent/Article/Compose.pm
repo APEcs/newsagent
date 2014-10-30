@@ -26,7 +26,7 @@ use v5.12;
 use Newsagent::System::TellUs;
 use Newsagent::System::Matrix;
 use Webperl::Utils qw(is_defined_numeric);
-use Data::Dumper;
+
 # ============================================================================
 #  Content generators
 
@@ -91,7 +91,7 @@ sub _generate_compose {
             $scheddata .= '"id_'.$schedules -> {$id} -> {"schedule_name"}.'": { next: ['.$nextdata.'],';
             $scheddata .= '"sections": ['.join(",",
                                                map {
-                                                   '{ "value": "'. $_ -> {"value"}.'", "name": "'.$_ -> {"name"}.'", "selected": '.($_ -> {"value"} eq $args -> {"section"} && $id eq ("id_".$args -> {"schedule"}) ? 'true' : 'false').'}'
+                                                   '{ "value": "'. $_ -> {"value"}.'", "name": "'.$_ -> {"name"}.'", "selected": '.($_ -> {"value"} eq $args -> {"section"} && $schedules -> {$id} -> {"schedule_name"} eq $args -> {"schedule"} ? 'true' : 'false').'}'
                                                } @{$schedules -> {$id} -> {"sections"}}).']},';
         }
 

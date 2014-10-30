@@ -23,6 +23,7 @@ use strict;
 use experimental 'smartmatch';
 use base qw(Newsagent::Article); # This class extends the Newsagent block class
 use v5.12;
+use Data::Dumper;
 
 # ============================================================================
 #  Support functions
@@ -260,10 +261,9 @@ sub _generate_edit {
             }
 
             $scheddata .= '"id_'.$schedules -> {$id} -> {"schedule_name"}.'": { next: ['.$nextdata.'],';
-
             $scheddata .= '"sections": ['.join(",",
                                                map {
-                                                   '{ "value": "'. $_ -> {"value"}.'", "name": "'.$_ -> {"name"}.'", "selected": '.($_ -> {"value"} eq $args -> {"section"} && $id eq ("id_".$args -> {"schedule"}) ? 'true' : 'false').'}'
+                                                   '{ "value": "'. $_ -> {"value"}.'", "name": "'.$_ -> {"name"}.'", "selected": '.($_ -> {"value"} eq $args -> {"section"} && $schedules -> {$id} -> {"schedule_name"} eq $args -> {"schedule"} ? 'true' : 'false').'}'
                                                } @{$schedules -> {$id} -> {"sections"}}).']},';
         }
 
