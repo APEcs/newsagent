@@ -77,6 +77,7 @@ sub _generate_compose {
         my $scheddata = "";
         my $nextdata;
         $args -> {"section"} = "" if(!$args -> {"section"});
+
         foreach my $id (sort(keys(%{$schedules}))) {
             next unless($id =~ /^id_/);
 
@@ -87,7 +88,7 @@ sub _generate_compose {
                             '"'.$self -> {"template"} -> replace_langvar("COMPOSE_SHED_MANUAL").'"';
             }
 
-            $scheddata .= '"'.$id.'": { next: ['.$nextdata.'],';
+            $scheddata .= '"id_'.$schedules -> {$id} -> {"schedule_name"}.'": { next: ['.$nextdata.'],';
             $scheddata .= '"sections": ['.join(",",
                                                map {
                                                    '{ "value": "'. $_ -> {"value"}.'", "name": "'.$_ -> {"name"}.'", "selected": '.($_ -> {"value"} eq $args -> {"section"} && $id eq ("id_".$args -> {"schedule"}) ? 'true' : 'false').'}'

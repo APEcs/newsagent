@@ -486,7 +486,7 @@ sub _validate_schedule_release {
     return $self -> {"template"} -> replace_langvar("COMPOSE_SCHEDULE_NONE")
         if(!$schedules || !scalar(keys(%{$schedules})));
 
-    # Schedule will be the schedule ID number
+    # Schedule will be the schedule name
     ($args -> {"schedule"}, $error) = $self -> validate_options("schedule", {"required" => 1,
                                                                              "source"   => $schedules -> {"_schedules"},
                                                                              "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_SCHEDULE")});
@@ -494,11 +494,18 @@ sub _validate_schedule_release {
 
     # Can only validate, or even check, the section if the schedule is valid
     if($args -> {"schedule"}) {
+        my $schedule = $self -> {"schedule"} -> get_schedule_byname($args -> {"schedule"});
+        if($schedule) {
+            $args -> {"schedule_id"} = $schedule -> {"id"};
+        } else {
+            $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => "{L_COMPOSE_ERR_BADSCHEDULE}"});
+        }
+
         # Section is the section ID number
         ($args -> {"section"}, $error) = $self -> validate_options("section", {"required" => 1,
                                                                                "source"   => $schedules -> {"id_".$args -> {"schedule"}} -> {"sections"},
                                                                                "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_SECTION")});
-         $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+        $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
     }
 
     ($args -> {"release_mode"}, $error) = $self -> validate_options("schedule_mode", {"required" => 1,
