@@ -21,6 +21,7 @@
 package Newsagent::System::NotificationQueue;
 
 use strict;
+use experimental qw(smartmatch);
 use base qw(Webperl::SystemModule); # This class extends the Newsagent block class
 use Webperl::Utils qw(hash_or_hashref);
 use v5.12;

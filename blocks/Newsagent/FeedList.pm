@@ -20,6 +20,7 @@
 package Newsagent::FeedList;
 
 use strict;
+use experimental qw(smartmatch);
 use base qw(Newsagent); # This class extends the Newsagent block class
 use Newsagent::System::Article;
 use Newsagent::System::Feed;
