@@ -23,6 +23,7 @@
 package Newsagent::Login;
 
 use strict;
+use experimental qw(smartmatch);
 use base qw(Newsagent); # This class extends the Newsagent block class
 use Webperl::Utils qw(path_join is_defined_numeric);
 use v5.12;
