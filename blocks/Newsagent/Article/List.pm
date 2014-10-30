@@ -318,7 +318,7 @@ sub _build_article_row {
         }
         $reldate = $self -> {"template"} -> fancy_time($article -> {"release_time"}, 0, 1);
     } else {
-        $feeds = $self -> {"template"} -> load_template("article/list/newsletter.tem", {"***schedule***" => $article -> {"section_data"} -> {"schedule"} -> {"name"},
+        $feeds = $self -> {"template"} -> load_template("article/list/newsletter.tem", {"***schedule***" => $article -> {"section_data"} -> {"schedule"} -> {"description"},
                                                                                         "***section***"  => $article -> {"section_data"} -> {"name"}});
         $reldate = $self -> _release_time($article);
     }
