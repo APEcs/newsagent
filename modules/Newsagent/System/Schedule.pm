@@ -116,7 +116,7 @@ sub get_user_schedule_sections {
         }
     }
 
-    foreach my $id (sort {$result -> {$a} -> {"schedule_description"} cmp $result -> {$b} -> {"schedule_description"}} keys(%{$result})) {
+    foreach my $id (sort {$result -> {$a} -> {"schedule_desc"} cmp $result -> {$b} -> {"schedule_desc"}} keys(%{$result})) {
         push(@{$result -> {"_schedules"}}, {"value" => $result -> {$id} -> {"schedule_name"},
                                             "name"  => $result -> {$id} -> {"schedule_desc"},
                                             "mode"  => $result -> {$id} -> {"schedule_mode"}});
@@ -499,7 +499,6 @@ sub _fetch_section_message_summaries {
                  AND `s`.`section_id` = ?
                  $filter
                  ORDER BY `s`.`sort_order`";
-    print STDERR Dumper([$query, $schedid, $secid]);
 
     # Pull out the messages ordered as set by the user
     my $messh = $self -> {"dbh"} -> prepare($query);
