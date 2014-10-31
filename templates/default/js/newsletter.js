@@ -23,6 +23,9 @@ function save_sort_order()
     savetimer = null;
 
     if(!saving) {
+        saving = true;
+        console.log("Saving...");
+
         var values = JSON.encode(sortlist.serialize(function(element, index) { sec = element.getParent().getProperty('id'); return sec+"_"+element.getProperty('id'); }).flatten());
 
         var req = new Request({ url: api_request_path("newsletters", "sortorder"),
@@ -41,6 +44,7 @@ function save_sort_order()
                                         $('statemsg').set('html', status);
                                     }
                                     saving = false;
+                                    console.log("Saving done.");
                                 }
                               });
         req.post({sortinfo: values
@@ -53,14 +57,17 @@ function save_sort_order()
 function queue_save()
 {
     if(savetimer) {
+        console.log("Cancelling timer "+savetimer);
         clearTimeout(savetimer);
         savetimer = null;
     } else {
+        console.log("Showing spinner");
         $('statespin').fade('in');
         $('statemsg').set('html', messages['saving']);
     }
 
-    savetimer = setTimeout(function() { save_sort_order(); }, 5000);
+    savetimer = setTimeout(function() { save_sort_order(); }, 1000);
+    console.log("Started timer "+savetimer);
 }
 
 window.addEvent('domready', function() {

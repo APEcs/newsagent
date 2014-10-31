@@ -13,3 +13,6 @@ NEWSLETTER_MODE_ALERT  = Blocked automatic release, requires attention.
 
 NEWSLETTER_LIST_SAVING = Saving article order
 NEWSLETTER_LIST_SAVED  = Article order saved
+
+NEWSLETTER_ERR_NOSORT  = No sort information in posted data
+NEWSLETTER_ERR_BADSORT = The sort data receieved by the API cannot be parsed.

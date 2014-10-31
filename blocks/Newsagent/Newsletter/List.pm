@@ -24,6 +24,7 @@ use experimental qw(smartmatch);
 use base qw(Newsagent::Article); # This class extends the Newsagent block class
 use Webperl::Utils qw(is_defined_numeric);
 use POSIX qw(ceil);
+use JSON;
 use v5.12;
 use Data::Dumper;
 
@@ -128,13 +129,33 @@ sub _generate_newsletterlist {
 }
 
 
+# ============================================================================
+#  API functions
+
+## @method $ _build_sortorder_response()
+# Generatea hash containing the response to a sort order change.
+#
+# @return A reference to a hash containing the API response.
 sub _build_sortorder_response {
     my $self = shift;
+    my $userid = $self -> {"session"} -> get_session_userid();
 
-    my $sortinfo = $self -> {"cgi"} -> param("sortinfo");
-    print STDERR $sortinfo;
+    # the sort information is in JSON format
+    my $sortinfo = $self -> {"cgi"} -> param("sortinfo")
+        or return $self -> api_errorhash('bad_data',
+                                         $self -> {"template"} -> replace_langvar("NEWSLETTER_ERR_NOSORT"));
 
-    return { "result" => { "status" => "Saved sort" } };
+    my $sortdata = eval { decode_json($sortinfo) }
+        or return $self -> api_errorhash('bad_data',
+                                         $self -> {"template"} -> replace_langvar("NEWSLETTER_ERR_BADSORT"));
+
+
+    # Sortdata should now be a reference to an array of strings describing newsletter articles
+    # use that to update the sort ordering.
+    $self -> {"schedule"} -> reorder_articles_fromsortdata($sortdata, $userid)
+        or return $self -> api_errorhash('api_error', $self -> {"schedule"} -> errstr());
+
+    return { "result" => { "status" => $self -> {"template"} -> replace_langvar("NEWSLETTER_LIST_SAVED") } };
 }
 
 

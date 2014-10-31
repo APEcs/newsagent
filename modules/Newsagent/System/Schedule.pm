@@ -361,6 +361,53 @@ sub get_newsletter_messages {
 }
 
 
+sub reorder_articles_fromsortdata {
+    my $self     = shift;
+    my $sortdata = shift;
+    my $userid   = shift;
+
+    $self -> clear_error();
+
+    # Each entry in $sortdata should be of the form list-<schedule_id>-<section_id>_msg-<article_id>
+    # to each section has its own ordering, so the list needs parsing and processing to make updating
+    # a bit more sane...
+    my $sections;
+    my $sid = 1;
+    my $schedule_id;
+    foreach my $row (@{$sortdata}) {
+        my ($schedule, $section, $article) = $row =~ /^list-(\d+)-(\d+)_msg-(\d+)$/;
+
+        # using straight ! is safe here; valid IDs are always >0
+        $self -> self_error("Malformed data in provides sort data")
+            if(!$schedule || !$section || !$article);
+
+        $schedule_id = $schedule if(!$schedule_id);
+        $sections -> {$section} -> {"order"} = $sid++ if(!$sections -> {$section} -> {"order"});
+
+        push(@{$sections -> {$section} -> {"articles"}}, $article);
+    }
+
+    print STDERR Dumper($sections);
+    foreach my $section_id (sort { $sections -> {$a} -> {"order"} <=> $sections -> {$b} -> {"order"} } keys(%{$sections})) {
+        # Make sure the user has permission to do anything in the section
+        my $section = $self -> get_section($section_id)
+            or return undef;
+
+        if($self -> {"roles"} -> user_has_capability($section -> {"metadata_id"}, $userid, "schedule")) {
+            # User can edit the section, so set the roder of the articles within it
+            for(my $pos = 0; $pos < scalar(@{$sections -> {$section_id} -> {"articles"}}); ++$pos) {
+                $self -> update_section_relation($sections -> {$section_id} -> {"articles"} -> [$pos], $schedule_id, $section_id, $pos + 1)
+                    or return undef;
+            }
+        } else {
+            print STDERR "User has no permission for $section_id\n";
+        }
+    }
+
+    return 1;
+}
+
+
 # ============================================================================
 #  Digesting
 
@@ -422,11 +469,11 @@ sub get_digest_section {
 #  Relation control
 
 ## @method $ add_section_relation($articleid, $scheduleid, $sectionid, $sort_order)
-# Greate a relation between the specified article and the provided section of a schedule.
+# Create a relation between the specified article and the provided section of a schedule.
 #
 # @param articleid  The ID of the article to set up the relation for.
 # @param scheduleid The ID of the schedule the article should be part of.
-# @param sectionid  The ID of the section in the schefule to add the article to.
+# @param sectionid  The ID of the section in the schedule to add the article to.
 # @param sort_order The position in the section to add the article at. If this is
 #                   omitted or zero, the article is added at the end of the section.
 #                   Note that multiple articles may have the same sort_order, and
@@ -465,6 +512,40 @@ sub add_section_relation {
     my $rows = $secth -> execute($articleid, $scheduleid, $sectionid, $sort_order);
     return $self -> self_error("Unable to perform article section relation insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Article section relation insert failed, no rows inserted") if($rows eq "0E0");
+
+    return 1;
+}
+
+
+## @method $ update_section_relation($articleid, $scheduleid, $sectionid, $sort_order)
+# Update the section and sort order of an article. This will not move the article to
+# a new schedule, but it can move it to a different section within the schedule, and
+# change its location within the section. All the arguments are required - including
+# the sort order, unlike with add_section_relation() - and the section must be part
+# of the specified section.
+#
+# @param articleid  The ID of the article to update the relation for.
+# @param scheduleid The ID of the schedule the article is part of.
+# @param sectionid  The ID of the section in the schedule the article should be in.
+# @param sort_order The position in the section to assign to the relation.
+# @return true on success, undef on error.
+sub update_section_relation {
+    my $self       = shift;
+    my $articleid  = shift;
+    my $scheduleid = shift;
+    my $sectionid  = shift;
+    my $sort_order = shift;
+
+    print STDERR "Setting article $articleid in schedule $scheduleid to section $sectionid pos $sort_order\n";
+
+    $self -> clear_error();
+
+    my $moveh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"articlesection"}."`
+                                             SET `section_id` = ?, `sort_order` = ?
+                                             WHERE `article_id` = ?
+                                             AND `schedule_id` = ?");
+    $moveh -> execute($sectionid, $sort_order, $articleid, $scheduleid)
+        or return $self -> self_error("Unable to perform article section relation update: ". $self -> {"dbh"} -> errstr);
 
     return 1;
 }
