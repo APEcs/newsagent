@@ -153,6 +153,7 @@ var CustomSortable = new Class({
 		this.list = element.getParent();
 		this.clone = this.getClone(event, element);
         this.droppables = this.getDroppables();
+//        this.lists = this.getLists();
 
         if(this.options.dropClass) this.markDrag(true);
 
@@ -241,10 +242,8 @@ var CustomSortable = new Class({
     },
 
     markDrag: function(setClass) {
-        this.droppables.each(function(element) {
+        this.lists.each(function(element) {
             if(element.get("tag") == 'ul') {
-                element.getChildren().each(function(child) { this.setMark(child, setClass); }, this);
-            } else {
                 this.setMark(element, setClass);
             }
         }, this);

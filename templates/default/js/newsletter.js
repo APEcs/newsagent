@@ -24,7 +24,6 @@ function save_sort_order()
 
     if(!saving) {
         saving = true;
-        console.log("Saving...");
 
         var values = JSON.encode(sortlist.serialize(function(element, index) { sec = element.getParent().getProperty('id'); return sec+"_"+element.getProperty('id'); }).flatten());
 
@@ -44,7 +43,6 @@ function save_sort_order()
                                         $('statemsg').set('html', status);
                                     }
                                     saving = false;
-                                    console.log("Saving done.");
                                 }
                               });
         req.post({sortinfo: values
@@ -57,17 +55,14 @@ function save_sort_order()
 function queue_save()
 {
     if(savetimer) {
-        console.log("Cancelling timer "+savetimer);
         clearTimeout(savetimer);
         savetimer = null;
     } else {
-        console.log("Showing spinner");
         $('statespin').fade('in');
         $('statemsg').set('html', messages['saving']);
     }
 
     savetimer = setTimeout(function() { save_sort_order(); }, 1000);
-    console.log("Started timer "+savetimer);
 }
 
 window.addEvent('domready', function() {
@@ -78,7 +73,8 @@ window.addEvent('domready', function() {
 		                              clone: true,
 		                              revert: true,
 		                              opacity: 0.5,
-                                      onComplete: function() { queue_save() },
+                                      dropClass: 'droplist',
+                                      onComplete: function() { queue_save(); }
 	                              });
 
     sortlist.removeItems($$('#messagebrowser div.edit ul li.dummy'));
