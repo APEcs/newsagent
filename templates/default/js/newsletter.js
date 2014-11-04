@@ -65,6 +65,12 @@ function queue_save()
     savetimer = setTimeout(function() { save_sort_order(); }, 1000);
 }
 
+
+function set_issue_date(date)
+{
+    location.href = issueurl + "/" + date.getFullYear() + "/" + (date.getMonth() + 1) + "/" + date.getDate();
+}
+
 window.addEvent('domready', function() {
     // Enable newsletter selection
     $$('div.newstitle').each(function(element) { setup_newsletter_link(element); });

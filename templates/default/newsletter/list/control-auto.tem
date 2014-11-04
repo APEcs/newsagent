@@ -2,6 +2,19 @@
                     <ul id="message-controls" class="msgctrl"><!--
                      --><li class="msgctrl-preview" title="{L_NEWSLETTER_PREVIEW}"><img src="{V_[templatepath]}images/newsletter/preview.png" width="16" height="16" alt="preview" /></li><!--
                     --></ul>
+                    <div id="datebox"><input class="fillwide datepick" type="text" name="issue_date" id="issue_date" size="16" maxlength="16" value="***next_date***" /></div>
                     <div id="statebox"><img id="statespin" src="{V_[templatepath]}images/spinner.gif" width="16" height="16" alt="working" class="workspin" /> <span id="statemsg"></span></div>
-                    ... issue controls here ...
                 </div>
+                <script lang="text/javascript">
+window.addEvent('domready', function() {
+    Locale.use('en-GB');
+    rdate_picker = new Picker.Date($('issue_date'), { timePicker: false,
+                                                      yearPicker: true,
+                                                      positionOffset: {x: 5, y: 0},
+                                                      pickerClass: 'datepicker_dashboard',
+                                                      useFadeInOut: !Browser.ie,
+                                                      availableDates: ***allowdates***,
+                                                      onSelect: function(date) { set_issue_date(date); }
+                                                    });
+});
+                </script>

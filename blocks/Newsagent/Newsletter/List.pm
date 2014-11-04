@@ -26,7 +26,6 @@ use Webperl::Utils qw(is_defined_numeric);
 use POSIX qw(ceil);
 use JSON;
 use v5.12;
-use Data::Dumper;
 
 # ============================================================================
 #  Content generators
@@ -62,7 +61,6 @@ sub _build_newsletter_list {
 }
 
 
-
 ## @method private @ _generate_newsletterlist($newsid)
 # Generate the contents of a page listing the messages in the specified newsletter.
 #
@@ -70,8 +68,9 @@ sub _build_newsletter_list {
 sub _generate_newsletterlist {
     my $self   = shift;
     my $newsid = shift;
+    my $issue  = shift;
     my $userid = $self -> {"session"} -> get_session_userid();
-    my ($newsletlist, $msglist, $controls, $intro, $sections, $usenext, $seldate) = ("", "", "", "", [], 1, undef);
+    my ($newsletlist, $msglist, $controls, $intro, $sections) = ("", "", "", "", []);
 
     # Fetch the list of schedules and sections the user can edit
     my $schedules  = $self -> {"schedule"} -> get_user_schedule_sections($userid);
@@ -83,7 +82,11 @@ sub _generate_newsletterlist {
     if($newsletter) {
         $newsletlist = $self -> _build_newsletter_list($schedules, $newsletter);
 
-        my ($mindate, $maxdate) = $self -> {"schedule"} -> get_newsletter_daterange($newsletter, $seldate);
+        # Fetch the list of dates teh newsletter is released on (this is undef for manual releases)
+        my $dates = $self -> {"schedule"} -> get_newsletter_datelist($newsletter, 52);
+
+        # And work out the date range for articles that should appear in the selected issue
+        my ($mindate, $maxdate, $usenext) = $self -> {"schedule"} -> get_newsletter_daterange($newsletter, $dates, $issue);
 
         # Fetch the messages set for the current message
         my $messages = $self -> {"schedule"} -> get_newsletter_messages($newsletter -> {"id"}, $userid, $usenext, $mindate, $maxdate);
@@ -107,13 +110,16 @@ sub _generate_newsletterlist {
                                                                });
         }
 
-    }
-
-    if(!$newsletter -> {"schedule"}) {
-        $intro    = "";
-        $controls = $self -> {"template"} -> load_template("newsletter/list/control-manual.tem", { "***schedule***" => $newsletter -> {"id"}, });
+        if(!$newsletter -> {"schedule"}) {
+            $controls = $self -> {"template"} -> load_template("newsletter/list/control-manual.tem", { "***schedule***"   => $newsletter -> {"id"}});
+        } else {
+            my $next_date = DateTime -> from_epoch(epoch => $maxdate);
+            $controls = $self -> {"template"} -> load_template("newsletter/list/control-auto.tem", { "***schedule***" => $newsletter -> {"id"},
+                                                                                                     "***allowdates***" => encode_json($dates),
+                                                                                                     "***next_date***"  => $next_date -> strftime("%d/%m/%Y")});
+        }
     } else {
-        $controls = $self -> {"template"} -> load_template("newsletter/list/control-auto.tem", { "***schedule***" => $newsletter -> {"id"}, });
+        $newsid = undef;
     }
 
     return ($self -> {"template"} -> replace_langvar("NEWSLETTER_LIST_TITLE"),
@@ -123,7 +129,10 @@ sub _generate_newsletterlist {
                                                                                    "***controls***"  => $controls,
                                                                                    "***nlist-url***" => $self -> build_url(block    => "newsletters",
                                                                                                                            params   => [],
-                                                                                                                           pathinfo => [])
+                                                                                                                           pathinfo => []),
+                                                                                   "***issue-url***" => $self -> build_url(block    => "newsletters",
+                                                                                                                           params   => [],
+                                                                                                                           pathinfo => [$newsid, "issue"])
                                                    }));
 
 }
@@ -133,7 +142,7 @@ sub _generate_newsletterlist {
 #  API functions
 
 ## @method $ _build_sortorder_response()
-# Generatea hash containing the response to a sort order change.
+# Generate a hash containing the response to a sort order change.
 #
 # @return A reference to a hash containing the API response.
 sub _build_sortorder_response {
@@ -213,10 +222,10 @@ sub page_display {
     } else {
         my @pathinfo = $self -> {"cgi"} -> param('pathinfo');
 
-        given($pathinfo[2]) {
-            when("page") { ($title, $content) = $self -> _generate_newsletterlist($pathinfo[0], $pathinfo[2]); }
+        given($pathinfo[1]) {
+            when("issue") { ($title, $content) = $self -> _generate_newsletterlist($pathinfo[0], [$pathinfo[2], $pathinfo[3], $pathinfo[4]]); }
             default {
-                ($title, $content) = $self -> _generate_newsletterlist($pathinfo[0], 1);
+                ($title, $content) = $self -> _generate_newsletterlist($pathinfo[0]);
             }
         }
 

@@ -21,6 +21,8 @@ package Newsagent::System::Schedule;
 
 use strict;
 use DateTime::Event::Cron;
+use List::Util qw(min);
+use JSON;
 use base qw(Webperl::SystemModule); # This class extends the Newsagent block class
 use v5.12;
 use Data::Dumper;
@@ -290,7 +292,69 @@ sub get_user_newsletter {
 }
 
 
-## @method @ get_newsletter_daterange($newsletter, $checkdate)
+## @method $ get_newsletter_datelist($newsletter, $count)
+# Given a newsletter and an issue count, produce a hash describing the
+# days on which the newsletter will be generated. If the newsletter is
+# a manual release newsletter, this returns undef.
+#
+# @param newsletter A reference to a hash containing the newsletter data.
+# @param count      The number of issues to generate dates for
+# @return a reference to a hash containing the newsletter date list
+#         in the form { "YYYY" => { "MM" => [ DD, DD, DD], "MM" => [ DD, DD, DD] }, etc}
+#         or undef.
+sub get_newsletter_datelist {
+    my $self       = shift;
+    my $newsletter = shift;
+    my $count      = shift;
+
+    return undef unless($newsletter -> {"schedule"});
+    my $lastrun = $newsletter -> {"last_release"} || time();
+
+    my $values = undef;
+    my $cron  = DateTime::Event::Cron -> from_cron($newsletter -> {"schedule"});
+    my $start = DateTime -> from_epoch(epoch => $lastrun);
+
+    my $prev = $cron -> previous($start);
+
+    # check whether the last release went out, if not go back to it.
+    $start = $cron -> previous($prev)
+        if(!$newsletter -> {"last_release"} || $newsletter -> {"last_release"} < $prev -> epoch());
+
+    # iterate over the requested cron runs
+    my $iter = $cron -> iterator(after => $start);
+    for(my $i = 0; $i < $count; ++$i) {
+        my $next = $iter -> next;
+        push(@{$values -> {$next -> year} -> {$next -> month}}, $next -> day);
+    }
+
+    return $values;
+}
+
+
+## @method $ get_newsletter_datelist_json($newsletter, $count)
+# Fetch the list of newsletter release dates as a json string. This does
+# the same job as get_newsletter_datelist() except that it returns the
+# newsletter release day information as a JSON-encoded string rather
+# than a reference to a hash.
+#
+# @param newsletter A reference to a hash containing the newsletter data.
+# @param count      The number of issues to generate dates for
+# @return A string containing the JSON encoded information about the release
+#         dates. If th enewsletter is manual release, this returns an
+#         empty string.
+sub get_newsletter_datelist_json {
+    my $self       = shift;
+    my $newsletter = shift;
+    my $count      = shift;
+
+    my $data = $self -> get_newsletter_datelist($newsletter, $count);
+    return "" unless($data);
+
+    return encode_json($data);
+}
+
+
+## @method @ get_newsletter_daterange($newsletter, $issue)
 # Determine the date range for a given newsletter issue. This attempts
 # to work out, based on the schedule set in the specified newsletter
 # and an optional start date, when the current issue will be released, and
@@ -298,26 +362,49 @@ sub get_user_newsletter {
 # has no schedule - it is manual release - this can't produce a range.
 #
 # @param newsletter A reference to a hash containing the newsletter data.
-# @param checkdate  An optional unix timestamp to use. The end time is
-#                   taken as the issue date that follows this timestamp,
-#                   and the start is the issue date that prceeds it. If
-#                   not set, this defaults to the current time.
+# @param issue      A reference to an array containing the issue year, month, and day.
 # @return An array of two values: the previous issue release date, and
 #         the next issue release date, both as unix timestamps. If the
 #         newsletter is a manual release, this returns undefs
 sub get_newsletter_daterange {
     my $self       = shift;
     my $newsletter = shift;
-    my $checkdate  = shift || time();
+    my $dates      = shift;
+    my $issue      = shift;
 
     if($newsletter -> {"schedule"}) {
+        my $start = DateTime -> now(); # Start off with a fallback of now
+
+        my $firstyear  = min(keys %{$dates});
+        my $firstmonth = min(keys %{$dates -> {$firstyear}});
+        my $firstday   = $dates -> {$firstyear} -> {$firstmonth} -> [0];
+        my $usenext    = 0;
+
+        # If an issue day has been set, try to use it
+        if($issue) {
+            $start = eval { DateTime -> new(year  => $issue -> [0],
+                                            month => $issue -> [1],
+                                            day   => $issue -> [2]) };
+            $self -> {"logger"} -> die_log($self -> {"cgi"}, "Bad issue date specified") if($@);
+
+            $usenext = ($issue -> [0] == $firstyear && $issue -> [1] == $firstmonth && $issue -> [2] == $firstday);
+        } else {
+            $start = eval { DateTime -> new(year  => $firstyear,
+                                            month => $firstmonth,
+                                            day   => $firstday) };
+            $self -> {"logger"} -> die_log($self -> {"cgi"}, "Bad start day in dates data") if($@);
+            $usenext = 1;
+        }
+
         my $cron = DateTime::Event::Cron -> new($newsletter -> {"schedule"});
-        my $next_time = $cron -> next(DateTime -> from_epoch(epoch => $checkdate));
+        my $next_time = $cron -> next($start);
         my $prev_time = $cron -> previous($next_time);
 
-        return ($prev_time -> epoch(), $next_time -> epoch());
+        print STDERR "Start: $start, Prev: $prev_time, Next: $next_time, usenet: $usenext";
+
+        return ($prev_time -> epoch(), $next_time -> epoch(), $usenext);
     } else {
-        return (undef, undef);
+        return (undef, time(), 1);
     }
 }
 
@@ -387,7 +474,6 @@ sub reorder_articles_fromsortdata {
         push(@{$sections -> {$section} -> {"articles"}}, $article);
     }
 
-    print STDERR Dumper($sections);
     foreach my $section_id (sort { $sections -> {$a} -> {"order"} <=> $sections -> {$b} -> {"order"} } keys(%{$sections})) {
         # Make sure the user has permission to do anything in the section
         my $section = $self -> get_section($section_id)
@@ -399,8 +485,6 @@ sub reorder_articles_fromsortdata {
                 $self -> update_section_relation($sections -> {$section_id} -> {"articles"} -> [$pos], $schedule_id, $section_id, $pos + 1)
                     or return undef;
             }
-        } else {
-            print STDERR "User has no permission for $section_id\n";
         }
     }
 
@@ -535,8 +619,6 @@ sub update_section_relation {
     my $scheduleid = shift;
     my $sectionid  = shift;
     my $sort_order = shift;
-
-    print STDERR "Setting article $articleid in schedule $scheduleid to section $sectionid pos $sort_order\n";
 
     $self -> clear_error();
 

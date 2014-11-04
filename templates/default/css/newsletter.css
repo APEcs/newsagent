@@ -181,3 +181,7 @@ ul.msgctrl li:hover {
     display: inline;
     color: #777;
 }
+
+#datebox {
+    display: inline;
+}

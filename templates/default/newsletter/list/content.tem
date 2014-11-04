@@ -1,5 +1,6 @@
 <script type="text/javascript">
 nlisturl = "***nlist-url***";
+issueurl = "***issue-url***";
 messages = { saving:  "{L_NEWSLETTER_LIST_SAVING}",
              saved:   "{L_NEWSLETTER_LIST_SAVED}"
 };
