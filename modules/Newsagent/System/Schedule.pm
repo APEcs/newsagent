@@ -99,13 +99,7 @@ sub get_user_schedule_sections {
 
                 # Work out when the next two runs of the schedule are
                 if($section -> {"schedule"}) {
-                    my $cron = DateTime::Event::Cron -> new($section -> {"schedule"});
-                    my $next_time = undef;
-                    for(my $i = 0; $i < 2; ++$i) {
-                        $next_time = $cron -> next($next_time);
-                        push(@{$result -> {"id_".$section -> {"schedule_id"}} -> {"next_run"}}, $next_time -> epoch);
-                    }
-
+                    $result -> {"id_".$section -> {"schedule_id"}} -> {"next_run"} = $self -> get_newsletter_issuedates($section);
                     $result -> {"id_".$section -> {"schedule_id"}} -> {"schedule_mode"} = "auto";
                 } else {
                     $result -> {"id_".$section -> {"schedule_id"}} -> {"next_run"} = [ "", "" ];
@@ -301,7 +295,7 @@ sub get_user_newsletter {
 # @param count      The number of issues to generate dates for
 # @return a reference to a hash containing the newsletter date list
 #         in the form { "YYYY" => { "MM" => [ DD, DD, DD], "MM" => [ DD, DD, DD] }, etc}
-#         or undef.
+#         or undef
 sub get_newsletter_datelist {
     my $self       = shift;
     my $newsletter = shift;
@@ -315,16 +309,24 @@ sub get_newsletter_datelist {
     my $start = DateTime -> from_epoch(epoch => $lastrun);
 
     my $prev = $cron -> previous($start);
+    my $late = 0;
 
     # check whether the last release went out, if not go back to it.
-    $start = $cron -> previous($prev)
-        if(!$newsletter -> {"last_release"} || $newsletter -> {"last_release"} < $prev -> epoch());
+    if(!$newsletter -> {"last_release"} || $newsletter -> {"last_release"} < $prev -> epoch()) {
+        $start = $cron -> previous($prev);
+        $late = 1;
+    }
 
     # iterate over the requested cron runs
     my $iter = $cron -> iterator(after => $start);
     for(my $i = 0; $i < $count; ++$i) {
         my $next = $iter -> next;
-        push(@{$values -> {$next -> year} -> {$next -> month}}, $next -> day);
+        push(@{$values -> {"hashed"} -> {$next -> year} -> {$next -> month}}, $next -> day);
+        push(@{$values -> {"dates"}}, {"year"  => $next -> year,
+                                       "month" => $next -> month,
+                                       "day"   => $next -> day,
+                                       "epoch" => $next -> epoch,
+                                       "late"  => (!$i && $late)});
     }
 
     return $values;
@@ -350,7 +352,7 @@ sub get_newsletter_datelist_json {
     my $data = $self -> get_newsletter_datelist($newsletter, $count);
     return "" unless($data);
 
-    return encode_json($data);
+    return encode_json($data -> {"hashed"});
 }
 
 
@@ -375,9 +377,9 @@ sub get_newsletter_daterange {
     if($newsletter -> {"schedule"}) {
         my $start = DateTime -> now(); # Start off with a fallback of now
 
-        my $firstyear  = min(keys %{$dates});
-        my $firstmonth = min(keys %{$dates -> {$firstyear}});
-        my $firstday   = $dates -> {$firstyear} -> {$firstmonth} -> [0];
+        my $firstyear  = $dates -> {"dates"} -> [0] -> {"year"};
+        my $firstmonth = $dates -> {"dates"} -> [0] -> {"month"};
+        my $firstday   = $dates -> {"dates"} -> [0] -> {"day"};
         my $usenext    = 0;
 
         # If an issue day has been set, try to use it
@@ -400,11 +402,81 @@ sub get_newsletter_daterange {
         my $next_time = $cron -> next($start);
         my $prev_time = $cron -> previous($next_time);
 
-        print STDERR "Start: $start, Prev: $prev_time, Next: $next_time, usenet: $usenext";
+        # Override the previous date for the next release, capturing everything
+        # that should be released since the last release.
+        $prev_time = DateTime -> from_epoch(epoch => $newsletter -> {"last_release"})
+            if($usenext);
 
         return ($prev_time -> epoch(), $next_time -> epoch(), $usenext);
     } else {
         return (undef, time(), 1);
+    }
+}
+
+
+## @method $ get_newsletter_issuedates($newsletter)
+# given a schedule, determine when the next release will (or should have) happen,
+# and when the one after that will be.
+#
+# @param newsletter A reference to a hash containing the newsletter data.
+# @return A refrence to an array of hashes containing the issue dates on success,
+#         undef if the newsletter is a maual release newsletter.
+sub get_newsletter_issuedates {
+    my $self       = shift;
+    my $newsletter = shift;
+
+    $self -> clear_error();
+
+    my $data = $self -> get_newsletter_datelist($newsletter, 2)
+        or return $self -> self_error("Attempt to fetch date list for manual release newsletter");
+
+    my $result = [];
+    foreach my $day (@{$data -> {"dates"}}) {
+        push(@{$result}, {"late" => $day -> {"late"},
+                          "timestamp" => $day -> {"epoch"}});
+    }
+
+    return $result;
+}
+
+
+## @method @ get_issuedate($article)
+# Given an article, complete with section and schedule information included,
+# determine when the article should appear in a newsletter. Note that this
+# will only return values for articles associated with automatic newsletters.
+#
+# @param article A reference to the article to get the newsletter date for.
+# @return The article release time, and a flag indicating whether the release
+#         is late
+sub get_issuedate {
+    my $self    = shift;
+    my $article = shift;
+
+    return (undef, undef)
+        unless($article -> {"section_data"} -> {"schedule"} -> {"schedule"});
+
+    # first get the times of releases
+    my $releases = $self -> get_newsletter_issuedates($article -> {"section_data"} -> {"schedule"});
+
+    # next is east - it's the first of the releases
+    if($article -> {"release_mode"} eq "next") {
+        return ($releases -> [0] -> {"timestamp"}, $releases -> [0] -> {"late"});
+
+    } elsif($article -> {"release_mode"} eq "after") {
+
+        # 'after' articles can fall into several places. Either it's some time before he first release
+        # (in which case it is due to go out in it), or it is in a later release.
+        # Next release check first...
+        if($article -> {"release_time"} < $releases -> [0] -> {"timestamp"}) {
+            return ($releases -> [0] -> {"timestamp"}, $releases -> [0] -> {"late"});
+
+        # It's not in the next release, so work out which future one it's in
+        } else {
+            my $cron  = DateTime::Event::Cron -> new($article -> {"section_data"} -> {"schedule"} -> {"schedule"});
+            my $issue = $cron -> next(DateTime -> from_epoch(epoch => $article -> {"release_time"}));
+
+            return ($issue -> epoch, $issue -> epoch < time());
+        }
     }
 }
 
@@ -646,13 +718,15 @@ sub _fetch_section_message_summaries {
     my $filter  = "";
 
     if($getnext) {
-        $filter  = " AND (`a`.`release_mode` = 'next' OR `a`.`release_mode` = 'after')";
+        $filter  = " AND (`a`.`release_mode` = 'next' OR (`a`.`release_mode` = 'after'";
     } else {
-        $filter  = " AND (`a`.`release_mode` = 'after')";
+        $filter  = " AND (`a`.`release_mode` = 'after'";
     }
 
-    $filter .= " AND `a`.`release_time` > $mindate"  if($mindate && $mindate =~ /^\d+$/);
+    $filter .= " AND `a`.`release_time` > $mindate"  if(defined($mindate) && $mindate =~ /^\d+$/);
     $filter .= " AND `a`.`release_time` <= $maxdate" if($maxdate && $maxdate =~ /^\d+$/);
+    $filter .= ")";
+    $filter .= ")" if($getnext);
 
     my $query = "SELECT `a`.`id`, `a`.`title`, `a`.`summary`, `a`.`release_mode`, `a`.`release_time`
                  FROM `".$self -> {"settings"} -> {"database"} -> {"articlesection"}."` AS `s`,

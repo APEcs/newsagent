@@ -114,8 +114,8 @@ sub _generate_newsletterlist {
             $controls = $self -> {"template"} -> load_template("newsletter/list/control-manual.tem", { "***schedule***"   => $newsletter -> {"id"}});
         } else {
             my $next_date = DateTime -> from_epoch(epoch => $maxdate);
-            $controls = $self -> {"template"} -> load_template("newsletter/list/control-auto.tem", { "***schedule***" => $newsletter -> {"id"},
-                                                                                                     "***allowdates***" => encode_json($dates),
+            $controls = $self -> {"template"} -> load_template("newsletter/list/control-auto.tem", { "***schedule***"   => $newsletter -> {"id"},
+                                                                                                     "***allowdates***" => encode_json($dates -> {"hashed"}),
                                                                                                      "***next_date***"  => $next_date -> strftime("%d/%m/%Y")});
         }
     } else {
