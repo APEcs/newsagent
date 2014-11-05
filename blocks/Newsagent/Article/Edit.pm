@@ -254,7 +254,12 @@ sub _generate_edit {
             next unless($id =~ /^id_/);
 
             if($schedules -> {$id} -> {"next_run"} -> [0]) {
-                $nextdata = join(",", map { '"'.$self -> {"template"} -> format_time($_).'"' } @{$schedules -> {$id} -> {"next_run"}});
+                $nextdata = "";
+                foreach my $nextrun (@{$schedules -> {$id} -> {"next_run"}}) {
+                    $nextdata .= ", " if($nextdata);
+                    $nextdata .= '{"time": "'.$self -> {"template"} -> format_time($nextrun -> {"timestamp"}).'",';
+                    $nextdata .= '"late": '.($nextrun -> {"late"} ? "true" : "false").'}';
+                }
             } else {
                 $nextdata = '"'.$self -> {"template"} -> replace_langvar("COMPOSE_SHED_MANUAL").'",'.
                             '"'.$self -> {"template"} -> replace_langvar("COMPOSE_SHED_MANUAL").'"';

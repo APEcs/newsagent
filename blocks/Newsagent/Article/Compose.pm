@@ -82,10 +82,15 @@ sub _generate_compose {
             next unless($id =~ /^id_/);
 
             if($schedules -> {$id} -> {"next_run"} -> [0]) {
-                $nextdata = join(",", map { '"'.$self -> {"template"} -> format_time($_).'"' } @{$schedules -> {$id} -> {"next_run"}});
+                $nextdata = "";
+                foreach my $nextrun (@{$schedules -> {$id} -> {"next_run"}}) {
+                    $nextdata .= ", " if($nextdata);
+                    $nextdata .= '{"time": "'.$self -> {"template"} -> format_time($nextrun -> {"timestamp"}).'",';
+                    $nextdata .= '"late": '.($nextrun -> {"late"} ? "true" : "false").'}';
+                }
             } else {
-                $nextdata = '"'.$self -> {"template"} -> replace_langvar("COMPOSE_SHED_MANUAL").'",'.
-                            '"'.$self -> {"template"} -> replace_langvar("COMPOSE_SHED_MANUAL").'"';
+                $nextdata = '{"time": "'.$self -> {"template"} -> replace_langvar("COMPOSE_SHED_MANUAL").'"},'.
+                            '{"time": "'.$self -> {"template"} -> replace_langvar("COMPOSE_SHED_MANUAL").'"}';
             }
 
             $scheddata .= '"id_'.$schedules -> {$id} -> {"schedule_name"}.'": { next: ['.$nextdata.'],';

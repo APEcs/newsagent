@@ -67,6 +67,14 @@ dd.next1 {
     font-size: 85%;
 }
 
+#schedule-next1.late {
+    padding-left: 16px;
+    background-image: url('../images/newsletter/late_newsletter.png');
+    background-repeat: no-repeat;
+    background-position: center left;
+    color: #C20101;
+}
+
 dd.next2 {
     color: #999;
     font-size: 75%;

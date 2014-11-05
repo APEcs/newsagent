@@ -255,8 +255,14 @@ function set_schedule_sections()
     if(sched_drop) {
         var schedule = sched_drop.getSelected().get("value");
 
-        $('schedule-next1').set('html', schedule_data['id_'+schedule]['next'][0]);
-        $('schedule-next2').set('html', schedule_data['id_'+schedule]['next'][1]);
+        $('schedule-next1').set('html', schedule_data['id_'+schedule]['next'][0]['time']);
+        if(schedule_data['id_'+schedule]['next'][0]['late']) {
+            $('schedule-next1').addClass('late');
+        } else {
+            $('schedule-next1').removeClass('late');
+        }
+
+        $('schedule-next2').set('html', schedule_data['id_'+schedule]['next'][1]['time']);
 
         $('comp-section').empty();
 
