@@ -26,6 +26,7 @@ use Webperl::Utils qw(is_defined_numeric);
 use DateTime::Event::Cron;
 use POSIX qw(ceil);
 use v5.12;
+use Data::Dumper;
 
 # ============================================================================
 #  General support
@@ -39,13 +40,16 @@ sub _release_time {
     my $self = shift;
     my $article = shift;
 
-    # Does the schedule for the article has a defined release schedule?
-    if($article -> {"schedule_data"} -> {"schedule"} -> {"schedule"}) {
-        my $cron = DateTime::Event::Cron -> new($article -> {"schedule_data"} -> {"schedule"} -> {"schedule"});
-
-    } else {
-
+    # Articles with no cron info with the schedule are manual release
+    if(!$article -> {"section_data"} -> {"schedule"} -> {"schedule"}) {
         return $self -> {"template"} -> replace_langvar("COMPOSE_SHED_MANUAL");
+
+    # Otherwise the article is part of an auto-release newsletter, so we need to work
+    # out /which/ newsletter it shoulld be in
+    } else {
+        my ($releasetime, $late) = $self -> {"schedule"} -> get_issuedate($article);
+        return $self -> {"template"} -> load_template("article/list/newsletter-timed.tem", {"***lateclass***" => $late ? "late" : "",
+                                                                                            "***next1***"     => $self -> {"template"} -> fancy_time($releasetime, 0, 1)});
     }
 }
 

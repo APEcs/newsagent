@@ -274,3 +274,19 @@ button.remover {
     vertical-align: top;
     cursor: pointer;
 }
+
+.news_issue {
+}
+
+.news_issue .next1.late {
+    padding-left: 16px;
+    background-image: url('../images/newsletter/late_newsletter.png');
+    background-repeat: no-repeat;
+    background-position: center left;
+    color: #C20101;
+}
+
+.news_issue .next2 {
+    font-size: 9px;
+    color: #555;
+}
