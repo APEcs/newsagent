@@ -482,12 +482,13 @@ sub get_issuedate {
 
 
 sub get_newsletter_messages {
-    my $self    = shift;
-    my $newsid  = shift;
-    my $userid  = shift;
-    my $getnext = shift;
-    my $mindate = shift;
-    my $maxdate = shift;
+    my $self     = shift;
+    my $newsid   = shift;
+    my $userid   = shift;
+    my $getnext  = shift;
+    my $mindate  = shift;
+    my $maxdate  = shift;
+    my $fulltext = shift;
 
     $self -> clear_error();
 
@@ -513,7 +514,7 @@ sub get_newsletter_messages {
 
         # Fetch the messages even if the user can't edit the section, so they can
         # see the content in context
-        $section -> {"messages"} = $self -> _fetch_section_message_summaries($newsid, $section -> {"id"}, $getnext, $mindate, $maxdate);
+        $section -> {"messages"} = $self -> _fetch_section_messages($newsid, $section -> {"id"}, $getnext, $mindate, $maxdate, $fulltext);
     }
 
     return $sections;
@@ -708,14 +709,15 @@ sub update_section_relation {
 # ============================================================================
 #  Internal implementation
 
-sub _fetch_section_message_summaries {
-    my $self    = shift;
+sub _fetch_section_messages {
+    my $self     = shift;
     my $schedid  = shift;
-    my $secid   = shift;
-    my $getnext = shift;
-    my $mindate = shift;
-    my $maxdate = shift;
-    my $filter  = "";
+    my $secid    = shift;
+    my $getnext  = shift;
+    my $mindate  = shift;
+    my $maxdate  = shift;
+    my $fulltext = shift;
+    my $filter   = "";
 
     if($getnext) {
         $filter  = " AND (`a`.`release_mode` = 'next' OR (`a`.`release_mode` = 'after'";

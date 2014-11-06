@@ -42,7 +42,8 @@ use v5.12;
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    my $self     = $class -> SUPER::new(@_)
+    my $self     = $class -> SUPER::new("timefmt" => '%a, %d %b %Y %H:%M:%S %z',
+                                        @_)
         or return undef;
 
     $self -> {"feed"} = Newsagent::System::Feed -> new(dbh      => $self -> {"dbh"},

@@ -22,13 +22,64 @@ package Newsagent::Newsletter::List;
 use strict;
 use experimental qw(smartmatch);
 use base qw(Newsagent::Article); # This class extends the Newsagent block class
-use Webperl::Utils qw(is_defined_numeric);
+use Webperl::Utils qw(trimspace path_join is_defined_numeric);
+use Digest::MD5 qw(md5_hex);
 use POSIX qw(ceil);
 use JSON;
 use v5.12;
+use Data::Dumper;
+
 
 # ============================================================================
-#  Content generators
+#  Content support
+
+sub _build_newsletter_article {
+    my $self     = shift;
+    my $article  = shift;
+    my $template = shift;
+
+    # The date can be needed in both the title and date fields.
+    my $pubdate = $self -> {"template"} -> format_time($article -> {"release_time"}, $self -> {"timefmt"});
+
+    # Generate the image urls
+    my @images;
+
+    for(my $img = 0; $img < 2; ++$img) {
+        next if(!$article -> {"images"} -> [$img] || !$article -> {"images"} -> [$img] -> {"location"});
+
+        $images[$img] = $article -> {"images"} -> [$img] -> {"location"}
+        if($article -> {"images"} -> [$img] -> {"location"});
+
+        $images[$img] = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
+                                  $images[$img])
+            if($images[$img] && $images[$img] !~ /^http/);
+    }
+
+    # Wrap the images in html
+    $images[0] = $self -> {"template"} -> load_template("newsletter/image.tem", {"***class***" => "leader",
+                                                                                 "***url***"   => $images[0],
+                                                                                 "***title***" => $article -> {"title"}})
+        if($images[0]);
+
+    $images[1] = $self -> {"template"} -> load_template("newsletter/image.tem", {"***class***" => "article",
+                                                                                 "***url***"   => $images[1],
+                                                                                 "***title***" => $article -> {"title"}})
+        if($images[1]);
+
+    $article -> {"fulltext"} = $self -> cleanup_entities($article -> {"fulltext"})
+        if($article -> {"fulltext"});
+
+    return $self -> {"template"} -> load_template($template, { "***title***"       => $article -> {"title"} || $pubdate,
+                                                               "***summary***"     => $article -> {"summary"},
+                                                               "***leaderimg***"   => $images[0],
+                                                               "***articleimg***"  => $images[1],
+                                                               "***email***"       => $article -> {"email"},
+                                                               "***name***"        => $article -> {"realname"} || $article -> {"username"},
+                                                               "***fulltext***"    => $article -> {"fulltext"},
+                                                               "***gravhash***"    => md5_hex(lc(trimspace($article -> {"email"} || ""))),
+                                                  });
+}
+
 
 ## @method private $ _build_newsletter_list($schedules, $active)
 # Generate a list of divs that can be used to select the newsletter to edit.
@@ -61,34 +112,102 @@ sub _build_newsletter_list {
 }
 
 
-## @method private @ _generate_newsletterlist($newsid)
+# ============================================================================
+#  Content generators
+
+## @method private @ _generate_newsletter_preview($newsname, $issue)
+# Generate a preview of the selected newsletter
+#
+# @param newsid The name of the currently selected newsletter
+# @param issue  A reference to an array containing the issue date (YYYY, MM, DD)
+# @return Three strings: the page title, the contents of the page, and the
+#         extra header string.
+sub _generate_newsletter_preview {
+    my $self     = shift;
+    my $newsname = shift;
+    my $issue    = shift;
+    my $userid   = $self -> {"session"} -> get_session_userid();
+    my $content;
+
+    my $newsletter = $self -> {"schedule"} -> active_newsletter($newsname, $userid);
+
+    # If a newsletter is selected, build the page
+    if($newsletter) {
+        # Fetch the list of dates teh newsletter is released on (this is undef for manual releases)
+        my $dates = $self -> {"schedule"} -> get_newsletter_datelist($newsletter, $self -> {"settings"} -> {"config"} -> {"newsletter:future_count"});
+
+        # And work out the date range for articles that should appear in the selected issue
+        my ($mindate, $maxdate, $usenext) = $self -> {"schedule"} -> get_newsletter_daterange($newsletter, $dates, $issue);
+
+        # Fetch the messages set for the current newsletter
+        my $messages = $self -> {"schedule"} -> get_newsletter_messages($newsletter -> {"id"}, $userid, $usenext, $mindate, $maxdate);
+        my $body  = "";
+        foreach my $section (@{$messages}) {
+            next unless(scalar(@{$section -> {"messages"}}) || $section -> {"required"} || $section -> {"empty_tem"});
+
+            my $articles = "";
+            foreach my $message (@{$section -> {"messages"}}) {
+                my $article = $self -> {"article"} -> get_article($message -> {"id"});
+
+                $articles .= $self -> _build_newsletter_article($article, $section -> {"article_tem"});
+            }
+
+            # If the section contains no articles, use the empty template.
+            $articles = $self -> {"template"} -> load_template($section -> {"empty_tem"})
+                if(!$articles);
+
+            # If it's still empty, and required, make it as such
+            $articles = $self -> {"template"} -> load_template("newsletter/list/required-section.tem")
+                if(!$articles && $section -> {"required"});
+
+            # And add this section to the accumulating page
+            $body .= $self -> {"template"} -> load_template($section -> {"template"}, {"***articles***" => $articles,
+                                                                                       "***title***"    => $section -> {"name"},
+                                                                                       "***id***"       => $section -> {"id"}});
+        }
+
+        $self -> {"template"} -> load_template(path_join($newsletter -> {"template"}, "body.tem"), {"***name***"        => $newsletter -> {"name"},
+                                                                                                    "***description***" => $newsletter -> {"description"},
+                                                                                                    "***id***"          => $newsletter -> {"id"},
+                                                                                                    "***body***"        => $body});
+    }
+
+    return ($self -> {"template"} -> replace_langvar("NEWSLETTER_LIST_PREVIEW", {"***newsletter***" => $newsletter ? $newsletter -> {"description"} : "Unknown newsletter"}),
+            $content,
+            $newsletter ? $self -> {"template"}  -> load_template(path_join($newsletter -> {"template"}, "extrahead.tem")) : "");
+}
+
+
+## @method private @ _generate_newsletter_list($newsname, $issue)
 # Generate the contents of a page listing the messages in the specified newsletter.
 #
+# @param newsid The name of the currently selected newsletter
+# @param issue  A reference to an array containing the issue date (YYYY, MM, DD)
 # @return Two strings: the page title, and the contents of the page.
-sub _generate_newsletterlist {
-    my $self   = shift;
-    my $newsid = shift;
-    my $issue  = shift;
-    my $userid = $self -> {"session"} -> get_session_userid();
+sub _generate_newsletter_list {
+    my $self     = shift;
+    my $newsname = shift;
+    my $issue    = shift;
+    my $userid   = $self -> {"session"} -> get_session_userid();
     my ($newsletlist, $msglist, $controls, $intro, $sections) = ("", "", "", "", []);
 
     # Fetch the list of schedules and sections the user can edit
     my $schedules  = $self -> {"schedule"} -> get_user_schedule_sections($userid);
 
     # And get the newsletter the user has selected
-    my $newsletter = $self -> {"schedule"} -> active_newsletter($newsid, $userid);
+    my $newsletter = $self -> {"schedule"} -> active_newsletter($newsname, $userid);
 
     # If a newsletter is selected, build the page
     if($newsletter) {
         $newsletlist = $self -> _build_newsletter_list($schedules, $newsletter);
 
         # Fetch the list of dates teh newsletter is released on (this is undef for manual releases)
-        my $dates = $self -> {"schedule"} -> get_newsletter_datelist($newsletter, 52);
+        my $dates = $self -> {"schedule"} -> get_newsletter_datelist($newsletter, $self -> {"settings"} -> {"config"} -> {"newsletter:future_count"});
 
         # And work out the date range for articles that should appear in the selected issue
         my ($mindate, $maxdate, $usenext) = $self -> {"schedule"} -> get_newsletter_daterange($newsletter, $dates, $issue);
 
-        # Fetch the messages set for the current message
+        # Fetch the messages set for the current newsletter
         my $messages = $self -> {"schedule"} -> get_newsletter_messages($newsletter -> {"id"}, $userid, $usenext, $mindate, $maxdate);
         foreach my $section (@{$messages}) {
             my $contents = "";
@@ -119,7 +238,7 @@ sub _generate_newsletterlist {
                                                                                                      "***next_date***"  => $next_date -> strftime("%d/%m/%Y")});
         }
     } else {
-        $newsid = undef;
+        $newsname = undef;
     }
 
     return ($self -> {"template"} -> replace_langvar("NEWSLETTER_LIST_TITLE"),
@@ -132,7 +251,7 @@ sub _generate_newsletterlist {
                                                                                                                            pathinfo => []),
                                                                                    "***issue-url***" => $self -> build_url(block    => "newsletters",
                                                                                                                            params   => [],
-                                                                                                                           pathinfo => [$newsid, "issue"])
+                                                                                                                           pathinfo => [$newsname, "issue"])
                                                    }));
 
 }
@@ -223,9 +342,10 @@ sub page_display {
         my @pathinfo = $self -> {"cgi"} -> param('pathinfo');
 
         given($pathinfo[1]) {
-            when("issue") { ($title, $content) = $self -> _generate_newsletterlist($pathinfo[0], [$pathinfo[2], $pathinfo[3], $pathinfo[4]]); }
+            when("preview") { ($title, $content, $extrahead) = $self -> _generate_newsletter_preview($pathinfo[0], [$pathinfo[2], $pathinfo[3], $pathinfo[4]]); }
+            when("issue")   { ($title, $content)             = $self -> _generate_newsletter_list($pathinfo[0], [$pathinfo[2], $pathinfo[3], $pathinfo[4]]); }
             default {
-                ($title, $content) = $self -> _generate_newsletterlist($pathinfo[0]);
+                ($title, $content) = $self -> _generate_newsletter_list($pathinfo[0]);
             }
         }
 
