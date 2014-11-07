@@ -1,0 +1,9 @@
+<div id="newsletlist">
+    <div class="shadowbox">
+        <h2>{L_NEWSLETTER_LIST_PREVIEW}</h2>
+        <div class="sbcontent">
+            ***content***
+            <div class="clear"></div>
+        </div>
+    </div>
+</div>

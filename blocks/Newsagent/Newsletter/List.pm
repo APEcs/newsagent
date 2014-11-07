@@ -66,18 +66,73 @@ sub _build_newsletter_article {
                                                                                  "***title***" => $article -> {"title"}})
         if($images[1]);
 
-    $article -> {"fulltext"} = $self -> cleanup_entities($article -> {"fulltext"})
-        if($article -> {"fulltext"});
+    $article -> {"article"} = $self -> cleanup_entities($article -> {"article"})
+        if($article -> {"article"});
 
-    return $self -> {"template"} -> load_template($template, { "***title***"       => $article -> {"title"} || $pubdate,
+    return $self -> {"template"} -> load_template($template, { "***id***"          => $article -> {"id"},
+                                                               "***title***"       => $article -> {"title"} || $pubdate,
                                                                "***summary***"     => $article -> {"summary"},
                                                                "***leaderimg***"   => $images[0],
                                                                "***articleimg***"  => $images[1],
                                                                "***email***"       => $article -> {"email"},
                                                                "***name***"        => $article -> {"realname"} || $article -> {"username"},
-                                                               "***fulltext***"    => $article -> {"fulltext"},
+                                                               "***fulltext***"    => $article -> {"article"},
                                                                "***gravhash***"    => md5_hex(lc(trimspace($article -> {"email"} || ""))),
                                                   });
+}
+
+
+sub _build_newsletter {
+    my $self     = shift;
+    my $newsname = shift;
+    my $issue    = shift;
+    my $userid   = $self -> {"session"} -> get_session_userid();
+    my $content;
+
+    my $newsletter = $self -> {"schedule"} -> active_newsletter($newsname, $userid);
+
+    # If a newsletter is selected, build the page
+    if($newsletter) {
+        # Fetch the list of dates teh newsletter is released on (this is undef for manual releases)
+        my $dates = $self -> {"schedule"} -> get_newsletter_datelist($newsletter, $self -> {"settings"} -> {"config"} -> {"newsletter:future_count"});
+
+        # And work out the date range for articles that should appear in the selected issue
+        my ($mindate, $maxdate, $usenext) = $self -> {"schedule"} -> get_newsletter_daterange($newsletter, $dates, $issue);
+
+        # Fetch the messages set for the current newsletter
+        my $messages = $self -> {"schedule"} -> get_newsletter_messages($newsletter -> {"id"}, $userid, $usenext, $mindate, $maxdate);
+        my $body  = "";
+        foreach my $section (@{$messages}) {
+            next unless(scalar(@{$section -> {"messages"}}) || $section -> {"required"} || $section -> {"empty_tem"});
+
+            my $articles = "";
+            foreach my $message (@{$section -> {"messages"}}) {
+                my $article = $self -> {"article"} -> get_article($message -> {"id"});
+
+                $articles .= $self -> _build_newsletter_article($article, $section -> {"article_tem"});
+            }
+
+            # If the section contains no articles, use the empty template.
+            $articles = $self -> {"template"} -> load_template($section -> {"empty_tem"})
+                if(!$articles && $section -> {"empty_tem"});
+
+            # If it's still empty, and required, make it as such
+            $articles = $self -> {"template"} -> load_template("newsletter/list/required-section.tem")
+                if(!$articles && $section -> {"required"});
+
+            # And add this section to the accumulating page
+            $body .= $self -> {"template"} -> load_template($section -> {"template"}, {"***articles***" => $articles,
+                                                                                       "***title***"    => $section -> {"name"},
+                                                                                       "***id***"       => $section -> {"id"}});
+        }
+
+        $content = $self -> {"template"} -> load_template(path_join($newsletter -> {"template"}, "body.tem"), {"***name***"        => $newsletter -> {"name"},
+                                                                                                               "***description***" => $newsletter -> {"description"},
+                                                                                                               "***id***"          => $newsletter -> {"id"},
+                                                                                                               "***body***"        => $body});
+    }
+
+    return ($content, $newsletter);
 }
 
 
@@ -126,55 +181,18 @@ sub _generate_newsletter_preview {
     my $self     = shift;
     my $newsname = shift;
     my $issue    = shift;
-    my $userid   = $self -> {"session"} -> get_session_userid();
-    my $content;
+    my ($title, $extrahead) = ("Unknown newsletter", undef);
 
-    my $newsletter = $self -> {"schedule"} -> active_newsletter($newsname, $userid);
-
-    # If a newsletter is selected, build the page
+    my ($content, $newsletter) = $self -> _build_newsletter($newsname, $issue);
     if($newsletter) {
-        # Fetch the list of dates teh newsletter is released on (this is undef for manual releases)
-        my $dates = $self -> {"schedule"} -> get_newsletter_datelist($newsletter, $self -> {"settings"} -> {"config"} -> {"newsletter:future_count"});
-
-        # And work out the date range for articles that should appear in the selected issue
-        my ($mindate, $maxdate, $usenext) = $self -> {"schedule"} -> get_newsletter_daterange($newsletter, $dates, $issue);
-
-        # Fetch the messages set for the current newsletter
-        my $messages = $self -> {"schedule"} -> get_newsletter_messages($newsletter -> {"id"}, $userid, $usenext, $mindate, $maxdate);
-        my $body  = "";
-        foreach my $section (@{$messages}) {
-            next unless(scalar(@{$section -> {"messages"}}) || $section -> {"required"} || $section -> {"empty_tem"});
-
-            my $articles = "";
-            foreach my $message (@{$section -> {"messages"}}) {
-                my $article = $self -> {"article"} -> get_article($message -> {"id"});
-
-                $articles .= $self -> _build_newsletter_article($article, $section -> {"article_tem"});
-            }
-
-            # If the section contains no articles, use the empty template.
-            $articles = $self -> {"template"} -> load_template($section -> {"empty_tem"})
-                if(!$articles);
-
-            # If it's still empty, and required, make it as such
-            $articles = $self -> {"template"} -> load_template("newsletter/list/required-section.tem")
-                if(!$articles && $section -> {"required"});
-
-            # And add this section to the accumulating page
-            $body .= $self -> {"template"} -> load_template($section -> {"template"}, {"***articles***" => $articles,
-                                                                                       "***title***"    => $section -> {"name"},
-                                                                                       "***id***"       => $section -> {"id"}});
-        }
-
-        $self -> {"template"} -> load_template(path_join($newsletter -> {"template"}, "body.tem"), {"***name***"        => $newsletter -> {"name"},
-                                                                                                    "***description***" => $newsletter -> {"description"},
-                                                                                                    "***id***"          => $newsletter -> {"id"},
-                                                                                                    "***body***"        => $body});
+        $title     = $newsletter -> {"description"};
+        $extrahead = $self -> {"template"}  -> load_template(path_join($newsletter -> {"template"}, "extrahead.tem"));
     }
 
-    return ($self -> {"template"} -> replace_langvar("NEWSLETTER_LIST_PREVIEW", {"***newsletter***" => $newsletter ? $newsletter -> {"description"} : "Unknown newsletter"}),
-            $content,
-            $newsletter ? $self -> {"template"}  -> load_template(path_join($newsletter -> {"template"}, "extrahead.tem")) : "");
+    return ($self -> {"template"} -> replace_langvar("NEWSLETTER_LIST_PREVIEW", {"***newsletter***" => $title }),
+            $self -> {"template"} -> load_template("newsletter/list/preview.tem", {"***newsletter***" => $title,
+                                                                                   "***content***"    => $content}),
+            $extrahead);
 }
 
 
@@ -242,16 +260,19 @@ sub _generate_newsletter_list {
     }
 
     return ($self -> {"template"} -> replace_langvar("NEWSLETTER_LIST_TITLE"),
-            $self -> {"template"} -> load_template("newsletter/list/content.tem", {"***newslets***"  => $newsletlist,
-                                                                                   "***messages***"  => $msglist,
-                                                                                   "***intro***"     => $intro,
-                                                                                   "***controls***"  => $controls,
-                                                                                   "***nlist-url***" => $self -> build_url(block    => "newsletters",
-                                                                                                                           params   => [],
-                                                                                                                           pathinfo => []),
-                                                                                   "***issue-url***" => $self -> build_url(block    => "newsletters",
-                                                                                                                           params   => [],
-                                                                                                                           pathinfo => [$newsname, "issue"])
+            $self -> {"template"} -> load_template("newsletter/list/content.tem", {"***newslets***"   => $newsletlist,
+                                                                                   "***messages***"   => $msglist,
+                                                                                   "***intro***"      => $intro,
+                                                                                   "***controls***"   => $controls,
+                                                                                   "***nlist-url***"  => $self -> build_url(block    => "newsletters",
+                                                                                                                            params   => [],
+                                                                                                                            pathinfo => []),
+                                                                                   "***issue-url***"  => $self -> build_url(block    => "newsletters",
+                                                                                                                            params   => [],
+                                                                                                                            pathinfo => [$newsname, "issue"]),
+                                                                                   "***preview-url***" => $self -> build_url(block    => "newsletters",
+                                                                                                                             params   => [],
+                                                                                                                             pathinfo => [$newsname, "preview", $issue -> [0], $issue -> [1], $issue -> [2]])
                                                    }));
 
 }
