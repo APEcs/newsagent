@@ -188,7 +188,7 @@ sub get_section {
         or return $self -> self_error("Unable to execute section lookup query: ".$self -> {"dbh"} -> errstr);
 
     my $section = $secth -> fetchrow_hashref()
-        or return $self -> self_error("Request for non-existant section $id");
+        or return $self -> self_error("Request for non-existant section '$id'");
 
     # Pull the schedule data in as most things using sections will need it.
     $section -> {"schedule"} = $self -> get_schedule_byid($section -> {"schedule_id"})
@@ -612,7 +612,7 @@ sub get_digest_section {
         or return $self -> self_error("Unable to execute section lookup query: ".$self -> {"dbh"} -> errstr);
 
     my $section = $secth -> fetchrow_hashref()
-        or return $self -> self_error("Request for non-existant section $id");
+        or return $self -> self_error("Request for non-existant section '$id'");
 
     # Pull the digest data in
     $section -> {"digest"} = $self -> get_digest($section -> {"digest_id"})
