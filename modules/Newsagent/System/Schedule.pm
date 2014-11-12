@@ -52,6 +52,7 @@ sub new {
     return $self;
 }
 
+
 # ============================================================================
 #  Data access
 
@@ -86,7 +87,7 @@ sub get_user_schedule_sections {
 
     my $result = {};
     while(my $section = $sectionh -> fetchrow_hashref()) {
-        if($self -> {"roles"} -> user_has_capability($section -> {"metadata_id"}, $userid, "schedule")) {
+        if($self -> {"roles"} -> user_has_capability($section -> {"metadata_id"}, $userid, "newsletter.schedule")) {
             # Store the section name and id.
             push(@{$result -> {"id_".$section -> {"schedule_id"}} -> {"sections"}},
                  {"value" => $section -> {"id"},
@@ -198,6 +199,29 @@ sub get_section {
 }
 
 
+## @method $ get_newsletter($name, $userid)
+# Locate a newsletter by name.
+#
+# @param name   The name of the newsletter to fetch.
+# @param userid An optional userid. If specified, the user must have
+#               schedule access to the newsletter or a section of it.
+# @return A reference to a hash containing the newsletter on success, undef on error.
+sub get_newsletter {
+    my $self   = shift;
+    my $name   = shift;
+    my $userid = shift;
+
+    $self -> clear_error();
+
+    # Determine whether the user can access the newsletter. If this
+    # returns undef or a filled in hashref, it can be returned.
+    my $newsletter = $self -> get_user_newsletter($name, $userid);
+    return $newsletter if(!defined($newsletter) || $newsletter -> {"id"});
+
+    return $self -> self_error("User $userid does not have permission to access $name");
+}
+
+
 ## @method $ active_newsletter($newsname, $userid)
 # Obtain the data for the active newsletter. If no ID is provided, or the user
 # does not have schedule access to the newsletter or any of its sections, this
@@ -247,9 +271,9 @@ sub active_newsletter {
 #         a reference to an empty hash if the user does not have access,
 #         undef on error.
 sub get_user_newsletter {
-    my $self   = shift;
+    my $self     = shift;
     my $newsname = shift;
-    my $userid = shift;
+    my $userid   = shift;
 
     $self -> clear_error();
 
@@ -265,8 +289,10 @@ sub get_user_newsletter {
     my $newsletter = $schedh -> fetchrow_hashref();
     if($newsletter) {
         # simple case: user has schedule access to the newsletter and all sections
+        # This needs to handle access with no user - note that this is explicitly undef userid NOT simply !$userid
+        # the latter could come from a faulty session, the former can only happen via explicit invocation.
         return $newsletter
-            if($self -> {"roles"} -> user_has_capability($newsletter -> {"metadata_id"}, $userid, "schedule"));
+            if(!defined($userid) || $self -> {"roles"} -> user_has_capability($newsletter -> {"metadata_id"}, $userid, "newsletter.schedule"));
 
         # user doesn't have simple access, check access to sections of this newsletter
         my $secth = $self -> {"dbh"} -> prepare("SELECT `metadata_id`
@@ -278,7 +304,7 @@ sub get_user_newsletter {
         while(my $section = $secth -> fetchrow_arrayref()) {
             # If the user has schedule capability on the section, they can access the newsletter
             return $newsletter
-                if($self -> {"roles"} -> user_has_capability($section -> [0], $userid, "schedule"));
+                if($self -> {"roles"} -> user_has_capability($section -> [0], $userid, "newsletter.schedule"));
         }
     }
 
@@ -510,7 +536,8 @@ sub get_newsletter_messages {
     # Go through the sections, working out which ones the user can edit, and
     # fetching the messages for the sections
     foreach my $section (@{$sections}) {
-        $section -> {"editable"} = $self -> {"roles"} -> user_has_capability($section -> {"metadata_id"}, $userid, "schedule");
+        # User can only even potentially edit if one is defined and non-zero.
+        $section -> {"editable"} = $userid && $self -> {"roles"} -> user_has_capability($section -> {"metadata_id"}, $userid, "newsletter.schedule");
 
         # Fetch the messages even if the user can't edit the section, so they can
         # see the content in context
@@ -552,7 +579,7 @@ sub reorder_articles_fromsortdata {
         my $section = $self -> get_section($section_id)
             or return undef;
 
-        if($self -> {"roles"} -> user_has_capability($section -> {"metadata_id"}, $userid, "schedule")) {
+        if($self -> {"roles"} -> user_has_capability($section -> {"metadata_id"}, $userid, "newsletter.schedule")) {
             # User can edit the section, so set the roder of the articles within it
             for(my $pos = 0; $pos < scalar(@{$sections -> {$section_id} -> {"articles"}}); ++$pos) {
                 $self -> update_section_relation($sections -> {$section_id} -> {"articles"} -> [$pos], $schedule_id, $section_id, $pos + 1)

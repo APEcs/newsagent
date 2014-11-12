@@ -78,7 +78,7 @@ sub _generate_newsletter_preview {
     my $issue    = shift;
     my ($title, $extrahead) = ("Unknown newsletter", undef);
 
-    my ($content, $newsletter) = $self -> build_newsletter($newsname, $issue);
+    my ($content, $newsletter) = $self -> build_newsletter($newsname, $issue, $self -> {"session"} -> get_session_userid());
     if($newsletter) {
         $title     = $newsletter -> {"description"};
         $extrahead = $self -> {"template"}  -> load_template(path_join($newsletter -> {"template"}, "extrahead.tem"));
@@ -143,7 +143,10 @@ sub _generate_newsletter_list {
         }
 
         if(!$newsletter -> {"schedule"}) {
-            $controls = $self -> {"template"} -> load_template("newsletter/list/control-manual.tem", { "***schedule***"   => $newsletter -> {"id"}});
+            my $publish = $self -> check_permission("newsletter.publish", $newsletter -> {"metadata_id"});
+            my $pubtem  = $self -> {"template"} -> load_template("newsletter/list/control-manual-".($publish ? "publish" : "nopublish").".tem");
+            $controls = $self -> {"template"} -> load_template("newsletter/list/control-manual.tem", { "***schedule***" => $newsletter -> {"id"},
+                                                                                                       "***publish***"  => $pubtem });
         } else {
             my $next_date = DateTime -> from_epoch(epoch => $maxdate);
             $controls = $self -> {"template"} -> load_template("newsletter/list/control-auto.tem", { "***schedule***"   => $newsletter -> {"id"},

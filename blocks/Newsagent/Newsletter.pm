@@ -29,6 +29,14 @@ use v5.12;
 # ============================================================================
 #  Content support
 
+## @method private $ _build_newsletter_article($article, $template)
+# Given an article and a template, process the contents of the article into the
+# provided template. This allows per-section templating of articles in
+# newsletters and control over article layout.
+#
+# @param article  A reference to a hash cotnaining the article data.
+# @param template The name of the template to use for the article.
+# @return A string containing the templated article.
 sub _build_newsletter_article {
     my $self     = shift;
     my $article  = shift;
@@ -78,14 +86,28 @@ sub _build_newsletter_article {
 }
 
 
+## @method @ build_newsletter($name, $issue, $userid)
+# Generate the contents of the specified issue of a newsletter.
+#
+# @param name   The name of the newsletter to generate.
+# @param issue  An optional reference to an array containing the year,
+#               month, and day of the issue to generate.
+# @param userid An optional userid, if specified the system will check
+#               that the user has schedule access to the newsletter
+#               or a section of it. If omitted, no checks are done.
+# @return A string containing the templated newsletter, and a
+#         reference to a hash containing the complete newsletter data.
 sub build_newsletter {
-    my $self     = shift;
-    my $newsname = shift;
-    my $issue    = shift;
-    my $userid   = $self -> {"session"} -> get_session_userid();
+    my $self   = shift;
+    my $name   = shift;
+    my $issue  = shift;
+    my $userid = shift;
     my $content;
 
-    my $newsletter = $self -> {"schedule"} -> active_newsletter($newsname, $userid);
+    # Fetch the newsletter row. If userid is not undef, this will
+    # determine whether the user has access to the newsletter,
+    # otherwise it's assumed to be an internal operation.
+    my $newsletter = $self -> {"schedule"} -> get_newsletter($name, $userid);
 
     # If a newsletter is selected, build the page
     if($newsletter) {
@@ -96,7 +118,8 @@ sub build_newsletter {
         my ($mindate, $maxdate, $usenext) = $self -> {"schedule"} -> get_newsletter_daterange($newsletter, $dates, $issue);
 
         # Fetch the messages set for the current newsletter
-        my $messages = $self -> {"schedule"} -> get_newsletter_messages($newsletter -> {"id"}, $userid, $usenext, $mindate, $maxdate);
+        # no need to pass userid into get_newsletter_messages here, as we dont' care about editing
+        my $messages = $self -> {"schedule"} -> get_newsletter_messages($newsletter -> {"id"}, undef, $usenext, $mindate, $maxdate);
         my $body  = "";
         foreach my $section (@{$messages}) {
             next unless(scalar(@{$section -> {"messages"}}) || $section -> {"required"} || $section -> {"empty_tem"});
@@ -126,6 +149,13 @@ sub build_newsletter {
                                                                                                                "***description***" => $newsletter -> {"description"},
                                                                                                                "***id***"          => $newsletter -> {"id"},
                                                                                                                "***body***"        => $body});
+        # record various bits in the newsletter as they may be needed by caller
+        $newsletter -> {"issuedata"} -> {"dates"}    = $dates;
+        $newsletter -> {"issuedata"} -> {"issue"}    = $issue;
+        $newsletter -> {"issuedata"} -> {"ranges"} -> {"min"}     = $mindate;
+        $newsletter -> {"issuedata"} -> {"ranges"} -> {"max"}     = $maxdate;
+        $newsletter -> {"issuedata"} -> {"ranges"} -> {"usenext"} = $usenext;
+        $newsletter -> {"messages"} = $messages;
     }
 
     return ($content, $newsletter);
