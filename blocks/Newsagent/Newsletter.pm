@@ -24,7 +24,7 @@ use base qw(Newsagent::Article); # This class extends the Newsagent Article clas
 use Webperl::Utils qw(trimspace path_join);
 use Digest::MD5 qw(md5_hex);
 use v5.12;
-
+use Data::Dumper;
 
 # ============================================================================
 #  Content support
@@ -107,21 +107,12 @@ sub build_newsletter {
     # Fetch the newsletter row. If userid is not undef, this will
     # determine whether the user has access to the newsletter,
     # otherwise it's assumed to be an internal operation.
-    my $newsletter = $self -> {"schedule"} -> get_newsletter($name, $userid);
-
+    my $newsletter = $self -> {"schedule"} -> get_newsletter($name, $userid, 1, $issue);
+    $content = "<!-- Newsletter: ".Dumper($newsletter)."-->";
     # If a newsletter is selected, build the page
     if($newsletter) {
-        # Fetch the list of dates teh newsletter is released on (this is undef for manual releases)
-        my $dates = $self -> {"schedule"} -> get_newsletter_datelist($newsletter, $self -> {"settings"} -> {"config"} -> {"newsletter:future_count"});
-
-        # And work out the date range for articles that should appear in the selected issue
-        my ($mindate, $maxdate, $usenext) = $self -> {"schedule"} -> get_newsletter_daterange($newsletter, $dates, $issue);
-
-        # Fetch the messages set for the current newsletter
-        # no need to pass userid into get_newsletter_messages here, as we dont' care about editing
-        my $messages = $self -> {"schedule"} -> get_newsletter_messages($newsletter -> {"id"}, undef, $usenext, $mindate, $maxdate);
         my $body  = "";
-        foreach my $section (@{$messages}) {
+        foreach my $section (@{$newsletter -> {"messages"}}) {
             next unless(scalar(@{$section -> {"messages"}}) || $section -> {"required"} || $section -> {"empty_tem"});
 
             my $articles = "";
@@ -145,17 +136,10 @@ sub build_newsletter {
                                                                                        "***id***"       => $section -> {"id"}});
         }
 
-        $content = $self -> {"template"} -> load_template(path_join($newsletter -> {"template"}, "body.tem"), {"***name***"        => $newsletter -> {"name"},
-                                                                                                               "***description***" => $newsletter -> {"description"},
-                                                                                                               "***id***"          => $newsletter -> {"id"},
-                                                                                                               "***body***"        => $body});
-        # record various bits in the newsletter as they may be needed by caller
-        $newsletter -> {"issuedata"} -> {"dates"}    = $dates;
-        $newsletter -> {"issuedata"} -> {"issue"}    = $issue;
-        $newsletter -> {"issuedata"} -> {"ranges"} -> {"min"}     = $mindate;
-        $newsletter -> {"issuedata"} -> {"ranges"} -> {"max"}     = $maxdate;
-        $newsletter -> {"issuedata"} -> {"ranges"} -> {"usenext"} = $usenext;
-        $newsletter -> {"messages"} = $messages;
+        $content .= $self -> {"template"} -> load_template(path_join($newsletter -> {"template"}, "body.tem"), {"***name***"        => $newsletter -> {"name"},
+                                                                                                                "***description***" => $newsletter -> {"description"},
+                                                                                                                "***id***"          => $newsletter -> {"id"},
+                                                                                                                "***body***"        => $body});
     }
 
     return ($content, $newsletter);

@@ -199,26 +199,49 @@ sub get_section {
 }
 
 
-## @method $ get_newsletter($name, $userid)
+## @method $ get_newsletter($name, $userid, $full)
 # Locate a newsletter by name.
 #
 # @param name   The name of the newsletter to fetch.
 # @param userid An optional userid. If specified, the user must have
 #               schedule access to the newsletter or a section of it.
+# @param full   If true, fetch the full data for the newsletter.
+# @param issue  An optional reference to an array containing the year,
+#               month, and day of the issue to generate.
 # @return A reference to a hash containing the newsletter on success, undef on error.
 sub get_newsletter {
     my $self   = shift;
     my $name   = shift;
     my $userid = shift;
+    my $full   = shift;
+    my $issue  = shift;
 
     $self -> clear_error();
 
     # Determine whether the user can access the newsletter. If this
     # returns undef or a filled in hashref, it can be returned.
     my $newsletter = $self -> get_user_newsletter($name, $userid);
-    return $newsletter if(!defined($newsletter) || $newsletter -> {"id"});
+    return undef if(!defined($newsletter));
+    return $self -> self_error("User $userid does not have permission to access $name") if(!$newsletter -> {"id"});
+    return $newsletter unless($full);
 
-    return $self -> self_error("User $userid does not have permission to access $name");
+    # Caller has requested the full newsletter...
+    # Fetch the list of dates the newsletter is released on (this is undef for manual releases)
+    $newsletter -> {"issuedata"} -> {"dates"} = $self -> get_newsletter_datelist($newsletter, $self -> {"settings"} -> {"config"} -> {"newsletter:future_count"});
+
+    # And work out the date range for articles that should appear in the selected issue
+    my ($mindate, $maxdate, $usenext) = $self -> get_newsletter_daterange($newsletter, $newsletter -> {"issuedata"} -> {"dates"}, $issue);
+
+    # store the information for later...
+    $newsletter -> {"issuedata"} -> {"issue"}    = $issue;
+    $newsletter -> {"issuedata"} -> {"ranges"} -> {"min"}     = $mindate;
+    $newsletter -> {"issuedata"} -> {"ranges"} -> {"max"}     = $maxdate;
+    $newsletter -> {"issuedata"} -> {"ranges"} -> {"usenext"} = $usenext;
+
+    # Fetch the messages set for the current newsletter
+    $newsletter -> {"messages"} = $self -> get_newsletter_messages($newsletter -> {"id"}, $userid, $usenext, $mindate, $maxdate);
+
+    return $newsletter;
 }
 
 
@@ -632,6 +655,9 @@ sub reorder_articles_fromsortdata {
 
 # ============================================================================
 #  Digesting
+
+## @method $ make_digest_from_schedule($newsletter, $articleid)
+# Given a complete newsletter (must include a
 
 
 ## @method $ get_digest($id)
