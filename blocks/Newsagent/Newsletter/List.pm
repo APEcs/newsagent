@@ -62,6 +62,52 @@ sub _build_newsletter_list {
 }
 
 
+## @method private $ _build_controls($newsletter, $usenext, $reldate, $dates)
+# Create the content to show in the controls area of the newsletter list.
+#
+# @param newsletter A reference to a hash containing the newsletter data.
+# @param usenext    Is the next newsletter being shown?
+# @param reldate    The release date of the newsletter (may be in the past for
+#                   late newsletters.
+# @param dates      A reference to a hash containing the potential release
+#                   dates for the newsletter. This may be undef for manual
+#                   newsletters, but is required for automated newsletters.
+# @return A string contaning the controls.
+sub _build_controls {
+    my $self       = shift;
+    my $newsletter = shift;
+    my $usenext    = shift;
+    my $reldate    = shift;
+    my $dates      = shift;
+    my $publish    = $self -> check_permission("newsletter.publish", $newsletter -> {"metadata_id"});
+    my $pubtem;
+
+    # Manual release newsletters get a 'publish' option (which may be disabled) if the
+    # list is currently showing the next newsletter. This is generally always the case,
+    # but check for it anyway to be certain.
+    if(!$newsletter -> {"schedule"}) {
+        if($usenext) {
+            $pubtem = $self -> {"template"} -> load_template("newsletter/list/control-manual-".($publish ? "publish" : "nopublish").".tem");
+        }
+        return  $self -> {"template"} -> load_template("newsletter/list/control-manual.tem", { "***schedule***" => $newsletter -> {"id"},
+                                                                                               "***publish***"  => $pubtem });
+
+    # Automatic release newsletters get a 'publish' option (which, again, may be disabled)
+    # if the next newsletter is currently being shown, and it is a late release.
+    } else {
+        if($usenext && $self -> {"schedule"} -> late_release($newsletter)) {
+            $pubtem = $self -> {"template"} -> load_template("newsletter/list/control-auto-".($publish ? "publish" : "nopublish").".tem");
+        }
+
+        my $next_date = DateTime -> from_epoch(epoch => $reldate);
+        return $self -> {"template"} -> load_template("newsletter/list/control-auto.tem", { "***schedule***"   => $newsletter -> {"id"},
+                                                                                            "***allowdates***" => encode_json($dates -> {"hashed"}),
+                                                                                            "***next_date***"  => $next_date -> strftime("%d/%m/%Y"),
+                                                                                            "***publish***"    => $pubtem});
+    }
+}
+
+
 # ============================================================================
 #  Content generators
 
@@ -142,20 +188,14 @@ sub _generate_newsletter_list {
                                                                });
         }
 
-        if(!$newsletter -> {"schedule"}) {
-            my $publish = $self -> check_permission("newsletter.publish", $newsletter -> {"metadata_id"});
-            my $pubtem  = $self -> {"template"} -> load_template("newsletter/list/control-manual-".($publish ? "publish" : "nopublish").".tem");
-            $controls = $self -> {"template"} -> load_template("newsletter/list/control-manual.tem", { "***schedule***" => $newsletter -> {"id"},
-                                                                                                       "***publish***"  => $pubtem });
-        } else {
-            my $next_date = DateTime -> from_epoch(epoch => $maxdate);
-            $controls = $self -> {"template"} -> load_template("newsletter/list/control-auto.tem", { "***schedule***"   => $newsletter -> {"id"},
-                                                                                                     "***allowdates***" => encode_json($dates -> {"hashed"}),
-                                                                                                     "***next_date***"  => $next_date -> strftime("%d/%m/%Y")});
-        }
+        $controls = $self -> _build_controls($newsletter, $usenext, $maxdate, $dates);
     } else {
         $newsname = undef;
     }
+
+    my $previewpath = [$newsname, "preview"];
+    push(@{$previewpath}, $issue -> [0], $issue -> [1], $issue -> [2])
+        if($issue && scalar(@{$issue}));
 
     return ($self -> {"template"} -> replace_langvar("NEWSLETTER_LIST_TITLE"),
             $self -> {"template"} -> load_template("newsletter/list/content.tem", {"***newslets***"   => $newsletlist,
@@ -170,7 +210,7 @@ sub _generate_newsletter_list {
                                                                                                                             pathinfo => [$newsname, "issue"]),
                                                                                    "***preview-url***" => $self -> build_url(block    => "newsletters",
                                                                                                                              params   => [],
-                                                                                                                             pathinfo => [$newsname, "preview", $issue -> [0], $issue -> [1], $issue -> [2]])
+                                                                                                                             pathinfo => $previewpath)
                                                    }));
 
 }

@@ -484,7 +484,7 @@ sub get_issuedate {
     # first get the times of releases
     my $releases = $self -> get_newsletter_issuedates($article -> {"section_data"} -> {"schedule"});
 
-    # next is east - it's the first of the releases
+    # next is easy - it's the first of the releases
     if($article -> {"release_mode"} eq "next") {
         return ($releases -> [0] -> {"timestamp"}, $releases -> [0] -> {"late"});
 
@@ -505,6 +505,44 @@ sub get_issuedate {
         }
     }
 }
+
+
+## @method $ late_release($newsletter)
+# Determine whether the specified newsletter has not released an issue when
+# it should have already done so. This checks to see whether the specified
+# newsletter is late in esnding out an issue - manual release newsletters
+# are never late, so this will always return false for them.
+#
+# @param newsletter Either a reference to a hash containing the newsletter
+#                   to check, or the name of the newsletter.
+# @return true if the newsletter is late, false if it is not, undef on error.
+sub late_release {
+    my $self       = shift;
+    my $newsletter = shift;
+
+    $self -> clear_error();
+
+    # first get the newsletter - either using the newsletter passed,
+    # or searching for it by name
+    my $newsletter_data;
+    if(ref($newsletter) eq "HASH") {
+        $newsletter_data = $newsletter;
+    } else {
+        $newsletter_data = $self -> get_newsletter($newsletter)
+        or return undef;
+    }
+
+    # manual release newsletters are never late
+    return 0 unless($newsletter_data -> {"schedule"});
+
+    # automatic releae newsletters can be, so find out when a release will
+    # happen, or should have happend by
+    my $releases = $self -> get_newsletter_issuedates($newsletter_data);
+
+    # All we really care about is whether the first issue is late
+    return $releases -> [0] -> {"late"};
+}
+
 
 
 sub get_newsletter_messages {
