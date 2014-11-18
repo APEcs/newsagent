@@ -432,7 +432,7 @@ sub get_newsletter_daterange {
         my $usenext    = 0;
 
         # If an issue day has been set, try to use it
-        if($issue) {
+        if($issue && scalar(@{$issue}) && $issue -> [0] && $issue -> [1] && $issue -> [2]) {
             $start = eval { DateTime -> new(year  => $issue -> [0],
                                             month => $issue -> [1],
                                             day   => $issue -> [2]) };
