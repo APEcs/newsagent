@@ -821,7 +821,7 @@ sub _fetch_section_messages {
     $filter .= ")";
     $filter .= ")" if($getnext);
 
-    my $query = "SELECT `a`.`id`, `a`.`title`, `a`.`summary`, `a`.`release_mode`, `a`.`release_time`
+    my $query = "SELECT `s`.`id` AS `mapid`,`a`.`id`, `a`.`title`, `a`.`summary`, `a`.`release_mode`, `a`.`release_time`, `s`.`sort_order`
                  FROM `".$self -> {"settings"} -> {"database"} -> {"articlesection"}."` AS `s`,
                       `".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `a`
                  WHERE `a`.`id` = `s`.`article_id`
