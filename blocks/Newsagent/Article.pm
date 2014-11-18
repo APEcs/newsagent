@@ -665,7 +665,7 @@ sub _validate_article {
             # Do not update the preset status, unless the new and old preset names match
             if($article -> {"release_mode"} ne "preset" ||
                ($article -> {"preset"} && $args -> {"preset"} && lc($article -> {"preset"}) eq lc($args -> {"preset"}))) {
-                $self -> {"article"} -> set_article_status($articleid, $userid, "edited", $article -> {"release_mode"} eq "timed")
+                $self -> {"article"} -> set_article_status($articleid, "edited", $userid, $article -> {"release_mode"} eq "timed")
                     or return ($self -> {"template"} -> load_template("error/error_list.tem", {"***message***" => $failmode,
                                                                                                "***errors***"  => $self -> {"template"} -> load_template("error/error_item.tem",
                                                                                                                                                          {"***error***" => $self -> {"article"} -> errstr()

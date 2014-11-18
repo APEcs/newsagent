@@ -448,7 +448,7 @@ sub _build_api_setmode_response {
     # Only attempt to change the status if needed
     if($article -> {"release_mode"} ne $newmode) {
         # Do the update, and spit out the row html if successful
-        $article = $self -> {"article"} -> set_article_status($articleid, $userid, $newmode, $setdate)
+        $article = $self -> {"article"} -> set_article_status($articleid, $newmode, $userid, $setdate)
             or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"article"} -> errstr()}));
 
         # abort edited/deleted article notifications

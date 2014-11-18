@@ -863,28 +863,47 @@ sub add_article {
 }
 
 
-## @method $ set_article_status($articleid, $userid, $newmode, $setdate)
+## @method $ set_article_status($articleid, $newmode, $userid, $setdate)
 # Update the release mode for the specified article. This will update the mode
 # set for the article and change its `updated` timestamp, it may also modify
 # the release time timestamp if required.
 #
 # @param articleid The ID of the article to update.
-# @param userid    The ID of the user updating the article.
 # @param newmode   The new mode to set for the article.
+# @param userid    The ID of the user updating the article.
 # @param setdate   Update the release_time to the current time.
 # @return A reference to a hash containing the updated article data on success,
 #         undef on error.
 sub set_article_status {
     my $self      = shift;
     my $articleid = shift;
-    my $userid    = shift;
     my $newmode   = shift;
+    my $userid    = shift;
     my $setdate   = shift;
+    my $now = time();
 
+    # We always set the update timestamp and status
+    my @params = ($now, $newmode);
+    my $set    = "`updated` = ?, `release_mode` = ?";
+
+    # If a userid is specified, update it.
+    if($userid) {
+        push(@params, $userid);
+        $set .= ", `updated_id` = ?";
+    }
+
+    # if the release timestamp should be updated, do so
+    if($setdate) {
+        push(@params, $now);
+        $set .= ", `release_time` = ?";
+    }
+
+    # finally, need the article id as the last argument to the query.
+    push(@params, $articleid);
     my $updateh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"articles"}."`
-                                               SET `updated` = UNIX_TIMESTAMP(), `updated_id` = ?, `release_mode` = ?".($setdate ? ", `release_time` = UNIX_TIMESTAMP()" : "")."
+                                               SET $set
                                                WHERE id = ?");
-    my $result = $updateh -> execute($userid, $newmode, $articleid);
+    my $result = $updateh -> execute(@params);
     return $self -> self_error("Unable to update article mode: ".$self -> {"dbh"} -> errstr) if(!$result);
     return $self -> self_error("Article mode update failed: no rows updated.") if($result eq "0E0");
 
