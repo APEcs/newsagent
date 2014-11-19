@@ -221,7 +221,7 @@ sub queue_notifications {
 
         # Trigger a wakup in the dispatcher
         my $res = $self -> {"daemon"} -> send_signal(14);
-        $self -> log("Daemon wakup signal result: $res");
+        $self -> log('daemon', "Daemon wakup signal result: $res");
     }
 
     return "";
