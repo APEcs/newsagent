@@ -24,6 +24,7 @@ use strict;
 use base qw(Webperl::Block); # Features are just a specific form of Block
 use Webperl::Utils qw(join_complex path_join);
 use CGI::Util qw(escape);
+use Devel::StackTrace;
 use DateTime::TimeZone;
 use HTML::Entities;
 use HTML::WikiConverter;
@@ -380,8 +381,15 @@ sub api_response {
 # @param message  The message to attach to the log entry, avoid messages over 128 characters.
 sub log {
     my $self     = shift;
-    my $type     = shift;
+    my $type     = shift || "unknown";
     my $message  = shift;
+
+    # It's possible for log to be called with no message, in which case it's at least
+    # useful to know /where/ it was called from.
+    if(!$message) {
+        my $trace = Devel::StackTrace -> new();
+        $message = "Empty message in log call from ".$trace -> as_string();
+    }
 
     $message = "[Item:".($self -> {"itemid"} ? $self -> {"itemid"} : "none")."] $message";
     $self -> {"logger"} -> log($type, $self -> {"session"} -> get_session_userid(), $self -> {"cgi"} -> remote_host(), $message);
