@@ -567,7 +567,25 @@ sub late_release {
 }
 
 
-
+## @method $ get_newsletter_messages($newsid, $userid, $getnext, $mindate, $maxdate, $fulltext)
+# Fetch the messages for the newsletter that are available to be published
+# within the date range specified.
+#
+# @param newsid   The ID of the newsletter to fetch messages for.
+# @param userid   The ID of the user fetching messages. This is optional, and
+#                 if provided each section hash will contain an "editable"
+#                 key indicating whether the user has edit access. If 0 or undef,
+#                 "editable" is always false.
+# @param getnext  Include articles with the "next" status?
+# @param mindate  Optional miminum unix timestamp articles can have to be included
+#                 (inclusive). If 0 or undef, no minimum is used.
+# @param maxdate  Optional maximum unix timestamp articles can have to be included
+#                 (inclusive). If 0 or undef, no maximum is used (use with caution!)
+# @param fulltext If set to true, the title, summary, and full article text are
+#                 included in the messages, otherwise only the title and summary
+#                 are included.
+# @return A reference to an array of hashes containing the newsletter messages,
+#         arranged by section, on success, undef on error.
 sub get_newsletter_messages {
     my $self     = shift;
     my $newsid   = shift;
@@ -606,6 +624,33 @@ sub get_newsletter_messages {
     }
 
     return $sections;
+}
+
+
+## @method $ get_newsletter_articledata($newsletter)
+# Given a newsletter hash, fill in the feed, level, image, and other data
+# to use when generating issues of the newsletter.
+#
+# @param newsletter A reference to a newsletter hash as obtained by get_newsletter()
+# @return true if the newsletter has been updated to include the article
+#         data, undef on error.
+
+sub get_newsletter_articledata {
+    my $self       = shift;
+    my $newsletter = shift;
+
+    $self -> clear_error();
+
+    $newsletter -> {"article_levels"} = $self -> _fetch_newsletter_levels($newsletter -> {"id"})
+        or return undef;
+
+    $newsletter -> {"article_feeds"}  = $self -> _fetch_newsletter_feeds($newsletter -> {"id"})
+        or return undef;
+
+    $newsletter -> {"article_images"} = $self -> _fetch_newsletter_images($newsletter -> {"id"})
+        or return undef;
+
+    return 1;
 }
 
 
@@ -656,8 +701,45 @@ sub reorder_articles_fromsortdata {
 # ============================================================================
 #  Digesting
 
-## @method $ make_digest_from_schedule($newsletter, $articleid)
-# Given a complete newsletter (must include a
+## @method $ make_digest_from_newsletter($newsletter, $articleid, $article)
+# Given a full newsletter (call get_newsletter() with $full set to true),
+# create a new digest entry for it, set up the direst section mappings,
+# and mark the articles as used.
+#
+# @param newsletter A reference to a hash containing the newsletter data,
+#                   including full message data.
+# @param articleid  The ID of the article the newsletter was published in
+# @param article    A reference to the system article model.
+sub make_digest_from_newsletter {
+    my $self       = shift;
+    my $newsletter = shift;
+    my $articleid  = shift;
+    my $article    = shift;
+
+    $self -> clear_error();
+
+    my $digestid = $self -> _create_digest($newsletter -> {"id"}, $articleid)
+        or return undef;
+
+    my $sectionh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"articledigest"}."`
+                                                (`article_id`, `digest_id`, `section_id`, `sort_order`)
+                                                VALUES(?, ?, ?, ?)");
+    # Go through each section, recording each article/section relation
+    foreach my $section (@{$newsletter -> {"messages"}}) {
+        foreach my $message (@{$section -> {"messages"}}) {
+            my $rows = $sectionh -> execute($message -> {"id"}, $digestid, $section -> {"id"}, $message -> {"sort_order"});
+            return $self -> self_error("Unable to perform article digest for article $articleid digest $digestid: ". $self -> {"dbh"} -> errstr) if(!$rows);
+            return $self -> self_error("Article digest for article $articleid digest $digestid failed, no rows inserted") if($rows eq "0E0");
+
+            # Mark the article as used
+            $article -> set_article_status($message -> {"id"}, "used", 0, 1)
+                or return $self -> self_error("Article digesting failed: ".$article -> errstr());
+        }
+    }
+
+    return $digestid;
+}
+
 
 
 ## @method $ get_digest($id)
@@ -679,37 +761,6 @@ sub get_digest {
 
     return $digesth -> fetchrow_hashref()
         or return $self -> self_error("Request for non-existant digest $id");
-}
-
-
-## @method $ get_digest_section($id)
-# Given a digest section ID, return the data for the section, and the digest it
-# is part of.
-#
-# @note This DOES NOT fetch the data for the source schedule/section.
-#
-# @param id The ID of the digest section to fetch the data for.
-# @return A reference to the digest section data (with the digest in a key
-#         called "digest") on success, undef on error/bad section
-sub get_digest_section {
-    my $self = shift;
-    my $id   = shift;
-
-    $self -> clear_error();
-
-    my $secth = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"digest_sections"}."`
-                                             WHERE `id` = ?");
-    $secth -> execute($id)
-        or return $self -> self_error("Unable to execute section lookup query: ".$self -> {"dbh"} -> errstr);
-
-    my $section = $secth -> fetchrow_hashref()
-        or return $self -> self_error("Request for non-existant section '$id'");
-
-    # Pull the digest data in
-    $section -> {"digest"} = $self -> get_digest($section -> {"digest_id"})
-        or return undef;
-
-    return $section;
 }
 
 
@@ -800,6 +851,45 @@ sub update_section_relation {
 # ============================================================================
 #  Internal implementation
 
+## @method $ _create_digest($scheduleid, $articleid)
+# Create a new digest header for an article generated from the specified schedule.
+#
+# @param scheduleid The ID of the schedule the digest is for.
+# @param articleid  The ID of the article the schedule was digested into.
+# @return The ID of the new digest header on success, undef on error.
+sub _create_digest {
+    my $self       = shift;
+    my $scheduleid = shift;
+    my $articleid  = shift;
+
+    $self -> clear_error();
+
+    my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".."`
+                                            (`schedule_id`, `article_id`, `generated`)
+                                            VALUES(?, ?, UNIX_TIMESTAMP())");
+    my $rows = $newh -> execute($scheduleid, $articleid);
+    return $self -> self_error("Unable to perform digest creation: ". $self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("Digest creation failed, no rows inserted") if($rows eq "0E0");
+
+    # Get the new ID
+    return $self -> {"dbh"} -> {"mysql_insertid"}
+        or $self -> self_error("Unable to obtain id for new digest row");
+}
+
+
+## @method private $ _fetch_section_messages($schedid, $secid, $getnext, $mindate, $maxdate, $fulltext)
+# Fetch the messages that should be published in the specified section of a newsletter.
+#
+# @param schedid  The ID of the newsletter schedule to fetch messages for.
+# @param secid    The ID of the section in the newsletter to fetch messages for.
+# @param getnext  Include articles with the "next" status?
+# @param mindate  Optional miminum unix timestamp articles can have to be included
+#                 (inclusive). If 0 or undef, no minimum is used.
+# @param maxdate  Optional maximum unix timestamp articles can have to be included
+#                 (inclusive). If 0 or undef, no maximum is used (use with caution!)
+# @param fulltext If set to true, the title, summary, and full article text are
+#                 included in the messages, otherwise only the title and summary
+#                 are included.
 sub _fetch_section_messages {
     my $self     = shift;
     my $schedid  = shift;
@@ -816,7 +906,7 @@ sub _fetch_section_messages {
         $filter  = " AND (`a`.`release_mode` = 'after'";
     }
 
-    $filter .= " AND `a`.`release_time` > $mindate"  if(defined($mindate) && $mindate =~ /^\d+$/);
+    $filter .= " AND `a`.`release_time` >= $mindate" if(defined($mindate) && $mindate =~ /^\d+$/);
     $filter .= " AND `a`.`release_time` <= $maxdate" if($maxdate && $maxdate =~ /^\d+$/);
     $filter .= ")";
     $filter .= ")" if($getnext);
@@ -836,6 +926,93 @@ sub _fetch_section_messages {
         or return $self -> self_error("Unable to perform section article lookup: ". $self -> {"dbh"} -> errstr);
 
     return $messh -> fetchall_arrayref({});
+}
+
+
+## @method private $ _fetch_newsletter_feeds($newsid)
+# Retrieve the list of feeds set up for the specified newsletter.
+# This obtains a list of feeds the newsletter should be published in when
+# issues are produced.
+#
+# @param newsid The ID of the newsletter to fetch the data for.
+# @return A reference to an array of feed IDs on success, undef on error.
+sub _fetch_newsletter_feeds {
+    my $self   = shift;
+    my $newsid = shift;
+
+    $self -> clear_error();
+
+    my $feedsh = $self -> {"dbh"} -> prepare("SELECT `feed_id`
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {"schedule_feeds"}."`
+                                              WHERE `schedule_id` = ?");
+    $feedsh -> execute($newsid)
+        or return $self -> self_error("Unable to perform newsletter feed query: ".$self -> {"dbh"} -> errstr());
+
+    return $feedsh -> fetchall_arrayref();
+}
+
+
+## @method private $ _fetch_newsletter_levels($newsid)
+# Fetch the level information for the specified newsletter. This fetches the list
+# of levels the newsletter should be posted at when issues are generated.
+#
+# @param newsid The ID of the newsletter to fetch the data for.
+# @return A reference to a hash containing the level data on success, undef on error.
+sub _fetch_newsletter_levels {
+    my $self   = shift;
+    my $newsid = shift;
+
+    $self -> clear_error();
+
+    my $levelsh = $self -> {"dbh"} -> prepare("SELECT `l`.`level`
+                                               FROM `".$self -> {"settings"} -> {"database"} -> {"levels"}."` AS `l`,
+                                                    `".$self -> {"settings"} -> {"database"} -> {"schedule_levels"}."` AS `n`
+                                               WHERE `l`.`id` = `n`.`level_id`
+                                               AND `n`.`schedule_id` = ?");
+    $levelsh -> execute($newsid)
+        or return $self -> self_error("Unable to perform newsletter level query: ".$self -> {"dbh"} -> errstr());
+
+    # the data from the database is not in a format that is suitable
+    # to pass around with the newsletter, so some fiddling is needed
+    my $result = {};
+    while(my $row = $levelsh -> fetchrow_arrayref()) {
+        $result -> {$row -> [0]} = 1;
+    }
+
+    return $result;
+}
+
+
+## @method private $ _fetch_newsletter_images($newsid)
+# Fetch the image information for the specified newsletter. This fetches the list
+# of images the newsletter should be posted at when issues are generated. Note
+# that this is the top-level image information used in feed generation and
+# auto-templating of articles, not the per-article image data set for articles
+# in the newsletter.
+#
+# @param newsid The ID of the newsletter to fetch the data for.
+# @return A reference to a hash containing the image data on success, undef on error.
+sub _fetch_newsletter_images {
+    my $self   = shift;
+    my $newsid = shift;
+
+    $self -> clear_error();
+
+    my $imagesh = $self -> {"dbh"} -> prepare("SELECT `position`, `image_id`
+                                               FROM `".$self -> {"settings"} -> {"database"} -> {"schedule_images"}."`
+                                               WHERE `schedule_id` = ?");
+    $imagesh -> execute($newsid)
+        or return $self -> self_error("Unable to perform newsletter image query: ".$self -> {"dbh"} -> errstr());
+
+    # The add_article() function expects images in a certain format of hash,
+    # so build that up here
+    my $images = {};
+    while(my $image = $imagesh -> fetchrow_hashref()) {
+        $images -> {$image -> {"position"}}  -> {"img"}  = $image -> {"image_id"};
+        $images -> {$image -> {"position"}}  -> {"mode"} = "img";
+    }
+
+    return $images;
 }
 
 1;
