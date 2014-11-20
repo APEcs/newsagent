@@ -107,7 +107,9 @@ sub list_feeds {
         or die $feeds -> errstr()."\n";
 
     print "Feeds, showing \"Description (internal name): Default URL\"\n";
-    print_feeds($tree, 1);
+    foreach my $base (sort keys %{$tree -> {"base"}}) {
+        print_feeds($tree, $base);
+    }
 }
 
 

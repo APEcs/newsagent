@@ -129,11 +129,17 @@ sub get_feeds_tree {
         or return $self -> self_error("Unable to execute feed query: ".$self -> {"dbh"} -> errstr);
 
     # While fetching the feeds, try to build a tree
-    my $tree = {};
+    my $tree = { "base" => { "1"  => 1 } };
     while(my $feed = $feedh -> fetchrow_hashref()) {
         # get the parent metadata ID
-        my $parentid = $self -> {"metadata"} -> parentid($feed -> {"metadata_id"})
-            or return $self -> self_error("Request for bad metadata parent for ".$feed -> {"name"});
+        my $parentid = $self -> {"metadata"} -> parentid($feed -> {"metadata_id"});
+        return $self -> self_error("Request for bad metadata parent for ".$feed -> {"name"})
+            if(!defined($parentid));
+
+        if(!$parentid) {
+            $parentid = "0";
+            $tree -> {"base"} -> {$parentid} = 1;
+        }
 
         $tree -> {$feed -> {"metadata_id"}} -> {"parent"} = $parentid;
         push(@{$tree -> {$parentid} -> {"children"}}, $feed -> {"metadata_id"});
