@@ -37,6 +37,8 @@ sub usage_string {
         "    grant <username> <feedname> <role> [role role ...]\n".
         "       - grand roles to a user on a feed. One or more roles may\n".
         "         be specified. Supported roles are:\n".
+        "             feed_admin    - post at all vis levels, plus edit all\n".
+        "                             articles posted in the feed.\n".
         "             author_home   - allow access at 'important' vis level\n".
         "             author_leader - allow access at 'leader' vis level\n".
         "             author_group  - allow access at 'general' vis level\n".
