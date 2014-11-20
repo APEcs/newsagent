@@ -145,4 +145,57 @@ sub build_newsletter {
     return ($content, $newsletter);
 }
 
+
+## @method $ publish_newsletter($$name, $issue, $userid)
+# Generate the contents of the specified issue of a newsletter.
+#
+# @param name   The name of the newsletter to publish.
+# @param issue  An optional reference to an array containing the year,
+#               month, and day of the issue to publish.
+# @param userid An optional userid, if specified the system will check
+#               that the user has schedule access to the newsletter
+#               or a section of it. If omitted, no checks are done.
+# @return undef on success, otherwise an error string
+sub publish_newsletter {
+    my $self   = shift;
+    my $name   = shift;
+    my $issue  = shift;
+    my $userid = shift;
+
+    my ($content, $newsletter) = $self -> build_newsletter($name, $issue, $userid);
+
+    if($newsletter) {
+        # Fill in the article-specific fields
+        $self -> {"schedule"} -> get_newsletter_articledata($newsletter);
+
+        # content contains the newsletter text, add it as a new newsletter article
+        my $article = { "title"         => $newsletter -> {"article_subject"},
+                        "summary"       => $newsletter -> {"article_summary"},
+                        "article"       => $content,
+                        "release_mode"  => "visible",
+                        "full_summary"  => 1,
+                        "levels"        => $newsletter -> {"article_levels"},
+                        "feeds"         => $newsletter -> {"article_feeds"},
+                        "images"        => $newsletter -> {"article_images"},
+                        # notification stuff...?
+        };
+
+        my $aid = $self -> {"article"} -> add_article($article, $userid, undef, 0)
+            or return $self -> {"article"} -> errstr();
+
+        $self -> log("newsletter", "Added newsletter issue article $aid");
+
+        my $did = $self -> {"schedule"} -> make_digest_from_newsletter($newsletter, $aid, $self -> {"article"})
+            or return $self -> {"schedule"} -> errstr();
+
+        $self -> log("newsletter", "Newsletter issue $aid digested as $did");
+
+        # oddly return undef for success!
+        return undef;
+    }
+
+    return "Publication failed: ".$self -> {"schedule"} -> errstr();
+}
+
+
 1;

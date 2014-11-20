@@ -20,3 +20,5 @@ NEWSLETTER_ERR_BADSORT = The sort data receieved by the API cannot be parsed.
 
 NEWSLETTER_LIST_PREVIEW  = Preview: '***newsletter***'
 NEWSLETTER_LIST_REQUIRED = This section is required, but it contains no articles. This newsletter can not be published until at least one article is added to this section.
+
+NEWSLETTER_PUBLISH_FAILED = Newsletter publication failed

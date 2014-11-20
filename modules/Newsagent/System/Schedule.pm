@@ -710,6 +710,7 @@ sub reorder_articles_fromsortdata {
 #                   including full message data.
 # @param articleid  The ID of the article the newsletter was published in
 # @param article    A reference to the system article model.
+# @return The ID of the new digest header on success, undef on error.
 sub make_digest_from_newsletter {
     my $self       = shift;
     my $newsletter = shift;
