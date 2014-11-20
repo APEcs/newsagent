@@ -52,6 +52,43 @@ sub new {
 # ============================================================================
 #  Data access
 
+## @method $ create_feed($name, $description, $default_url, $parent_id)
+# Create a new feed
+#
+# @param name        The name of the feed to create
+# @param description The description to give the feed
+# @param default_url The URL to set for the feed
+# @param parent_id   The ID of the metadata context to add this feed as a
+#                    child of.
+# @return The new feed ID on success, undef on error
+sub create_feed {
+    my $self        = shift;
+    my $name        = shift;
+    my $description = shift;
+    my $default_url = shift;
+    my $parent_id   = shift;
+
+    $self -> clear_error();
+
+    # make a context first
+    my $metadata_id = $self -> {"metadata"} -> create($parent_id)
+        or return $self -> self_error("Unable to create new metadata context: ".$self -> {"metadata"} -> errstr());
+
+    # and now make a new feed
+    my $feedh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"feeds"}."`
+                                             (`metadata_id`, `name`, `description`, `default_url`)
+                                             VALUES(?, ?, ?, ?)");
+    my $rows = $feedh -> execute($metadata_id, $name, $description, $default_url);
+    return $self -> self_error("Unable to perform feed insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("Feed insert failed, no rows inserted") if($rows eq "0E0");
+
+    my $feedid = $self -> {"dbh"} -> {"mysql_insertid"};
+
+    $self -> {"metadata"} -> attach($metadata_id);
+    return $feedid;
+}
+
+
 ## @method $ get_feeds()
 # Fetch a list of all feeds defined in the system. This will generate an array
 # containing the data for all the feeds, whether the user has any author
@@ -71,6 +108,40 @@ sub get_feeds {
 
     return $feedsh -> fetchall_arrayref({})
         or return $self -> self_error("No system defined feeds available");
+}
+
+
+## @method $ get_feeds_tree(void)
+# Generate a hash describing the feeds available in the system. This generates a
+# hash that stores the feedinformation in a form that allows the relationships
+# between feeds to be shown.
+#
+# @return A reference to a hash containing the feed hierarchy data on success,
+#         undef on error.
+sub get_feeds_tree {
+    my $self = shift;
+
+    my $feedh = $self -> {"dbh"} -> prepare("SELECT *
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"feeds"}."`
+                                             ORDER BY `name`");
+    # Fetch all the feeds as a flat list of rows
+    $feedh -> execute()
+        or return $self -> self_error("Unable to execute feed query: ".$self -> {"dbh"} -> errstr);
+
+    # While fetching the feeds, try to build a tree
+    my $tree = {};
+    while(my $feed = $feedh -> fetchrow_hashref()) {
+        # get the parent metadata ID
+        my $parentid = $self -> {"metadata"} -> parentid($feed -> {"metadata_id"})
+            or return $self -> self_error("Request for bad metadata parent for ".$feed -> {"name"});
+
+        $tree -> {$feed -> {"metadata_id"}} -> {"parent"} = $parentid;
+        push(@{$tree -> {$parentid} -> {"children"}}, $feed -> {"metadata_id"});
+
+        push(@{$tree -> {$feed -> {"metadata_id"}} -> {"feeds"}}, $feed);
+    }
+
+    return $tree;
 }
 
 
@@ -224,5 +295,21 @@ sub get_feed_url_byname {
     return $feedrow;
 }
 
+
+## @method $ get_metadata_id($feed)
+# Given a feed name, obtain the ID of the metadata context associated with
+# the feed.
+#
+# @param feed     The name of the feed to fetch the metadata conext Id for.
+# @return The metadata context ID on success, undef if the feed does not exist.
+sub get_metadata_id {
+    my $self = shift;
+    my $feed = shift;
+
+    my $feeddata = $self -> get_feed_byname($feed)
+        or return undef;
+
+    return $feeddata -> {"metadata_id"};
+}
 
 1;
