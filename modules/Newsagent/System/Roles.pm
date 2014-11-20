@@ -370,20 +370,14 @@ sub user_remove_role {
 }
 
 
-## @method $ get_role_users($metadataid, $roleid, $fields, $orderby, $sourceid)
+## @method $ get_role_users($metadataid, $roleid, $sourceid)
 # Obtain a list of users who have the specified role at this metadata level. If
 # the sourceid is specified, only roles allocated by the specified source are
 # considered when constructing the list.
 #
 # @param metadataid The ID of the metadata context to list users from.
-# @param roleid     The ID of the role that has been assigned to users.
-# @param fields     A reference to an array containing the user table fields to include
-#                   in the returned data. If this is undef, all fields are collected.
-#                   If the selected fields do not start with "u." it will be prepended
-#                   for you.
-# @param orderby    Optional contents of the 'ORDER BY' clause of the query. The user table
-#                   is aliased as 'u', so you can do things like "u.username ASC". Set
-#                   to undef if you don't care about sorting.
+# @param roleid     The ID of the role that has been assigned to users. If not set, any
+#                   roles are returned.
 # @param sourceid   The ID of the enrolment source that allocated the role, or
 #                   undef if any source is acceptable
 # @return A reference to an array of hashrefs, each hashref contains the data
@@ -392,42 +386,37 @@ sub get_role_users {
     my $self       = shift;
     my $metadataid = shift;
     my $roleid     = shift;
-    my $fields     = shift || [];
-    my $orderby    = shift;
     my $sourceid   = shift;
 
     $self -> clear_error();
 
-    my $selectedfields = "";
-    foreach my $field (@{$fields}) {
-        $selectedfields .= ", " if($selectedfields);
+    my $filters = "";
+    my @params  = ($metadataid);
 
-        # Make sure the field is coming out of the user table
-        $field = "u.$field" unless($field =~ /^u\./);
-
-        $selectedfields .= $field;
+    if($roleid) {
+        $filters .= " AND `mr`.`role_id` = ? ";
+        push(@params, $roleid);
     }
-    # Fall back on fetching everything if there's no field selection.
-    $selectedfields = "u.*" if(!$selectedfields);
 
-    # Simple query is pretty simple...
-    my $userh = $self -> {"dbh"} -> prepare("SELECT $selectedfields
-                                             FROM ".$self -> {"settings"} -> {"database"} -> {"users"}." AS u,
-                                                  ".$self -> {"settings"} -> {"database"} -> {"metadata_roles"}." AS r
-                                             WHERE r.role_id = ?
-                                             AND u.user_id = r.user_id"
-                                            .($sourceid ? " AND source_id = ?" : "")
-                                            .($orderby ? " ORDER BY $orderby" : ""));
     if($sourceid) {
-        $userh -> execute($roleid, $sourceid)
-            or return $self -> self_error("Unable to fetch role users: ". $self -> {"dbh"} -> errstr);
-    } else {
-        $userh -> execute($roleid)
-            or return $self -> self_error("Unable to fetch role users: ". $self -> {"dbh"} -> errstr);
+        $filters .= " AND `mr`.`source_id` = ? ";
+        push(@params, $sourceid);
     }
 
-    # Fetch all the results as an array of hashrefs
-    return $userh -> fetchall_arrayref({});
+    # Fetch the role allocations at this level
+    my $rolesh = $self -> {"dbh"} -> prepare("SELECT `u`.*,`r`.`role_name`
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"metadata_roles"}."` AS `mr`,
+                                                  `".$self -> {"settings"} -> {"database"} -> {"roles"}."` AS `r`,
+                                                  `".$self -> {"settings"} -> {"database"} -> {"users")."` As `u`
+                                             WHERE `r`.`id` = `mr`.`role_id`
+                                             AND `u`.`user_id` = `mr`.`user_id`
+                                             AND `mr`.`metadata_id` = ?
+                                             $filters
+                                             ORDER BY `r`.`role_name`, `u`.`username`");
+    $rolesh -> execute(@params)
+        or return $self -> self_error("Role allocation lookup failed: ".$self -> {"dbh"} -> errstr);
+
+    return $rolesh -> fetchall_arrayref({});
 }
 
 
