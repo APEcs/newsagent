@@ -57,7 +57,7 @@ sub print_feeds {
     my $indent = shift || 0;
 
     foreach my $feed (@{$tree -> {$id} -> {"feeds"}}) {
-        print "".(" " x $indent).$feed -> {"description"}." (".$feed -> {"name"}."): ".$feed -> {"default_url"}."\n";
+        print "".(" " x $indent).$feed -> {"id"}."[".$feed->{"metadata_id"}."]: ".$feed -> {"description"}." (".$feed -> {"name"}."): ".$feed -> {"default_url"}."\n";
     }
 
     if($tree -> {$id} -> {"children"}) {
