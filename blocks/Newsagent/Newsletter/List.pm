@@ -79,15 +79,20 @@ sub _build_controls {
     my $usenext    = shift;
     my $reldate    = shift;
     my $dates      = shift;
+    my $blocked    = shift;
     my $publish    = $self -> check_permission("newsletter.publish", $newsletter -> {"metadata_id"});
     my $pubtem;
+
+    my $pubmode = "nopublish";
+    $pubmode = $blocked ? "publish-blocked" : "publish"
+        if($publish);
 
     # Manual release newsletters get a 'publish' option (which may be disabled) if the
     # list is currently showing the next newsletter. This is generally always the case,
     # but check for it anyway to be certain.
     if(!$newsletter -> {"schedule"}) {
         if($usenext) {
-            $pubtem = $self -> {"template"} -> load_template("newsletter/list/control-manual-".($publish ? "publish" : "nopublish").".tem");
+            $pubtem = $self -> {"template"} -> load_template("newsletter/list/control-manual-".$pubmode.".tem");
         }
         return  $self -> {"template"} -> load_template("newsletter/list/control-manual.tem", { "***schedule***" => $newsletter -> {"id"},
                                                                                                "***publish***"  => $pubtem });
@@ -96,7 +101,7 @@ sub _build_controls {
     # if the next newsletter is currently being shown, and it is a late release.
     } else {
         if($usenext && $self -> {"schedule"} -> late_release($newsletter)) {
-            $pubtem = $self -> {"template"} -> load_template("newsletter/list/control-auto-".($publish ? "publish" : "nopublish").".tem");
+            $pubtem = $self -> {"template"} -> load_template("newsletter/list/control-auto-".$pubmode.".tem");
         }
 
         my $next_date = DateTime -> from_epoch(epoch => $reldate);
@@ -167,7 +172,7 @@ sub _generate_newsletter_list {
         my ($mindate, $maxdate, $usenext) = $self -> {"schedule"} -> get_newsletter_daterange($newsletter, $dates, $issue);
 
         # Fetch the messages set for the current newsletter
-        my $messages = $self -> {"schedule"} -> get_newsletter_messages($newsletter -> {"id"}, $userid, $usenext, $mindate, $maxdate);
+        my ($messages, $blocked) = $self -> {"schedule"} -> get_newsletter_messages($newsletter -> {"id"}, $userid, $usenext, $mindate, $maxdate);
         foreach my $section (@{$messages}) {
             my $contents = "";
 
@@ -188,7 +193,7 @@ sub _generate_newsletter_list {
                                                                });
         }
 
-        $controls = $self -> _build_controls($newsletter, $usenext, $maxdate, $dates);
+        $controls = $self -> _build_controls($newsletter, $usenext, $maxdate, $dates, $blocked);
     } else {
         $newsname = undef;
     }
@@ -246,6 +251,40 @@ sub _build_sortorder_response {
 }
 
 
+## @method $ _build_publish_response()
+# Generate a hash containing the response to a sort order change.
+#
+# @return A reference to a hash containing the API response.
+sub _build_publish_response {
+    my $self   = shift;
+    my $userid = $self -> {"session"} -> get_session_userid();
+    my ($args, $error, @issue);
+
+    ($args -> {"issue"}, $error) = $self -> validate_string("issue", {"required"   => 0,
+                                                                      "nicename"   => "Issue",
+                                                                      "formattest" => '^\d{4}-\d{2}-\d{2}$',
+                                                                      "formatdesc" => "Issue format: YYYY-MM-DD",
+                                                            });
+    return $self -> api_errorhash("api_error", $error) if($error);
+
+    ($args -> {"name"}, $error) = $self -> validate_string("name", {"required"   => 1,
+                                                                    "nicename"   => "Newsletter",
+                                                                    "formattest" => '^\w+$',
+                                                                    "formatdesc" => $self -> {"template"} -> replace_langvar("NEWSLETTER_API_BADNAME"),
+                                                           });
+    return $self -> api_errorhash("api_error", $error) if($error);
+
+    # If an issue has been provided, split it
+    @issue = $args -> {"issue"} =~ /^(\d{4})-(\d{2})-(\d{2})$/
+        if($args -> {"issue"});
+
+    $error = $self -> publish_newsletter($args -> {"name"}, \@issue, $userid);
+    return $self -> api_errorhash("api_error", $error) if($error);
+
+    return { "result" => { "status" => $self -> {"template"} -> replace_langvar("NEWSLETTER_API_PUBLISHED") } };
+}
+
+
 # ============================================================================
 #  Interface functions
 
@@ -291,6 +330,7 @@ sub page_display {
     if(defined($apiop)) {
         # API call - dispatch to appropriate handler.
         given($apiop) {
+            when("publish")   { $self -> api_response($self -> _build_publish_response()); }
             when("sortorder") { $self -> api_response($self -> _build_sortorder_response()); }
             default {
                 return $self -> api_response($self -> api_errorhash('bad_op',
