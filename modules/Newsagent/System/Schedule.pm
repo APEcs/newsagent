@@ -239,7 +239,7 @@ sub get_newsletter {
     $newsletter -> {"issuedata"} -> {"ranges"} -> {"usenext"} = $usenext;
 
     # Fetch the messages set for the current newsletter
-    $newsletter -> {"messages"} = $self -> get_newsletter_messages($newsletter -> {"id"}, $userid, $usenext, $mindate, $maxdate);
+    ($newsletter -> {"messages"}, $newsletter -> {"blocked"}) = $self -> get_newsletter_messages($newsletter -> {"id"}, $userid, $usenext, $mindate, $maxdate);
 
     return $newsletter;
 }
@@ -614,6 +614,7 @@ sub get_newsletter_messages {
 
     # Go through the sections, working out which ones the user can edit, and
     # fetching the messages for the sections
+    my $blocked = 0;
     foreach my $section (@{$sections}) {
         # User can only even potentially edit if one is defined and non-zero.
         $section -> {"editable"} = $userid && $self -> {"roles"} -> user_has_capability($section -> {"metadata_id"}, $userid, "newsletter.schedule");
@@ -621,9 +622,11 @@ sub get_newsletter_messages {
         # Fetch the messages even if the user can't edit the section, so they can
         # see the content in context
         $section -> {"messages"} = $self -> _fetch_section_messages($newsid, $section -> {"id"}, $getnext, $mindate, $maxdate, $fulltext);
+
+        $blocked = 1 if($section -> {"required"} && !scalar(@{$section -> {"messages"}}));
     }
 
-    return $sections;
+    return ($sections, $blocked);
 }
 
 
@@ -865,7 +868,7 @@ sub _create_digest {
 
     $self -> clear_error();
 
-    my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".."`
+    my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"digests"}."`
                                             (`schedule_id`, `article_id`, `generated`)
                                             VALUES(?, ?, UNIX_TIMESTAMP())");
     my $rows = $newh -> execute($scheduleid, $articleid);
@@ -949,7 +952,12 @@ sub _fetch_newsletter_feeds {
     $feedsh -> execute($newsid)
         or return $self -> self_error("Unable to perform newsletter feed query: ".$self -> {"dbh"} -> errstr());
 
-    return $feedsh -> fetchall_arrayref();
+    my $feeds = [];
+    while(my $feed = $feedsh -> fetchrow_arrayref()) {
+        push(@{$feeds}, $feed -> [0]);
+    }
+
+    return $feeds;
 }
 
 

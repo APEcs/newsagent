@@ -22,3 +22,7 @@ NEWSLETTER_LIST_PREVIEW  = Preview: '***newsletter***'
 NEWSLETTER_LIST_REQUIRED = This section is required, but it contains no articles. This newsletter can not be published until at least one article is added to this section.
 
 NEWSLETTER_PUBLISH_FAILED = Newsletter publication failed
+NEWSLETTER_PUBLISHED      = Newsletter published successfully.
+NEWSLETTER_PUBLISHBLOCK   = Publication blocked; one or more required sections empty!
+
+NEWSLETTER_API_BADNAME = Illegal characters detected in newsletter name.

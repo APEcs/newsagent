@@ -108,7 +108,7 @@ sub build_newsletter {
     # determine whether the user has access to the newsletter,
     # otherwise it's assumed to be an internal operation.
     my $newsletter = $self -> {"schedule"} -> get_newsletter($name, $userid, 1, $issue);
-    $content = "<!-- Newsletter: ".Dumper($newsletter)."-->";
+
     # If a newsletter is selected, build the page
     if($newsletter) {
         my $body  = "";
@@ -153,8 +153,8 @@ sub build_newsletter {
 # @param issue  An optional reference to an array containing the year,
 #               month, and day of the issue to publish.
 # @param userid An optional userid, if specified the system will check
-#               that the user has schedule access to the newsletter
-#               or a section of it. If omitted, no checks are done.
+#               that the user has publish access to the newsletter. If
+#               omitted, no checks are done.
 # @return undef on success, otherwise an error string
 sub publish_newsletter {
     my $self   = shift;
@@ -165,6 +165,12 @@ sub publish_newsletter {
     my ($content, $newsletter) = $self -> build_newsletter($name, $issue, $userid);
 
     if($newsletter) {
+        return $self -> {"template"} -> replace_langvar("NEWSLETTER_NOPUBLISH")
+            if($userid && !$self -> check_permission("newsletter.publish", $newsletter -> {"metadata_id"}, $userid));
+
+        return $self -> {"template"} -> replace_langvar("NEWSLETTER_PUBLISHBLOCK")
+            if($newsletter -> {"blocked"});
+
         # Fill in the article-specific fields
         $self -> {"schedule"} -> get_newsletter_articledata($newsletter);
 
@@ -180,11 +186,14 @@ sub publish_newsletter {
                         # notification stuff...?
         };
 
+        # Publish the newsletter as an article
         my $aid = $self -> {"article"} -> add_article($article, $userid, undef, 0)
             or return $self -> {"article"} -> errstr();
 
         $self -> log("newsletter", "Added newsletter issue article $aid");
 
+        # And now go through digesting all the messages published above so they
+        # won't show up in other newsletters.
         my $did = $self -> {"schedule"} -> make_digest_from_newsletter($newsletter, $aid, $self -> {"article"})
             or return $self -> {"schedule"} -> errstr();
 
