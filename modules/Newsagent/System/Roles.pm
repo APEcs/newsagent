@@ -407,7 +407,7 @@ sub get_role_users {
     my $rolesh = $self -> {"dbh"} -> prepare("SELECT `u`.*,`r`.`role_name`
                                              FROM `".$self -> {"settings"} -> {"database"} -> {"metadata_roles"}."` AS `mr`,
                                                   `".$self -> {"settings"} -> {"database"} -> {"roles"}."` AS `r`,
-                                                  `".$self -> {"settings"} -> {"database"} -> {"users")."` As `u`
+                                                  `".$self -> {"settings"} -> {"database"} -> {"users"}."` As `u`
                                              WHERE `r`.`id` = `mr`.`role_id`
                                              AND `u`.`user_id` = `mr`.`user_id`
                                              AND `mr`.`metadata_id` = ?
