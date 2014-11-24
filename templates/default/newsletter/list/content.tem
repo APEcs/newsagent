@@ -2,8 +2,13 @@
 nlisturl = "***nlist-url***";
 issueurl = "***issue-url***";
 preview  = "***preview-url***";
+pubimg   = { blocked: "{V_[templatepath]}images/newsletter/publishblocked.png",
+             publish: "{V_[templatepath]}images/newsletter/publish.png"
+};
 messages = { saving:  "{L_NEWSLETTER_LIST_SAVING}",
-             saved:   "{L_NEWSLETTER_LIST_SAVED}"
+             saved:   "{L_NEWSLETTER_LIST_SAVED}",
+             blocked: "{L_NEWSLETTER_PUBLISHBLOCK}",
+             publish: "{L_NEWSLETTER_PUBLISH}"
 };
 </script>
 <div id="newsletlist">

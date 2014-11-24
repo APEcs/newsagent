@@ -189,7 +189,9 @@ sub _generate_newsletter_list {
                                                                                                "***messages***" => $contents,
                                                                                                "***schedule***" => $newsletter -> {"id"},
                                                                                                "***section***"  => $section -> {"id"},
-                                                                                               "***editable***" => $section -> {"editable"} ? "edit" : "noedit"
+                                                                                               "***editable***" => $section -> {"editable"} ? "edit" : "noedit",
+                                                                                               "***required***" => $section -> {"required"} ? "required" : "",
+                                                                                               "***empty***"    => scalar(@{$section -> {"messages"}}) ? "" : "empty"
                                                                });
         }
 
