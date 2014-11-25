@@ -150,6 +150,31 @@ sub get_valid_years {
 }
 
 
+## @method $ get_current_year()
+# Fetch the current year from the usr data - assumes that the maximum year id found in the
+# student year level table is the current year.
+#
+# @return The ID of the current year on success, undef on error.
+sub get_current_year {
+    my $self = shift;
+
+    $self -> clear_error();
+
+    $self -> connect()
+        or return undef;
+
+    my $lookuph = $self -> {"udata_dbh"} -> prepare("SELECT MAX(`year_id`)
+                                                     FROM `".$self -> {"settings"} -> {"userdata"} -> {"user_years"}."`");
+    $lookuph -> execute()
+        or return $self -> self_error("Unable to execute academic year lookup: ".$self -> {"udata_dbh"} -> errstr);
+
+    my $year = $lookuph -> fetchrow_arrayref()
+        or return $self -> self_error("No academic year data available");
+
+    return $year -> [0];
+}
+
+
 ## @method $ get_year_data($date)
 # Given a date, attempt to locate the academic year the specified date falls in.
 #

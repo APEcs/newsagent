@@ -637,7 +637,6 @@ sub get_newsletter_messages {
 # @param newsletter A reference to a newsletter hash as obtained by get_newsletter()
 # @return true if the newsletter has been updated to include the article
 #         data, undef on error.
-
 sub get_newsletter_articledata {
     my $self       = shift;
     my $newsletter = shift;
@@ -651,6 +650,9 @@ sub get_newsletter_articledata {
         or return undef;
 
     $newsletter -> {"article_images"} = $self -> _fetch_newsletter_images($newsletter -> {"id"})
+        or return undef;
+
+    ($newsletter -> {"methods"}, $newsletter -> {"notify_matrix"}) = $self -> _fetch_newsletter_notifications($newsletter -> {"id"})
         or return undef;
 
     return 1;
@@ -1022,6 +1024,59 @@ sub _fetch_newsletter_images {
     }
 
     return $images;
+}
+
+
+## @method private @ _fetch_newsletter_($newsid)
+# Fetch the notification data for the specified newsletter. This fetches the list
+# of recipients and notification methods associated with the specified newsletter.
+#
+# @param newsid The ID of the newsletter to fetch the data for.
+# @return A reference to the method data hash, and a reference to the matrix data.
+sub _fetch_newsletter_notifications {
+    my $self   = shift;
+    my $newsid = shift;
+    my $methods;
+    my $notify_matrix;
+
+    # first fetch the list of recipientmethod mappings
+    my $notifyh = $self -> {"dbh"} -> prepare("SELECT `m`.`name` AS `methodname`, `rm`.`method_id`, n.*
+                                               FROM `".$self -> {"settings"} -> {"database"} -> {"schedule_notify"}."` AS `n`,
+                                                    `".$self -> {"settings"} -> {"database"} -> {"notify_matrix"}."` AS `rm`,
+                                                    `".$self -> {"settings"} -> {"database"} -> {"notify_methods"}."` AS `m`
+                                               WHERE `m`.`id` = `rm`.`method_id`
+                                               AND `rm`.`id` = `n`.`notify_recipient_method_id`
+                                               AND `n`.`schedule_id` = ?");
+    $notifyh -> execute($newsid)
+        or return $self -> self_error("Unable to perform newsletter notification query: ".$self -> {"dbh"} -> errstr());
+
+    while(my $notify = $notifyh -> fetchrow_hashref()) {
+        # This gets filled in later...
+        $methods -> {$notify -> {"methodname"}} = $notify -> {"method_id"};
+
+        push(@{$notify_matrix -> {"used_methods"} -> {$notify -> {"methodname"}}}, $notify -> {"notify_recipient_method_id"});
+    }
+
+    # and now the data for the methods
+    my $datah = $self -> {"dbh"} -> prepare("SELECT `data` FROM `".$self -> {"settings"} -> {"database"} -> {"schedule_methdata"}."`
+                                             WHERE `schedule_id` = ?
+                                             AND `method_id` = ?");
+    foreach my $method (keys %{$methods}) {
+        $datah -> execute($newsid, $methods -> {$method})
+            or return $self -> self_error("Unable to perform newsletter method data query: ".$self -> {"dbh"} -> errstr());
+
+        my $data = $datah -> fetchrow_arrayref();
+        if($data) {
+            # Split up data, expects format `name: value|name:|name:value|name:`
+            my %settings = $data -> [0] =~ /(\w+):\s*([^|]*)\|?/g;
+
+            $methods -> {$method} = \%settings;
+        } else {
+            $methods -> {$method} = undef;
+        }
+    }
+
+    return ($methods, $notify_matrix);
 }
 
 1;

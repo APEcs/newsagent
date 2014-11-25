@@ -183,14 +183,24 @@ sub publish_newsletter {
                         "levels"        => $newsletter -> {"article_levels"},
                         "feeds"         => $newsletter -> {"article_feeds"},
                         "images"        => $newsletter -> {"article_images"},
-                        # notification stuff...?
+                        "methods"       => $newsletter -> {"methods"},
+                        "notify_matrix" => $newsletter -> {"notify_matrix"},
         };
+
+        # finally need the year
+        $article -> {"notify_matrix"} -> {"year"} = $self -> {"system"} -> {"userdata"} -> get_current_year()
+            or return $self -> {"system"} -> {"userdata"} -> errstr();
 
         # Publish the newsletter as an article
         my $aid = $self -> {"article"} -> add_article($article, $userid, undef, 0)
             or return $self -> {"article"} -> errstr();
 
         $self -> log("newsletter", "Added newsletter issue article $aid");
+
+        $self -> {"queue"} -> queue_notifications($aid, $article, $userid, 0, $article -> {"notify_matrix"} -> {"used_methods"})
+            or return "Publication failed: ".$self -> {"queue"} -> errstr();
+
+        $self -> log("newsletter", "Newsletter notifications queued");
 
         # And now go through digesting all the messages published above so they
         # won't show up in other newsletters.
