@@ -142,17 +142,29 @@ ul.msgctrl li {
 	list-style: none;
 }
 
+ul.msgctrl li.disabled {
+    color: #555;
+    border: solid 1px #a3a3a3;
+    background-color: #cdcdcd; /* Fallback */
+}
+
 ul.msgctrl li:first-child {
-	-webkit-border-radius: 3px 0px 0px 3px;
-	-moz-border-radius: 3px 0px 0px 3px;
-	border-radius: 3px 0px 0px 3px;
+    -webkit-border-top-left-radius: 3px;
+    -webkit-border-bottom-left-radius: 3px;
+    -moz-border-radius-topleft: 3px;
+    -moz-border-radius-bottomleft: 3px;
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
 }
 
 
 ul.msgctrl li:last-child {
-	-webkit-border-radius: 0px 3px 3px 0px;
-	-moz-border-radius: 0px 3px 3px 0px;
-	border-radius: 0px 3px 3px 0px;
+    -webkit-border-top-right-radius: 3px;
+    -webkit-border-bottom-right-radius: 3px;
+    -moz-border-radius-topright: 3px;
+    -moz-border-radius-bottomright: 3px;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
     border-right: solid 1px #b1b1b1;
 }
 
@@ -168,6 +180,14 @@ ul.msgctrl li:hover {
     background-image: -webkit-linear-gradient(top, #eeeeee, #c9c9c9); /* new Webkit */
     background-image: linear-gradient(top, #eeeeee, #c9c9c9); /* proposed W3C Markup */
 	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#eeeeee', endColorstr='#c9c9c9');
+}
+
+ul.msgctrl li.disabled:hover {
+    color: #555;
+    border: solid 1px #a3a3a3;
+    background-color: #cdcdcd !important; /* Fallback */
+    background-image: none !important;
+    cursor: default;
 }
 
 .droplist {
@@ -198,7 +218,7 @@ div.section h3 {
 }
 
 div.section.required h3 {
-    background-image: url("../images/newsletter/required_ok.png");
+/*    background-image: url("../images/newsletter/required_ok.png");*/
 }
 
 div.section.required.empty h3 {

@@ -18,6 +18,39 @@ function setup_newsletter_link(element)
 }
 
 
+function check_required_sections()
+{
+    var empty_required = false;
+
+    $$('div.section.required').each(function(element) {
+
+        // Does the UL inside this element have any children?
+        if(element.getFirst('ul.section').getChildren().length == 0) {
+            empty_required = true;
+            element.addClass('empty');
+        } else {
+            element.removeClass('empty');
+        }
+    });
+
+    var publish = $('publishbtn');
+    if(publish) {
+        var mode = 'publish';
+        if(empty_required) {
+            publish.addClass('disabled');
+            mode = 'blocked';
+        } else {
+            publish.removeClass('disabled');
+        }
+
+        publish.setProperty('title', messages[mode]);
+        publish.getFirst('img').setProperty('src', pubimg[mode]);
+    }
+}
+
+
+
+
 function save_sort_order()
 {
     savetimer = null;
@@ -72,6 +105,7 @@ function queue_save()
     }
 
     savetimer = setTimeout(function() { save_sort_order(); }, 1000);
+    check_required_sections();
 }
 
 
@@ -100,4 +134,6 @@ window.addEvent('domready', function() {
             window.open(preview, 'preview');
         });
     });
+
+    check_required_sections();
 });
