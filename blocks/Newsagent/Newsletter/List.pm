@@ -132,7 +132,7 @@ sub _generate_newsletter_preview {
     my ($content, $newsletter) = $self -> build_newsletter($newsname, $issue, $self -> {"session"} -> get_session_userid());
     if($newsletter) {
         $title     = $newsletter -> {"description"};
-        $extrahead = $self -> {"template"}  -> load_template(path_join($newsletter -> {"template"}, "extrahead.tem"));
+#        $extrahead = $self -> {"template"}  -> load_template(path_join($newsletter -> {"template"}, "extrahead.tem"));
     }
 
     return ($self -> {"template"} -> replace_langvar("NEWSLETTER_LIST_PREVIEW", {"***newsletter***" => $title }),
