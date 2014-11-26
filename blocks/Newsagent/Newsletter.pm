@@ -23,6 +23,7 @@ use strict;
 use base qw(Newsagent::Article); # This class extends the Newsagent Article class
 use Webperl::Utils qw(trimspace path_join);
 use Digest::MD5 qw(md5_hex);
+use CSS::Inliner;
 use v5.12;
 use Data::Dumper;
 
@@ -111,7 +112,7 @@ sub build_newsletter {
 
     # If a newsletter is selected, build the page
     if($newsletter) {
-        my $body  = "";
+        my ($body, $menu)  = ("", "");
         foreach my $section (@{$newsletter -> {"messages"}}) {
             next unless(scalar(@{$section -> {"messages"}}) || $section -> {"required"} || $section -> {"empty_tem"});
 
@@ -134,12 +135,28 @@ sub build_newsletter {
             $body .= $self -> {"template"} -> load_template($section -> {"template"}, {"***articles***" => $articles,
                                                                                        "***title***"    => $section -> {"name"},
                                                                                        "***id***"       => $section -> {"id"}});
+            $menu .= $self -> {"template"} -> load_template(path_join($newsletter -> {"template"}, "section-menu-item.tem"), {"***title***"    => $section -> {"name"},
+                                                                                                                              "***id***"       => $section -> {"id"}});
         }
 
         $content .= $self -> {"template"} -> load_template(path_join($newsletter -> {"template"}, "body.tem"), {"***name***"        => $newsletter -> {"name"},
                                                                                                                 "***description***" => $newsletter -> {"description"},
                                                                                                                 "***id***"          => $newsletter -> {"id"},
-                                                                                                                "***body***"        => $body});
+                                                                                                                "***body***"        => $body,
+                                                                                                                "***menu***"        => $menu});
+    }
+
+    # If there is any newsletter content, convert any styles to inline
+    if($content) {
+        my $html = $self -> {"template"} -> load_template("newsletter/harness.tem", {"***header***" => $self -> {"template"} -> load_template(path_join($newsletter -> {"template"}, "extrahead.tem")),
+                                                                                     "***body***"   => $content});
+
+        my $inliner = new CSS::Inliner;
+        $inliner -> read({html => $html});
+        $content = $inliner -> inlinify();
+
+        # Nuke the harness
+        $content =~ s|^.*?<body>\s*(.*?)\s*</body>.*$|$1|s;
     }
 
     return ($content, $newsletter);
