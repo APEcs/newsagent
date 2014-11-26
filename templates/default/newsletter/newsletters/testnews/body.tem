@@ -1,4 +1,12 @@
 <div class="na-testnews">
     <h1>***description***</h1>
-    <div class="na-testnews-body">***body***</div>
+    <div class="na-testnews-content">
+        <div class="na-testnews-menu">
+            <h3>Contents</h3>
+            <ul>
+***menu***
+            </ul>
+        </div>
+        <div class="na-testnews-body">***body***</div>
+    </div>
 </div>
