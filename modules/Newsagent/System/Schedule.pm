@@ -617,7 +617,7 @@ sub get_newsletter_messages {
     my $blocked = 0;
     foreach my $section (@{$sections}) {
         # User can only even potentially edit if one is defined and non-zero.
-        $section -> {"editable"} = $userid && $self -> {"roles"} -> user_has_capability($section -> {"metadata_id"}, $userid, "newsletter.schedule");
+        $section -> {"editable"} = $userid && $self -> {"roles"} -> user_has_capability($section -> {"metadata_id"}, $userid, "newsletter.layout");
 
         # Fetch the messages even if the user can't edit the section, so they can
         # see the content in context
@@ -690,7 +690,7 @@ sub reorder_articles_fromsortdata {
         my $section = $self -> get_section($section_id)
             or return undef;
 
-        if($self -> {"roles"} -> user_has_capability($section -> {"metadata_id"}, $userid, "newsletter.schedule")) {
+        if($self -> {"roles"} -> user_has_capability($section -> {"metadata_id"}, $userid, "newsletter.layout")) {
             # User can edit the section, so set the roder of the articles within it
             for(my $pos = 0; $pos < scalar(@{$sections -> {$section_id} -> {"articles"}}); ++$pos) {
                 $self -> update_section_relation($sections -> {$section_id} -> {"articles"} -> [$pos], $schedule_id, $section_id, $pos + 1)
