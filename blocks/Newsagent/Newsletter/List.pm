@@ -306,7 +306,7 @@ sub page_display {
     # Exit with a permission error unless the user has permission to list newsletters
     # this could be deduced by checking the user's permissions against all newsletters,
     # but that'll take longer than needed.
-    if(!$self -> check_permission("newsletter.showlist")) {
+    if(!$self -> check_permission("newsletter")) {
         $self -> log("error:newsletter:permission", "User does not have permission to list newsletters");
 
         my $userbar = $self -> {"module"} -> load_module("Newsagent::Userbar");

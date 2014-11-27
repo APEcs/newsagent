@@ -154,7 +154,7 @@ sub block_display {
             if($self -> check_permission("tellus"));
 
         $newslist = $self -> {"template"} -> load_template("userbar/newsletters_enabled.tem", {"***url-newslist***"  => $self -> build_url(block => "newsletters"  , pathinfo => [])})
-            if($self -> check_permission("newsletter.showlist"));
+            if($self -> check_permission("newsletter"));
 
         $presets = $self -> _build_preset_list($user -> {"user_id"});
 
