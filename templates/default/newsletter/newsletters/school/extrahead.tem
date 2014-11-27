@@ -4,18 +4,19 @@ div.na-testnews {
 
 div.na-testnews-menu {
     float: left;
-    width: 160px;
-    margin: 5px 5px;
-    padding: 5px;
+    width: 170px;
+    margin: 5px 5px 5px 0px;
+    padding: 0px;
 }
 
 div.na-testnews-menu ul {
     margin: 0px;
-    padding: 0px;
+    padding: 0px 0px 0px 5px;
 }
 
 div.na-testnews-menu ul li {
     list-style-type: none;
+    font-size: 12px;
 }
 
 div.na-testnews-menu ul li a {
@@ -27,7 +28,7 @@ div.na-testnews h1 {
     font-size: 30px;
     line-height: 63px;
     vertical-align: center;
-    border-bottom: 1px solid #888;
+    border-bottom: 1px solid #56007E;
     padding: 5px 10px 3px 10px
 }
 
