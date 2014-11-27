@@ -42,7 +42,7 @@ COMPOSE_FULLSUMMARY = Summary display
 COMPOSE_FULLSUMOPT  = Show summary in full article view.
 
 COMPOSE_NOSCHEDULE  = You do not currently have access to any scheduled releases.
-COMPOSE_SCHEDULE    = Scheduled release
+COMPOSE_SCHEDULE    = Newsletter
 COMPOSE_NEXTREL     = Next release
 COMPOSE_SECTION     = Section
 COMPOSE_PRIORITY    = Priority
