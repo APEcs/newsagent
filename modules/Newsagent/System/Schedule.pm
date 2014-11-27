@@ -87,7 +87,8 @@ sub get_user_schedule_sections {
 
     my $result = {};
     while(my $section = $sectionh -> fetchrow_hashref()) {
-        if($self -> {"roles"} -> user_has_capability($section -> {"metadata_id"}, $userid, "newsletter.schedule")) {
+        if($self -> {"roles"} -> user_has_capability($section -> {"metadata_id"}, $userid, "newsletter.schedule") ||
+           $self -> {"roles"} -> user_has_capability($section -> {"metadata_id"}, $userid, "newsletter.layout")) {
             # Store the section name and id.
             push(@{$result -> {"id_".$section -> {"schedule_id"}} -> {"sections"}},
                  {"value" => $section -> {"id"},
@@ -315,7 +316,9 @@ sub get_user_newsletter {
         # This needs to handle access with no user - note that this is explicitly undef userid NOT simply !$userid
         # the latter could come from a faulty session, the former can only happen via explicit invocation.
         return $newsletter
-            if(!defined($userid) || $self -> {"roles"} -> user_has_capability($newsletter -> {"metadata_id"}, $userid, "newsletter.schedule"));
+            if(!defined($userid) ||
+               $self -> {"roles"} -> user_has_capability($newsletter -> {"metadata_id"}, $userid, "newsletter.schedule") ||
+               $self -> {"roles"} -> user_has_capability($newsletter -> {"metadata_id"}, $userid, "newsletter.layout"));
 
         # user doesn't have simple access, check access to sections of this newsletter
         my $secth = $self -> {"dbh"} -> prepare("SELECT `metadata_id`
@@ -327,7 +330,8 @@ sub get_user_newsletter {
         while(my $section = $secth -> fetchrow_arrayref()) {
             # If the user has schedule capability on the section, they can access the newsletter
             return $newsletter
-                if($self -> {"roles"} -> user_has_capability($section -> [0], $userid, "newsletter.schedule"));
+                if($self -> {"roles"} -> user_has_capability($section -> [0], $userid, "newsletter.schedule") ||
+                   $self -> {"roles"} -> user_has_capability($section -> [0], $userid, "newsletter.layout"));
         }
     }
 
