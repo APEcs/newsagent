@@ -330,3 +330,8 @@ img.workspin {
 div.clear {
     clear: both;
 }
+
+.error {
+    color: #FF3300;
+    font-weight: bold;
+}

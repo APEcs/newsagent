@@ -5,7 +5,6 @@ div.na-testnews {
 div.na-testnews-menu {
     float: left;
     width: 160px;
-    border: 1px solid #56007E;
     margin: 5px 5px;
     padding: 5px;
 }
@@ -52,6 +51,7 @@ ul.na-testnews-articles {
 
 li.na-testnews-articleitem {
     list-style-type: none;
+    padding: 2px;
 }
 
 div.na-testnews-article {
