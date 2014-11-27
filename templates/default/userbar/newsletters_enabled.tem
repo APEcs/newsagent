@@ -1,0 +1,1 @@
+            <li id="user-newslist" title="{L_USERBAR_NEWSLETTER_LIST}"><a href="***url-newslist***" class="item"><img class="controlicon" src="{V_[templatepath]}userbar/images/newsletters.png" alt="newslist" /></a></li>

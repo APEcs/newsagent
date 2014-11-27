@@ -119,7 +119,7 @@ sub block_display {
                                       params   => {});
 
     # Initialise fragments to sane "logged out" defaults.
-    my ($siteadmin, $msglist, $compose, $userprofile, $presets, $docs, $tellus, $tuqueues) =
+    my ($siteadmin, $msglist, $compose, $userprofile, $presets, $docs, $tellus, $tuqueues, $newslist) =
         ($self -> {"template"} -> load_template("userbar/siteadmin_disabled.tem"),
          $self -> {"template"} -> load_template("userbar/msglist_disabled.tem"),
          $self -> {"template"} -> load_template("userbar/compose_disabled.tem"),
@@ -128,6 +128,7 @@ sub block_display {
          $self -> {"template"} -> load_template("userbar/doclink_disabled.tem"),
          $self -> {"template"} -> load_template("userbar/tellus_disabled.tem"),
          $self -> {"template"} -> load_template("userbar/tuqueues_disabled.tem"),
+         $self -> {"template"} -> load_template("userbar/newsletters_disabled.tem"),
         );
 
     # Is documentation available?
@@ -151,6 +152,9 @@ sub block_display {
 
         $tellus = $self -> {"template"} -> load_template("userbar/tellus_enabled.tem"      , {"***url-tellus***"  => $self -> build_url(block => "tellus"  , pathinfo => [])})
             if($self -> check_permission("tellus"));
+
+        $newslist = $self -> {"template"} -> load_template("userbar/newsletters_enabled.tem", {"***url-newslist***"  => $self -> build_url(block => "newsletters"  , pathinfo => [])})
+            if($self -> check_permission("newsletter.showlist"));
 
         $presets = $self -> _build_preset_list($user -> {"user_id"});
 
@@ -188,6 +192,7 @@ sub block_display {
                                                                           "***compose***"    => $compose,
                                                                           "***msglist***"    => $msglist,
                                                                           "***tuqueues***"   => $tuqueues,
+                                                                          "***newslist***"   => $newslist,
                                                                           "***doclink***"    => $docs,
                                                                           "***profile***"    => $userprofile});
 }
