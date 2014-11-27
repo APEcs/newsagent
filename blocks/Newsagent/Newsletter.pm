@@ -128,7 +128,7 @@ sub build_newsletter {
                 if(!$articles && $section -> {"empty_tem"});
 
             # If it's still empty, and required, make it as such
-            $articles = $self -> {"template"} -> load_template("newsletter/list/required-section.tem")
+            $articles = $self -> {"template"} -> load_template(path_join($newsletter -> {"template"}, "required-section.tem"))
                 if(!$articles && $section -> {"required"});
 
             # And add this section to the accumulating page
