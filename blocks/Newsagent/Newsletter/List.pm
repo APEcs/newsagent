@@ -197,7 +197,8 @@ sub _generate_newsletter_list {
 
         $controls = $self -> _build_controls($newsletter, $usenext, $maxdate, $dates, $blocked);
     } else {
-        $newsname = undef;
+        $newsletlist = $self -> _build_newsletter_list($schedules, $newsletter);
+        $newsname = "";
     }
 
     my $previewpath = [$newsname, "preview"];
@@ -305,7 +306,7 @@ sub page_display {
     # Exit with a permission error unless the user has permission to list newsletters
     # this could be deduced by checking the user's permissions against all newsletters,
     # but that'll take longer than needed.
-    if(!$self -> check_permission("newsletter.list")) {
+    if(!$self -> check_permission("newsletter.showlist")) {
         $self -> log("error:newsletter:permission", "User does not have permission to list newsletters");
 
         my $userbar = $self -> {"module"} -> load_module("Newsagent::Userbar");
