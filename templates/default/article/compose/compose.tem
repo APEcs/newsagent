@@ -24,6 +24,12 @@ confirm_messages = {   errors: "{L_COMPOSE_ERRORS}",
                     restoring: "{L_COMPOSE_AUTOSAVE_LOADING}",
                      checking: "{L_COMPOSE_AUTOSAVE_CHECKING}",
                        saving: "{L_COMPOSE_AUTOSAVE_SAVING}",
+                       normal: "{L_COMPOSE_MODE_NORMAL}",
+                   newsletter: "{L_COMPOSE_MODE_NEWSLETTER}",
+                    newsintro: "{L_COMPOSE_NEWSLETTER_INTRO}",
+                     newsname: "{L_COMPOSE_SCHEDULE}",
+                     newssect: "{L_COMPOSE_SECTION}",
+                        draft: "{L_COMPOSE_SAVEDRAFT}"
                    };
 
 window.addEvent('domready', function() {

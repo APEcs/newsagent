@@ -403,7 +403,7 @@ function set_session_cookies(cookies)
  *  Confirmation popup related
  */
 
-function confirm_errors(summary, fulltext, feeds, levels, publish, pubname)
+function confirm_errors(relmode, summary, fulltext, feeds, levels, publish, pubname)
 {
     var errlist = new Element('ul');
     var errelem = new Element('div').adopt(
@@ -411,12 +411,14 @@ function confirm_errors(summary, fulltext, feeds, levels, publish, pubname)
         errlist
     );
 
-    if(!feeds) {
-        errlist.adopt(new Element('li', { html: confirm_messages['nofeeds'] }));
-    }
+    if(relmode == 0) {
+        if(!feeds) {
+            errlist.adopt(new Element('li', { html: confirm_messages['nofeeds'] }));
+        }
 
-    if(!levels) {
-        errlist.adopt(new Element('li', { html: confirm_messages['nolevels'] }));
+        if(!levels) {
+            errlist.adopt(new Element('li', { html: confirm_messages['nolevels'] }));
+        }
     }
 
     if(!summary.length && !fulltext.length) {
@@ -574,6 +576,23 @@ function confirm_notify()
 }
 
 
+function confirm_newsletter()
+{
+    var newsletter = $('comp-schedule').getSelected()[0].get('html');
+    var section    = $('comp-section').getSelected()[0].get('html');
+
+    var confirmelem = new Element('div').adopt(
+        new Element('dl').adopt(
+            new Element('dt', { html: confirm_messages['newsintro'] }),
+            new Element('dd', { html: confirm_messages['newsname']+": "+newsletter }),
+            new Element('dd', { html: confirm_messages['newssect']+": "+section })
+        )
+    );
+
+    return confirmelem;
+}
+
+
 function confirm_submit()
 {
     if($('stopconfirm').get('value') == '1') {
@@ -584,7 +603,8 @@ function confirm_submit()
         var fulltext = CKEDITOR.instances['comp-desc'].getData();
         var feeds    = $$('input[name=feed]:checked').length;
         var levels   = $$('input[name=level]:checked').length;
-        var publish  = $('comp-release').getSelected().get("value");
+        var publish  = $('comp-release').getSelected()[0].get("value");
+        var newspub  = $('comp-srelease').getSelected()[0].get("value");
         var pubname  = $('preset').get('value');
         var relmode  = $('relmode').get('value');
 
@@ -608,13 +628,27 @@ function confirm_submit()
         // the message will appear" stuff and the confirm button.
         if(((relmode == 0 && feeds && levels) || relmode == 1) &&
            (summary.length || fulltext.length) && (publish != 'preset' || pubname.length)) {
-            bodytext.adopt(
-                confirm_preset(publish == 'preset'),
-                confirm_levels(),
-                confirm_notify(),
-                new Element('hr')
+            var bodyelems = new Array();
+            if(relmode == 0) {
+                if(publish == "draft") {
+                    bodyelems.push(new Element('p', { html: confirm_messages['draft']}));
+                } else {
+                    bodyelems.push(new Element('p', { html: confirm_messages['normal']}),
+                                   confirm_preset(publish == 'preset'),
+                                   confirm_levels(),
+                                   confirm_notify());
+                }
+            } else {
+                if(newspub == "nldraft") {
+                    bodyelems.push(new Element('p', { html: confirm_messages['draft']}));
+                } else {
+                    bodyelems.push(new Element('p', { html: confirm_messages['newsletter']}),
+                                   confirm_newsletter());
+                }
+            }
 
-            );
+            bodyelems.push(new Element('hr'));
+            bodytext.adopt(bodyelems);
 
             // Inject a confirmation disable checkbox into the footer, it looks better there than in the body
             popbox.footer.adopt(new Element('label', { 'for': 'conf-suppress-cb',
@@ -640,7 +674,7 @@ function confirm_submit()
             // Otherwise, the system will reject the article - produce errors to show to the user, and keep
             // the single 'cancel' button.
         } else {
-            bodytext.adopt(confirm_errors(summary, fulltext, feeds, levels, publish, pubname));
+            bodytext.adopt(confirm_errors(relmode, summary, fulltext, feeds, levels, publish, pubname));
         }
 
         $('poptitle').set('text', confirm_messages['title']);

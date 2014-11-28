@@ -127,3 +127,9 @@ COMPOSE_AUTOSAVE_LOADING  = Restoring autosave...
 COMPOSE_AUTOSAVE_SAVING   = Saving autosave...
 
 COMPOSE_ERR_BADSCHEDULE   = Unable to locate an ID for the selected schedule.
+
+COMPOSE_MODE_NORMAL       = Your article will be published as a normal article.
+COMPOSE_MODE_NEWSLETTER   = Your article will be included in a newsletter.
+COMPOSE_NEWSLETTER_INTRO  = Your article will appear in the following newsletter and section:
+
+COMPOSE_SAVEDRAFT         = Your article will be saved as a draft message and will not be published in its current form. You can edit or clone the article through your article list when you are ready to edit it for release.
