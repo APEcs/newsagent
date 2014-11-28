@@ -80,6 +80,7 @@ COMPOSE_LEVEL_ERRNONE        = No visibility levels have been selected, or all s
 COMPOSE_LEVEL_ERRNOCOMMON    = After checking the visibility levels you are allowed to post articles at for all the selected feeds, all the visibility levels were excluded. You will not be able to continue unless you request increased permissions, or remove feeds from your selection.
 COMPOSE_FEED_ERRNONE         = No feeds have been selected, or all the selected feeds were excluded after checking your posting permissions.
 COMPOSE_ERR_NOSUMMARYARTICLE = No text has been entered for the summary or article.
+COMPOSE_ERR_NORELTIME        = Your article has been set to be published at or after a specific time, but no time has been set for the release.
 
 COMPOSE_ADDED_TITLE       = Article Added
 COMPOSE_ADDED_SUMMARY     = Article created and added to the system successfully.
@@ -133,3 +134,5 @@ COMPOSE_MODE_NEWSLETTER   = Your article will be included in a newsletter.
 COMPOSE_NEWSLETTER_INTRO  = Your article will appear in the following newsletter and section:
 
 COMPOSE_SAVEDRAFT         = Your article will be saved as a draft message and will not be published in its current form. You can edit or clone the article through your article list when you are ready to edit it for release.
+COMPOSE_TIMED_NORMAL      = Your article has been set to be released at a specific date and time. If the date has already past, your article will appear in feeds as if it had been published at that time. The release time you have set is:
+COMPOSE_TIMED_NEWSLETTER  = Your article has been set to be published in a newsletter at or after a specific time. It will not be published in newsletters before that time, and it will appear in the next newsletter published after that time. The release time you have set is:

@@ -403,7 +403,7 @@ function set_session_cookies(cookies)
  *  Confirmation popup related
  */
 
-function confirm_errors(relmode, summary, fulltext, feeds, levels, publish, pubname)
+function confirm_errors(relmode, summary, fulltext, feeds, levels, publish, pubtime, newspub, newstime, pubname)
 {
     var errlist = new Element('ul');
     var errelem = new Element('div').adopt(
@@ -419,15 +419,24 @@ function confirm_errors(relmode, summary, fulltext, feeds, levels, publish, pubn
         if(!levels) {
             errlist.adopt(new Element('li', { html: confirm_messages['nolevels'] }));
         }
+
+        if(publish == "timed" && !pubtime.length) {
+            errlist.adopt(new Element('li', { html: confirm_messages['noreltime'] }));
+        }
+
+        if(publish == 'preset' && !pubname.length) {
+            errlist.adopt(new Element('li', { html: confirm_messages['nopreset'] }));
+        }
+    } else {
+        if(newspub == 'after' && !newstime.length) {
+            errlist.adopt(new Element('li', { html: confirm_messages['noreltime'] }));
+        }
     }
 
     if(!summary.length && !fulltext.length) {
         errlist.adopt(new Element('li', { html: confirm_messages['notext'] }));
     }
 
-    if(publish == 'preset' && !pubname.length) {
-        errlist.adopt(new Element('li', { html: confirm_messages['nopreset'] }));
-    }
 
 
     return errelem;
@@ -593,6 +602,49 @@ function confirm_newsletter()
 }
 
 
+function confirm_timed(relmode, delaytime)
+{
+    if(relmode == 0) {
+        return new Element('p', { html: confirm_messages['relnormal']+" "+delaytime});
+    } else {
+        return new Element('p', { html: confirm_messages['relnewslet']+" "+delaytime});
+    }
+}
+
+
+function check_valid(relmode, summary, fulltext, feeds, levels, publish, pubtime, newspub, newstime, pubname)
+{
+    // Must always have summary or full text set regardless of mode
+    if(!(summary.length || fulltext.length)) {
+        return false;
+    } else {
+        // normal release must have feed and level, and valid publish setting
+        if(relmode == 0) {
+            if(!feeds || !levels) {
+                return false;
+            }
+
+            // valid publish setting basic checks - preset must have a name, timed must have a time
+            if(publish == "preset" && !pubname.length) {
+                return false;
+            } else if(publish == "timed" && !pubtime.length) {
+                return false;
+            }
+
+        // newsletters must have valid publish
+        } else if(relmode == 1) {
+            if(newspub == "after" && !newstime.length) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
 function confirm_submit()
 {
     if($('stopconfirm').get('value') == '1') {
@@ -604,7 +656,9 @@ function confirm_submit()
         var feeds    = $$('input[name=feed]:checked').length;
         var levels   = $$('input[name=level]:checked').length;
         var publish  = $('comp-release').getSelected()[0].get("value");
+        var pubtime  = $('release_date').get('value');
         var newspub  = $('comp-srelease').getSelected()[0].get("value");
+        var newstime = $('schedule_date').get('value');
         var pubname  = $('preset').get('value');
         var relmode  = $('relmode').get('value');
 
@@ -626,8 +680,7 @@ function confirm_submit()
         // If at least one level has been specified, and either the summary or full text have been set,
         // the article is almost certainly going to be accepted by the system so show the "this is where
         // the message will appear" stuff and the confirm button.
-        if(((relmode == 0 && feeds && levels) || relmode == 1) &&
-           (summary.length || fulltext.length) && (publish != 'preset' || pubname.length)) {
+        if(check_valid(relmode, summary, fulltext, feeds, levels, publish, pubtime, newspub, newstime, pubname)) {
             var bodyelems = new Array();
             if(relmode == 0) {
                 if(publish == "draft") {
@@ -637,6 +690,10 @@ function confirm_submit()
                                    confirm_preset(publish == 'preset'),
                                    confirm_levels(),
                                    confirm_notify());
+
+                    if(publish == "timed") {
+                        bodyelems.push(confirm_timed(relmode, pubtime));
+                    }
                 }
             } else {
                 if(newspub == "nldraft") {
@@ -644,6 +701,10 @@ function confirm_submit()
                 } else {
                     bodyelems.push(new Element('p', { html: confirm_messages['newsletter']}),
                                    confirm_newsletter());
+
+                    if(newspub == "after") {
+                        bodyelems.push(confirm_timed(relmode, newstime));
+                    }
                 }
             }
 
@@ -674,7 +735,7 @@ function confirm_submit()
             // Otherwise, the system will reject the article - produce errors to show to the user, and keep
             // the single 'cancel' button.
         } else {
-            bodytext.adopt(confirm_errors(relmode, summary, fulltext, feeds, levels, publish, pubname));
+            bodytext.adopt(confirm_errors(relmode, summary, fulltext, feeds, levels, publish, pubtime, newspub, newstime, pubname));
         }
 
         $('poptitle').set('text', confirm_messages['title']);
