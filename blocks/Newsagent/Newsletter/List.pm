@@ -164,6 +164,7 @@ sub _generate_newsletter_list {
     # If a newsletter is selected, build the page
     if($newsletter) {
         $newsletlist = $self -> _build_newsletter_list($schedules, $newsletter);
+        $newsname = $newsletter -> {"name"};
 
         # Fetch the list of dates teh newsletter is released on (this is undef for manual releases)
         my $dates = $self -> {"schedule"} -> get_newsletter_datelist($newsletter, $self -> {"settings"} -> {"config"} -> {"newsletter:future_count"});
