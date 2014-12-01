@@ -4,7 +4,7 @@ div.na-testnews {
 
 div.na-testnews-menu {
     float: left;
-    width: 170px;
+    width: 200px;
     margin: 5px 5px 5px 0px;
     padding: 0px;
 }
@@ -29,11 +29,11 @@ div.na-testnews h1 {
     line-height: 63px;
     vertical-align: center;
     border-bottom: 1px solid #56007E;
-    padding: 5px 10px 3px 10px
+    padding: 5px 10px 3px 0px
 }
 
 div.na-testnews-body {
-    margin-left: 200px;
+    margin-left: 210px;
 }
 
 div.na-testnews-section h2 {
