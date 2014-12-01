@@ -790,7 +790,7 @@ sub add_article {
     }
 
     # Make a new metadata context to attach to the article
-    my $metadataid = $self -> _create_article_metadata($article -> {"feeds"}, $article -> {"section"}, $mode)
+    my $metadataid = $self -> _create_article_metadata($previd, $article -> {"feeds"}, $article -> {"section"}, $mode)
         or return $self -> self_error("Unable to create new metadata context: ".$self -> {"metadata"} -> errstr());
 
     # Fix up release time
@@ -1428,12 +1428,35 @@ sub _get_level_byname {
 }
 
 
-## @method private $ _create_article_metadata($feeds, $sectionid, $mode)
+## @method private $ _get_article_metadataid($articleid)
+# Given an article ID, obtain the metadata context ID for the article.
+#
+# @param articleid The ID of the article to fetch the metadata for
+# @return The metadata ID on success, undef on error.
+sub _get_article_metadata {
+    my $self      = shift;
+    my $articleid = shift;
+
+    my $metah = $self -> {"dbh"} -> prepare("SELECT `metadata_id`
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"articles"}."`
+                                             WHERE `id` = ?");
+    $metah -> execute($articleid)
+        or return $self -> self_error("Unable to execute article metadata lookup query: ".$self -> {"dbh"} -> errstr);
+
+    my $meta = $metah -> fetchrow_arrayref()
+        or return $self -> self_error("Request for non-existent article '$articleid', giving up");
+
+    return $meta -> [0];
+}
+
+
+## @method private $ _create_article_metadata($previd, $feeds, $sectionid, $mode)
 # Create a metadata context to attach to the article specified. This will determine
 # whether the article can be attached to a single feed's metadata, whether it can
 # be attached to a schedule's metadata, or whether it needs to be attached to the
 # root.
 #
+# @param previd    The ID of the previous article
 # @param feeds     A reference to an array of IDs for feeds the article has been posted in.
 # @param sectionid The ID of the schedule section the article is being added to.
 # @param mode      0 indicates the article is a normal article, 1 indicates it is a
@@ -1441,11 +1464,22 @@ sub _get_level_byname {
 # @return The new metadata context ID on success, undef otherwise.
 sub _create_article_metadata {
     my $self      = shift;
+    my $previd    = shift;
     my $feeds     = shift;
     my $sectionid = shift;
     my $mode      = shift;
 
     $self -> clear_error();
+
+    # If a previous ID has been provided, try to hang off its metadata (this
+    # should allow multiple edits to an article and retain access for non-admin
+    # authors to their article)
+    if($previd) {
+        my $metadataid = $self -> _get_article_metadata($previd)
+            or return undef;
+
+        return $self -> {"metadata"} -> create($metadataid);
+    }
 
     # Normal article with feeds available?
     if($mode == 0 && $feeds) {
