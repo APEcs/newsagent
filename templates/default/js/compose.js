@@ -727,7 +727,7 @@ function confirm_submit()
                                                                                                  }
                                                                                                  $('popspinner').fade('in');
                                                                                                  popbox.disableButtons(true);
-1                                                                                                 window.onbeforeunload = null;
+                                                                                                 window.onbeforeunload = null;
                                                                                                  $('fullform').submit();
                                                                                                }
                         },
