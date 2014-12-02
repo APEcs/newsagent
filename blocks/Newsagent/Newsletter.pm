@@ -42,6 +42,7 @@ sub _build_newsletter_article {
     my $self     = shift;
     my $article  = shift;
     my $template = shift;
+    my $oddrow   = shift;
 
     # The date can be needed in both the title and date fields.
     my $pubdate = $self -> {"template"} -> format_time($article -> {"release_time"}, $self -> {"timefmt"});
@@ -83,6 +84,7 @@ sub _build_newsletter_article {
                                                                "***name***"        => $article -> {"realname"} || $article -> {"username"},
                                                                "***fulltext***"    => $article -> {"article"},
                                                                "***gravhash***"    => md5_hex(lc(trimspace($article -> {"email"} || ""))),
+                                                               "***row***"         => $oddrow ? "odd" : "even"
                                                   });
 }
 
@@ -117,10 +119,11 @@ sub build_newsletter {
             next unless(scalar(@{$section -> {"messages"}}) || $section -> {"required"} || $section -> {"empty_tem"});
 
             my $articles = "";
+            my $row = 0;
             foreach my $message (@{$section -> {"messages"}}) {
                 my $article = $self -> {"article"} -> get_article($message -> {"id"});
 
-                $articles .= $self -> _build_newsletter_article($article, $section -> {"article_tem"});
+                $articles .= $self -> _build_newsletter_article($article, $section -> {"article_tem"}, ++$row % 2);
             }
 
             # If the section contains no articles, use the empty template.
@@ -163,7 +166,7 @@ sub build_newsletter {
 }
 
 
-## @method $ publish_newsletter($$name, $issue, $userid)
+## @method @ publish_newsletter($name, $issue, $userid)
 # Generate the contents of the specified issue of a newsletter.
 #
 # @param name   The name of the newsletter to publish.
@@ -172,7 +175,8 @@ sub build_newsletter {
 # @param userid An optional userid, if specified the system will check
 #               that the user has publish access to the newsletter. If
 #               omitted, no checks are done.
-# @return undef on success, otherwise an error string
+# @return undef on success, otherwise an error string, followed by the
+#         published article ID and digest ID
 sub publish_newsletter {
     my $self   = shift;
     my $name   = shift;
@@ -182,10 +186,10 @@ sub publish_newsletter {
     my ($content, $newsletter) = $self -> build_newsletter($name, $issue, $userid);
 
     if($newsletter) {
-        return $self -> {"template"} -> replace_langvar("NEWSLETTER_NOPUBLISH")
+        return ($self -> {"template"} -> replace_langvar("NEWSLETTER_NOPUBLISH"), undef, undef)
             if($userid && !$self -> check_permission("newsletter.publish", $newsletter -> {"metadata_id"}, $userid));
 
-        return $self -> {"template"} -> replace_langvar("NEWSLETTER_PUBLISHBLOCK")
+        return ($self -> {"template"} -> replace_langvar("NEWSLETTER_PUBLISHBLOCK"), undef, undef)
             if($newsletter -> {"blocked"});
 
         # Fill in the article-specific fields
@@ -206,31 +210,31 @@ sub publish_newsletter {
 
         # finally need the year
         $article -> {"notify_matrix"} -> {"year"} = $self -> {"system"} -> {"userdata"} -> get_current_year()
-            or return $self -> {"system"} -> {"userdata"} -> errstr();
+            or return ($self -> {"system"} -> {"userdata"} -> errstr(), undef, undef);
 
         # Publish the newsletter as an article
         my $aid = $self -> {"article"} -> add_article($article, $userid, undef, 0)
-            or return $self -> {"article"} -> errstr();
+            or return ($self -> {"article"} -> errstr(), undef, undef);
 
         $self -> log("newsletter", "Added newsletter issue article $aid");
 
         $self -> {"queue"} -> queue_notifications($aid, $article, $userid, 0, $article -> {"notify_matrix"} -> {"used_methods"})
-            or return "Publication failed: ".$self -> {"queue"} -> errstr();
+            or return ("Publication failed: ".$self -> {"queue"} -> errstr(), undef, undef);
 
         $self -> log("newsletter", "Newsletter notifications queued");
 
         # And now go through digesting all the messages published above so they
         # won't show up in other newsletters.
         my $did = $self -> {"schedule"} -> make_digest_from_newsletter($newsletter, $aid, $self -> {"article"})
-            or return $self -> {"schedule"} -> errstr();
+            or return ($self -> {"schedule"} -> errstr(), undef, undef);
 
         $self -> log("newsletter", "Newsletter issue $aid digested as $did");
 
         # oddly return undef for success!
-        return undef;
+        return (undef, $aid, $did);
     }
 
-    return "Publication failed: ".$self -> {"schedule"} -> errstr();
+    return ("Publication failed: ".$self -> {"schedule"} -> errstr(), undef, undef);
 }
 
 

@@ -211,6 +211,7 @@ sub _generate_newsletter_list {
                                                                                    "***messages***"   => $msglist,
                                                                                    "***intro***"      => $intro,
                                                                                    "***controls***"   => $controls,
+                                                                                   "***newsname***"   => $newsname,
                                                                                    "***nlist-url***"  => $self -> build_url(block    => "newsletters",
                                                                                                                             params   => [],
                                                                                                                             pathinfo => []),
@@ -262,7 +263,7 @@ sub _build_sortorder_response {
 sub _build_publish_response {
     my $self   = shift;
     my $userid = $self -> {"session"} -> get_session_userid();
-    my ($args, $error, @issue);
+    my ($args, $aid, $error, @issue);
 
     ($args -> {"issue"}, $error) = $self -> validate_string("issue", {"required"   => 0,
                                                                       "nicename"   => "Issue",
@@ -282,10 +283,18 @@ sub _build_publish_response {
     @issue = $args -> {"issue"} =~ /^(\d{4})-(\d{2})-(\d{2})$/
         if($args -> {"issue"});
 
-    $error = $self -> publish_newsletter($args -> {"name"}, \@issue, $userid);
+    ($error, $aid) = $self -> publish_newsletter($args -> {"name"}, \@issue, $userid);
     return $self -> api_errorhash("api_error", $error) if($error);
 
-    return { "result" => { "status" => $self -> {"template"} -> replace_langvar("NEWSLETTER_API_PUBLISHED") } };
+    # build a viewer URL for the new article
+    my $article = $self -> {"article"} -> get_article($aid)
+        or return $self -> api_errorhash("api_error", $self -> {"article"} -> errstr());
+
+    my $feedurl = path_join($article -> {"feeds"} -> [0] -> {"default_url"}, "?articleid=$aid");
+
+    return { "result" => { "status"    => "published",
+                           "content"   => "<![CDATA[".$self -> {"template"} -> load_template("newsletter/list/published.tem", {"***viewurl***" => $feedurl})."]]>",
+                           "articleid" => $aid} };
 }
 
 

@@ -18,6 +18,45 @@ function setup_newsletter_link(element)
 }
 
 
+var do_publish = function()
+{
+    if(!saving) {
+        var req = new Request({ url: api_request_path("newsletters", "publish"),
+                                onRequest: function() {
+                                    $('statespin').fade('in');
+                                    $('statemsg').set('html', messages['publishing']);
+                                },
+                                onSuccess: function(respText, respXML) {
+                                    $('statespin').fade('out');
+                                    $('statemsg').set('html', '');
+
+                                    var err = respXML.getElementsByTagName("error")[0];
+                                    if(err) {
+                                        $('errboxmsg').set('html', '<p class="error">'+err.getAttribute('info')+'</p>');
+                                        errbox.open();
+
+                                        // No error, we have a response
+                                    } else {
+                                        var result = respXML.getElementsByTagName('result')[0];
+                                        var status = result.getAttribute('status');
+
+                                        $('popbody').empty().set('html', result.textContent);
+                                        popbox.setButtons( [ { title: messages['continue'], color: 'blue', event: function() {
+                                                                   location.reload();
+                                                               }
+                                                             }
+                                                           ]);
+                                        popbox.open();
+                                    }
+                                }
+                              });
+        var args = { name: newsname };
+
+        req.post(args);
+    }
+}
+
+
 function check_required_sections()
 {
     var empty_required = false;
@@ -39,8 +78,10 @@ function check_required_sections()
         if(empty_required) {
             publish.addClass('disabled');
             mode = 'blocked';
+            publish.removeEvent('click', do_publish);
         } else {
             publish.removeClass('disabled');
+            publish.addEvent('click', do_publish);
         }
 
         publish.setProperty('title', messages[mode]);
@@ -111,7 +152,7 @@ function queue_save()
 
 function set_issue_date(date)
 {
-    location.href = issueurl + "/" + date.getFullYear() + "/" + (date.getMonth() + 1) + "/" + date.getDate();
+    location.href = issueurl + "/" +  date.getFullYear() + "/" + (date.getMonth() + 1) + "/" + date.getDate();
 }
 
 window.addEvent('domready', function() {

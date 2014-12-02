@@ -38,6 +38,8 @@ BLOCK_SECTION_DISPLAY = Direct call to unimplemented section_display()
 
 PAGE_ERROR    = Error
 PAGE_ERROROK  = Okay
+PAGE_POPUP    = Information
+PAGE_CONTINUE = Continue
 
 FATAL_ERROR         = Fatal Error
 FATAL_ERROR_SUMMARY = The system has encountered a fatal error and can not continue. The error is shown below.
