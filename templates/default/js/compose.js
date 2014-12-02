@@ -651,7 +651,8 @@ function confirm_submit()
         window.onbeforeunload = null;
         $('fullform').submit();
     } else {
-        var relmode  = $('relmode').get('value');
+        // If no schedule dropdown is available, the user has no schedule access, so force normal mode.
+        var relmode  = $('comp-schedule') ? $('relmode').get('value') : 0;
         var summary  = $('comp-summ').get('value');
         var fulltext = CKEDITOR.instances['comp-desc'].getData();
         var feeds    = $$('input[name=feed]:checked').length;
@@ -726,7 +727,7 @@ function confirm_submit()
                                                                                                  }
                                                                                                  $('popspinner').fade('in');
                                                                                                  popbox.disableButtons(true);
-                                                                                                 window.onbeforeunload = null;
+1                                                                                                 window.onbeforeunload = null;
                                                                                                  $('fullform').submit();
                                                                                                }
                         },
