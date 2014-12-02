@@ -651,16 +651,16 @@ function confirm_submit()
         window.onbeforeunload = null;
         $('fullform').submit();
     } else {
+        var relmode  = $('relmode').get('value');
         var summary  = $('comp-summ').get('value');
         var fulltext = CKEDITOR.instances['comp-desc'].getData();
         var feeds    = $$('input[name=feed]:checked').length;
         var levels   = $$('input[name=level]:checked').length;
         var publish  = $('comp-release').getSelected()[0].get("value");
         var pubtime  = $('release_date').get('value');
-        var newspub  = $('comp-srelease').getSelected()[0].get("value");
-        var newstime = $('schedule_date').get('value');
+        var newspub  = $('comp-srelease') ? $('comp-srelease').getSelected()[0].get("value") : '';
+        var newstime = $('schedule_date') ? $('schedule_date').get('value') : '';
         var pubname  = $('preset').get('value');
-        var relmode  = $('relmode').get('value');
 
         var buttons  = [ { title: confirm_messages['cancel'] , color: 'blue', event: function() { popbox.close(); popbox.footer.empty(); }} ];
 
