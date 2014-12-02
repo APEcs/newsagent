@@ -418,10 +418,18 @@ sub _validate_summary_text {
         $args -> {"article"} = "<p>".$args -> {"summary"}."</p>";
         return undef;
 
-    # If there's an article text, but no summary, copy over the first <240 chars
+    # If there's an article text, but no summary, what happens depends on the mode
     } elsif(!$args -> {"summary"} && $nohtml) {
-        $args -> {"summary"} = $self -> truncate_text($nohtml, 240);
-        return undef;
+        # In normal release, copy the first chunk of the article into the summary
+        if($args -> {"relmode"} == 0) {
+            $args -> {"summary"} = $self -> truncate_text($nohtml, 240);
+            return undef;
+
+        # In newsletter mode, just make sure the summary is empty
+        } elsif($args -> {"relmode"} == 1) {
+            $args -> {"summary"} = '';
+            return undef;
+        }
     }
 
     # Last possible case: no summary or article text - complain about it.
@@ -552,6 +560,14 @@ sub _validate_article_fields {
     my $userid = shift;
     my ($errors, $error) = ("", "");
 
+    # Which release mode is the user using? 0 is default, 1 is batch
+    ($args -> {"relmode"}, $error) = $self -> validate_numeric("relmode", {"required" => 1,
+                                                                           "default"  => 0,
+                                                                           "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_RELMODE"),
+                                                                           "min"      => 0,
+                                                                           "max"      => 1});
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
+
     ($args -> {"title"}, $error) = $self -> validate_string("title", {"required" => 0,
                                                                       "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_TITLE"),
                                                                       "maxlen"   => 100});
@@ -582,14 +598,6 @@ sub _validate_article_fields {
     $args -> {"minor_edit"} = $self -> {"cgi"} -> param("minor_edit") ? 1 : 0;
 
     my $sys_levels = $self -> {"article"} -> get_all_levels();
-
-    # Which release mode is the user using? 0 is default, 1 is batch
-    ($args -> {"relmode"}, $error) = $self -> validate_numeric("relmode", {"required" => 1,
-                                                                           "default"  => 0,
-                                                                           "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_RELMODE"),
-                                                                           "min"      => 0,
-                                                                           "max"      => 1});
-    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
     # Release mode 0 is "standard" release - potentially with timed delay.
     if($args -> {"relmode"} == 0) {
