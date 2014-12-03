@@ -14,13 +14,13 @@
                         </dd>
                     </dl>
                     <dl class="input">
-                        <dt><label for="comp-release">{L_COMPOSE_RELEASE}</label></dt>
+                        <dt><label for="comp-srelease">{L_COMPOSE_RELEASE}</label></dt>
                         <dd><select class="fillwide" id="comp-srelease" name="schedule_mode">
                                 ***schedule_mode***
                             </select>
                         </dd>
                     </dl>
-                    <dl class="input">
+                    <dl class="input" id="comp-sreldate">
                         <dt><label for="schedule_date">{L_COMPOSE_RELAFTER}</label></dt>
                         <dd><input class="fillwide datepick" type="text" name="schedule_date" id="schedule_date" size="16" maxlength="16" value="***schedule_date_fmt***" /></dd>
                     </dl>

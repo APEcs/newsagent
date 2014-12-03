@@ -52,43 +52,15 @@ var sdate_picker;
 var feed_levels;
 var sendat_picker = new Array();
 
-function date_control(datefield, tsfield, control)
+function date_control(datefield, tsfield, dateopt, control, picker)
 {
-    var selVal = $(control).getSelected().get("value");
+    var selVal = $(control).getSelected()[0].get("value");
     var disabled = (selVal != 'timed' && selVal != 'after');
 
     $(datefield).set("disabled", disabled);
 
     // clear the contents if the field is disabled
     if(disabled) {
-        $(datefield).set('value', '');
-        $(tsfield).set('value', '');
-    } else if(!$(tsfield).get('value')) {
-        // Create a default date one day from now
-        var defdate = new Date();
-        defdate.setTime(defdate.getTime() + 86400000);
-
-        $(tsfield).set('value', defdate.getTime() / 1000);
-        rdate_picker.select(defdate);
-    } else {
-        var defdate = new Date($(tsfield).get('value') * 1000);
-        rdate_picker.select(defdate);
-    }
-}
-
-
-function release_control(datefield, tsfield, dateopt, presetfield, presetopt, control)
-{
-    var selVal = $(control).getSelected().get("value");
-
-    var datedisabled   = (selVal != 'timed' && selVal != 'after');
-    var presetdisabled = (selVal != 'preset');
-
-    $(datefield).set("disabled", datedisabled);
-    $(presetfield).set("disabled", presetdisabled);
-
-    // clear the contents if the field is disabled
-    if(datedisabled) {
         $(datefield).set('value', '');
         $(tsfield).set('value', '');
         $(dateopt).dissolve();
@@ -99,14 +71,24 @@ function release_control(datefield, tsfield, dateopt, presetfield, presetopt, co
             defdate.setTime(defdate.getTime() + 86400000);
 
             $(tsfield).set('value', defdate.getTime() / 1000);
-            rdate_picker.select(defdate);
+            picker.select(defdate);
         } else {
             var defdate = new Date($(tsfield).get('value') * 1000);
-            rdate_picker.select(defdate);
+            picker.select(defdate);
         }
-
         $(dateopt).reveal();
     }
+}
+
+
+function release_control(datefield, tsfield, dateopt, presetfield, presetopt, control, picker)
+{
+    date_control(datefield, tsfield, dateopt, control, picker);
+
+    var selVal = $(control).getSelected()[0].get("value");
+    var presetdisabled = (selVal != 'preset');
+
+    $(presetfield).set("disabled", presetdisabled);
 
     if(presetdisabled) {
         $(presetfield).set('value', '');
@@ -800,8 +782,8 @@ window.addEvent('domready', function() {
                                                         }
                                                       });
     if($('comp-release')) {
-        $('comp-release').addEvent('change', function() { release_control('release_date', 'rtimestamp', 'comp-reldate', 'preset', 'comp-relpreset', 'comp-release'); });
-        release_control('release_date', 'rtimestamp', 'comp-reldate', 'preset', 'comp-relpreset', 'comp-release');
+        $('comp-release').addEvent('change', function() { release_control('release_date', 'rtimestamp', 'comp-reldate', 'preset', 'comp-relpreset', 'comp-release', rdate_picker); });
+        release_control('release_date', 'rtimestamp', 'comp-reldate', 'preset', 'comp-relpreset', 'comp-release', rdate_picker);
     }
 
     $$('select.notifymode').each(function(element) { setup_notify_picker(element) });
@@ -832,8 +814,8 @@ window.addEvent('domready', function() {
         $('comp-schedule').addEvent('change', function() { set_schedule_sections(); });
         set_schedule_sections();
 
-        $('comp-srelease').addEvent('change', function() { date_control('schedule_date', 'stimestamp', 'comp-srelease'); });
-        date_control('schedule_date', 'stimestamp', 'comp-srelease');
+        $('comp-srelease').addEvent('change', function() { date_control('schedule_date', 'stimestamp', 'comp-sreldate', 'comp-srelease', sdate_picker); });
+        date_control('schedule_date', 'stimestamp', 'comp-sreldate', 'comp-srelease', sdate_picker);
     }
 
     $$('input[name=level]').addEvent('change', function(event) { cascade_levels(event.target); });
