@@ -186,12 +186,18 @@ sub _generate_newsletter_list {
                                                                                                     "***summary***" => $message -> {"summary"}});
             }
 
+            my $reqtitle = "";
+            $reqtitle = $self -> {"template"} -> load_template("newsletter/list/reqsec_title.tem", {"***reqcount***" => $section -> {"required"}})
+                if($section -> {"required"});
+
             $msglist .= $self -> {"template"} -> load_template("newsletter/list/section.tem", {"***title***"    => $section -> {"name"},
                                                                                                "***messages***" => $contents,
                                                                                                "***schedule***" => $newsletter -> {"id"},
                                                                                                "***section***"  => $section -> {"id"},
                                                                                                "***editable***" => $section -> {"editable"} ? "edit" : "noedit",
                                                                                                "***required***" => $section -> {"required"} ? "required" : "",
+                                                                                               "***reqcount***" => $section -> {"required"},
+                                                                                               "***reqtitle***" => $reqtitle,
                                                                                                "***empty***"    => scalar(@{$section -> {"messages"}}) ? "" : "empty"
                                                                });
         }

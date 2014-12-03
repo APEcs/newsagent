@@ -29,3 +29,5 @@ NEWSLETTER_API_BADNAME = Illegal characters detected in newsletter name.
 NEWSLETTER_API_PUBLISHED = Newsletter published successfully!<br /><br />You can view the published article by <a href="***viewurl***">clicking here</a>.
 
 NEWSLETTER_PUBLISHING  = Publishing...
+
+NEWSLETTER_REQUIRED    = required

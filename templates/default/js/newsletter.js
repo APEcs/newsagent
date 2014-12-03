@@ -62,14 +62,19 @@ function check_required_sections()
     var empty_required = false;
 
     $$('div.section.required').each(function(element) {
+        var subid = element.get('id').substr(4);
+        var count = element.getFirst('ul.section').getChildren().length;
+        var required = $('req'+subid).textContent;
 
         // Does the UL inside this element have any children?
-        if(element.getFirst('ul.section').getChildren().length == 0) {
+        if(count < required) {
             empty_required = true;
             element.addClass('empty');
         } else {
             element.removeClass('empty');
         }
+
+        $('count'+subid).set('html', count);
     });
 
     var publish = $('publishbtn');
