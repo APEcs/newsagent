@@ -122,6 +122,7 @@ sub new {
                               "preset"   => "{L_ALIST_RELTEMPLATE}",
                               "next"     => "{L_ALIST_RELNEWSNEXT}",
                               "after"    => "{L_ALIST_RELNEWSAFTER}",
+                              "used"     => "{L_ALIST_RELNEWSUSED}",
                             };
 
     $self -> {"filtermodes"} = [{"name"  => "hidden",
@@ -134,6 +135,8 @@ sub new {
                                  "desc"  => "{L_ALIST_FILTER_RELNEWSNEXT}"},
                                 {"name"  => "after",
                                  "desc"  => "{L_ALIST_FILTER_RELNEWSAFTER}"},
+                                {"name"  => "used",
+                                 "desc"  => "{L_ALIST_FILTER_RELNEWSUSED}"},
                                 {"name"  => "draft" ,
                                  "desc"  => "{L_ALIST_FILTER_RELNONE}"},
                                 {"name"  => "edited",

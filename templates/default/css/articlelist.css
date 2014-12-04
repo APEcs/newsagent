@@ -74,6 +74,10 @@ table.listtable tr td.mode div.after {
     background-position: -144px 0px;
 }
 
+table.listtable tr td.mode div.used {
+    background-position: -160px 0px;
+}
+
 table.listtable tr td.date.timed {
     color: #777;
 }

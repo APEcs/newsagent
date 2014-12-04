@@ -12,6 +12,7 @@ ALIST_RELDELETED     = Deleted
 ALIST_RELTEMPLATE    = Template: ***preset***
 ALIST_RELNEWSNEXT    = Released in next newsletter
 ALIST_RELNEWSAFTER   = Released after ***afterdate***
+ALIST_RELNEWSUSED    = Used in newsletter
 
 ALIST_FILTER_RELHIDDEN      = Hidden
 ALIST_FILTER_RELNOW         = Published
@@ -22,6 +23,7 @@ ALIST_FILTER_RELEDIT        = Edited
 ALIST_FILTER_RELTEMPLATES   = Templates
 ALIST_FILTER_RELNEWSNEXT    = Newsletter (next)
 ALIST_FILTER_RELNEWSAFTER   = Newsletter (timed)
+ALIST_FILTER_RELNEWSUSED    = Used in newsletter
 
 ALIST_CTRLEDIT       = Edit this article
 ALIST_CTRLCLONE      = Clone this article
