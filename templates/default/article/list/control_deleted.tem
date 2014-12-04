@@ -1,3 +1,4 @@
 <ul class="controls">
     <li><div class="control edit"     id="editbtn-a***id***"     onclick="edit_article('***id***');" title="{L_ALIST_CTRLEDIT}"></div></li>
+    <li><div class="control clone"   id="clonebtn-a***id***"  onclick="clone_article('***id***');"  title="{L_ALIST_CTRLCLONE}"></div></li>
 </ul>

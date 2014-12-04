@@ -327,6 +327,13 @@ sub _build_article_row {
         $reldate = $self -> _release_time($article);
     }
 
+    my $params = {};
+    $params -> {"clone"} = "1"
+        if($self -> {"cloneonly"} -> {$article -> {"release_mode"}});
+
+    my $editurl = $self -> build_url(block => "edit",
+                                     pathinfo => [$article -> {"id"}],
+                                     params   => $params);
 
     return $self -> {"template"} -> load_template("article/list/row.tem", {"***modeclass***" => $article -> {"release_mode"},
                                                                            "***modeinfo***"  => $self -> {"relmodes"} -> {$article -> {"release_mode"}},
@@ -341,7 +348,7 @@ sub _build_article_row {
                                                                            "***preset***"    => $article -> {"preset"},
                                                                            "***controls***"  => $self -> {"template"} -> load_template("article/list/control_".$article -> {"release_mode"}.".tem"),
                                                                            "***id***"        => $article -> {"id"},
-                                                                           "***editurl***"   => $self -> build_url(block => "edit", pathinfo => [$article -> {"id"}]),
+                                                                           "***editurl***"   => $editurl,
                                                   });
 }
 

@@ -155,6 +155,10 @@ sub new {
                              "name"  => "{L_COMPOSE_IMG}" },
                           ];
 
+    # Which states allow editing?
+    $self -> {"cloneonly"} = { "hidden" => 1,
+                               "used"   => 1 };
+
     $self -> {"allow_tags"} = [
         "a", "b", "blockquote", "br", "caption", "col", "colgroup", "comment",
         "em", "h1", "h2", "h3", "h4", "h5", "h6", "hr", "li", "ol", "p",
