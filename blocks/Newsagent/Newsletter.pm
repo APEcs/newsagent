@@ -130,9 +130,10 @@ sub build_newsletter {
             $articles = $self -> {"template"} -> load_template($section -> {"empty_tem"})
                 if(!$articles && $section -> {"empty_tem"});
 
-            # If it's still empty, and required, make it as such
-            $articles = $self -> {"template"} -> load_template(path_join($newsletter -> {"template"}, "required-section.tem"))
-                if(!$articles && $section -> {"required"});
+            # If it's not filled, and required, mark it as such
+            $articles .= $self -> {"template"} -> load_template(path_join($newsletter -> {"template"}, "required-section.tem"), {"***count***"    => scalar(@{$section -> {"messages"}}),
+                                                                                                                                 "***required***" => $section -> {"required"}})
+                if($section -> {"required"} && scalar(@{$section -> {"messages"}}) < $section -> {"required"});
 
             # And add this section to the accumulating page
             $body .= $self -> {"template"} -> load_template($section -> {"template"}, {"***articles***" => $articles,
