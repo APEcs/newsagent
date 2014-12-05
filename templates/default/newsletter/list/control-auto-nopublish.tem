@@ -1,1 +1,1 @@
-                     --><li class="msgctrl-nopublish" title="{L_NEWSLETTER_NOPUBLISH}"><img src="{V_[templatepath]}images/newsletter/nopublish.png" width="16" height="16" alt="nopublish" /></li><!--
+                     --><li class="msgctrl-nopublish disabled" title="{L_NEWSLETTER_NOPUBLISH}"><img src="{V_[templatepath]}images/newsletter/nopublish.png" width="16" height="16" alt="nopublish" /></li><!--
