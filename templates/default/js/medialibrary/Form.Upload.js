@@ -25,10 +25,15 @@ provides: Form.Upload
 
 (function() {
 
+// Enable listeners for drag events
+Object.append(Element.NativeEvents, {
+	dragenter: 2, dragleave: 2, dragover: 2, dragend: 2, drop: 2
+});
+
 if (!this.Form) this.Form = {};
 var Form = this.Form;
 
-Form.Upload = new Class({
+Form.Uploader = new Class({
 
     Implements: [Options, Events],
 
@@ -47,38 +52,37 @@ Form.Upload = new Class({
 
         this.setOptions(options);
 
-        this.request = Request.File({ url: this.options.url,
-                                      onRequest: function() { this.progress.setStyles({ display: 'block', width: 0}); },
-                                      onProgress: function(event){
-                                          var loaded = event.loaded, total = event.total;
-                                          this.progress.setStyle('width', parseInt(loaded / total * 100, 10).limit(0, 100) + '%');
-                                      },
-                                      onComplete: function(){
-                                          this.progress.setStyle('width', '100%');
-                                          this.reset();
-                                      },
-                                      onSuccess: function(responseText, responseXML) {
-                                          this.fireEvent('success', responseText, responseXML);
-                                      },
-                                      onFailure: function(xhr) {
-                                          this.fireEvent('failure', xhr);
-                                      }
-                                    });
+        this.request = new Request.File({ url: this.options.url,
+                                          onRequest: function() { this.progress.setStyles({ display: 'block', width: 0}); },
+                                          onProgress: function(event){
+                                              var loaded = event.loaded, total = event.total;
+                                              this.progress.setStyle('width', parseInt(loaded / total * 100, 10).limit(0, 100) + '%');
+                                          },
+                                          onComplete: function(){
+                                              this.progress.setStyle('width', '100%');
+                                              this.reset();
+                                          },
+                                          onSuccess: function(responseText, responseXML) {
+                                              this.fireEvent('success', responseText, responseXML);
+                                          },
+                                          onFailure: function(xhr) {
+                                              this.fireEvent('failure', xhr);
+                                          }
+                                        });
 
-        this.dropArea.addEvents({ dragenter: function() { this.fireEvent('dragenter'); }.bind(this),
-                                  dragleave: function() { this.fireEvent('dragleave'); }.bind(this),
-                                  dragend:   function() { this.fireEvent('dragend'); }.bind(this),
-                                  dragover:  function(event) {
-                                      event.preventDefault();
-                                      this.fireEvent('dragover', event);
-                                  }.bind(this),
-                                  drop: function(event) {
-                                      event.preventDefault();
-                                      var dataTransfer = event.event.dataTransfer;
-                                      if (dataTransfer) this.send(dataTranser.files[0]);
-                                      this.fireEvent('drop', event);
-                                  }.bind(this)
-                                });
+        this.dropArea.addEvent("dragenter", function() { this.fireEvent('dragenter'); }.bind(this));
+        this.dropArea.addEvent("dragleave", function() { this.fireEvent('dragleave'); }.bind(this));
+        this.dropArea.addEvent("dragend",   function() { this.fireEvent('dragend'); }.bind(this));
+        this.dropArea.addEvent("dragover",  function(event) {
+                                   event.preventDefault();
+                                   this.fireEvent('dragover', event);
+                               }.bind(this));
+        this.dropArea.addEvent("drop", function(event) {
+                                   event.preventDefault();
+                                   var dataTransfer = event.event.dataTransfer;
+                                   if (dataTransfer) this.send(dataTransfer.files[0]);
+                                   this.fireEvent('drop', event);
+                               }.bind(this));
     },
 
     send: function(file) {

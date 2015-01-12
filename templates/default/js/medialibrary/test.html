@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Upload Test</title>
+<script src="https://ajax.googleapis.com/ajax/libs/mootools/1.5.1/mootools.js"></script>
+<script src="Request.File.js"></script>
+<script src="Form.Upload.js"></script>
+<link href="test.css" rel="stylesheet" type="text/css" />
+
+<script>
+window.addEvent('domready', function(){
+
+var upload = new Form.Uploader('droparea', 'progress',
+                               { url: 'test.xml',
+                                 onSuccess: function(responseText) { alert(responseText); },
+                                 onFailure: function() { alert("Upload failed!"); },
+                                 onDragenter: function() { $('droparea').addClass('hover'); },
+			                     onDragleave: function() { $('droparea').removeClass('hover'); },
+			                     onDrop: function() { $('droparea').removeClass('hover'); }
+                               });
+});
+</script>
+</head>
+<body>
+    <div id="wrapper">
+        <div id="droparea"><div>Drop image to upload here</div></div>
+        <div id="progressbox"><div id="progress"></div></div>
+    </div>
+</body>
+</html>

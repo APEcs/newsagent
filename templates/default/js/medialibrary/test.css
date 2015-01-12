@@ -1,0 +1,37 @@
+#wrapper {
+	margin: 100px auto;
+	width: 50%;
+}
+
+#droparea {
+	background: #545A74;
+	padding: 10px;
+	clear: both;
+	text-align: center;
+}
+
+#droparea.hover {
+	background: #121a3f;
+}
+
+
+#droparea div {
+	border: #ddd 1px dashed;
+    margin: 0px 0px;
+	color: white;
+	padding: 20px;
+	text-align: center;
+}
+
+#progressbox {
+	margin: 5px 0;
+	height: 15px;
+	background: #545A74;
+}
+
+#progress {
+    display: block;
+    width: 10%;
+	height: 15px;
+	background: #dd5A74;
+}
