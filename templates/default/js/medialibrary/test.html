@@ -17,8 +17,17 @@ var upload = new Form.Uploader('dropzone', 'progress', 'progressmsg',
                                  onFailure: function() { alert("Upload failed!"); },
                                  onDragenter: function() { $('droparea').addClass('hover'); },
 			                     onDragleave: function() { $('droparea').removeClass('hover'); },
-			                     onDrop: function() { $('droparea').removeClass('hover'); }
+			                     onDrop: function() { $('droparea').removeClass('hover'); },
+			                     onRequest: function() { $('droparea').addClass('disabled'); },
+			                     onComplete: function() { $('droparea').removeClass('disabled'); }
                                });
+$('upload').addEvent('change', function() {
+    var file = $('upload').files[0];
+    if(file && file instanceof File) {
+        upload.send(file);
+    }
+});
+
 });
 </script>
 </head>
@@ -26,6 +35,7 @@ var upload = new Form.Uploader('dropzone', 'progress', 'progressmsg',
     <div id="wrapper">
         <div id="droparea"><div id="dropzone">Drop image to upload here</div></div>
         <div id="progressbox"><div id="progress"></div><div id="progressmsg"></div></div>
+        <input name="upload" id="upload" type="file" />
     </div>
 </body>
 </html>

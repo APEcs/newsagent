@@ -14,6 +14,10 @@
 	background: #121a3f;
 }
 
+#droparea.disabled {
+	background: #666;
+}
+
 
 #droparea div {
 	border: #ddd 1px dashed;
