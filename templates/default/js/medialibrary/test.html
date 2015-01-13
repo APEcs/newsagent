@@ -11,7 +11,7 @@
 <script>
 window.addEvent('domready', function(){
 
-var upload = new Form.Uploader('droparea', 'progress',
+var upload = new Form.Uploader('dropzone', 'progress', 'progressmsg',
                                { url: 'test.xml',
                                  onSuccess: function(responseText) { alert(responseText); },
                                  onFailure: function() { alert("Upload failed!"); },
@@ -24,8 +24,8 @@ var upload = new Form.Uploader('droparea', 'progress',
 </head>
 <body>
     <div id="wrapper">
-        <div id="droparea"><div>Drop image to upload here</div></div>
-        <div id="progressbox"><div id="progress"></div></div>
+        <div id="droparea"><div id="dropzone">Drop image to upload here</div></div>
+        <div id="progressbox"><div id="progress"></div><div id="progressmsg"></div></div>
     </div>
 </body>
 </html>
