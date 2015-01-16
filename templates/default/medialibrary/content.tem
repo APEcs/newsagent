@@ -1,0 +1,20 @@
+<div id="ml-body">
+<ul>
+    <li><h3>{L_MEDIA_SELECT}</h3>
+        <div id="selector">
+
+        </div>
+    </li>
+    <li><h3>{L_MEDIA_UPLOAD}</h3>
+        <div id="uploader">
+            <div id="ml-droparea">
+                <div id="ml-dropzone">{L_UPLOADER_DROPHERE}</div>
+            </div>
+            <div id="progressbox">
+                <div id="ml-progress"></div>
+                <div id="ml-progressmsg"></div>
+            </div>
+        </div>
+    </li>
+</ul>
+</div>

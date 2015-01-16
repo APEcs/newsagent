@@ -1,0 +1,4 @@
+MEDIA_SELECT  = Select an image...
+MEDIA_UPLOAD  = ... or upload a new one
+
+UPLOADER_DROPHERE = Drop image to upload here
