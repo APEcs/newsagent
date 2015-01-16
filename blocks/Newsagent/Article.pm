@@ -149,8 +149,6 @@ sub new {
                              "name"  => "{L_COMPOSE_IMGNONE}" },
                             {"value" => "url",
                              "name"  => "{L_COMPOSE_IMGURL}" },
-                            {"value" => "file",
-                             "name"  => "{L_COMPOSE_IMGFILE}" },
                             {"value" => "img",
                              "name"  => "{L_COMPOSE_IMG}" },
                           ];
@@ -753,7 +751,7 @@ sub _build_image_options {
     my $selected = shift;
 
     $selected = "none"
-        unless($selected && ($selected eq "url" || $selected eq "file" || $selected eq "img"));
+        unless($selected && ($selected eq "url" || $selected eq "img"));
 
     return $self -> {"template"} -> build_optionlist($self -> {"imgops"}, $selected);
 }
