@@ -33,3 +33,9 @@
 
     <!-- edit warning and autosave -->
     <script type="text/javascript" src="{V_[jspath]}edittools.js"></script>
+
+    <!-- media library support -->
+    <script type="text/javascript" src="{V_[jspath]}medialibrary/Request.File.js"></script>
+    <script type="text/javascript" src="{V_[jspath]}medialibrary/Form.Upload.js"></script>
+    <script type="text/javascript" src="{V_[jspath]}medialibrary/medialibrary.js"></script>
+    <link href="{V_[templatepath]}css/uploader.css" rel="stylesheet" type="text/css" />
