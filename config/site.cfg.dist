@@ -8,6 +8,7 @@ password = PASSWORD
 auth_methods       = auth_methods
 auth_params        = auth_methods_params
 blocks             = blocks
+language           = language
 logging            = log
 message_queue      = messages_queue
 message_sender     = messages_sender
@@ -22,4 +23,100 @@ keys               = session_keys
 settings           = settings
 users              = users
 
-# Add any other table mappings you need here
+# metdata and role framework support
+metadata          = news_metadata
+metadata_roles    = news_metadata_roles
+metadata_tags     = news_metadata_tags
+metadata_tags_log = news_metadata_tags_log
+role_capabilities = news_role_capabilities
+roles             = news_roles
+tags              = news_tags
+
+# support data
+images            = news_images
+levels            = news_levels
+feeds             = news_feeds
+feedurls          = news_feeds_urls
+
+# article core
+articles          = news_articles
+articlefeeds      = news_article_feeds
+articleimages     = news_article_images
+articlelevels     = news_article_levels
+
+# schedule/newsletter related
+schedules         = news_schedule
+schedule_sections = news_schedule_sections
+schedule_feeds    = news_schedule_feeds
+schedule_levels   = news_schedule_levels
+schedule_images   = news_schedule_images
+schedule_notify   = news_schedule_notifications
+schedule_methdata = news_schedule_methoddata
+articlesection    = news_article_schedule_section
+digests           = news_digest
+articledigest     = news_article_digest_section
+
+# notification related
+notify_prefixes    = news_notify_prefixes
+notify_methods     = news_notify_methods
+notify_meth_cfg    = news_notify_methods_settings
+notify_recipients  = news_notify_recipients
+notify_matrix      = news_notify_recipient_methods
+notify_matrix_cfg  = news_notify_rm_year_settings
+article_notify     = news_article_notify
+article_notify_rms = news_article_notify_rms
+user_settings      = news_users_settings
+
+# documentation
+docs               = news_doclinks
+
+# import handler
+import_meta        = news_import_metainfo
+import_sources     = news_import_sources
+
+# autossaves
+autosave           = news_users_autosave
+
+# tellus
+tellus_messages    = news_tellus_messages
+tellus_queues      = news_tellus_queues
+tellus_notify      = news_tellus_queues_notify
+tellus_types       = news_tellus_types
+
+
+[method:email]
+prefixes          = news_notify_email_prefixes
+data              = news_article_notify_emaildata
+
+[method:twitter]
+data              = news_article_notify_twitterdata
+
+[userdata]
+database          = DBI:mysql:DATABASE
+username          = USERNAME
+password          = PASSWORD
+
+acplans           = academic_plans
+acprogs           = academic_progs
+acyears           = academic_years
+courses           = courses
+user_course       = student_course
+user_plans        = student_plan
+user_progs        = student_prog
+user_years        = student_year_level
+progact           = student_prog_actions
+users             = users
+
+[twitter]
+autocache         = news_twitter_autocache
+consumer_key      = KEY
+consumer_secret   = SECRET
+access_token      = TOKEN
+token_secret      = SECRET
+screen_names      = NAMES
+
+[megaphone]
+default_sleep     = 300
+pidfile           = /var/run/newsagent/megaphone.pid
+stdout_logfile    = /var/log/newsagent/outfile
+stderr_logfile    = /var/log/newsagent/errfile
