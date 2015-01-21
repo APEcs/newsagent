@@ -49,12 +49,16 @@ chomp($ID);
 
 # Remove old links
 `rm js_*`;
+`rm css_*`;
 
 # Set up the new link
 my $err = `ln -s js js_$ID`;
 die "Link creation failed: $err\n" if($err);
 
+$err = `ln -s css css_$ID`;
+die "Link creation failed: $err\n" if($err);
+
 # And update the config with the new id
 $settings -> set_db_config("jsdirid", $ID);
 
-print "Updated javascript directory to js_$ID\n";
+print "Updated javascript directory to js_$ID\nUpdated stylesheet directory to css_$ID\n";

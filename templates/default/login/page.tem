@@ -13,7 +13,7 @@
     <link href="{V_[jspath]}lightface/LightFace.css" rel="stylesheet" type="text/css" />
 
     <!-- any site-specific javascriptery and styles -->
-    <link href="{V_[templatepath]}css/login.css" rel="stylesheet" type="text/css" />
+    <link href="{V_[csspath]}login.css" rel="stylesheet" type="text/css" />
 
     <!-- favicon -->
     <link rel="icon" type="image/png" href="{V_[templatepath]}images/favicon.png" />

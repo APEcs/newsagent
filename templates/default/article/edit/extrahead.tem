@@ -27,7 +27,7 @@
     <!-- newsagent features -->
     <script type="text/javascript" src="{V_[jspath]}api.js"></script>
     <script type="text/javascript" src="{V_[jspath]}compose.js"></script>
-    <link href="{V_[templatepath]}css/compose.css" rel="stylesheet" />
+    <link href="{V_[csspath]}compose.css" rel="stylesheet" />
 
     <script type="text/javascript" src="{V_[jspath]}matrix.js"></script>
 
