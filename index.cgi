@@ -1,6 +1,8 @@
 #!/usr/bin/perl -wT
 # Note: above -w flag should be removed in production, as it will cause warnings in
 # 3rd party modules to appear in the server error log
+# When running through mod_perl, remove the -T flag and use 'PerlSwitches -T'
+# in the apache configuration.
 
 use utf8;
 use v5.12;
@@ -8,9 +10,12 @@ use lib qw(/var/www/webperl);
 use FindBin;
 
 # Work out where the script is, so module and config loading can work.
-my $scriptpath;
+our $scriptpath;
 BEGIN {
-    if($FindBin::Bin =~ /(.*)/) {
+    # Autodetect will fail under mod_perl, so use a hard-coded location.
+    if($ENV{MOD_PERL}) {
+        $scriptpath = "/path/to/newsagent";
+    } elsif($FindBin::Bin =~ /(.*)/) {
         $scriptpath = $1;
     }
 }
@@ -19,7 +24,7 @@ use CGI::Carp qw(fatalsToBrowser set_message); # Catch as many fatals as possibl
 
 use lib "$scriptpath/modules";
 
-my $contact = 'contact@email.address'; # global contact address, for error messages
+our $contact = 'contact@email.address'; # global contact address, for error messages
 
 # System modules
 use CGI::Carp qw(fatalsToBrowser set_message); # Catch as many fatals as possible and send them to the user as well as stderr
@@ -45,6 +50,7 @@ set_message(\&handle_errors);
 
 my $app = Webperl::Application -> new(appuser        => Newsagent::AppUser -> new(),
                                       system         => Newsagent::System -> new(),
-                                      block_selector => Newsagent::BlockSelector -> new())
+                                      block_selector => Newsagent::BlockSelector -> new(),
+                                      config         => "$scriptpath/config/site.cfg")
     or die "Unable to create application";
 $app -> run();
