@@ -1,4 +1,4 @@
-#!/usr/bin/perl -wT
+#!/usr/bin/perl -w
 # Note: above -w flag should be removed in production, as it will cause warnings in
 # 3rd party modules to appear in the server error log
 # When running through mod_perl, remove the -T flag and use 'PerlSwitches -T'
@@ -9,25 +9,28 @@ use v5.12;
 use lib qw(/var/www/webperl);
 use FindBin;
 
-# Work out where the script is, so module and config loading can work.
-our $scriptpath;
+our ($scriptpath, $fallbackpath, $contact);
+
+# Handle very early startup tasks
 BEGIN {
-    # Autodetect will fail under mod_perl, so use a hard-coded location.
+    # Modify these two defaults to suit your environment
+    $fallbackpath = "/home/chris/newsagent";
+    $contact      = 'chris@starforge.co.uk';
+
+    # Location autodetect will fail under mod_perl, so use a hard-coded location.
     if($ENV{MOD_PERL}) {
-        $scriptpath = "/path/to/newsagent";
+        $scriptpath = $fallbackpath;
+
+    # Otherwise use the script's location as the script path
     } elsif($FindBin::Bin =~ /(.*)/) {
         $scriptpath = $1;
     }
 }
 
-use CGI::Carp qw(fatalsToBrowser set_message); # Catch as many fatals as possible and send them to the user as well as stderr
-
 use lib "$scriptpath/modules";
 
-our $contact = 'contact@email.address'; # global contact address, for error messages
-
-# System modules
-use CGI::Carp qw(fatalsToBrowser set_message); # Catch as many fatals as possible and send them to the user as well as stderr
+# Catch as many fatals as possible and send them to the user as well as stderr
+use CGI::Carp qw(fatalsToBrowser set_message);
 
 # Webperl modules
 use Webperl::Application;
