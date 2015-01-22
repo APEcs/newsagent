@@ -14,7 +14,7 @@ our ($scriptpath, $fallbackpath, $contact);
 # Handle very early startup tasks
 BEGIN {
     # Modify these two defaults to suit your environment
-    $fallbackpath = "/home/chris/newsagent";
+    $fallbackpath = "/home/chris/newsagent/newsagent";
     $contact      = 'chris@starforge.co.uk';
 
     # Location autodetect will fail under mod_perl, so use a hard-coded location.
