@@ -79,7 +79,7 @@ sub connect {
 
 
 
-## @method $ diconnect()
+## @method $ disconnect()
 # Check whether a connection to the userdata database is currently available, and
 # disconnect from it if it is. This will also clean up the database handle reference
 # in $self.
