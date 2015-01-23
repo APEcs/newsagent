@@ -89,3 +89,13 @@ button.medialib {
 .loading img {
     vertical-align: middle;
 }
+
+#ml-body ul {
+    margin: 0px;
+    padding: 0px;
+}
+
+#lm-body ul li {
+    list-style-type: none;
+    margin: 0px 0px 10px 0px;
+}

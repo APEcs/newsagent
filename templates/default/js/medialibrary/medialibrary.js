@@ -49,8 +49,35 @@ var MediaLibrary = new Class({
     },
 
     open: function() {
+        // Do nothing if the popup is already open
+        if(this.popup.isOpen) return this;
+
+        // Otherwise clear any old body, and then start the load
         this.loadingBody();
         this.popup.open();
+
+        this.loadReq = new Request.HTML({ url: api_request_path("webapi", "media.open", basepath),
+                                          method: 'post',
+                                          onSuccess: function(espTree, respElems, respHTML) {
+                                              this.popup.messageBox.fade('out').get('tween').chain(function() {
+                                                  this.popup.messageBox.set('html', respHTML);
+
+                                                  this.uploader = new Form.Uploader('ml-dropzone', 'ml-progress', 'ml-progressmsg',
+                                                                                    { url: api_request_path("webapi", "media.upload", basepath),
+                                                                                      onSuccess: function(responseText) { alert(responseText); },
+                                                                                      onFailure: function() { alert("Upload failed!"); },
+                                                                                      onDragenter: function() { $('ml-droparea').addClass('hover'); },
+			                                                                          onDragleave: function() { $('ml-droparea').removeClass('hover'); },
+			                                                                          onDrop: function() { $('ml-droparea').removeClass('hover'); },
+			                                                                          onRequest: function() { $('ml-droparea').addClass('disabled'); },
+			                                                                          onComplete: function() { $('ml-droparea').removeClass('disabled'); }
+                                                                                    });
+
+                                                  this.popup.messageBox.fade('in');
+                                              }.bind(this));
+                                          }.bind(this)
+                                        });
+        this.loadReq.post();
     }
 
 });

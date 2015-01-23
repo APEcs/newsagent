@@ -115,6 +115,23 @@ sub _build_rcount_response {
 }
 
 
+# ============================================================================
+#  Media library API functions
+
+## @method private $ _build_mediaopen_response(void)
+# Generate the HTML to send back in response to a mediaopen API request.
+#
+# @return The HTML to send back to the client.
+sub _build_mediaopen_response {
+    my $self = shift;
+
+    return $self -> {"template"} -> load_template("medialibrary/content.tem");
+}
+
+
+# ============================================================================
+#  Autosave operation API functions
+
 ## @method private $ _build_autosave_response()
 # Save the contents of the subject, summary, and article text to the current
 # user's autosave record. This will replace any autosave data set for the user,
@@ -272,6 +289,9 @@ sub page_display {
             when("auto.save")  { return $self -> api_response($self -> _build_autosave_response());  }
             when("auto.load")  { return $self -> api_response($self -> _build_autoload_response());  }
             when("auto.check") { return $self -> api_response($self -> _build_autocheck_response()); }
+
+            # API operations related to media handling
+            when("media.open") { return $self -> api_html_response($self -> _build_mediaopen_response()); }
 
             default {
                 return $self -> api_response($self -> api_errorhash('bad_op',
