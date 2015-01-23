@@ -85,6 +85,12 @@ sub new {
                                     'used'    => 1
     };
 
+    $self -> {"image_sizes"} = { "icon"  => { '-resize 130x63^ -gravity Center -crop 130x63+0+0 +repage'},
+                                 "media" => { '-resize 128x128^ -gravity Center -crop 128x128+0+0 +repage' },
+                                 "thumb" => { '-resize 350x167^'},
+                                 "large" => { '-resize 512x512\>'}
+    };
+
     return $self;
 }
 
@@ -733,18 +739,25 @@ sub store_image {
     if(my $outdir = $self -> _build_destdir($newid)) {
         # Now build the paths needed for moving things
         my $outname = path_join($outdir, $filename);
-        my $outpath = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_path"}, $outname);
 
-        my ($cleanout) = $outpath =~ m|^((?:/[-\w.]+)+?(?:\.\w+)?)$|;
+        if($self -> _update_location($newid, $outname)) {
+            $self -> {"logger"} -> log('notice', $userid, undef, "Storing image $filename in $outname, image id $newid");
 
-        if(copy($srcfile, $cleanout)) {
-            if($self -> _update_location($newid, $outname)) {
-                $self -> {"logger"} -> log('notice', $userid, undef, "Stored image $filename in $outname, image id $newid");
+            my $converted = 1;
+            # Go through the required sizes, converting the source image
+            foreach my $size (keys(%{$self -> {"image_sizes"}})) {
+                my $outpath = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_path"}, $size, $outname);
+                my ($cleanout) = $outpath =~ m|^((?:/[-\w.]+)+?(?:\.\w+)?)$|;
 
-                return $self -> get_image_info($newid);
+                if(!convert($srcfile, $cleanout, $self -> {"image_sizes"} -> {$size})) {
+                    $converted = 0;
+                    last;
+                }
             }
-        } else {
-            $self -> self_error("Unable to copy image file $filename: $!");
+
+            # If all worked, return the information
+            return $self -> get_image_info($newid)
+                if($converted);
         }
     }
 
@@ -1214,11 +1227,13 @@ sub _build_destdir {
     my ($base, $sub) = $padded =~ /^(\d\d)(\d\d)/;
     my $destdir = path_join($base, $sub, $id);
 
-    # Make sure the path exists
-    my $fullpath = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_path"}, $destdir);
-    eval { make_path($fullpath); };
-    return $self -> self_error("Unable to create image store directory: $@")
-        if($@);
+    # Make sure the paths exist
+    foreach my $size (keys(%{$self -> {"image_sizes"}})) {
+        my $fullpath = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_path"}, $size, $destdir);
+        eval { make_path($fullpath); };
+        return $self -> self_error("Unable to create image store directory: $@")
+            if($@);
+    }
 
     return $destdir;
 }
