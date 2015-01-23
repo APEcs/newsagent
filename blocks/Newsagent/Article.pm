@@ -225,39 +225,6 @@ sub new {
 # ============================================================================
 #  Validation code
 
-## @method @ _validate_article_file($base)
-# Determine whether the file submitted for the specified image submission field is
-# valid, and copy it into the image filestore if needed.
-#
-# @param base The base name of the image submission field.
-# @return Two values: the image id on success, undef on error, and an error message
-#         if needed.
-sub _validate_article_file {
-    my $self = shift;
-    my $base = shift;
-
-    my $filename = $self -> {"cgi"} -> param($base."_file");
-    return (undef, $self -> {"template"} -> replace_langvar("COMPOSE_IMGFILE_ERRNOFILE", {"***field***" => "{L_COMPOSE_".uc($base)."}"}))
-        if(!$filename);
-
-    my $tmpfile = $self -> {"cgi"} -> tmpFileName($filename)
-        or return (undef, $self -> {"template"} -> replace_langvar("COMPOSE_IMGFILE_ERRNOTMP", {"***field***" => "{L_COMPOSE_".uc($base)."}"}));
-
-    my ($name, $path, $extension) = fileparse($filename, '\..*');
-    $filename = $name.$extension;
-    $filename =~ tr/ /_/;
-    $filename =~ s/[^a-zA-Z0-9_.-]//g;
-
-    # By the time this returns, either the file has been copied into the filestore and the
-    # database updated with the file details, or an error has occurred.
-    my $imgdata = $self -> {"article"} -> store_image($tmpfile, $filename, $self -> {"session"} -> get_session_userid())
-        or return (undef, $self -> {"article"} -> errstr());
-
-    # All that _validate_article_image() needs is the new ID
-    return ($imgdata -> {"id"}, undef);
-}
-
-
 ## @method private $ _validate_article_image($args, $imgid)
 # Validate the image field for an article. This checks the values set for one
 # of the possible images attached to an article.
@@ -298,16 +265,6 @@ sub _validate_article_image {
                                                                                                                       "source"     => $self -> {"settings"} -> {"database"} -> {"images"},
                                                                                                                       "where"      => "WHERE `id` = ?"});
                       $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
-        }
-
-        # File upload is more complicated: if the file upload is successful, the image mode is switched to 'img', as
-        # at that point the user is using an existing image; it just happens to be the one they uploaded!
-        when("file") { ($args -> {"images"} -> {$imgid} -> {"img"}, $error) = $self -> _validate_article_file($base);
-                       if($error) {
-                           $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
-                       } else {
-                           $args -> {"images"} -> {$imgid} -> {"mode"} = "img";
-                       }
         }
     }
 

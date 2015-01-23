@@ -56,6 +56,39 @@ sub _explode_matrix {
 
 
 # ============================================================================
+#  Validation code
+
+## @method @ _validate_image_file()
+# Determine whether the file uploaded is valid.
+#
+# @return Two values: the image id on success, undef on error, and an error message
+#         if needed.
+sub _validate_article_file {
+    my $self = shift;
+
+    my $filename = $self -> {"cgi"} -> param("upload");
+    return (undef, $self -> {"template"} -> replace_langvar("MEDIA_ERR_NOIMGDATA"))
+        if(!$filename);
+
+    my $tmpfile = $self -> {"cgi"} -> tmpFileName($filename)
+        or return (undef, $self -> {"template"} -> replace_langvar("MEDIA_ERR_NOTMP"));
+
+    my ($name, $path, $extension) = fileparse($filename, '\..*');
+    $filename = $name.$extension;
+    $filename =~ tr/ /_/;
+    $filename =~ s/[^a-zA-Z0-9_.-]//g;
+
+    # By the time this returns, either the file has been copied into the filestore and the
+    # database updated with the file details, or an error has occurred.
+    my $imgdata = $self -> {"article"} -> store_image($tmpfile, $filename, $self -> {"session"} -> get_session_userid())
+        or return (undef, $self -> {"article"} -> errstr());
+
+    # All that _validate_article_image() needs is the new ID
+    return ($imgdata -> {"id"}, undef);
+}
+
+
+# ============================================================================
 #  API functions
 
 
