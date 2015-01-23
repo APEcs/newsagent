@@ -259,11 +259,28 @@ var LightFace = new Class({
 
     // Loads content
     load: function(content, title) {
-        if(content) this.messageBox.set("html", content);
+        if(content)
+            this.messageBox.set("html", content);
+
         title = title || this.options.title;
-        if(title) this.title.set("html", title).setStyle("display", "block");
-        else this.title.setStyle("display", "none");
+        if(title)
+            this.title.set("html", title).setStyle("display", "block");
+        else
+            this.title.setStyle("display", "none");
+
         this.fireEvent("complete");
+        return this;
+    },
+
+    setContent: function(content) {
+        // Note tyoeOf here, not typeof - the former is the mootools version!
+        if(typeOf(content) === "element") {
+            this.messageBox.getChildren().destroy().empty();
+            this.messageBox.adopt(content);
+            this.fireEvent("complete");
+        } else {
+            this.load(content);
+        }
         return this;
     },
 
