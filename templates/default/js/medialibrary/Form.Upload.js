@@ -42,7 +42,8 @@ Form.Uploader = new Class({
         url: "",
         param: 'upload',
         uploadmsg: 'Uploading file: {loaded} of {total} ({percent}% complete)',
-        donemsg: 'Complete'/*,
+        uploadedmsg: 'Upload complete. Processing image, please wait...',
+        donemsg: 'Upload complete.'/*,
         onSuccess:,
         onFailure:,
         */
@@ -79,11 +80,18 @@ Form.Uploader = new Class({
                                           }.bind(this),
                                           onProgress: function(event) {
                                               var loaded = event.loaded, total = event.total;
-                                              var percent = parseInt(loaded / total * 100, 10).limit(0, 100);
-                                              this.progress.setStyle('width', percent + '%');
-                                              this.progmess.set('html', this.options.uploadmsg.substitute({'loaded': this.filesize_format(loaded),
-                                                                                                           'total': this.filesize_format(total),
-                                                                                                           'percent': percent}));
+                                              // Is the upload still in progress?
+                                              if(loaded < total) {
+                                                  var percent = parseInt(loaded / total * 100, 10).limit(0, 100);
+                                                  this.progress.setStyle('width', percent + '%');
+                                                  this.progmess.set('html', this.options.uploadmsg.substitute({'loaded': this.filesize_format(loaded),
+                                                                                                               'total': this.filesize_format(total),
+                                                                                                               'percent': percent}));
+                                              // Upload has done, waiting on server to process the request
+                                              } else {
+                                                  this.progmess.set('html', this.options.uploadedmsg);
+                                                  this.progress.setStyle('width', '0');
+                                              }
                                           }.bind(this),
                                           onComplete: function(){
                                               this.progress.setStyle('width', '0');
