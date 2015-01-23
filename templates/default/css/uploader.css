@@ -76,3 +76,16 @@ button.medialib {
     font-size: 12px;
     text-shadow: 2px 2px 1px #333;
 }
+
+/* Media selection box styling */
+
+.loading {
+    width: 100%;
+    height: 400px;
+    line-height: 400px;
+    text-align: center;
+}
+
+.loading img {
+    vertical-align: middle;
+}

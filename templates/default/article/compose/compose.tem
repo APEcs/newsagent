@@ -53,6 +53,9 @@ window.addEvent('domready', function() {
     set_visible_levels();
 
     matrix_handler = new Matrix();
+
+    if($('imagea_mediabtn')) new MediaLibrary('imagea_mediabtn', 'imagea_imgid');
+    if($('imageb_mediabtn')) new MediaLibrary('imageb_mediabtn', 'imageb_imgid');
 });
 </script>
 <div id="composeform">
