@@ -2,3 +2,5 @@ MEDIA_SELECT  = Select an image...
 MEDIA_UPLOAD  = ... or upload a new one
 
 UPLOADER_DROPHERE = Drop image to upload here
+
+MEDIA_PERMISSION_NOUPLOAD = You do not have permission to upload images.

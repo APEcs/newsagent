@@ -28,7 +28,7 @@ var MediaLibrary = new Class({
                                                    event: function() { this.selectImage(); }.bind(this) },
                                                  { title: this.options.cancelTxt,
                                                    color: 'blue',
-                                                   event: function() { this.popup.close(); this.load('<div></div>'); }.bind(this) }
+                                                   event: function() { this.popup.close(); this.loadingBody(); }.bind(this) }
                                                ]});
 
         this.button.addEvent('click', function(event) { event.preventDefault();
@@ -64,7 +64,15 @@ var MediaLibrary = new Class({
 
                                                   this.uploader = new Form.Uploader('ml-dropzone', 'ml-progress', 'ml-progressmsg',
                                                                                     { url: api_request_path("webapi", "media.upload", basepath),
-                                                                                      onSuccess: function(responseText) { alert(responseText); },
+                                                                                      onSuccess: function(respText, respXML) {
+                                                                                          var err = respXML.getElementsByTagName("error")[0];
+                                                                                          if(err) {
+                                                                                              $('errboxmsg').set('html', '<p class="error">'+err.getAttribute('info')+'</p>');
+                                                                                              errbox.open();
+                                                                                          } else {
+                                                                                              alert(respText);
+                                                                                          }
+                                                                                      },
                                                                                       onFailure: function() { alert("Upload failed!"); },
                                                                                       onDragenter: function() { $('ml-droparea').addClass('hover'); },
 			                                                                          onDragleave: function() { $('ml-droparea').removeClass('hover'); },

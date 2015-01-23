@@ -101,7 +101,7 @@ Form.Uploader = new Class({
                                               this.fireEvent('complete');
                                           }.bind(this),
                                           onSuccess: function(responseText, responseXML) {
-                                              this.fireEvent('success', responseText, responseXML);
+                                              this.fireEvent('success', [responseText, responseXML]);
                                           }.bind(this),
                                           onFailure: function(xhr) {
                                               this.fireEvent('failure', xhr);

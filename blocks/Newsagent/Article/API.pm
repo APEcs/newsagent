@@ -129,6 +129,18 @@ sub _build_mediaopen_response {
 }
 
 
+sub _build_mediaupload_response {
+    my $self = shift;
+
+    if(!$self -> check_permission("upload")) {
+        $self -> log("error:medialibrary:permission", "User does not have permission to upload");
+
+        return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"template"} -> replace_langvar("MEDIA_PERMISSION_NOUPLOAD")}));
+    }
+
+}
+
+
 # ============================================================================
 #  Autosave operation API functions
 
@@ -291,7 +303,8 @@ sub page_display {
             when("auto.check") { return $self -> api_response($self -> _build_autocheck_response()); }
 
             # API operations related to media handling
-            when("media.open") { return $self -> api_html_response($self -> _build_mediaopen_response()); }
+            when("media.open")   { return $self -> api_html_response($self -> _build_mediaopen_response()); }
+            when("media.upload") { return $self -> api_response($self -> _build_mediaupload_response()); }
 
             default {
                 return $self -> api_response($self -> api_errorhash('bad_op',
