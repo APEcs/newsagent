@@ -25,7 +25,7 @@ use base qw(Newsagent::Article); # This class extends the Newsagent article clas
 use Webperl::Utils qw(is_defined_numeric);
 use File::Basename;
 use v5.12;
-
+use Data::Dumper;
 # ============================================================================
 #  Support functions
 
@@ -62,17 +62,17 @@ sub _explode_matrix {
 ## @method @ _validate_image_file()
 # Determine whether the file uploaded is valid.
 #
-# @return Two values: the image id on success, undef on error, and an error message
+# @return Three values: the image id and media image path on success, undef on error, and an error message
 #         if needed.
 sub _validate_article_file {
     my $self = shift;
 
     my $filename = $self -> {"cgi"} -> param("upload");
-    return (undef, $self -> {"template"} -> replace_langvar("MEDIA_ERR_NOIMGDATA"))
+    return (undef, undef, $self -> {"template"} -> replace_langvar("MEDIA_ERR_NOIMGDATA"))
         if(!$filename);
 
     my $tmpfile = $self -> {"cgi"} -> tmpFileName($filename)
-        or return (undef, $self -> {"template"} -> replace_langvar("MEDIA_ERR_NOTMP"));
+        or return (undef, undef, $self -> {"template"} -> replace_langvar("MEDIA_ERR_NOTMP"));
 
     my ($name, $path, $extension) = fileparse($filename, '\..*');
     $filename = $name.$extension;
@@ -82,10 +82,10 @@ sub _validate_article_file {
     # By the time this returns, either the file has been copied into the filestore and the
     # database updated with the file details, or an error has occurred.
     my $imgdata = $self -> {"article"} -> store_image($tmpfile, $filename, $self -> {"session"} -> get_session_userid())
-        or return (undef, $self -> {"article"} -> errstr());
-
+        or return (undef, undef, $self -> {"article"} -> errstr());
+    print STDERR Dumper($imgdata);
     # All that _validate_article_image() needs is the new ID
-    return ($imgdata -> {"id"}, undef);
+    return ($imgdata -> {"id"}, $imgdata -> {"path"} -> {"media"}, undef);
 }
 
 
@@ -174,13 +174,14 @@ sub _build_mediaupload_response {
 
     # User has permission, validate the submission and store it
     $self -> log("debug:medialibrary:upload", "Permission granted, attempting store of uploaded image");
-    my ($id, $error) = $self -> _validate_article_file();
+    my ($id, $path, $error) = $self -> _validate_article_file();
     return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $error}))
         if($error);
 
     $self -> log("debug:medialibrary:upload", "Store complete, image saved with id $id");
     return { "result" => { "status"  => "saved",
-                           "imageid" => $id
+                           "imageid" => $id,
+                           "path"    => $path
                          }
            };
 }

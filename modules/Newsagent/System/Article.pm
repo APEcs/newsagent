@@ -205,7 +205,12 @@ sub get_image_info {
     $imgh -> execute($id)
         or return $self -> self_error("Unable to execute image lookup: ".$self -> {"dbh"} -> errstr);
 
-    return $imgh -> fetchrow_hashref();
+    my $data = $imgh -> fetchrow_hashref();
+    foreach my $size (keys(%{$self -> {"image_sizes"}})) {
+        $data -> {"path"} -> {$size} = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"}, $size, $data -> {"location"});
+    }
+
+    return $data;
 }
 
 
@@ -1257,13 +1262,18 @@ sub _file_md5_lookup {
     $self -> clear_error();
 
     # Does the md5 match an already present image?
-    my $md5h = $self -> {"dbh"} -> prepare("SELECT *
+    my $md5h = $self -> {"dbh"} -> prepare("SELECT id
                                             FROM `".$self -> {"settings"} -> {"database"} -> {"images"}."`
                                             WHERE `md5` LIKE ?");
     $md5h -> execute($md5)
         or return $self -> self_error("Unable to perform image md5 search: ".$self -> {"dbh"} -> errstr);
 
-    return $md5h -> fetchrow_hashref();
+    my $idrow = $md5h -> fetchrow_arrayref();
+    if($idrow) {
+        return $self -> get_image_info($idrow -> [0]);
+    }
+
+    return undef;
 }
 
 

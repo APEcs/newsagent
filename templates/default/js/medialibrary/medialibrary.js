@@ -70,9 +70,19 @@ var MediaLibrary = new Class({
                                                                                               $('errboxmsg').set('html', '<p class="error">'+err.getAttribute('info')+'</p>');
                                                                                               errbox.open();
                                                                                           } else {
-                                                                                              alert(respText);
+                                                                                              var resp = respXML.getElementsByTagName("result");
+                                                                                              if(resp) {
+                                                                                                  this.idstore.set('value', resp[0].getAttribute('imageid'));
+                                                                                                  this.button.set('html', '<img src="' + resp[0].getAttribute('path') + '" width="128" height="128" />');
+
+                                                                                                  this.popup.close();
+                                                                                                  this.loadingBody();
+                                                                                              } else {
+                                                                                                  $('errboxmsg').set('html', '<p class="error">No result found in response data.</p>');
+                                                                                                  errbox.open();
+                                                                                              }
                                                                                           }
-                                                                                      },
+                                                                                      }.bind(this),
                                                                                       onFailure: function() { alert("Upload failed!"); },
                                                                                       onDragenter: function() { $('ml-droparea').addClass('hover'); },
 			                                                                          onDragleave: function() { $('ml-droparea').removeClass('hover'); },
