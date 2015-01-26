@@ -26,7 +26,6 @@ use Newsagent::System::Feed;
 use Newsagent::System::Schedule;
 use Newsagent::System::Article;
 use Newsagent::System::NotificationQueue;
-use File::Basename;
 use v5.12;
 
 # ============================================================================

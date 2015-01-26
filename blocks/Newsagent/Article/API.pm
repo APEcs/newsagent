@@ -23,6 +23,7 @@ use strict;
 use experimental 'smartmatch';
 use base qw(Newsagent::Article); # This class extends the Newsagent article class
 use Webperl::Utils qw(is_defined_numeric);
+use File::Basename;
 use v5.12;
 
 # ============================================================================
@@ -171,6 +172,17 @@ sub _build_mediaupload_response {
         return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"template"} -> replace_langvar("MEDIA_PERMISSION_NOUPLOAD")}));
     }
 
+    # User has permission, validate the submission and store it
+    $self -> log("debug:medialibrary:upload", "Permission granted, attempting store of uploaded image");
+    my ($id, $error) = $self -> _validate_article_file();
+    return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $error}))
+        if($error);
+
+    $self -> log("debug:medialibrary:upload", "Store complete, image saved with id $id");
+    return { "result" => { "status"  => "saved",
+                           "imageid" => $id
+                         }
+           };
 }
 
 

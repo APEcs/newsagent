@@ -85,10 +85,10 @@ sub new {
                                     'used'    => 1
     };
 
-    $self -> {"image_sizes"} = { "icon"  => { '-resize 130x63^ -gravity Center -crop 130x63+0+0 +repage'},
-                                 "media" => { '-resize 128x128^ -gravity Center -crop 128x128+0+0 +repage' },
-                                 "thumb" => { '-resize 350x167^'},
-                                 "large" => { '-resize 512x512\>'}
+    $self -> {"image_sizes"} = { "icon"  => '-resize 130x63^ -gravity Center -crop 130x63+0+0 +repage',
+                                 "media" => '-resize 128x128^ -gravity Center -crop 128x128+0+0 +repage' ,
+                                 "thumb" => '-resize 350x167^',
+                                 "large" => '-resize 512x512\>'
     };
 
     return $self;
@@ -749,7 +749,7 @@ sub store_image {
                 my $outpath = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_path"}, $size, $outname);
                 my ($cleanout) = $outpath =~ m|^((?:/[-\w.]+)+?(?:\.\w+)?)$|;
 
-                if(!convert($srcfile, $cleanout, $self -> {"image_sizes"} -> {$size})) {
+                if(!$self -> _convert($srcfile, $cleanout, $self -> {"image_sizes"} -> {$size})) {
                     $converted = 0;
                     last;
                 }
@@ -1352,7 +1352,7 @@ sub _delete_image {
 
     $self -> clear_error();
 
-    my $nukeh = $self -> {"dbh"} -> prepare("DELETE FROM `".$self -> {"settings"} -> {"database"} -> {"image"}."`
+    my $nukeh = $self -> {"dbh"} -> prepare("DELETE FROM `".$self -> {"settings"} -> {"database"} -> {"images"}."`
                                              WHERE id = ?");
     $nukeh -> execute($id)
         or return $self -> self_error("Image delete failed: ".$self -> {"dbh"} -> errstr);
@@ -1419,6 +1419,36 @@ sub _add_image_relation {
         if(!$newid);
 
     return $newid;
+}
+
+
+## @method private $ _convert($source, $dest, $operation)
+# Given a source filename and a destination to write it to, apply the specified
+# conversion operation to it.
+#
+# @param source    The name of the image file to convert.
+# @param dest      The destination to write the converted file to.
+# @param operation The ImageMagick operation(s) to apply.
+# @return true on success, undef on error.
+sub _convert {
+    my $self      = shift;
+    my $source    = shift;
+    my $dest      = shift;
+    my $operation = shift;
+
+    # NOTE: this does not use Image::Magick, instead it invokes `convert` directly.
+    # The conversion steps are established to work correctly in convert, and
+    # image conversion is a rare enough operation that the overhead of going out
+    # to another process is not onerous. It could be done using Image::Magick,
+    # but doing so will require replication of the steps `convert` already does
+    # not sure that much effort is worth it, really.
+    my $cmd = join(" ", ($self -> {"settings"} -> {"config"} -> {"Media:convert_path"}, $source, $operation, $dest));
+
+    my $result = `$cmd 2>&1`;
+    return $self -> self_error("Image conversion failed: $result")
+        if($result);
+
+    return 1;
 }
 
 
