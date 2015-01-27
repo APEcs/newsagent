@@ -25,7 +25,7 @@ use base qw(Newsagent::Article); # This class extends the Newsagent article clas
 use Webperl::Utils qw(is_defined_numeric);
 use File::Basename;
 use v5.12;
-use Data::Dumper;
+
 # ============================================================================
 #  Support functions
 
@@ -83,7 +83,7 @@ sub _validate_article_file {
     # database updated with the file details, or an error has occurred.
     my $imgdata = $self -> {"article"} -> store_image($tmpfile, $filename, $self -> {"session"} -> get_session_userid())
         or return (undef, undef, $self -> {"article"} -> errstr());
-    print STDERR Dumper($imgdata);
+
     # All that _validate_article_image() needs is the new ID
     return ($imgdata -> {"id"}, $imgdata -> {"path"} -> {"media"}, undef);
 }
