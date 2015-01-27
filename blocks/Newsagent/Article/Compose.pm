@@ -114,11 +114,6 @@ sub _generate_compose {
     my $imagea_opts = $self -> _build_image_options($args -> {"images"} -> {"a"} -> {"mode"});
     my $imageb_opts = $self -> _build_image_options($args -> {"images"} -> {"b"} -> {"mode"});
 
-    # Pre-existing image options
-    my $fileimages = $self -> {"article"} -> get_file_images();
-    my $imagea_img = $self -> {"template"} -> build_optionlist($fileimages, $args -> {"images"} -> {"a"} -> {"img"});
-    my $imageb_img = $self -> {"template"} -> build_optionlist($fileimages, $args -> {"images"} -> {"b"} -> {"img"});
-
     # Wrap the error in an error box, if needed.
     $error = $self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $error})
         if($error);
@@ -178,8 +173,6 @@ sub _generate_compose {
                                                                                    "***imagebopts***"       => $imageb_opts,
                                                                                    "***imagea_url***"       => $args -> {"images"} -> {"a"} -> {"url"} || "https://",
                                                                                    "***imageb_url***"       => $args -> {"images"} -> {"b"} -> {"url"} || "https://",
-                                                                                   "***imageaimgs***"       => $imagea_img,
-                                                                                   "***imagebimgs***"       => $imageb_img,
                                                                                    "***relmode***"          => $args -> {"relmode"} || 0,
                                                                                    "***userlevels***"       => $feed_levels,
                                                                                    "***levellist***"        => $jslevels,
