@@ -59,13 +59,15 @@ sub _explode_matrix {
 # ============================================================================
 #  Validation code
 
-## @method @ _validate_image_file()
+## @method @ _validate_image_file($mode)
 # Determine whether the file uploaded is valid.
 #
+# @param mode The image mode to return the path for.
 # @return Three values: the image id and media image path on success, undef on error, and an error message
 #         if needed.
 sub _validate_article_file {
     my $self = shift;
+    my $mode = shift;
 
     my $filename = $self -> {"cgi"} -> param("upload");
     return (undef, undef, $self -> {"template"} -> replace_langvar("MEDIA_ERR_NOIMGDATA"))
@@ -81,11 +83,11 @@ sub _validate_article_file {
 
     # By the time this returns, either the file has been copied into the filestore and the
     # database updated with the file details, or an error has occurred.
-    my $imgdata = $self -> {"article"} -> store_image($tmpfile, $filename, $self -> {"session"} -> get_session_userid())
+    my $imgdata = $self -> {"article"} -> {"images"} -> store_image($tmpfile, $filename, $self -> {"session"} -> get_session_userid())
         or return (undef, undef, $self -> {"article"} -> errstr());
 
     # All that _validate_article_image() needs is the new ID
-    return ($imgdata -> {"id"}, $imgdata -> {"path"} -> {"media"}, undef);
+    return ($imgdata -> {"id"}, $imgdata -> {"path"} -> {$mode}, undef);
 }
 
 
@@ -174,7 +176,12 @@ sub _build_mediaupload_response {
 
     # User has permission, validate the submission and store it
     $self -> log("debug:medialibrary:upload", "Permission granted, attempting store of uploaded image");
-    my ($id, $path, $error) = $self -> _validate_article_file();
+
+    my ($mode, $moderr) = $self -> validate_options('mode', { "required" => 0,
+                                                              "default"  => "media",
+                                                              "source"   => ["icon", "media", "thumb", "large"]});
+
+    my ($id, $path, $error) = $self -> _validate_article_file($mode);
     return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $error}))
         if($error);
 

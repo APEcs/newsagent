@@ -43,7 +43,8 @@ Form.Uploader = new Class({
         param: 'upload',
         uploadmsg: 'Uploading file: {loaded} of {total} ({percent}% complete)',
         uploadedmsg: 'Upload complete. Processing image, please wait...',
-        donemsg: 'Upload complete.'/*,
+        donemsg: 'Upload complete.',
+        args: { }/*,
         onSuccess:,
         onFailure:,
         */
@@ -143,6 +144,11 @@ Form.Uploader = new Class({
         // Reset the request before sending the file, to be sure it can't be sent twice.
         this.request.reset();
         this.request.append(this.options.param, file);
+
+        Object.each(this.options.args, function(value, key) {
+            this.request.append(key, value);
+        }.bind(this));
+
         this.request.send();
 
         return this;

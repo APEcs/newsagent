@@ -21,7 +21,7 @@ package Newsagent::System::Article;
 
 use strict;
 use experimental 'smartmatch';
-use base qw(Webperl::SystemModule); # This class extends the Newsagent block class
+use base qw(Webperl::SystemModule); # This class extends the system module class
 use v5.12;
 
 use DateTime;
@@ -33,7 +33,7 @@ use Data::Dumper;
 #  Constructor
 
 ## @cmethod $ new(%args)
-# Create a new Article object to manage tag allocation and lookup.
+# Create a new Article object to manage article creation, updating, and retrieval.
 # The minimum values you need t provide are:
 #
 # * dbh       - The database handle to use for queries.
@@ -1044,43 +1044,6 @@ sub _update_autosave {
 
 # ==============================================================================
 #  Private methods
-
-## @method private $ _build_destdir($id)
-# Given a file id, determine which directory the corresponding file should be stored
-# in, and ensure that the directory tree is in place for it. Note that this will
-# create a hierarchy of directories, up to 100 directories (00 to 99) at the top
-# level, and with up to 100 directories (again, 0 to 99) in each of the top-level
-# directories. This is to reduce the number of files and directories present in
-# any single directory to help out filesystems that struggle with lots of either.
-#
-# @param id The ID of the file to store.
-# @return A path to store the file in, relative to Article:upload_image_path, on success.
-#         undef on error.
-sub _build_destdir {
-    my $self = shift;
-    my $id   = shift;
-
-    $self -> clear_error();
-
-    # Pad the id with zeros out to at least 4 characters
-    my $pad    = 4 - length($id);
-    my $padded = $pad > 0 ? ("0" x $pad).$id : $id;
-
-    # Now pull out the bits, and rejoin them into the required form
-    my ($base, $sub) = $padded =~ /^(\d\d)(\d\d)/;
-    my $destdir = path_join($base, $sub, $id);
-
-    # Make sure the paths exist
-    foreach my $size (keys(%{$self -> {"image_sizes"}})) {
-        my $fullpath = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_path"}, $size, $destdir);
-        eval { make_path($fullpath); };
-        return $self -> self_error("Unable to create image store directory: $@")
-            if($@);
-    }
-
-    return $destdir;
-}
-
 
 ## @method private $ _get_level_byname($name)
 # Obtain the ID of the level with the specified name, if possible.

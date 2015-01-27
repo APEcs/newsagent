@@ -54,7 +54,7 @@ window.addEvent('domready', function() {
 
     matrix_handler = new Matrix();
 
-    if($('imagea_mediabtn')) new MediaLibrary('imagea_mediabtn', 'imagea_imgid');
+    if($('imagea_mediabtn')) new MediaLibrary('imagea_mediabtn', 'imagea_imgid', { mode: 'icon' });
     if($('imageb_mediabtn')) new MediaLibrary('imageb_mediabtn', 'imageb_imgid');
 });
 </script>

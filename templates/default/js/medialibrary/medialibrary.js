@@ -7,6 +7,7 @@ var MediaLibrary = new Class({
         selectTxt: 'Select',
         cancelTxt: 'Cancel',
         loadingTxt: 'Loading, please wait...',
+        mode: 'media', /* valid values: icon, media, thumb, large */
         width: '1000px'
     },
 
@@ -64,6 +65,7 @@ var MediaLibrary = new Class({
 
                                                   this.uploader = new Form.Uploader('ml-dropzone', 'ml-progress', 'ml-progressmsg',
                                                                                     { url: api_request_path("webapi", "media.upload", basepath),
+                                                                                      args: {'mode': this.options.mode },
                                                                                       onSuccess: function(respText, respXML) {
                                                                                           var err = respXML.getElementsByTagName("error")[0];
                                                                                           if(err) {
@@ -73,7 +75,7 @@ var MediaLibrary = new Class({
                                                                                               var resp = respXML.getElementsByTagName("result");
                                                                                               if(resp) {
                                                                                                   this.idstore.set('value', resp[0].getAttribute('imageid'));
-                                                                                                  this.button.set('html', '<img src="' + resp[0].getAttribute('path') + '" width="128" height="128" />');
+                                                                                                  this.button.set('html', '<img src="' + resp[0].getAttribute('path') + '" />');
 
                                                                                                   this.popup.close();
                                                                                                   this.loadingBody();

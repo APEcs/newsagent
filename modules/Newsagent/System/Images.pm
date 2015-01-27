@@ -1,9 +1,27 @@
+## @file
+# This file contains the implementation of the image handling code.
+#
+# @author  Chris Page &lt;chris@starforge.co.uk&gt;
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+## @class
 package Newsagent::System::Images;
 
 use strict;
 use experimental 'smartmatch';
-use base qw(Webperl::SystemModule); # This class extends the Newsagent block class
+use base qw(Webperl::SystemModule); # This class extends the system module class
 use v5.12;
 
 use Digest;
@@ -148,7 +166,7 @@ sub store_image {
     my $exists = $self -> _md5_lookup($md5);
     if($exists || $self -> errstr()) {
         # Log the duplicate hit if appropriate.
-        $self -> {"logger"} -> log('notice', $userid, undef, "Request to store image $filename, already exists as image ".$exists -> {"id"})
+        $self -> {"logger"} -> log('notice', $userid, undef, "Request to store image $filename, already exists as image $exists")
             if($exists);
 
         return $exists ? $self -> get_image_info($exists) : undef;
@@ -266,6 +284,43 @@ sub add_image_relation {
         if(!$newid);
 
     return $newid;
+}
+
+
+## @method private $ _build_destdir($id)
+# Given a file id, determine which directory the corresponding file should be stored
+# in, and ensure that the directory tree is in place for it. Note that this will
+# create a hierarchy of directories, up to 100 directories (00 to 99) at the top
+# level, and with up to 100 directories (again, 0 to 99) in each of the top-level
+# directories. This is to reduce the number of files and directories present in
+# any single directory to help out filesystems that struggle with lots of either.
+#
+# @param id The ID of the file to store.
+# @return A path to store the file in, relative to Article:upload_image_path, on success.
+#         undef on error.
+sub _build_destdir {
+    my $self = shift;
+    my $id   = shift;
+
+    $self -> clear_error();
+
+    # Pad the id with zeros out to at least 4 characters
+    my $pad    = 4 - length($id);
+    my $padded = $pad > 0 ? ("0" x $pad).$id : $id;
+
+    # Now pull out the bits, and rejoin them into the required form
+    my ($base, $sub) = $padded =~ /^(\d\d)(\d\d)/;
+    my $destdir = path_join($base, $sub, $id);
+
+    # Make sure the paths exist
+    foreach my $size (keys(%{$self -> {"image_sizes"}})) {
+        my $fullpath = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_path"}, $size, $destdir);
+        eval { make_path($fullpath); };
+        return $self -> self_error("Unable to create image store directory: $@")
+            if($@);
+    }
+
+    return $destdir;
 }
 
 
