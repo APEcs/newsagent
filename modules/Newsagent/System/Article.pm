@@ -352,11 +352,9 @@ sub get_feed_articles {
                                                   AND `artfeeds`.`article_id` = ?
                                                   ORDER BY `feed`.`name`");
 
-        my $imageh = $self -> {"dbh"} -> prepare("SELECT `image`.*, `artimgs`.`order`
-                                                  FROM `".$self -> {"settings"} -> {"database"} -> {"images"}."` AS `image`,
-                                                       `".$self -> {"settings"} -> {"database"} -> {"articleimages"}."` AS `artimgs`
-                                                  WHERE `image`.`id` = `artimgs`.`image_id`
-                                                  AND `artimgs`.`article_id` = ?
+        my $imageh = $self -> {"dbh"} -> prepare("SELECT `artimgs`.`image_id`, `artimgs`.`order`
+                                                  FROM `".$self -> {"settings"} -> {"database"} -> {"articleimages"}."` AS `artimgs`
+                                                  WHERE `artimgs`.`article_id` = ?
                                                   ORDER BY `artimgs`.`order`");
 
         foreach my $article (@{$articles}) {
@@ -379,7 +377,7 @@ sub get_feed_articles {
             $article -> {"images"} = [];
             # Place the images into the images array based using the order as the array position
             while(my $image = $imageh -> fetchrow_hashref()) {
-                $article -> {"images"} -> [$image -> {"order"}] = $image;
+                $article -> {"images"} -> [$image -> {"order"}] = $self -> get_image_info($image -> {"image_id"});
             }
 
             # Fetch the year info
@@ -634,11 +632,9 @@ sub get_article {
                                              AND `artfeeds`.`article_id` = ?
                                              ORDER BY `feed`.`name`");
 
-    my $imageh = $self -> {"dbh"} -> prepare("SELECT `image`.*, `artimgs`.`order`
-                                              FROM `".$self -> {"settings"} -> {"database"} -> {"images"}."` AS `image`,
-                                                   `".$self -> {"settings"} -> {"database"} -> {"articleimages"}."` AS `artimgs`
-                                              WHERE `image`.`id` = `artimgs`.`image_id`
-                                              AND `artimgs`.`article_id` = ?
+    my $imageh = $self -> {"dbh"} -> prepare("SELECT `artimgs`.`image_id`, `artimgs`.`order`
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {"articleimages"}."` AS `artimgs`
+                                              WHERE `artimgs`.`article_id` = ?
                                               ORDER BY `artimgs`.`order`");
     $articleh -> execute($articleid)
         or return $self -> self_error("Unable to execute article query: ".$self -> {"dbh"} -> errstr);
@@ -672,7 +668,7 @@ sub get_article {
         or return $self -> self_error("Unable to execute article image query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
     my $images = $imageh -> fetchall_arrayref({});
     foreach my $image (@{$images}) {
-        $article -> {"images"} -> [$image -> {"order"}] = $image;
+        $article -> {"images"} -> [$image -> {"order"}] = $self -> get_image_info($image -> {"image_id"});
     }
 
     return $article;
