@@ -731,13 +731,13 @@ sub store_image {
         $self -> {"logger"} -> log('notice', $userid, undef, "Request to store image $filename, already exists as image ".$exists -> {"id"})
             if($exists);
 
-        return $exists;
+        return $exists ? $self -> get_image_info($exists) : undef;
     }
 
     # File does not appear to be a duplicate, so moving it into the tree should be okay.
     # The first stage of this is to obtain a new file record ID to use as a unique
     # directory name.
-    my $newid = $self -> _add_file($filename, $md5)
+    my $newid = $self -> _add_file($filename, $md5, $userid)
         or return undef;
 
     # Convert the id to a destination directory
@@ -1253,8 +1253,7 @@ sub _build_destdir {
 # Mandelbrot set.
 #
 # @param md5 The hex-encoded MD5 digest to search for
-# @return A reference to an image record hash on success, undef if the md5 does
-#         not exist, or on error.
+# @return The ID of the image on success, undef if the md5 does not exist, or on error.
 sub _file_md5_lookup {
     my $self = shift;
     my $md5  = shift;
@@ -1269,31 +1268,29 @@ sub _file_md5_lookup {
         or return $self -> self_error("Unable to perform image md5 search: ".$self -> {"dbh"} -> errstr);
 
     my $idrow = $md5h -> fetchrow_arrayref();
-    if($idrow) {
-        return $self -> get_image_info($idrow -> [0]);
-    }
-
-    return undef;
+    return $idrow ? $idrow -> [0] : undef;
 }
 
 
-## @method private $ _add_file($name, $md5)
+## @method private $ _add_file($name, $md5, $userid)
 # Add an entry for a file to the images table.
 #
-# @param name The name of the image file to add.
-# @param md5  The md5 of the image file being added.
+# @param name   The name of the image file to add.
+# @param md5    The md5 of the image file being added.
+# @param userid The ID of the user adding the image.
 # @return The id of the new image file row on success, undef on error.
 sub _add_file {
-    my $self = shift;
-    my $name = shift;
-    my $md5  = shift;
+    my $self   = shift;
+    my $name   = shift;
+    my $md5    = shift;
+    my $userid = shift;
 
     $self -> clear_error();
 
     my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"images"}."`
-                                            (type, md5, name)
-                                            VALUES('file', ?, ?)");
-    my $rows = $newh -> execute($md5, $name);
+                                            (type, md5, name, uploader, uploaded)
+                                            VALUES('file', ?, ?, ?, UNIX_TIMESTAMP())");
+    my $rows = $newh -> execute($md5, $name, $userid);
     return $self -> self_error("Unable to perform image file insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Image file insert failed, no rows inserted") if($rows eq "0E0");
 
