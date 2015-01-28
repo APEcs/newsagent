@@ -93,7 +93,7 @@ var MediaLibrary = new Class({
 			                                                                          onComplete: function() { $('ml-droparea').removeClass('disabled'); }
                                                                                     });
 
-                                                  this.attachClickListeners();
+                                                  this.attachClickListeners($$('div.selector-image'));
                                                   this.popup.messageBox.fade('in');
                                               }.bind(this));
                                           }.bind(this)
@@ -101,8 +101,8 @@ var MediaLibrary = new Class({
         this.loadReq.post({ 'mode': this.options.mode });
     },
 
-    attachClickListeners: function() {
-        $$('div.selector-image').each(function(element) {
+    attachClickListeners: function(elements) {
+        elements.each(function(element) {
             element.removeEvents('click');
             element.medialib = this;
 
