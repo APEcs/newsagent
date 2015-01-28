@@ -93,11 +93,30 @@ var MediaLibrary = new Class({
 			                                                                          onComplete: function() { $('ml-droparea').removeClass('disabled'); }
                                                                                     });
 
+                                                  this.attachClickListeners();
                                                   this.popup.messageBox.fade('in');
                                               }.bind(this));
                                           }.bind(this)
                                         });
         this.loadReq.post({ 'mode': this.options.mode });
+    },
+
+    attachClickListeners: function() {
+        $$('div.selector-image').each(function(element) {
+            element.removeEvents('click');
+            element.medialib = this;
+
+            element.addEvent('click', function(event) {
+                var id  = this.get('id').substr(4);
+                var img = this.getElement('img');
+                var medialib = this.medialib;
+
+                medialib.idstore.set('value', id);
+                medialib.button.set('html', '<img src="' + img.getAttribute('src') + '" />');
+                medialib.popup.close();
+                medialib.loadingBody();
+            });
+        }.bind(this));
     }
 
 });
