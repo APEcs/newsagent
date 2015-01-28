@@ -28,7 +28,7 @@ use Digest;
 use File::Path qw(make_path);
 use File::Copy;
 use File::Type;
-use Webperl::Utils qw(path_join);
+use Webperl::Utils qw(path_join trimspace);
 
 
 ## @cmethod $ new(%args)
@@ -63,34 +63,72 @@ sub new {
 }
 
 
-## @method $ get_file_images()
+## @method $ get_file_images($userid, $sortfield, $offset, $count)
 # Obtain a list of all images currently stored in the system. This generates
-# a list of images suitable for presenting the user with a dropdown from
-# which they can select an already uploaded image file.
+# a list of images, including all the image data needed for the media library.
 #
+# @param userid The ID of the user to filter the images by. If zero or undef,
+#               images by all users are included.
+# @param sortfield The field to sort the images on. Valid values are 'uploaded' and 'name'
+# @param offset    The offset to start fetching images from.
+# @param count     The number of images to fetch.
 # @return A reference to an array of hashrefs to image data.
 sub get_file_images {
-    my $self = shift;
+    my $self      = shift;
+    my $userid    = shift;
+    my $sortfield = shift;
+    my $offset    = shift;
+    my $count     = shift;
 
     $self -> clear_error();
 
-    my $imgh = $self -> {"dbh"} -> prepare("SELECT id, name, location
-                                            FROM `".$self -> {"settings"} -> {"database"} -> {"images"}."`
-                                            WHERE `type` = 'file'
-                                            ORDER BY `name`");
-    $imgh -> execute()
-        or return $self -> self_error("Unable to execute image list query: ".$self -> {"dbh"} -> errstr);
+    my $query = "SELECT `i`.*, `u`.`username`, `u`.`realname`, `u`.`email`
+                 FROM `".$self -> {"settings"} -> {"database"} -> {"images"}."` AS `i`,
+                      `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `u`
+                 WHERE `i`.`type` = 'file'
+                 AND `u`.`user_id` = `i`.`uploader`";
 
-    my @imagelist;
-    while(my $image = $imgh -> fetchrow_hashref()) {
-        # NOTE: no need to do permission checks here - all users have access to
-        # all images (as there's bugger all the system can do to prevent it)
-        push(@imagelist, {"name"  => $image -> {"name"},
-                          "title" => path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"}, $image -> {"location"}),
-                          "value" => $image -> {"id"}});
+    my @params = ();
+    if($userid) {
+        $query .= " AND `uploader` = ? ";
+        push(@params, $userid);
     }
 
-    return \@imagelist;
+    my $way;
+    given($sortfield) {
+        when("uploaded") { $way = "DESC"; }
+        when("name")     { $way = "ASC"; }
+        default {
+            $sortfield = "uploaded";
+            $way       = "DESC";
+        }
+    }
+
+    $query .= " ORDER BY `$sortfield` $way LIMIT $offset,$count";
+
+    my $imgh = $self -> {"dbh"} -> prepare($query);
+    $imgh -> execute(@params)
+        or return $self -> self_error("Unable to execute image list query: ".$self -> {"dbh"} -> errstr);
+
+    my $results = $imgh -> fetchall_arrayref({})
+        or return $self -> self_error("Unable to fetch image list query: ".$self -> {"dbh"} -> errstr);
+
+    foreach my $image (@{$results}) {
+        # Work out the user's name
+        $image -> {"fullname"} = $image -> {"realname"} || $image -> {"username"};
+
+        # Make the user gravatar hash
+        my $digest = Digest -> new("MD5");
+        $digest -> add(lc(trimspace($image -> {"email"} || "")));
+        $image -> {"gravatar_hash"} = $digest -> hexdigest;
+
+        # And build the loading paths
+        foreach my $size (keys(%{$self -> {"image_sizes"}})) {
+            $image -> {"path"} -> {$size} = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"}, $size, $image -> {"location"});
+        }
+    }
+
+    return $results;
 }
 
 

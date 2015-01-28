@@ -90,12 +90,94 @@ button.medialib {
     vertical-align: middle;
 }
 
-#ml-body ul {
+#ml-body {
     margin: 0px;
     padding: 0px;
 }
 
-#lm-body ul li {
+#ml-body > li {
     list-style-type: none;
-    margin: 0px 0px 10px 0px;
+    margin: 0px;
+}
+
+div.controlbox {
+    text-align: right;
+    margin: 3px 0px;
+}
+
+#selector {
+    height: 390px;
+    overflow-x: hidden;
+    overflow-y: scroll;
+}
+
+.selector-image {
+    display: inline-block;
+    margin: 3px;
+    padding: 2px;
+    position: relative;
+    border: 1px solid #666;
+    overflow: hidden;
+    width: 130px;
+}
+
+.selector-image:hover {
+    border: 1px solid #07F;
+    box-shadow: 0 0 5px rgba(0, 0, 255, 1);
+    -webkit-box-shadow: 0 0 5px rgba(0, 0, 255, 1);
+    -moz-box-shadow: 0 0 5px rgba(0, 0, 255, 1);
+
+}
+
+.selector-image.media {
+    height: 128px;
+}
+
+.selector-image.icon {
+    height: 80px;
+}
+
+.selector-imgcore {
+    position: relative;
+    text-align: center;
+}
+
+.selector-image.icon .selector-imgcore {
+    margin-top: 8px;
+}
+
+div.selector-imgname, ul.selector-imgmeta {
+    position: absolute;
+    display: none;
+    left: 0px;
+    width: 100%;
+    background-color: rgba(128, 128, 128, 0.6);
+    margin: 0px;
+    padding: 2px;
+    color: #fff;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+div.selector-imgname {
+    font-size: 11px;
+    font-weight: bold;
+    padding: 4px;
+    width: 124px;
+    top: 0px;
+}
+
+ul.selector-imgmeta {
+    font-size: 9px;
+    bottom: 0px;
+}
+
+.selector-image:hover .selector-imgname, .selector-image:hover .selector-imgmeta {
+    display: block;
+}
+
+.selector-imgmeta li {
+    list-style-type: none;
+    padding: 0px;
+    margin: 0px;
 }

@@ -84,7 +84,7 @@ sub _validate_article_file {
     # By the time this returns, either the file has been copied into the filestore and the
     # database updated with the file details, or an error has occurred.
     my $imgdata = $self -> {"article"} -> {"images"} -> store_image($tmpfile, $filename, $self -> {"session"} -> get_session_userid())
-        or return (undef, undef, $self -> {"article"} -> errstr());
+        or return (undef, undef, $self -> {"article"} -> {"images"} -> errstr());
 
     # All that _validate_article_image() needs is the new ID
     return ($imgdata -> {"id"}, $imgdata -> {"path"} -> {$mode}, undef);
@@ -154,6 +154,42 @@ sub _build_rcount_response {
 # ============================================================================
 #  Media library API functions
 
+## @method private $ _build_media_selector($userid, $sortfield, $offset, $count)
+# Generate a string containing media selector boxes.
+#
+# @param userid The ID of the user to filter the images by. If zero or undef,
+#               images by all users are included.
+# @param sortfield The field to sort the images on. Valid values are 'uploaded' and 'name'
+# @param offset    The offset to start fetching images from.
+# @param count     The number of images to fetch.
+# @return A string containing the selector HTML.
+sub _build_media_selector {
+    my $self      = shift;
+    my $mode      = shift;
+    my $userid    = shift;
+    my $sortfield = shift;
+    my $offset    = shift;
+    my $count     = shift;
+
+    my $images = $self -> {"article"} -> {"images"} -> get_file_images($userid, $sortfield, $offset, $count);
+    my $selector = "";
+
+    foreach my $image (@{$images}) {
+        $selector .= $self -> {"template"} -> load_template("medialibrary/image.tem",
+                                                            { "***mode***"     => $mode,
+                                                              "***id***"       => $image -> {"id"},
+                                                              "***url***"      => $image -> {"path"} -> {$mode},
+                                                              "***name***"     => $image -> {"name"},
+                                                              "***user***"     => $image -> {"fullname"},
+                                                              "***gravhash***" => $image -> {"gravatar_hash"},
+                                                              "***uploaded***" => $self -> {"template"} -> fancy_time($image -> {"uploaded"}, 0, 1)
+                                                            });
+    }
+
+    return $selector;
+}
+
+
 ## @method private $ _build_mediaopen_response(void)
 # Generate the HTML to send back in response to a mediaopen API request.
 #
@@ -161,10 +197,25 @@ sub _build_rcount_response {
 sub _build_mediaopen_response {
     my $self = shift;
 
-    return $self -> {"template"} -> load_template("medialibrary/content.tem");
+    my ($mode, $moderr) = $self -> validate_options('mode', { "required" => 0,
+                                                              "default"  => "media",
+                                                              "source"   => ["icon", "media"]});
+
+    return $self -> {"template"} -> load_template("medialibrary/content.tem",
+                                                  { "***initial***" => $self -> _build_media_selector($mode,
+                                                                                                      undef,
+                                                                                                      'uploaded',
+                                                                                                      0,
+                                                                                                      $self -> {"settings"} -> {"config"} -> {"Media:initial_count"})
+                                                  }
+                                                 );
 }
 
 
+## @method private $ _build_mediaupload_response(void)
+# Generate the respose to send back for a mediaupload API request.
+#
+# @return A hash containing the API response.
 sub _build_mediaupload_response {
     my $self = shift;
 

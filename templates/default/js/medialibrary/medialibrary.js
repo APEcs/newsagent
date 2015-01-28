@@ -23,7 +23,7 @@ var MediaLibrary = new Class({
                                       zIndex: 8001,
                                       pad: 200,
                                       width: "1000px",
-                                      height: "420px",
+                                      height: "560px",
                                       buttons: [ { title: this.options.selectTxt,
                                                    color: 'blue',
                                                    event: function() { this.selectImage(); }.bind(this) },
@@ -97,7 +97,7 @@ var MediaLibrary = new Class({
                                               }.bind(this));
                                           }.bind(this)
                                         });
-        this.loadReq.post();
+        this.loadReq.post({ 'mode': this.options.mode });
     }
 
 });

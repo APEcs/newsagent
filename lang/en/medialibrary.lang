@@ -1,7 +1,19 @@
 MEDIA_SELECT  = Select an image...
 MEDIA_UPLOAD  = ... or upload a new one
 
-UPLOADER_DROPHERE = Drop image to upload here
+UPLOADER_DROPHERE = Drop an image file to upload here
+
+MEDIA_SHOW       = Show uploads by:
+MEDIA_SHOW_ALL   = All users
+MEDIA_SHOW_ME    = Me only
+
+MEDIA_ORDER      = Order by:
+MEDIA_ORDER_AGE  = Age, newest first.
+MEDIA_ORDER_NAME = Name
+
+MEDIA_NAME       = Name
+MEDIA_USER       = By
+MEDIA_ADDED      = Added
 
 MEDIA_PERMISSION_NOUPLOAD = You do not have permission to upload images.
 
