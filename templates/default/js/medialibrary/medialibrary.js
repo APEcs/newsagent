@@ -8,13 +8,15 @@ var MediaLibrary = new Class({
         cancelTxt: 'Cancel',
         loadingTxt: 'Loading, please wait...',
         mode: 'media', /* valid values: icon, media, thumb, large */
-        width: '1000px'
+        width: '1000px',
+        loadCount: 12
     },
 
     initialize: function(button, idstore, options) {
         this.button  = $(button);
         this.idstore = $(idstore);
         this.setOptions(options);
+        this.streaming = false;
 
         this.popup   = new LightFace({title: this.options.title,
                                       draggable: false,
@@ -77,8 +79,8 @@ var MediaLibrary = new Class({
                                                                                                   this.idstore.set('value', resp[0].getAttribute('imageid'));
                                                                                                   this.button.set('html', '<img src="' + resp[0].getAttribute('path') + '" />');
 
-                                                                                                  this.popup.close();
-                                                                                                  this.loadingBody();
+                                                                                                  //this.popup.close();
+                                                                                                  //this.loadingBody();
                                                                                               } else {
                                                                                                   $('errboxmsg').set('html', '<p class="error">No result found in response data.</p>');
                                                                                                   errbox.open();
@@ -94,6 +96,7 @@ var MediaLibrary = new Class({
                                                                                     });
 
                                                   this.attachClickListeners($$('div.selector-image'));
+                                                  this.attachScrollSpy('selector');
                                                   this.popup.messageBox.fade('in');
                                               }.bind(this));
                                           }.bind(this)
@@ -117,6 +120,36 @@ var MediaLibrary = new Class({
                 medialib.loadingBody();
             });
         }.bind(this));
+    },
+
+    attachScrollSpy: function(element) {
+        this.scrollSpy = new ScrollSpy(element, { onEnter: function() {
+            if(!this.streaming) {
+                this.streaming = true;
+
+                this.streamReq = new Request.HTML({ url: api_request_path("webapi", "media.stream", basepath),
+                                                    method: 'post',
+                                                    onRequest: function() {
+                                                        this.spinner = new Element("img", {'id': 'streamspinner',
+                                                                                          'src': spinner_url,
+                                                                                          'style': 'opacity: 0',
+                                                                                          width: 16,
+                                                                                          height: 16,
+                                                                                          'class': 'workspin'});
+                                                        $('selector').adopt(this.spinner);
+                                                        this.spinner.fade('in');
+                                                    }.bind(this),
+                                                    onSuccess: function(respTree, respElems, respHTML) {
+                                                        this.spinner.destroy();
+
+                                                        $('selector').adopt(respElems);
+                                                        this.streaming = false;
+                                                    }.bind(this)
+                                                  });
+                this.streamReq.post({'offset': $('selector').getChildren().length,
+                                     'count': this.options.loadCount});
+            }
+        }});
     }
 
 });

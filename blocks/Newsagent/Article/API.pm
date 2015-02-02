@@ -212,6 +212,27 @@ sub _build_mediaopen_response {
 }
 
 
+sub _build_mediastream_response {
+    my $self = shift;
+
+    my ($offset, $offerr) = $self -> validate_numeric('offset', { required => 0,
+                                                                  default  => 0,
+                                                                  intonly  => 1,
+                                                                  min      => 0,
+                                                                  nicename => "Offset"});
+    my ($count, $cnterr) = $self -> validate_numeric('count', { required => 0,
+                                                                default  => $self -> {"settings"} -> {"config"} -> {"Media:fetch_count"},
+                                                                intonly  => 1,
+                                                                min      => 0,
+                                                                nicename => "Count"});
+
+    return $self -> _build_media_selector($mode,
+                                          undef,
+                                          'uploaded',
+                                          0,
+                                          $self -> {"settings"} -> {"config"} -> {"Media:initial_count"})
+
+
 ## @method private $ _build_mediaupload_response(void)
 # Generate the respose to send back for a mediaupload API request.
 #
@@ -409,6 +430,7 @@ sub page_display {
             # API operations related to media handling
             when("media.open")   { return $self -> api_html_response($self -> _build_mediaopen_response()); }
             when("media.upload") { return $self -> api_response($self -> _build_mediaupload_response()); }
+            when("media.stream") { return $self -> api_html_response($self -> _build_mediastream_response()); }
 
             default {
                 return $self -> api_response($self -> api_errorhash('bad_op',

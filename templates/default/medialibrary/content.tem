@@ -15,9 +15,7 @@
                      </select>
                  </label>
              </div>
-             <div id="selector">
-***initial***
-             </div>
+             <div id="selector">***initial***</div>
         </div>
     </li>
     <li><h3>{L_MEDIA_UPLOAD}</h3>
