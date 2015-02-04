@@ -231,6 +231,7 @@ sub _build_mediastream_response {
                                           'uploaded',
                                           0,
                                           $self -> {"settings"} -> {"config"} -> {"Media:initial_count"})
+}
 
 
 ## @method private $ _build_mediaupload_response(void)
