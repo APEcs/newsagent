@@ -1,5 +1,6 @@
 <style type="text/css">
 div.na-testnews {
+    font-family: Calibri, Arial, sans-serif;
 }
 
 div.na-testnews-menu {
@@ -23,6 +24,8 @@ div.na-testnews-menu ul li a {
     text-decoration: none;
 }
 
+/* Not currently used:
+ *
 div.na-testnews h1 {
     font-weight: bold;
     font-size: 30px;
@@ -31,21 +34,19 @@ div.na-testnews h1 {
     border-bottom: 1px solid #56007E;
     padding: 5px 10px 3px 0px
 }
+*/
 
 div.na-testnews-body {
     margin-left: 210px;
 }
 
-div.na-testnews-section h2 {
+h2.na-testnews-section {
     border-bottom: 1px dotted #999;
     padding: 5px 10px 3px 0px
 }
 
-div.na-testnews-section {
-    border-bottom: 3px solid #56007E;
-}
-
 ul.na-testnews-articles {
+    border-bottom: 3px solid #56007E;
     margin: 0px;
     padding: 0px;
 }

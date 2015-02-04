@@ -1,4 +1,2 @@
-<div class="na-testnews-section" id="sect-***id***">
-    <h2>***title***</h2>
-    <ul class="na-testnews-articles">***articles***</ul>
-</div>
+<h2 class="na-testnews-section" id="sect-***id***"><span style="float: right; margin-left: 5px; font-size: 0.7em">[ <a href="#na-news-top" style="text-decoration: none;">top</a> ]</span><a name="sect-***id***"></a>***title***</h2>
+<ul class="na-testnews-articles">***articles***</ul>
