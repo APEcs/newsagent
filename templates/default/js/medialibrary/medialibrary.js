@@ -9,7 +9,8 @@ var MediaLibrary = new Class({
         loadingTxt: 'Loading, please wait...',
         mode: 'media', /* valid values: icon, media, thumb, large */
         width: '1000px',
-        loadCount: 12
+        loadCount: 12,
+        initialCount: 24
     },
 
     initialize: function(button, idstore, options) {
@@ -39,16 +40,18 @@ var MediaLibrary = new Class({
                                                       }.bind(this));
     },
 
-    loadingBody: function() {
-        var loading = new Element('div', { 'class': 'loading' }).adopt(
+    loadingElem: function() {
+        return new Element('div', { 'class': 'loading' }).adopt(
             new Element('img', { src: spinner_imgurl,
                                  styles: { 'width': 16,
                                            'height': 16,
                                            'alt': "working" }}),
             new Element('span', { html: this.options.loadingTxt })
         );
+    },
 
-        this.popup.setContent(loading);
+    loadingBody: function() {
+        this.popup.setContent(this.loadingElem());
     },
 
     open: function() {
@@ -79,8 +82,8 @@ var MediaLibrary = new Class({
                                                                                                   this.idstore.set('value', resp[0].getAttribute('imageid'));
                                                                                                   this.button.set('html', '<img src="' + resp[0].getAttribute('path') + '" />');
 
-                                                                                                  //this.popup.close();
-                                                                                                  //this.loadingBody();
+                                                                                                  this.popup.close();
+                                                                                                  this.loadingBody();
                                                                                               } else {
                                                                                                   $('errboxmsg').set('html', '<p class="error">No result found in response data.</p>');
                                                                                                   errbox.open();
@@ -97,15 +100,20 @@ var MediaLibrary = new Class({
 
                                                   this.attachClickListeners($$('div.selector-image'));
                                                   this.attachScrollSpy('selector');
+                                                  this.attachModeChanger('selector', 'selector-show', 'selector-order');
                                                   this.popup.messageBox.fade('in');
                                               }.bind(this));
                                           }.bind(this)
                                         });
-        this.loadReq.post({ 'mode': this.options.mode });
+        this.loadReq.post({ 'mode': this.options.mode,
+                            'count': this.options.initialCount
+                          });
     },
 
     attachClickListeners: function(elements) {
-        elements.each(function(element) {
+        // Can't use elements.each() here as the argument may be either
+        // an Elements object or a NodeList.
+        Array.each(elements, function(element) {
             element.removeEvents('click');
             element.medialib = this;
 
@@ -123,33 +131,91 @@ var MediaLibrary = new Class({
     },
 
     attachScrollSpy: function(element) {
-        this.scrollSpy = new ScrollSpy(element, { onEnter: function() {
-            if(!this.streaming) {
-                this.streaming = true;
+        var self = this;
 
-                this.streamReq = new Request.HTML({ url: api_request_path("webapi", "media.stream", basepath),
+        self.scrollSpy = new ScrollSpy(element, { onEnter: function() {
+            if(!self.streaming) {
+                self.streaming = true;
+
+                self.streamReq = new Request.HTML({ url: api_request_path("webapi", "media.stream", basepath),
                                                     method: 'post',
                                                     onRequest: function() {
-                                                        this.spinner = new Element("img", {'id': 'streamspinner',
+                                                        self.spinner = new Element("img", {'id': 'streamspinner',
                                                                                           'src': spinner_url,
                                                                                           'style': 'opacity: 0',
                                                                                           width: 16,
                                                                                           height: 16,
                                                                                           'class': 'workspin'});
-                                                        $('selector').adopt(this.spinner);
-                                                        this.spinner.fade('in');
+                                                        $('selector').adopt(self.spinner);
+                                                        self.spinner.fade('in');
                                                     }.bind(this),
                                                     onSuccess: function(respTree, respElems, respHTML) {
-                                                        this.spinner.destroy();
+                                                        self.spinner.destroy();
 
-                                                        $('selector').adopt(respElems);
-                                                        this.streaming = false;
+                                                        if(respTree.length > 0) {
+                                                            // shove the new elements into the selector list
+                                                            self.attachClickListeners(respTree);
+                                                            $('selector').adopt(respTree);
+
+                                                            // And recalculate.
+                                                            self.scrollSpy.update();
+                                                        }
+
+                                                        self.streaming = false;
                                                     }.bind(this)
                                                   });
-                this.streamReq.post({'offset': $('selector').getChildren().length,
-                                     'count': this.options.loadCount});
+                self.streamReq.post({'mode': self.options.mode,
+                                     'offset': $('selector').getChildren().length,
+                                     'count': self.options.loadCount,
+                                     'show': $('selector-show').getSelected()[0].get('value'),
+                                     'order': $('selector-order').getSelected()[0].get('value')
+                                    });
             }
         }});
+    },
+
+    attachModeChanger: function(container, filter, order) {
+        container = $(container);
+        filter    = $(filter);
+        order     = $(order);
+
+        filter.addEvent('change', function() { this.modeChanged(container); }.bind(this));
+        order.addEvent('change', function() { this.modeChanged(container); }.bind(this));
+    },
+
+    modeChanged: function(container) {
+
+        this.streaming = true;
+        this.streamReq = new Request.HTML({ url: api_request_path("webapi", "media.stream", basepath),
+                                            method: 'post',
+                                            onRequest: function() {
+                                                container.fade('out').get('tween').chain(function() {
+                                                    container.getChildren().destroy().empty();
+                                                    container.adopt(this.loadingElem());
+                                                }.bind(this));
+                                            }.bind(this),
+                                            onSuccess: function(respTree, respElems, respHTML) {
+                                                container.fade('out').get('tween').chain(function() {
+                                                    container.getChildren().destroy().empty();
+
+                                                    // shove the new elements into the selector list
+                                                    this.attachClickListeners(respTree);
+                                                    container.adopt(respTree);
+
+                                                    container.fade('in').get('tween').chain(function() {
+                                                        // And recalculate.
+                                                        this.scrollSpy.update();
+                                                        this.streaming = false;
+                                                    }.bind(this));
+                                                }.bind(this));
+                                            }.bind(this)
+                                          });
+        this.streamReq.post({'mode': this.options.mode,
+                             'offset': 0,
+                             'count': this.options.initialCount,
+                             'show': $('selector-show').getSelected()[0].get('value'),
+                             'order': $('selector-order').getSelected()[0].get('value')
+                            });
     }
 
 });

@@ -154,9 +154,10 @@ sub _build_rcount_response {
 # ============================================================================
 #  Media library API functions
 
-## @method private $ _build_media_selector($userid, $sortfield, $offset, $count)
+## @method private $ _build_media_selector($mode, $userid, $sortfield, $offset, $count)
 # Generate a string containing media selector boxes.
 #
+# @param mode   Which form of image to use. Should be one of 'icon', 'thumb', 'media' or 'full'.
 # @param userid The ID of the user to filter the images by. If zero or undef,
 #               images by all users are included.
 # @param sortfield The field to sort the images on. Valid values are 'uploaded' and 'name'
@@ -200,13 +201,14 @@ sub _build_mediaopen_response {
     my ($mode, $moderr) = $self -> validate_options('mode', { "required" => 0,
                                                               "default"  => "media",
                                                               "source"   => ["icon", "media"]});
+    my ($count, $cnterr) = $self -> validate_numeric('count', { required => 0,
+                                                                default  => $self -> {"settings"} -> {"config"} -> {"Media:initial_count"},
+                                                                intonly  => 1,
+                                                                min      => 1,
+                                                                nicename => "Count"});
 
     return $self -> {"template"} -> load_template("medialibrary/content.tem",
-                                                  { "***initial***" => $self -> _build_media_selector($mode,
-                                                                                                      undef,
-                                                                                                      'uploaded',
-                                                                                                      0,
-                                                                                                      $self -> {"settings"} -> {"config"} -> {"Media:initial_count"})
+                                                  { "***initial***" => $self -> _build_media_selector($mode, undef, 'uploaded', 0, $count)
                                                   }
                                                  );
 }
@@ -214,6 +216,11 @@ sub _build_mediaopen_response {
 
 sub _build_mediastream_response {
     my $self = shift;
+
+    # First fetch all the supported parameters
+    my ($mode, $moderr) = $self -> validate_options('mode', { "required" => 0,
+                                                              "default"  => "media",
+                                                              "source"   => ["icon", "media"]});
 
     my ($offset, $offerr) = $self -> validate_numeric('offset', { required => 0,
                                                                   default  => 0,
@@ -226,11 +233,31 @@ sub _build_mediastream_response {
                                                                 min      => 0,
                                                                 nicename => "Count"});
 
-    return $self -> _build_media_selector($mode,
-                                          undef,
-                                          'uploaded',
-                                          0,
-                                          $self -> {"settings"} -> {"config"} -> {"Media:initial_count"})
+    my ($show, $moderr) = $self -> validate_options('show', { "required" => 0,
+                                                              "default"  => "all",
+                                                              "source"   => ["all", "me"]});
+
+    my ($order, $moderr) = $self -> validate_options('order', { "required" => 0,
+                                                                "default"  => "age",
+                                                                "source"   => ["age", "name"]});
+
+    # Now convert the parameters as needed
+    given($show) {
+        when('me')  { $show = $self -> {"session"} -> get_session_userid(); } # 'me' mode requires the userid
+        default {
+            $show = undef;
+        }
+    }
+
+    given($order) {
+        when('name') { $order = "name"; }
+        default {
+            $order = 'uploaded';
+        }
+    }
+
+
+    return $self -> _build_media_selector($mode, $show, $order, $offset, $count);
 }
 
 

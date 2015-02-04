@@ -54,8 +54,14 @@ window.addEvent('domready', function() {
 
     matrix_handler = new Matrix();
 
-    if($('imagea_mediabtn')) new MediaLibrary('imagea_mediabtn', 'imagea_imgid', { mode: 'icon' });
-    if($('imageb_mediabtn')) new MediaLibrary('imageb_mediabtn', 'imageb_imgid');
+    if($('imagea_mediabtn'))
+        new MediaLibrary('imagea_mediabtn', 'imagea_imgid', { mode: 'icon',
+                                                              loadCount: ***loadcount***,
+                                                              initialCount: ***initialcount***});
+
+    if($('imageb_mediabtn'))
+        new MediaLibrary('imageb_mediabtn', 'imageb_imgid', { loadCount: ***loadcount***,
+                                                              initialCount: ***initialcount***});
 });
 </script>
 <div id="composeform">

@@ -184,6 +184,8 @@ sub _generate_compose {
                                                                                    "***preset***"           => $args -> {"preset"},
                                                                                    "***fullsummary***"      => $args -> {"full_summary"} ? 'checked="checked"' : '',
                                                                                    "***ckeconfig***"        => $ckeconfig,
+                                                                                   "***loadcount***"        => $self -> {"settings"} -> {"config"} -> {"Media:fetch_count"},
+                                                                                   "***initialcount***"     => $self -> {"settings"} -> {"config"} -> {"Media:initial_count"},
                                                    }));
 }
 
