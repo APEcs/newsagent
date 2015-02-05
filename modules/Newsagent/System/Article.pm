@@ -599,6 +599,7 @@ sub get_article {
     # And add the image data
     $imageh -> execute($article -> {"id"})
         or return $self -> self_error("Unable to execute article image query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
+
     my $images = $imageh -> fetchall_arrayref({});
     foreach my $image (@{$images}) {
         $article -> {"images"} -> [$image -> {"order"}] = $self -> {"images"} -> get_image_info($image -> {"image_id"});
@@ -845,7 +846,7 @@ sub update_article_inplace {
     $self -> update_image_url($articleid, 0, $newsettings -> {"images"} -> {"a"} -> {"url"}) or return undef
         if($newsettings -> {"images"} -> {"a"} -> {"url"});
 
-    $self -> update_image_url($articleid, 0, $newsettings -> {"images"} -> {"b"} -> {"url"}) or return undef
+    $self -> update_image_url($articleid, 1, $newsettings -> {"images"} -> {"b"} -> {"url"}) or return undef
         if($newsettings -> {"images"} -> {"b"} -> {"url"});
 
     return 1;
