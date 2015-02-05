@@ -233,11 +233,11 @@ sub _build_mediastream_response {
                                                                 min      => 0,
                                                                 nicename => "Count"});
 
-    my ($show, $moderr) = $self -> validate_options('show', { "required" => 0,
-                                                              "default"  => "all",
-                                                              "source"   => ["all", "me"]});
+    my ($show, $showerr) = $self -> validate_options('show', { "required" => 0,
+                                                               "default"  => "all",
+                                                               "source"   => ["all", "me"]});
 
-    my ($order, $moderr) = $self -> validate_options('order', { "required" => 0,
+    my ($order, $orderr) = $self -> validate_options('order', { "required" => 0,
                                                                 "default"  => "age",
                                                                 "source"   => ["age", "name"]});
 
