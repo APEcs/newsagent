@@ -696,20 +696,30 @@ sub _validate_article {
 # ============================================================================
 #  Form generators
 
-## @method private $ _build_image_options($selected)
+## @method private $ _build_image_options($imgopt, $mode)
 # Generate a string containing the options to provide for image selection.
 #
-# @param selected The selected image option, defaults to 'none', must be one of
-#                 'none', 'url', 'file', or 'img'
-# @return A string containing the image mode options
+# @param imgopt The image data to work on.
+# @param mode   The image mode, should be one of 'icon' or 'media'
+# @return A string containing the image mode options, and a string containing
+#         the contents of the medialib button.
 sub _build_image_options {
-    my $self     = shift;
-    my $selected = shift;
+    my $self   = shift;
+    my $imgopt = shift;
+    my $mode   = shift;
 
-    $selected = "none"
-        unless($selected && ($selected eq "url" || $selected eq "img"));
+    # Force a sane mode
+    $imgopt -> {"mode"} = "none"
+        unless($imgopt -> {"mode"} && ($imgopt -> {"mode"} eq "url" || $imgopt -> {"mode"} eq "img"));
 
-    return $self -> {"template"} -> build_optionlist($self -> {"imgops"}, $selected);
+    my $button = $self -> {"template"} -> replace_langvar("COMPOSE_MEDIALIB");
+    if($imgopt -> {"mode"} eq "img") {
+        my $imgdata = $self -> {"article"} -> {"images"} -> get_image_info($imgopt -> {"img"});
+        $button = '<img src="'.$imgdata -> {"path"} -> {$mode}.'" />'
+            if($imgdata);
+    }
+
+    return ($self -> {"template"} -> build_optionlist($self -> {"imgops"}, $imgopt -> {"mode"}), $button);
 }
 
 

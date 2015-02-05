@@ -120,8 +120,8 @@ window.addEvent('domready', function() {
                                 ***imageaopts***
                             </select>
                             <div class="subopt" id="imagea_mode_url"><input class="fillwide" type="text" name="imagea_url" id="imagea_url" size="32" value="***imagea_url***" /></div>
-                            <div class="subopt" id="imagea_mode_img"><button id="imagea_mediabtn" name="imagea_media" class="button blue medialib">{L_COMPOSE_MEDIALIB}</button>
-                                                                     <input id="imagea_imgid" name="imagea_imgid" type="hidden" value="***imageaid***" />
+                            <div class="subopt" id="imagea_mode_img"><button id="imagea_mediabtn" name="imagea_media" class="button blue medialib">***imagea_btn***</button>
+                                                                     <input id="imagea_imgid" name="imagea_imgid" type="hidden" value="***imagea_id***" />
                             </div>
                         </dd>
                     </dl>
@@ -131,8 +131,8 @@ window.addEvent('domready', function() {
                                 ***imagebopts***
                             </select>
                             <div class="subopt" id="imageb_mode_url"><input class="fillwide" type="text" name="imageb_url" id="imageb_url" size="32" value="***imageb_url***" /></div>
-                            <div class="subopt" id="imageb_mode_img"><button id="imageb_mediabtn" name="imageb_media" class="button blue medialib">{L_COMPOSE_MEDIALIB}</button>
-                                                                     <input id="imageb_imgid" name="imageb_imgid" type="hidden" value="***imagebid***" />
+                            <div class="subopt" id="imageb_mode_img"><button id="imageb_mediabtn" name="imageb_media" class="button blue medialib">***imageb_btn***</button>
+                                                                     <input id="imageb_imgid" name="imageb_imgid" type="hidden" value="***imageb_id***" />
                             </div>
                         </dd>
                     </dl>
