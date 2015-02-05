@@ -258,11 +258,11 @@ sub _validate_article_image {
                       $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
         }
 
-        # Image validation ("us an existing image") is basically checking that an entry with the corresponding ID is in the database.
-        when("img") { ($args -> {"images"} -> {$imgid} -> {"img"}, $error) = $self -> validate_options($base."_img", {"required"   => 1,
-                                                                                                                      "nicename"   => $self -> {"template"} -> replace_langvar("COMPOSE_IMGURL"),
-                                                                                                                      "source"     => $self -> {"settings"} -> {"database"} -> {"images"},
-                                                                                                                      "where"      => "WHERE `id` = ?"});
+        # Image validation ("use an existing image") is basically checking that an entry with the corresponding ID is in the database.
+        when("img") { ($args -> {"images"} -> {$imgid} -> {"img"}, $error) = $self -> validate_options($base."_imgid", {"required"   => 1,
+                                                                                                                        "nicename"   => $self -> {"template"} -> replace_langvar("COMPOSE_IMG"),
+                                                                                                                        "source"     => $self -> {"settings"} -> {"database"} -> {"images"},
+                                                                                                                        "where"      => "WHERE `id` = ?"});
                       $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
         }
     }
