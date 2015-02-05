@@ -132,14 +132,16 @@ sub get_file_images {
 }
 
 
-## @method $ get_image_info($id)
+## @method $ get_image_info($id, $order)
 # Obtain the storage information for the image with the specified id.
 #
-# @param id The ID of the image to fetch the information for.
+# @param id    The ID of the image to fetch the information for.
+# @param order Sort position indicator for ordering.
 # @return A reference to the image data on success, undef on error.
 sub get_image_info {
-    my $self = shift;
-    my $id   = shift;
+    my $self  = shift;
+    my $id    = shift;
+    my $order = shift;
 
     $self -> clear_error();
 
@@ -151,10 +153,54 @@ sub get_image_info {
 
     my $data = $imgh -> fetchrow_hashref();
     foreach my $size (keys(%{$self -> {"image_sizes"}})) {
-        $data -> {"path"} -> {$size} = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"}, $size, $data -> {"location"});
+        if($data -> {"type"} eq "file") {
+            $data -> {"path"} -> {$size} = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"}, $size, $data -> {"location"});
+        } else {
+            $data -> {"path"} -> {$size} = $data -> {"location"};
+        }
     }
 
+    # copy in the order
+    $data -> {"order"} = $order;
+
     return $data;
+}
+
+
+## @method $ get_image_url($image, $mode, $defurl)
+# Given an image has or ID, generate the URL the image may be found out
+# based on the image type and mode.
+#
+# @param image  A reference to an image hash, or the Id of the image.
+# @param mode   The image mode, must be one of 'icon', 'thumb', 'media', or 'large'
+# @param defurl The URL to return if the image is not available.
+sub get_image_url {
+    my $self   = shift;
+    my $image  = shift;
+    my $mode   = shift;
+    my $defurl = shift;
+
+    my $url = $defurl;
+
+    if($image) {
+        # Fetch the image data if we don't have a hash
+        $image = $self -> get_image_info($image)
+            unless(ref($image) eq "HASH");
+
+        # If image is still defined, we have a hash...
+        if($image) {
+            given($image -> {"type"}) {
+                when("url")  { $url = $image -> {"location"}; }
+                when('file') { $url = $image -> {"path"} -> {$mode}; }
+            }
+        }
+    }
+
+    # If the URL isn't absolute, make it so
+    $url = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"}, $url)
+        unless($url =~ m|^https?://|);
+
+    return $url;
 }
 
 

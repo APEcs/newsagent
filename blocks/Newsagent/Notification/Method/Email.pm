@@ -255,14 +255,8 @@ sub send {
             if(!$article -> {"images"} -> [0] -> {"location"} && $self -> {"settings"} -> {"config"} -> {"HTML:default_image"});
 
     my @images;
-    for(my $img = 0; $img < 2; ++$img) {
-        next if(!$article -> {"images"} -> [$img] || !$article -> {"images"} -> [$img] -> {"location"});
-        $images[$img] = $article -> {"images"} -> [$img] -> {"location"};
-
-        $images[$img] = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
-                                  $images[$img])
-            if($images[$img] && $images[$img] !~ /^http/);
-    }
+    $images[0] = $queue -> {"article"} -> {"images"} -> get_image_url($article -> {"images"} -> [0], 'icon', $self -> {"settings"} -> {"config"} -> {"HTML:default_image"});
+    $images[1] = $queue -> {"article"} -> {"images"} -> get_image_url($article -> {"images"} -> [1], 'large');
 
     $images[0] = $self -> {"template"} -> load_template("Notification/Method/Email/image_sized.tem", {"***class***"  => "leader",
                                                                                                       "***url***"    => $images[0],
@@ -273,7 +267,7 @@ sub send {
     $images[1] = $self -> {"template"} -> load_template("Notification/Method/Email/image.tem", {"***class***"  => "article",
                                                                                                 "***url***"    => $images[1],
                                                                                                 "***alt***"    => "article image"})
-        if($article -> {"images"} -> [1] -> {"location"});
+        if($images[1]);
 
     $article -> {"article"} = $self -> cleanup_entities($article -> {"article"});
 

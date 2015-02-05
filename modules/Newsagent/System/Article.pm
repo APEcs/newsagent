@@ -310,7 +310,7 @@ sub get_feed_articles {
             $article -> {"images"} = [];
             # Place the images into the images array based using the order as the array position
             while(my $image = $imageh -> fetchrow_hashref()) {
-                $article -> {"images"} -> [$image -> {"order"}] = $self -> {"images"} -> get_image_info($image -> {"image_id"});
+                $article -> {"images"} -> [$image -> {"order"}] = $self -> {"images"} -> get_image_info($image -> {"image_id"}, $image -> {"order"});
             }
 
             # Fetch the year info
@@ -602,7 +602,7 @@ sub get_article {
 
     my $images = $imageh -> fetchall_arrayref({});
     foreach my $image (@{$images}) {
-        $article -> {"images"} -> [$image -> {"order"}] = $self -> {"images"} -> get_image_info($image -> {"image_id"});
+        $article -> {"images"} -> [$image -> {"order"}] = $self -> {"images"} -> get_image_info($image -> {"image_id"}, $image -> {"order"});
     }
 
     return $article;

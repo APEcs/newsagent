@@ -1,1 +1,1 @@
-        <newsagent:image src="***url***" alt="***name***" order="***order***" />
+        <newsagent:image src="***url***" alt="***name***" type="***type***" />
