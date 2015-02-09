@@ -291,7 +291,7 @@ sub send {
                                                              });
     my $email_data = { "addresses" => $addresses,
                        "debug"     => $addresses -> {"use_debugmode"},
-                       "subject"   => Encode::encode("iso-8859-1", $subject),
+                       "subject"   => Encode::encode("iso-8859-1", decode_entities($subject)),
                        "html_body" => Encode::encode("iso-8859-1", $htmlbody),
                        "text_body" => $self -> make_markdown_body(Encode::encode("iso-8859-1", $articlebody), $article -> {"images"}),
                        "reply_to"  => $article -> {"methods"} -> {"Email"} -> {"reply_to"} || $author -> {"email"},

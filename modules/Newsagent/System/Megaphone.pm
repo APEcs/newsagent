@@ -26,6 +26,8 @@ use v5.12;
 use CGI;
 use List::Util qw(min);
 use DateTime;
+use HTML::Entities;
+use Encode;
 use Webperl::Message::Queue;
 use Webperl::Modules;
 use Webperl::SessionHandler;
@@ -161,9 +163,9 @@ sub _notify_author {
                                                           });
     }
 
-    $status =  $self -> {"messages"} -> queue_message(subject => $self -> {"template"} -> replace_langvar("CRON_NOTIFY_STATUS", {"***article***" => $article -> {"title"}}),
+    $status =  $self -> {"messages"} -> queue_message(subject => $self -> {"template"} -> replace_langvar("CRON_NOTIFY_STATUS", {"***article***" => Encode::encode("iso-8859-1", decode_entities($article -> {"title"}))}),
                                                       message => $self -> {"template"} -> load_template("article/cron/notify_email.tem",
-                                                                                                        {"***article***"  => $article -> {"title"},
+                                                                                                        {"***article***"  => decode_entities($article -> {"title"}),
                                                                                                          "***status***"   => $status,
                                                                                                          "***realname***" => $author -> {"fullname"},
                                                                                                          "***method***"   => $notify -> {"name"},
