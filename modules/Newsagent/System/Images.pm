@@ -56,7 +56,7 @@ sub new {
     $self -> {"image_sizes"} = { "icon"  => '-resize 130x63^ -gravity Center -crop 130x63+0+0 +repage',
                                  "media" => '-resize 128x128^ -gravity Center -crop 128x128+0+0 +repage' ,
                                  "thumb" => '-resize 350x167^',
-                                 "large" => '-resize 512x512\>'
+                                 "large" => '-resize 450x450\>'
     };
 
     return $self;
