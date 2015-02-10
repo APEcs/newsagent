@@ -448,7 +448,8 @@ sub get_role_users {
         # And store them in a way that ORs them together
         # FIXME: This does not take tree discontinuities/default roles into account.
         while(my $role = $rolesh -> fetchrow_hashref()) {
-            $user_roles -> {$role -> {"user_id"}} -> {$role -> {"role_name"}} = $role -> {"id"};
+            $user_roles -> {$role -> {"user_id"}} -> {$role -> {"role_name"}} -> {"id"} = $role -> {"id"};
+            push(@{$user_roles -> {$role -> {"user_id"}} -> {$role -> {"role_name"}} -> {"contexts"}}, $params[0]);
         }
 
         # Try to get the parent metadata context for this one
