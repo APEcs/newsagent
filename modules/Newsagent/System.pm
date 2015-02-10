@@ -58,26 +58,26 @@ sub init {
     $self -> {"metadata"} = Newsagent::System::Metadata -> new(dbh      => $self -> {"dbh"},
                                                                settings => $self -> {"settings"},
                                                                logger   => $self -> {"logger"})
-        or return $self -> self_error("Metadata system init failed: ".$Metadata::errstr);
+        or return $self -> self_error("Metadata system init failed: ".$Webperl::SystemModule::errstr);
 
     $self -> {"tags"} = Newsagent::System::Tags -> new(dbh      => $self -> {"dbh"},
                                                        settings => $self -> {"settings"},
                                                        logger   => $self -> {"logger"},
                                                        metadata => $self -> {"metadata"})
-        or return $self -> self_error("Tag system init failed: ".$Tags::errstr);
+        or return $self -> self_error("Tag system init failed: ".$Webperl::SystemModule::errstr);
 
     $self -> {"roles"} = Newsagent::System::Roles -> new(dbh      => $self -> {"dbh"},
                                                          settings => $self -> {"settings"},
                                                          logger   => $self -> {"logger"},
                                                          metadata => $self -> {"metadata"})
-        or return $self -> self_error("Roles system init failed: ".$Roles::errstr);
+        or return $self -> self_error("Roles system init failed: ".$Webperl::SystemModule::errstr);
 
     $self -> {"userdata"} = Newsagent::System::UserDataBridge -> new(dbh      => $self -> {"dbh"},
                                                                      settings => $self -> {"settings"},
                                                                      logger   => $self -> {"logger"},
                                                                      metadata => $self -> {"metadata"},
                                                                      roles    => $self -> {"roles"})
-        or return $self -> self_error("UserData system init failed: ".$Roles::errstr);
+        or return $self -> self_error("UserData system init failed: ".$Webperl::SystemModule::errstr);
 
     return 1;
 }

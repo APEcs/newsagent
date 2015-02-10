@@ -370,22 +370,28 @@ sub user_remove_role {
 }
 
 
-## @method $ get_role_users($metadataid, $roleid, $sourceid)
+## @method $ get_role_users($metadataid, $roleids, $sourceid)
 # Obtain a list of users who have the specified role at this metadata level. If
 # the sourceid is specified, only roles allocated by the specified source are
 # considered when constructing the list.
 #
 # @param metadataid The ID of the metadata context to list users from.
-# @param roleid     The ID of the role that has been assigned to users. If not set, any
-#                   roles are returned.
+# @param roles      The name or ID of the role that has been assigned to users, or a
+#                   reference to an array of names or IDs. If not set, any roles
+#                   allocated to users at this level are returned.
+# @param inherited  If true, include roles the user has inherited at the
+#                   specified metadata context. If false (the default), only
+#                   roles allocated at the specified metadata context are listed.
 # @param sourceid   The ID of the enrolment source that allocated the role, or
 #                   undef if any source is acceptable
-# @return A reference to an array of hashrefs, each hashref contains the data
-#         for a user with the specified role.
+# @return A reference to a hash of hashrefs, each key in the outer hash is a userid
+#         while the subhashes contain role names and IDs:
+#         { "user_id" => { "rolename" => id, "rolename" => id } }
 sub get_role_users {
     my $self       = shift;
     my $metadataid = shift;
-    my $roleid     = shift;
+    my $roles      = shift;
+    my $inherited  = shift;
     my $sourceid   = shift;
 
     $self -> clear_error();
@@ -393,9 +399,24 @@ sub get_role_users {
     my $filters = "";
     my @params  = ($metadataid);
 
-    if($roleid) {
-        $filters .= " AND `mr`.`role_id` = ? ";
-        push(@params, $roleid);
+    if($roles) {
+        # Force an array of role IDs, even for a single ID.
+        $roles = [ $roles ] unless(ref($roles) eq "ARRAY");
+
+        # convert names to IDs if needed
+        foreach my $role (@{$roles}) {
+            next if($role =~ /^\d+$/); # skip numeric roles (assume it's an ID)
+
+            # Attempt the lookup.
+            my $roleid = role_get_roleid($self, $role)
+                or return $self -> self_error("Unable to map role name '$role' to an ID. Role does not exist?");
+
+            $role = $roleid;
+        }
+
+        # The filter string needs to use IN, with enough placeholders for each ID specified.
+        $filters = " AND `mr`.`role_id` IN (?".(",?" x (scalar(@{$roles}) - 1)).")";
+        push(@params, @{$roles});
     }
 
     if($sourceid) {
@@ -404,19 +425,88 @@ sub get_role_users {
     }
 
     # Fetch the role allocations at this level
-    my $rolesh = $self -> {"dbh"} -> prepare("SELECT `u`.*,`r`.`role_name`
-                                             FROM `".$self -> {"settings"} -> {"database"} -> {"metadata_roles"}."` AS `mr`,
-                                                  `".$self -> {"settings"} -> {"database"} -> {"roles"}."` AS `r`,
-                                                  `".$self -> {"settings"} -> {"database"} -> {"users"}."` As `u`
-                                             WHERE `r`.`id` = `mr`.`role_id`
-                                             AND `u`.`user_id` = `mr`.`user_id`
-                                             AND `mr`.`metadata_id` = ?
-                                             $filters
-                                             ORDER BY `r`.`role_name`, `u`.`username`");
-    $rolesh -> execute(@params)
-        or return $self -> self_error("Role allocation lookup failed: ".$self -> {"dbh"} -> errstr);
+    my $rolesh = $self -> {"dbh"} -> prepare("SELECT `u`.`user_id`,`r`.`id`,`r`.`role_name`
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {"metadata_roles"}."` AS `mr`,
+                                                   `".$self -> {"settings"} -> {"database"} -> {"roles"}."` AS `r`,
+                                                   `".$self -> {"settings"} -> {"database"} -> {"users"}."` As `u`
+                                              WHERE `r`.`id` = `mr`.`role_id`
+                                              AND `u`.`user_id` = `mr`.`user_id`
+                                              AND `mr`.`metadata_id` = ?
+                                              $filters
+                                              ORDER BY `r`.`role_name`, `u`.`username`");
 
-    return $rolesh -> fetchall_arrayref({});
+    # And a query to allow tree walking
+    my $metah = $self -> {"dbh"} -> prepare("SELECT `parent_id`
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"metadata"}."`
+                                             WHERE `id` = ?");
+    my $user_roles = {};
+    do {
+        # Fetch the list of role allocations at the current metadata level
+        $rolesh -> execute(@params)
+            or return $self -> self_error("Role allocation lookup failed: ".$self -> {"dbh"} -> errstr);
+
+        # And store them in a way that ORs them together
+        # FIXME: This does not take tree discontinuities/default roles into account.
+        while(my $role = $rolesh -> fetchrow_hashref()) {
+            $user_roles -> {$role -> {"user_id"}} -> {$role -> {"role_name"}} -> {"id"} = $role -> {"id"};
+            push(@{$user_roles -> {$role -> {"user_id"}} -> {$role -> {"role_name"}} -> {"contexts"}}, $params[0]);
+        }
+
+        # Try to get the parent metadata context for this one
+        $metah -> execute($params[0])
+            or return $self -> self_error("Metadata parent lookup failed: ".$self -> {"dbh"} -> errstr);
+
+        my $meta = $metah -> fetchrow_arrayref();
+        $params[0] = $meta ? $meta -> [0] : undef;
+
+    # keep working unless inherited roles are not needed, or the context has no parent.
+    } while($inherited && $params[0]);
+
+    return $user_roles;
+}
+
+
+## @method $ get_capability_users($metadataid, $capability, $inherited, $sourceid)
+# Obtain a list of users with the specified capability at the provided metadata
+# context. If the sourceid is specified, only roles allocated by the specified
+# source are considered when constructing the list.
+#
+# @param metadataid The ID of the metadata context to list users from.
+# @param capability The name of the capability to search for.
+# @param inherited  If true, include roles the user has inherited at the
+#                   specified metadata context. If false (the default), only
+#                   roles allocated at the specified metadata context are listed.
+# @param sourceid   The ID of the enrolment source that allocated the role, or
+#                   undef if any source is acceptable
+# @return A reference to a hash of hashrefs, each key in the outer hash is a userid
+#         while the subhashes contain the role names and IDs that gave the user the
+#         capability@ { "user_id" => { "rolename" => id, "rolename" => id } }
+sub get_capability_users {
+    my $self       = shift;
+    my $metadataid = shift;
+    my $capability = shift;
+    my $inherited  = shift;
+    my $sourceid   = shift;
+
+    $self -> clear_error();
+
+    my $rolesh = $self -> {"dbh"} -> prepare("SELECT `role_id`
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {"role_capabilities"}."`
+                                              WHERE `capability` LIKE ?");
+    $rolesh -> execute($capability)
+        or return $self -> self_error("Capability lookup failed: ".$self -> {"dbh"} -> errstr);
+
+    # build the list of roles that provide this capability
+    my @roles = ();
+    while(my $role = $rolesh -> fetchrow_arrayref()) {
+        push(@roles, $role -> [0]);
+    }
+
+    # No roles have this capability? Give up
+    return $self -> self_error("No roles grant the requested '$capability' capability") if(!scalar(@roles));
+
+    # Now look up who has the roles
+    return $self -> get_role_users($metadataid, \@roles, $inherited, $sourceid);
 }
 
 

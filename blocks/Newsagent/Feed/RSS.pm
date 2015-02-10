@@ -45,15 +45,8 @@ sub embed_fulltext_image {
     my $article = shift;
     my $image   = "";
 
-    foreach my $img (@{$article -> {"images"}}) {
-        # Skip images other than the article image
-        next unless($img -> {"location"} && $img -> {"order"} == 1);
-
-        my $url = $img -> {"location"};
-        $url = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
-                         $url)
-            if($img -> {"type"} eq "file");
-
+    if($article -> {"images"} -> [1]) {
+        my $url = $self -> {"article"} -> {"images"} -> get_image_url($article -> {"images"} -> [1], 'large');
         $image = $self -> {"template"} -> load_template("feeds/rss/fulltext-image-img.tem", {"***class***" => "article",
                                                                                              "***url***"   => $url,
                                                                                              "***title***" => $article -> {"title"}});
@@ -61,6 +54,28 @@ sub embed_fulltext_image {
 
     return $self -> {"template"} -> load_template("feeds/rss/fulltext-image.tem", {"***image***" => $image,
                                                                                    "***text***"  => $article -> {"fulltext"}});
+}
+
+
+sub _build_rss_image {
+    my $self  = shift;
+    my $image = shift;
+    my $type  = shift;
+
+    # Convenience hash to map image modes to internal sizes.
+    my $modes = { "lead"    => "icon",
+                  "thumb"   => "thumb",
+                  "article" => "large" };
+
+    # Do nothing if there is no image data available.
+    return "" if(!$image);
+
+    my $url = $self -> {"article"} -> {"images"} -> get_image_url($image, $modes -> {$type})
+        or return "";
+
+    return $self -> {"template"} -> load_template("feeds/rss/image.tem", {"***url***"  => $url,
+                                                                          "***name***" => $image -> {"name"},
+                                                                          "***type***" => $type});
 }
 
 
@@ -87,19 +102,14 @@ sub generate_feed {
             if($result -> {"release_time"} > $maxdate);
 
         # Build the image list
-        foreach my $image (@{$result -> {"images"}}) {
-            next if(!$image -> {"location"});
+        $images .= $self -> _build_rss_image($result -> {"images"} -> [0], 'lead')
+            if($result -> {"images"} -> [0]);
 
-            # Work out where the image is
-            my $url = $image -> {"location"};
-            $url = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
-                             $url)
-                if($image -> {"type"} eq "file");
-
-            $images .= $self -> {"template"} -> load_template("feeds/rss/image.tem", {"***url***"   => $url,
-                                                                                      "***name***"  => $image -> {"name"},
-                                                                                      "***order***" => $image -> {"order"}});
+        if($result -> {"images"} -> [1]) {
+            $images .= $self -> _build_rss_image($result -> {"images"} -> [1], 'thumb');
+            $images .= $self -> _build_rss_image($result -> {"images"} -> [1], 'article');
         }
+
         $images = $self -> {"template"} -> load_template("feeds/rss/images.tem", {"***images***" => $images})
             if($images);
 

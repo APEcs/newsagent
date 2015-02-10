@@ -1,0 +1,32 @@
+<ul id="ml-body">
+    <li><h3>{L_MEDIA_SELECT}</h3>
+        <div id="selector-container">
+            <div class="controlbox">
+                 <label for="selector-show">{L_MEDIA_SHOW}
+                     <select id="selector-show">
+                         <option value="all">{L_MEDIA_SHOW_ALL}</option>
+                         <option value="me">{L_MEDIA_SHOW_ME}</option>
+                     </select>
+                 </label>
+                 <label for="selector-order">{L_MEDIA_ORDER}
+                     <select id="selector-order">
+                         <option value="age">{L_MEDIA_ORDER_AGE}</option>
+                         <option value="name">{L_MEDIA_ORDER_NAME}</option>
+                     </select>
+                 </label>
+             </div>
+             <div id="selector">***initial***</div>
+        </div>
+    </li>
+    <li><h3>{L_MEDIA_UPLOAD}</h3>
+        <div id="uploader">
+            <div id="ml-droparea">
+                <div id="ml-dropzone">{L_UPLOADER_DROPHERE}</div>
+            </div>
+            <div id="ml-progressbox">
+                <div id="ml-progress"></div>
+                <div id="ml-progressmsg"></div>
+            </div>
+        </div>
+    </li>
+</ul>

@@ -1,0 +1,8 @@
+<div class="selector-image ***mode***" id="img-***id***">
+    <div class="selector-imgcore"><img src="***url***" alt="***name***" /></div>
+    <div class="selector-imgname">***name***</div>
+    <ul class="selector-imgmeta">
+        <li>{L_MEDIA_ADDED}: ***uploaded***</li>
+        <li>{L_MEDIA_USER}: ***user***</li>
+    </ul>
+</div>

@@ -28,7 +28,7 @@ use Digest::MD5 qw(md5_hex);
 use CGI::Util qw(escape);
 use Webperl::Utils qw(trimspace path_join);
 use v5.12;
-
+use Data::Dumper;
 # ============================================================================
 #  Constructor
 
@@ -92,22 +92,9 @@ sub generate_feed {
         my @images;
 
         if($settings -> {"images"}) {
-            for(my $img = 0; $img < 2; ++$img) {
-                next if(!$result -> {"images"} -> [$img] || !$result -> {"images"} -> [$img] -> {"location"});
-
-                $images[$img] = $result -> {"images"} -> [$img] -> {"location"}
-                    if($result -> {"images"} -> [$img] -> {"location"});
-
-                $images[$img] = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
-                                          $images[$img])
-                    if($images[$img] && $images[$img] !~ /^http/);
-            }
+            $images[0] = $self -> {"article"} -> {"images"} -> get_image_url($result -> {"images"} -> [0], 'icon', $self -> {"settings"} -> {"config"} -> {"HTML:default_image"});
+            $images[1] = $self -> {"article"} -> {"images"} -> get_image_url($result -> {"images"} -> [1], 'large');
         }
-
-        # Force default leader image if needed
-        $images[0] = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
-                               $self -> {"settings"} -> {"config"} -> {"HTML:default_image"})
-            if($settings -> {"images"} && !$images[0] && $self -> {"settings"} -> {"config"} -> {"HTML:default_image"});
 
         # Wrap the images in html
         $images[0] = $self -> {"template"} -> load_template("feeds/html/image.tem", {"***class***" => "leader",

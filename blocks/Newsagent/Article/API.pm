@@ -23,6 +23,7 @@ use strict;
 use experimental 'smartmatch';
 use base qw(Newsagent::Article); # This class extends the Newsagent article class
 use Webperl::Utils qw(is_defined_numeric);
+use File::Basename;
 use v5.12;
 
 # ============================================================================
@@ -52,6 +53,41 @@ sub _explode_matrix {
     }
 
     return \@enabled;
+}
+
+
+# ============================================================================
+#  Validation code
+
+## @method @ _validate_image_file($mode)
+# Determine whether the file uploaded is valid.
+#
+# @param mode The image mode to return the path for.
+# @return Three values: the image id and media image path on success, undef on error, and an error message
+#         if needed.
+sub _validate_article_file {
+    my $self = shift;
+    my $mode = shift;
+
+    my $filename = $self -> {"cgi"} -> param("upload");
+    return (undef, undef, $self -> {"template"} -> replace_langvar("MEDIA_ERR_NOIMGDATA"))
+        if(!$filename);
+
+    my $tmpfile = $self -> {"cgi"} -> tmpFileName($filename)
+        or return (undef, undef, $self -> {"template"} -> replace_langvar("MEDIA_ERR_NOTMP"));
+
+    my ($name, $path, $extension) = fileparse($filename, '\..*');
+    $filename = $name.$extension;
+    $filename =~ tr/ /_/;
+    $filename =~ s/[^a-zA-Z0-9_.-]//g;
+
+    # By the time this returns, either the file has been copied into the filestore and the
+    # database updated with the file details, or an error has occurred.
+    my $imgdata = $self -> {"article"} -> {"images"} -> store_image($tmpfile, $filename, $self -> {"session"} -> get_session_userid())
+        or return (undef, undef, $self -> {"article"} -> {"images"} -> errstr());
+
+    # All that _validate_article_image() needs is the new ID
+    return ($imgdata -> {"id"}, $imgdata -> {"path"} -> {$mode}, undef);
 }
 
 
@@ -114,6 +150,152 @@ sub _build_rcount_response {
     return $output;
 }
 
+
+# ============================================================================
+#  Media library API functions
+
+## @method private $ _build_media_selector($mode, $userid, $sortfield, $offset, $count)
+# Generate a string containing media selector boxes.
+#
+# @param mode   Which form of image to use. Should be one of 'icon', 'thumb', 'media' or 'full'.
+# @param userid The ID of the user to filter the images by. If zero or undef,
+#               images by all users are included.
+# @param sortfield The field to sort the images on. Valid values are 'uploaded' and 'name'
+# @param offset    The offset to start fetching images from.
+# @param count     The number of images to fetch.
+# @return A string containing the selector HTML.
+sub _build_media_selector {
+    my $self      = shift;
+    my $mode      = shift;
+    my $userid    = shift;
+    my $sortfield = shift;
+    my $offset    = shift;
+    my $count     = shift;
+
+    my $images = $self -> {"article"} -> {"images"} -> get_file_images($userid, $sortfield, $offset, $count);
+    my $selector = "";
+
+    foreach my $image (@{$images}) {
+        $selector .= $self -> {"template"} -> load_template("medialibrary/image.tem",
+                                                            { "***mode***"     => $mode,
+                                                              "***id***"       => $image -> {"id"},
+                                                              "***url***"      => $image -> {"path"} -> {$mode},
+                                                              "***name***"     => $image -> {"name"},
+                                                              "***user***"     => $image -> {"fullname"},
+                                                              "***gravhash***" => $image -> {"gravatar_hash"},
+                                                              "***uploaded***" => $self -> {"template"} -> fancy_time($image -> {"uploaded"}, 0, 1)
+                                                            });
+    }
+
+    return $selector;
+}
+
+
+## @method private $ _build_mediaopen_response(void)
+# Generate the HTML to send back in response to a mediaopen API request.
+#
+# @return The HTML to send back to the client.
+sub _build_mediaopen_response {
+    my $self = shift;
+
+    my ($mode, $moderr) = $self -> validate_options('mode', { "required" => 0,
+                                                              "default"  => "media",
+                                                              "source"   => ["icon", "media"]});
+    my ($count, $cnterr) = $self -> validate_numeric('count', { required => 0,
+                                                                default  => $self -> {"settings"} -> {"config"} -> {"Media:initial_count"},
+                                                                intonly  => 1,
+                                                                min      => 1,
+                                                                nicename => "Count"});
+
+    return $self -> {"template"} -> load_template("medialibrary/content.tem",
+                                                  { "***initial***" => $self -> _build_media_selector($mode, undef, 'uploaded', 0, $count)
+                                                  }
+                                                 );
+}
+
+
+sub _build_mediastream_response {
+    my $self = shift;
+
+    # First fetch all the supported parameters
+    my ($mode, $moderr) = $self -> validate_options('mode', { "required" => 0,
+                                                              "default"  => "media",
+                                                              "source"   => ["icon", "media"]});
+
+    my ($offset, $offerr) = $self -> validate_numeric('offset', { required => 0,
+                                                                  default  => 0,
+                                                                  intonly  => 1,
+                                                                  min      => 0,
+                                                                  nicename => "Offset"});
+    my ($count, $cnterr) = $self -> validate_numeric('count', { required => 0,
+                                                                default  => $self -> {"settings"} -> {"config"} -> {"Media:fetch_count"},
+                                                                intonly  => 1,
+                                                                min      => 0,
+                                                                nicename => "Count"});
+
+    my ($show, $showerr) = $self -> validate_options('show', { "required" => 0,
+                                                               "default"  => "all",
+                                                               "source"   => ["all", "me"]});
+
+    my ($order, $orderr) = $self -> validate_options('order', { "required" => 0,
+                                                                "default"  => "age",
+                                                                "source"   => ["age", "name"]});
+
+    # Now convert the parameters as needed
+    given($show) {
+        when('me')  { $show = $self -> {"session"} -> get_session_userid(); } # 'me' mode requires the userid
+        default {
+            $show = undef;
+        }
+    }
+
+    given($order) {
+        when('name') { $order = "name"; }
+        default {
+            $order = 'uploaded';
+        }
+    }
+
+
+    return $self -> _build_media_selector($mode, $show, $order, $offset, $count);
+}
+
+
+## @method private $ _build_mediaupload_response(void)
+# Generate the respose to send back for a mediaupload API request.
+#
+# @return A hash containing the API response.
+sub _build_mediaupload_response {
+    my $self = shift;
+
+    if(!$self -> check_permission("upload")) {
+        $self -> log("error:medialibrary:permission", "User does not have permission to upload");
+
+        return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"template"} -> replace_langvar("MEDIA_PERMISSION_NOUPLOAD")}));
+    }
+
+    # User has permission, validate the submission and store it
+    $self -> log("debug:medialibrary:upload", "Permission granted, attempting store of uploaded image");
+
+    my ($mode, $moderr) = $self -> validate_options('mode', { "required" => 0,
+                                                              "default"  => "media",
+                                                              "source"   => ["icon", "media", "thumb", "large"]});
+
+    my ($id, $path, $error) = $self -> _validate_article_file($mode);
+    return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $error}))
+        if($error);
+
+    $self -> log("debug:medialibrary:upload", "Store complete, image saved with id $id");
+    return { "result" => { "status"  => "saved",
+                           "imageid" => $id,
+                           "path"    => $path
+                         }
+           };
+}
+
+
+# ============================================================================
+#  Autosave operation API functions
 
 ## @method private $ _build_autosave_response()
 # Save the contents of the subject, summary, and article text to the current
@@ -272,6 +454,11 @@ sub page_display {
             when("auto.save")  { return $self -> api_response($self -> _build_autosave_response());  }
             when("auto.load")  { return $self -> api_response($self -> _build_autoload_response());  }
             when("auto.check") { return $self -> api_response($self -> _build_autocheck_response()); }
+
+            # API operations related to media handling
+            when("media.open")   { return $self -> api_html_response($self -> _build_mediaopen_response()); }
+            when("media.upload") { return $self -> api_response($self -> _build_mediaupload_response()); }
+            when("media.stream") { return $self -> api_html_response($self -> _build_mediastream_response()); }
 
             default {
                 return $self -> api_response($self -> api_errorhash('bad_op',

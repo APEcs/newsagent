@@ -4,7 +4,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>{V_[sitename]}: ***title***</title>
 
-    <link rel="stylesheet" type="text/css" href="{V_[templatepath]}css/core.css" />
+    <link rel="stylesheet" type="text/css" href="{V_[csspath]}core.css" />
 
     <!-- mootools for effects and javascript sanity -->
     <script type='text/javascript' src="{V_[jspath]}mootools-core.js"></script>
@@ -19,12 +19,10 @@
 
     <!-- userbar support -->
     <script type='text/javascript' src="{V_[jspath]}userbar.js"></script>
-    <link rel="stylesheet" type="text/css" href="{V_[templatepath]}css/userbar.css" />
+    <link rel="stylesheet" type="text/css" href="{V_[csspath]}userbar.css" />
 
     <!-- favicon -->
     <link rel="icon" type="image/png" href="{V_[templatepath]}images/favicon.png" />
-
-    ***extrahead***
 
     <!--[if IE]>
     <style type="text/css">
@@ -36,15 +34,7 @@
         basepath = "{V_[scriptpath]}";
         tempath  = "{V_[templatepath]}";
         utcoffset = ***utcoffset***;
-// ]]>
-    </script>
-</head>
-<body id="newsagent" class="newsagent">
-<div id="content" class="content clear">
-***content***
-<div id="footer">***footer***</div>
-            <script type="text/javascript">
-// <![CDATA[
+
 window.addEvent('domready', function() {
     $$('a.rel').each(function(element) {
                          element.addEvent('click',
@@ -72,7 +62,14 @@ window.addEvent('domready', function() {
     });
 });
 // ]]>
-            </script></div>
+    </script>
+    ***extrahead***
+</head>
+<body id="newsagent" class="newsagent">
+<div id="content" class="content clear">
+***content***
+<div id="footer">***footer***</div>
+            </div>
 ***userbar***
 </body>
 </html>

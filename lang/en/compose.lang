@@ -68,8 +68,8 @@ COMPOSE_IMAGES      = Images
 COMPOSE_FILES       = Files
 COMPOSE_IMGNONE     = No image
 COMPOSE_IMGURL      = Image URL
-COMPOSE_IMGFILE     = Upload image file
-COMPOSE_IMG         = Existing image
+COMPOSE_IMG         = Use existing or upload new image
+COMPOSE_MEDIALIB    = Click to select image
 
 COMPOSE_IMGURL_DESC = The image URL must be an absolute URL stating http:// or https://
 

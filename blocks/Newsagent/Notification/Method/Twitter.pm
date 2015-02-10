@@ -194,7 +194,7 @@ sub send {
     my $status = $self -> _build_status($article);
 
     # Should an image be sent with the update?
-    my $image = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_path"}, $article -> {"images"} -> [1] -> {"location"})
+    my $image = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_path"}, 'large', $article -> {"images"} -> [1] -> {"location"})
         if($article -> {"images"} && $article -> {"images"} -> [1] && $article -> {"images"} -> [1] -> {"type"} eq "file");
 
     # now process the accounts.

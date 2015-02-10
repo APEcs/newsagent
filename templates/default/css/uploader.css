@@ -1,0 +1,183 @@
+button.medialib {
+}
+
+/* The following assumes a HTML setup as:
+ *
+ * <div ... > <!-- container for drag&drop feature -->
+ *     <div id="ml-droparea">
+ *         <div id="ml-dropzone">Drop image to upload here</div>
+ *     </div>
+ *     <div id="progressbox">
+ *         <div id="ml-progress"></div>
+ *         <div id="ml-progressmsg"></div>
+ *     </div>
+ * </div>
+ */
+
+/* outer drop area styling */
+#ml-droparea {
+	background: #545A74;
+	padding: 10px;
+	clear: both;
+	text-align: center;
+}
+
+#ml-droparea.hover {
+	background: #121a3f;
+}
+
+#ml-droparea.disabled {
+	background: #666;
+}
+
+/* inner drop area */
+#ml-dropzone {
+	border: #ddd 1px dashed;
+    margin: 0px 0px;
+	color: white;
+	padding: 20px;
+	text-align: center;
+}
+
+/* Progress display. Note that the outer div has relative position
+ * so that the progress message can be overlaid over the progress
+ * bar with absolute positioning.
+ */
+#ml-progressbox {
+	border-radius: 3px;
+    position: relative;
+	margin: 5px 0;
+	height: 20px;
+	background: #545A74;
+}
+
+#ml-progress {
+	border-radius: 3px;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    display: block;
+    width: 0;
+	height: 20px;
+	background: #dd5A74 url('../images/upload.gif') repeat-x top left;
+}
+
+#ml-progressmsg {
+	border-radius: 3px;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    display: block;
+    width: 100%;
+	height: 20px;
+    color: #FFF;
+    text-align: center;
+    line-height: 20px;
+    font-size: 12px;
+    text-shadow: 2px 2px 1px #333;
+}
+
+/* Media selection box styling */
+
+.loading {
+    width: 100%;
+    height: 400px;
+    line-height: 400px;
+    text-align: center;
+}
+
+.loading img {
+    vertical-align: middle;
+}
+
+#ml-body {
+    margin: 0px;
+    padding: 0px;
+}
+
+#ml-body > li {
+    list-style-type: none;
+    margin: 0px;
+}
+
+div.controlbox {
+    text-align: right;
+    margin: 3px 0px;
+}
+
+#selector {
+    height: 390px;
+    overflow-x: hidden;
+    overflow-y: scroll;
+}
+
+.selector-image {
+    display: inline-block;
+    margin: 3px;
+    padding: 2px;
+    position: relative;
+    border: 1px solid #666;
+    overflow: hidden;
+    width: 130px;
+}
+
+.selector-image:hover {
+    border: 1px solid #07F;
+    box-shadow: 0 0 5px rgba(0, 0, 255, 1);
+    -webkit-box-shadow: 0 0 5px rgba(0, 0, 255, 1);
+    -moz-box-shadow: 0 0 5px rgba(0, 0, 255, 1);
+
+}
+
+.selector-image.media {
+    height: 128px;
+}
+
+.selector-image.icon {
+    height: 80px;
+}
+
+.selector-imgcore {
+    position: relative;
+    text-align: center;
+}
+
+.selector-image.icon .selector-imgcore {
+    margin-top: 8px;
+}
+
+div.selector-imgname, ul.selector-imgmeta {
+    position: absolute;
+    display: none;
+    left: 0px;
+    width: 100%;
+    background-color: rgba(128, 128, 128, 0.6);
+    margin: 0px;
+    padding: 2px;
+    color: #fff;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+div.selector-imgname {
+    font-size: 11px;
+    font-weight: bold;
+    padding: 4px;
+    width: 124px;
+    top: 0px;
+}
+
+ul.selector-imgmeta {
+    font-size: 9px;
+    bottom: 0px;
+}
+
+.selector-image:hover .selector-imgname, .selector-image:hover .selector-imgmeta {
+    display: block;
+}
+
+.selector-imgmeta li {
+    list-style-type: none;
+    padding: 0px;
+    margin: 0px;
+}

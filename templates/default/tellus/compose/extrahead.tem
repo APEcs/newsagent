@@ -2,4 +2,4 @@
     <script type="text/javascript" src="{V_[jspath]}ckeditor/ckeditor.js"></script>
     <script type="text/javascript" src="{V_[commonpath]}cke_configs/basic_open.js"></script>
 
-    <link href="{V_[templatepath]}css/tellus.css" rel="stylesheet" />
+    <link href="{V_[csspath]}tellus.css" rel="stylesheet" />

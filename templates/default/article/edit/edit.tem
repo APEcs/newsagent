@@ -52,6 +52,15 @@ window.addEvent('domready', function() {
     set_visible_levels();
 
     matrix_handler = new Matrix();
+
+    if($('imagea_mediabtn'))
+        new MediaLibrary('imagea_mediabtn', 'imagea_imgid', { mode: 'icon',
+                                                              loadCount: ***loadcount***,
+                                                              initialCount: ***initialcount***});
+
+    if($('imageb_mediabtn'))
+        new MediaLibrary('imageb_mediabtn', 'imageb_imgid', { loadCount: ***loadcount***,
+                                                              initialCount: ***initialcount***});
 });
 </script>
 <div id="composeform">
@@ -112,10 +121,9 @@ window.addEvent('domready', function() {
                                 ***imageaopts***
                             </select>
                             <div class="subopt" id="imagea_mode_url"><input class="fillwide" type="text" name="imagea_url" id="imagea_url" size="32" value="***imagea_url***" /></div>
-                            <div class="subopt" id="imagea_mode_file"><input class="fillwide" type="file" name="imagea_file" id="imagea_file" /></div>
-                            <div class="subopt" id="imagea_mode_img"><select name="imagea_img" id="imagea_img" class="fancyselect">
-                                    ***imageaimgs***
-                            </select></div>
+                            <div class="subopt" id="imagea_mode_img"><button id="imagea_mediabtn" name="imagea_media" class="button blue medialib">***imagea_btn***</button>
+                                                                     <input id="imagea_imgid" name="imagea_imgid" type="hidden" value="***imagea_id***" />
+                            </div>
                         </dd>
                     </dl>
                     <dl class="input iblock">
@@ -124,10 +132,9 @@ window.addEvent('domready', function() {
                                 ***imagebopts***
                             </select>
                             <div class="subopt" id="imageb_mode_url"><input class="fillwide" type="text" name="imageb_url" id="imageb_url" size="32" value="***imageb_url***" /></div>
-                            <div class="subopt" id="imageb_mode_file"><input class="fillwide" type="file" name="imageb_file" id="imageb_file" /></div>
-                            <div class="subopt" id="imageb_mode_img"><select name="imageb_img" id="imageb_img" class="fancyselect">
-                                    ***imagebimgs***
-                            </select></div>
+                            <div class="subopt" id="imageb_mode_img"><button id="imageb_mediabtn" name="imageb_media" class="button blue medialib">***imageb_btn***</button>
+                                                                     <input id="imageb_imgid" name="imageb_imgid" type="hidden" value="***imageb_id***" />
+                            </div>
                         </dd>
                     </dl>
                 </div>

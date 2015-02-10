@@ -111,13 +111,8 @@ sub _generate_compose {
     }
 
     # Image options
-    my $imagea_opts = $self -> _build_image_options($args -> {"images"} -> {"a"} -> {"mode"});
-    my $imageb_opts = $self -> _build_image_options($args -> {"images"} -> {"b"} -> {"mode"});
-
-    # Pre-existing image options
-    my $fileimages = $self -> {"article"} -> get_file_images();
-    my $imagea_img = $self -> {"template"} -> build_optionlist($fileimages, $args -> {"images"} -> {"a"} -> {"img"});
-    my $imageb_img = $self -> {"template"} -> build_optionlist($fileimages, $args -> {"images"} -> {"b"} -> {"img"});
+    my ($imagea_opts, $imagea_btn) = $self -> _build_image_options($args -> {"images"} -> {"a"}, 'icon');
+    my ($imageb_opts, $imageb_btn) = $self -> _build_image_options($args -> {"images"} -> {"b"}, 'media');
 
     # Wrap the error in an error box, if needed.
     $error = $self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $error})
@@ -176,10 +171,12 @@ sub _generate_compose {
                                                                                    "***rtimestamp***"       => $args -> {"release_time"},
                                                                                    "***imageaopts***"       => $imagea_opts,
                                                                                    "***imagebopts***"       => $imageb_opts,
+                                                                                   "***imagea_btn***"       => $imagea_btn,
+                                                                                   "***imageb_btn***"       => $imageb_btn,
                                                                                    "***imagea_url***"       => $args -> {"images"} -> {"a"} -> {"url"} || "https://",
                                                                                    "***imageb_url***"       => $args -> {"images"} -> {"b"} -> {"url"} || "https://",
-                                                                                   "***imageaimgs***"       => $imagea_img,
-                                                                                   "***imagebimgs***"       => $imageb_img,
+                                                                                   "***imagea_id***"        => $args -> {"images"} -> {"a"} -> {"img"} || 0,
+                                                                                   "***imageb_id***"        => $args -> {"images"} -> {"b"} -> {"img"} || 0,
                                                                                    "***relmode***"          => $args -> {"relmode"} || 0,
                                                                                    "***userlevels***"       => $feed_levels,
                                                                                    "***levellist***"        => $jslevels,
@@ -191,6 +188,8 @@ sub _generate_compose {
                                                                                    "***preset***"           => $args -> {"preset"},
                                                                                    "***fullsummary***"      => $args -> {"full_summary"} ? 'checked="checked"' : '',
                                                                                    "***ckeconfig***"        => $ckeconfig,
+                                                                                   "***loadcount***"        => $self -> {"settings"} -> {"config"} -> {"Media:fetch_count"},
+                                                                                   "***initialcount***"     => $self -> {"settings"} -> {"config"} -> {"Media:initial_count"},
                                                    }));
 }
 

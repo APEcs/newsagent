@@ -26,7 +26,6 @@ use Newsagent::System::Feed;
 use Newsagent::System::Schedule;
 use Newsagent::System::Article;
 use Newsagent::System::NotificationQueue;
-use File::Basename;
 use v5.12;
 
 # ============================================================================
@@ -149,8 +148,6 @@ sub new {
                              "name"  => "{L_COMPOSE_IMGNONE}" },
                             {"value" => "url",
                              "name"  => "{L_COMPOSE_IMGURL}" },
-                            {"value" => "file",
-                             "name"  => "{L_COMPOSE_IMGFILE}" },
                             {"value" => "img",
                              "name"  => "{L_COMPOSE_IMG}" },
                           ];
@@ -227,39 +224,6 @@ sub new {
 # ============================================================================
 #  Validation code
 
-## @method @ _validate_article_file($base)
-# Determine whether the file submitted for the specified image submission field is
-# valid, and copy it into the image filestore if needed.
-#
-# @param base The base name of the image submission field.
-# @return Two values: the image id on success, undef on error, and an error message
-#         if needed.
-sub _validate_article_file {
-    my $self = shift;
-    my $base = shift;
-
-    my $filename = $self -> {"cgi"} -> param($base."_file");
-    return (undef, $self -> {"template"} -> replace_langvar("COMPOSE_IMGFILE_ERRNOFILE", {"***field***" => "{L_COMPOSE_".uc($base)."}"}))
-        if(!$filename);
-
-    my $tmpfile = $self -> {"cgi"} -> tmpFileName($filename)
-        or return (undef, $self -> {"template"} -> replace_langvar("COMPOSE_IMGFILE_ERRNOTMP", {"***field***" => "{L_COMPOSE_".uc($base)."}"}));
-
-    my ($name, $path, $extension) = fileparse($filename, '\..*');
-    $filename = $name.$extension;
-    $filename =~ tr/ /_/;
-    $filename =~ s/[^a-zA-Z0-9_.-]//g;
-
-    # By the time this returns, either the file has been copied into the filestore and the
-    # database updated with the file details, or an error has occurred.
-    my $imgdata = $self -> {"article"} -> store_image($tmpfile, $filename, $self -> {"session"} -> get_session_userid())
-        or return (undef, $self -> {"article"} -> errstr());
-
-    # All that _validate_article_image() needs is the new ID
-    return ($imgdata -> {"id"}, undef);
-}
-
-
 ## @method private $ _validate_article_image($args, $imgid)
 # Validate the image field for an article. This checks the values set for one
 # of the possible images attached to an article.
@@ -294,22 +258,12 @@ sub _validate_article_image {
                       $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
         }
 
-        # Image validation ("us an existing image") is basically checking that an entry with the corresponding ID is in the database.
-        when("img") { ($args -> {"images"} -> {$imgid} -> {"img"}, $error) = $self -> validate_options($base."_img", {"required"   => 1,
-                                                                                                                      "nicename"   => $self -> {"template"} -> replace_langvar("COMPOSE_IMGURL"),
-                                                                                                                      "source"     => $self -> {"settings"} -> {"database"} -> {"images"},
-                                                                                                                      "where"      => "WHERE `id` = ?"});
+        # Image validation ("use an existing image") is basically checking that an entry with the corresponding ID is in the database.
+        when("img") { ($args -> {"images"} -> {$imgid} -> {"img"}, $error) = $self -> validate_options($base."_imgid", {"required"   => 1,
+                                                                                                                        "nicename"   => $self -> {"template"} -> replace_langvar("COMPOSE_IMG"),
+                                                                                                                        "source"     => $self -> {"settings"} -> {"database"} -> {"images"},
+                                                                                                                        "where"      => "WHERE `id` = ?"});
                       $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
-        }
-
-        # File upload is more complicated: if the file upload is successful, the image mode is switched to 'img', as
-        # at that point the user is using an existing image; it just happens to be the one they uploaded!
-        when("file") { ($args -> {"images"} -> {$imgid} -> {"img"}, $error) = $self -> _validate_article_file($base);
-                       if($error) {
-                           $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
-                       } else {
-                           $args -> {"images"} -> {$imgid} -> {"mode"} = "img";
-                       }
         }
     }
 
@@ -742,20 +696,30 @@ sub _validate_article {
 # ============================================================================
 #  Form generators
 
-## @method private $ _build_image_options($selected)
+## @method private $ _build_image_options($imgopt, $mode)
 # Generate a string containing the options to provide for image selection.
 #
-# @param selected The selected image option, defaults to 'none', must be one of
-#                 'none', 'url', 'file', or 'img'
-# @return A string containing the image mode options
+# @param imgopt The image data to work on.
+# @param mode   The image mode, should be one of 'icon' or 'media'
+# @return A string containing the image mode options, and a string containing
+#         the contents of the medialib button.
 sub _build_image_options {
-    my $self     = shift;
-    my $selected = shift;
+    my $self   = shift;
+    my $imgopt = shift;
+    my $mode   = shift;
 
-    $selected = "none"
-        unless($selected && ($selected eq "url" || $selected eq "file" || $selected eq "img"));
+    # Force a sane mode
+    $imgopt -> {"mode"} = "none"
+        unless($imgopt -> {"mode"} && ($imgopt -> {"mode"} eq "url" || $imgopt -> {"mode"} eq "img"));
 
-    return $self -> {"template"} -> build_optionlist($self -> {"imgops"}, $selected);
+    my $button = $self -> {"template"} -> replace_langvar("COMPOSE_MEDIALIB");
+    if($imgopt -> {"mode"} eq "img") {
+        my $imgdata = $self -> {"article"} -> {"images"} -> get_image_info($imgopt -> {"img"});
+        $button = '<img src="'.$imgdata -> {"path"} -> {$mode}.'" />'
+            if($imgdata);
+    }
+
+    return ($self -> {"template"} -> build_optionlist($self -> {"imgops"}, $imgopt -> {"mode"}), $button);
 }
 
 

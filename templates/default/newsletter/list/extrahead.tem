@@ -2,7 +2,7 @@
     <script type="text/javascript" src="{V_[jspath]}CustomSortable.js"></script>
     <script type="text/javascript" src="{V_[jspath]}newsletter.js"></script>
 
-    <link href="{V_[templatepath]}css/newsletter.css" rel="stylesheet" />
+    <link href="{V_[csspath]}newsletter.css" rel="stylesheet" />
 
     <!-- date picker related -->
     <!--script src="{V_[tjspath]}datepicker/Locale.en-US.DatePicker.js" type="text/javascript"></script -->
