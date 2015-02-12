@@ -31,3 +31,7 @@ NEWSLETTER_API_PUBLISHED = Newsletter published successfully!<br /><br />You can
 NEWSLETTER_PUBLISHING  = Publishing...
 
 NEWSLETTER_REQUIRED    = required
+
+NEWSLETTER_CONTRIB     = Contributors
+NEWSLETTER_CONTRIBNAME = Name
+NEWSLETTER_CONTRIBDONE = Done?

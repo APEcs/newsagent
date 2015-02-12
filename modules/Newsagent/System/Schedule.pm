@@ -49,6 +49,9 @@ sub new {
     return Webperl::SystemModule::set_error("No metadata object available.") if(!$self -> {"metadata"});
     return Webperl::SystemModule::set_error("No roles object available.")    if(!$self -> {"roles"});
 
+    # The roles that determine whether someohe has access to a given newsletter.
+    $self -> {"defined_roles"} = ['newsletter.contribute', 'newsletter.manager', 'newsletter.publisher'];
+
     return $self;
 }
 
@@ -413,14 +416,15 @@ sub get_newsletter_datelist_json {
 # Determine the date range for a given newsletter issue. This attempts
 # to work out, based on the schedule set in the specified newsletter
 # and an optional start date, when the current issue will be released, and
-# when the previous issue should have been released. If the newsletter
-# has no schedule - it is manual release - this can't produce a range.
+# when the previous issue should have been released.
 #
 # @param newsletter A reference to a hash containing the newsletter data.
 # @param issue      A reference to an array containing the issue year, month, and day.
 # @return An array of two values: the previous issue release date, and
 #         the next issue release date, both as unix timestamps. If the
-#         newsletter is a manual release, this returns undefs
+#         newsletter is a manual release, this returns the date of the last
+#         publication, the current date, and a true value to indicate
+#         that articles marked 'next' should be used.
 sub get_newsletter_daterange {
     my $self       = shift;
     my $newsletter = shift;
@@ -462,7 +466,17 @@ sub get_newsletter_daterange {
 
         return ($prev_time -> epoch(), $next_time -> epoch(), $usenext);
     } else {
-        return (undef, time(), 1);
+        # Get the most recent digest date
+        my $digesth = $self -> {"dbh"} -> prepare("SELECT `generated`
+                                                   FROM `".$self -> {"settings"} -> {"database"} -> {"digests"}."`
+                                                   WHERE `schedule_id` = ?
+                                                   ORDER BY `generated` DESC
+                                                   LIMIT 1");
+        $digesth -> execute($newsletter -> {"id"})
+            or return $self -> self_error("Unable to fetch last digest date: ".$self -> {"dbh"} -> errstr);
+
+        my $digest = $digesth -> fetchrow_arrayref();
+        return ($digest ? $digest -> [0] : 0, time(), 1);
     }
 }
 
@@ -707,6 +721,99 @@ sub reorder_articles_fromsortdata {
 }
 
 
+## @method $ get_newsletter_contributors($newsid, $mintime, $maxtime)
+# Get the list of contributors to the specified newsletter, and whether they have
+# indicated that their content is ready for this release.
+#
+# @param newsid the ID of the newsletter to get the contributor data for.
+
+# @return a refrence to an array of hashes of user and readiness data.
+sub get_newsletter_contributors {
+    my $self    = shift;
+    my $newsid  = shift;
+    my $mintime = shift;
+    my $maxtime = shift;
+
+    $self -> clear_error();
+
+    # First find out which users can possibly contribute to the newsletter
+    my $users = $self -> _fetch_newsletter_users($newsid)
+        or return undef;
+
+    # Get the list of users who say they're ready
+    my $ready = $self -> _fetch_ready_users($newsid, $mintime, $maxtime)
+        or return undef;
+
+    # Merge the two sets of data, marking users as ready where appropriate
+    foreach my $user (@{$ready}) {
+        $users -> {$user} -> {"ready"} = 1;
+    }
+
+    my @userlist = keys(%{$users});
+    if(scalar(@userlist)) {
+        my $placeholders = "?".(",?" x (scalar(@userlist) - 1));
+
+        # And pull in the user data
+        my $userdatah = $self -> {"dbh"} -> prepare("SELECT `user_id`, `username`, `realname`, `email`
+                                                     FROM `".$self -> {"settings"} -> {"database"} -> {"users"}."`
+                                                     WHERE `user_id` IN ($placeholders)");
+        $userdatah -> execute(@userlist)
+            or return $self -> self_error("Unable to fetch user data: ".$self -> {"dbh"} -> errstr());
+
+        while(my $user = $userdatah -> fetchrow_hashref()) {
+            $users -> {$user -> {"user_id"}} -> {"name"}  = $user -> {"realname"} || $user -> {"username"};
+            $users -> {$user -> {"user_id"}} -> {"email"} = $user -> {"email"};
+        }
+    }
+
+    return $users;
+}
+
+
+## @method $ toggle_ready($newsid, $userid, $issuedate, $readytime)
+# Toggle the indication of the specified user's readiness for the provided newsletter.
+# note that this does not determine whether the user has access to the newsletter;
+# that must have been determined before calling this function!
+#
+# @param newsid    The ID of the newsletter the user has finished contributing to.
+# @param userid    The ID of the contributing user.
+# @param issuedate Unix timestamp of the start of the issue. For manual
+#                  newsletters this should be the second following the last issue date.
+# @param readytime The timestamp to set for the user's readiness. This must not be
+#                  less than issuedate!
+# @return true on success, undef on error.
+sub toggle_ready {
+    my $self      = shift;
+    my $newsid    = shift;
+    my $userid    = shift;
+    my $issuedate = shift;
+    my $readytime = shift;
+
+    # Try to delete the user's status. This should result in a non-zero row count
+    # if the user had an old status row
+    my $offh = $self -> {"dbh"} -> prepare("DELETE
+                                            FROM `".$self -> {"settings"} -> {"database"} -> {"schedule_ready"}."`
+                                            WHERE `schedule_id` = ?
+                                            AND `user_id` = ?
+                                            AND `issue_date` = ?");
+    my $rows = $offh -> execute($newsid, $userid, $issuedate);
+    return $self -> self_error("Unable to execute status removal query: ".$self -> {"dbh"} -> errstr) if(!$rows);
+
+    # If the row count is non-zero, the user had a status removed so we don't
+    # want to add it back here
+    return 1 if($rows > 0);
+
+    # Otherwise, add the new row
+    my $addh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"schedule_ready"}."`
+                                            (`schedule_id`, `user_id`, `issue_date`, `ready_at`)
+                                            VALUES(?, ?, ?, ?)");
+    $addh -> execute($newsid, $userid, $issuedate, $readytime)
+        or return $self -> self_error("Failed to insert new readiness row: ".$self -> {"dbh"} -> errstr);
+
+    return 1;
+}
+
+
 # ============================================================================
 #  Digesting
 
@@ -811,7 +918,7 @@ sub add_section_relation {
             or return $self -> self_error("Unable to perform article section sort_order lookup: ". $self -> {"dbh"} -> errstr);
 
         my $posrow = $posh -> fetchrow_arrayref();
-        $sort_order = $posrow ? $posrow -> [0] + 1 : 1;
+        $sort_order = $posrow ? ($posrow -> [0] || 0) + 1 : 1;
     }
 
     # And do the insert
@@ -1081,6 +1188,94 @@ sub _fetch_newsletter_notifications {
     }
 
     return ($methods, $notify_matrix);
+}
+
+
+## @method private $ _fetch_newsletter_users($newsid)
+# Obtain a list of users who have access to contribute to the specified newsletter.
+# This will generate a list of the users who have access to contribute articles
+# to the specified newsletter, or a subsection of it.
+#
+# @param newsid The ID of the newsletter to fetch the user list for.
+# @return A reference to an hash of user IDs on success, undef on error.
+sub _fetch_newsletter_users {
+    my $self = shift;
+    my $newsid = shift;
+
+    $self -> clear_error();
+
+    # Fetch the list of sections for this newsletter.
+    my $secth = $self -> {"dbh"} -> prepare("SELECT `metadata_id`
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"schedule_sections"}."`
+                                             WHERE `schedule_id` = ?");
+    $secth -> execute($newsid)
+        or return $self -> self_error("Unable to execute section query: ".$self -> {"dbh"} -> errstr);
+
+    my $userhash = {};
+    while(my $section = $secth -> fetchrow_arrayref()) {
+        my $users = $self -> {"roles"} -> get_role_users($section -> [0], $self -> {"defined_roles"}, 1)
+            or return $self -> self_error("Role lookup error: ".$self -> {"roles"} -> errstr());
+
+        # We only need to mark the user as being a contributor in some fashion here.
+        foreach my $user (keys(%{$users})) {
+            $userhash -> {$user} -> {"ready"} = 0; # store zeros as the default to show a user can contribute but may not be ready
+        }
+    }
+
+    my @userlist = keys(%{$userhash});
+
+    return $self -> self_error("No users have access to newsletter $newsid!")
+        if(!scalar(@userlist));
+
+    return $userhash;
+}
+
+
+## @method private $ _fetch_ready_users($newsid, $mintime, $maxtime)
+# Fetch the list of users who say they are done contributing to the specified
+# newsletter for the given time.
+#
+# @param newsid  The ID of the newsletter to fetch ready users for.
+# @param mintime The minimum ready time to include in the result (inclusive).
+#                If not set, all ready entries since the beginning are included.
+# @param maxtime The maximum ready time to include in the result (inclusive).
+#                if not set, all ready entries from mintime on are included.
+# @return A reference to an array of ready user IDs on success (which may be
+#         an empty array!), undef on error.
+sub _fetch_ready_users {
+    my $self    = shift;
+    my $newsid  = shift;
+    my $mintime = shift;
+    my $maxtime = shift;
+
+    $self -> clear_error();
+
+    my @params  = ($newsid);
+    my $filters = "";
+    if($mintime) {
+        push(@params, $mintime);
+        $filters .= " AND `ready_at` >= ?";
+    }
+
+    if($maxtime) {
+        push(@params, $maxtime);
+        $filters .= " AND `ready_at` <= ?";
+    }
+
+    # Now that we have users, work out which ones have indicated they are ready
+    my $readyh = $self -> {"dbh"} -> prepare("SELECT `user_id`
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {"schedule_ready"}."`
+                                              WHERE `schedule_id` = ?
+                                              $filters");
+    $readyh -> execute(@params)
+        or return $self -> self_error("Ready user lookup failed: ".$self -> {"dbh"} -> errstr);
+
+    my @users = ();
+    while(my $ready = $readyh -> fetchrow_arrayref()) {
+        push(@users, $ready -> [0]);
+    }
+
+    return \@users;
 }
 
 1;

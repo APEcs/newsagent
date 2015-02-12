@@ -1,0 +1,1 @@
+<tr id="contrib-***id***"><td class="***status***">***name***</td><td class="toggle ***status***"><input type="checkbox" class="readytoggle" id="ready-***id***" name="ready-***id***" ***checked*** /></td></tr>

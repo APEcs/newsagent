@@ -234,3 +234,58 @@ div.section.required.empty h3 span.reqtitle {
     font-size: 9px;
     color: #A00;
 }
+
+div#newsletready {
+    margin-top: 2em;
+    width: 18%;
+}
+
+div#newsletready h2 {
+    font-size: 14px;
+    font-weight: bold;
+    border-bottom: 1px dotted #555;
+}
+
+div#newsletready table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+}
+
+div#newsletready table thead th {
+    border-bottom: 1px solid #ddd;
+}
+
+div#newsletready table tbody {
+    overflow-x: hidden;
+    overflow-y: scroll;
+}
+
+div#newsletready table tbody td {
+    border-bottom: 1px dotted #ddd;
+}
+
+div#newsletready table tbody td.toggle {
+    text-align: center;
+}
+
+div#newsletready table tbody td.toggle.done {
+    text-align: center;
+}
+
+div#newsletready table tbody td.readymark {
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+div#newsletready table tbody td.readymark.notdone {
+    background-image: url("../images/newsletter/notdone.png");
+}
+
+div#newsletready table tbody td.done {
+    background-color: #C3FFC3;
+}
+
+div#newsletready table tbody td.readymark.done {
+    background-image: url("../images/newsletter/done.png");
+}

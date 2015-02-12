@@ -25,6 +25,17 @@ messages = { saving:  "{L_NEWSLETTER_LIST_SAVING}",
             <div id="newsletbrowser">
 ***newslets***
             </div>
+            <div id="newsletready">
+                <h2>{L_NEWSLETTER_CONTRIB}</h2>
+                <table>
+                    <thead>
+                        <tr><th>{L_NEWSLETTER_CONTRIBNAME}</th><th>{L_NEWSLETTER_CONTRIBDONE}</th></tr>
+                    </thead>
+                    <tbody id="newsletcontribs">
+***readylist***
+                    </tbody>
+                </table>
+            </div>
             <div class="clear"></div>
         </div>
     </div>

@@ -1,6 +1,7 @@
 var sortlist;
 var savetimer;
 var saving = false;
+var toggling = false;
 
 /** Add a click handler to the specified newsletter list element to switch
  *  the newsletter view to a different newsletter.
@@ -160,6 +161,33 @@ function set_issue_date(date)
     location.href = issueurl + "/" +  date.getFullYear() + "/" + (date.getMonth() + 1) + "/" + date.getDate();
 }
 
+
+function attach_ready_toggle()
+{
+    $$('input.readytoggle').each(function(element) {
+        element.removeEvents('change');
+
+        element.addEvent('change', function() {
+            if(!toggling) {
+                toggling = true;
+
+                var togglereq = new Request.HTML({url: api_request_path("newsletters", "toggleready"),
+                                                  onRequest: function() { element.set('disabled', true); },
+                                                  onSuccess: function(respTree, respElems, respHTML) {
+                                                      $('newsletcontribs').getChildren().destroy().empty();
+                                                      $('newsletcontribs').set('html', respHTML);
+
+                                                      attach_ready_toggle();
+                                                      toggling = false;
+                                                  }
+                                                 });
+                togglereq.post({ name: newsname });
+            }
+        });
+    });
+
+}
+
 window.addEvent('domready', function() {
     // Enable newsletter selection
     $$('div.newstitle').each(function(element) { setup_newsletter_link(element); });
@@ -182,4 +210,5 @@ window.addEvent('domready', function() {
     });
 
     check_required_sections();
+    attach_ready_toggle();
 });

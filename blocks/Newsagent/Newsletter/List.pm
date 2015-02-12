@@ -113,6 +113,38 @@ sub _build_controls {
 }
 
 
+## @method private $ _build_contributor_list($contribs, $newsid)
+# Generate the list of contributors to display in the newsletter editor page.
+#
+# @param contribs A reference to a hash of contributor settings.
+# @param newsid   The ID of the newsletter being displayed.
+# @return A string containing the contributor list.
+sub _build_contributor_list {
+    my $self     = shift;
+    my $contribs = shift;
+    my $newsid   = shift;
+    my $result   = "";
+    my $activeuser = $self -> {"session"} -> get_session_userid();
+
+    my @idlist = sort { $contribs -> {$a} -> {"name"} cmp $contribs -> {$b} -> {"name"} } keys(%{$contribs});
+    foreach my $userid (@idlist) {
+        if($userid == $activeuser) {
+            $result .= $self -> {"template"} -> load_template("newsletter/list/contrib-user.tem", {"***id***"      => $userid,
+                                                                                                   "***name***"    => $contribs -> {$userid} -> {"name"},
+                                                                                                   "***checked***" => $contribs -> {$userid} -> {"ready"} ? 'checked="checked"' : "",
+                                                                                                   "***status***"  => $contribs -> {$userid} -> {"ready"} ? "done" : "notdone"});
+        } else {
+            $result .= $self -> {"template"} -> load_template("newsletter/list/contrib.tem", {"***id***"     => $userid,
+                                                                                              "***name***"   => $contribs -> {$userid} -> {"name"},
+                                                                                              "***email***"  => $contribs -> {$userid} -> {"email"},
+                                                                                              "***status***" => $contribs -> {$userid} -> {"ready"} ? "done" : "notdone"});
+        }
+    }
+
+    return $result;
+}
+
+
 # ============================================================================
 #  Content generators
 
@@ -153,7 +185,7 @@ sub _generate_newsletter_list {
     my $newsname = shift;
     my $issue    = shift;
     my $userid   = $self -> {"session"} -> get_session_userid();
-    my ($newsletlist, $msglist, $controls, $intro, $sections) = ("", "", "", "", []);
+    my ($newsletlist, $msglist, $controls, $intro, $readylist, $sections) = ("", "", "", "", "", []);
 
     # Fetch the list of schedules and sections the user can edit
     my $schedules  = $self -> {"schedule"} -> get_user_schedule_sections($userid);
@@ -171,6 +203,10 @@ sub _generate_newsletter_list {
 
         # And work out the date range for articles that should appear in the selected issue
         my ($mindate, $maxdate, $usenext) = $self -> {"schedule"} -> get_newsletter_daterange($newsletter, $dates, $issue);
+
+        my $contributors = $self -> {"schedule"} -> get_newsletter_contributors($newsletter -> {"id"}, $mindate, $maxdate);
+        $readylist = $self -> _build_contributor_list($contributors, $newsletter -> {"id"})
+            if($contributors);
 
         # Fetch the messages set for the current newsletter
         my ($messages, $blocked) = $self -> {"schedule"} -> get_newsletter_messages($newsletter -> {"id"}, $userid, $usenext, $mindate, $maxdate);
@@ -218,6 +254,7 @@ sub _generate_newsletter_list {
                                                                                    "***intro***"      => $intro,
                                                                                    "***controls***"   => $controls,
                                                                                    "***newsname***"   => $newsname,
+                                                                                   "***readylist***"  => $readylist,
                                                                                    "***nlist-url***"  => $self -> build_url(block    => "newsletters",
                                                                                                                             params   => [],
                                                                                                                             pathinfo => []),
@@ -304,6 +341,67 @@ sub _build_publish_response {
 }
 
 
+sub _build_contributor_response {
+    my $self = shift;
+
+
+}
+
+
+sub _build_toggleready_response {
+    my $self = shift;
+    my $userid = $self -> {"session"} -> get_session_userid();
+
+    # Obtain the name of the newsletter the user is looking at
+    my ($name, $error) = $self -> validate_string("name", {"required"   => 1,
+                                                           "nicename"   => "Newsletter",
+                                                           "formattest" => '^\w+$',
+                                                           "formatdesc" => $self -> {"template"} -> replace_langvar("NEWSLETTER_API_BADNAME"),
+                                                           });
+    return $self -> api_errorhash("api_error", $error) if($error);
+
+    my ($issue, $issueerr) = $self -> validate_string("issue", {"required"   => 0,
+                                                                "nicename"   => "Issue",
+                                                                "formattest" => '^\d{4}-\d{2}-\d{2}$',
+                                                                "formatdesc" => "Issue format: YYYY-MM-DD",
+                                                      });
+    return $self -> api_errorhash("api_error", $issueerr) if($issueerr);
+
+    my @issuedate = $issue =~ /^(\d{4})-(\d{2})-(\d{2})$/
+        if($issue);
+
+    # Fetch the newsletter, including checking access
+    my $newsletter = $self -> {"schedule"} -> active_newsletter($name, $userid)
+        or return $self -> api_errorhash("api_error", $self -> {"schedule"} -> errstr());
+
+    return $self -> api_errorhash("api_error", "Permission denied: you do not have access to this newsletter")
+        unless($newsletter -> {"id"});
+
+    # Fetch the list of dates the newsletter is released on (this is undef for manual releases)
+    my $dates = $self -> {"schedule"} -> get_newsletter_datelist($newsletter, $self -> {"settings"} -> {"config"} -> {"newsletter:future_count"});
+
+    # And work out the date range for the current newsletter
+    my ($mindate, $maxdate, $usenext) = $self -> {"schedule"} -> get_newsletter_daterange($newsletter, $dates, \@issuedate);
+
+    # Toggle the user's readiness. The fourth argument is the timestamp to set for the toggle,
+    # and deciding that is a bit fiddly. For manual newsletters (with no schedule) it should be
+    # time(), while for scheduled releases it needs to be the earliest time in the schedule OR
+    # the current time if in the issue time range
+    my $readytime = time();
+    $readytime = $mindate
+        if($newsletter -> {"schedule"} && ($readytime < $mindate || $readytime > $maxdate));
+
+    $self -> {"schedule"} -> toggle_ready($newsletter -> {"id"}, $userid, $mindate, $readytime)
+        or return $self -> api_errorhash("api_error", $self -> {"schedule"} -> errstr());
+
+    my $contributors = $self -> {"schedule"} -> get_newsletter_contributors($newsletter -> {"id"}, $mindate, $maxdate);
+    return $self -> _build_contributor_list($contributors, $newsletter -> {"id"})
+        if($contributors);
+
+    return "";
+}
+
+
 # ============================================================================
 #  Interface functions
 
@@ -349,8 +447,10 @@ sub page_display {
     if(defined($apiop)) {
         # API call - dispatch to appropriate handler.
         given($apiop) {
-            when("publish")   { $self -> api_response($self -> _build_publish_response()); }
-            when("sortorder") { $self -> api_response($self -> _build_sortorder_response()); }
+            when("publish")     { $self -> api_response($self -> _build_publish_response()); }
+            when("sortorder")   { $self -> api_response($self -> _build_sortorder_response()); }
+            when("contibutors") { $self -> api_html_response($self -> _build_contributor_response()); }
+            when("toggleready") { $self -> api_html_response($self -> _build_toggleready_response()); }
             default {
                 return $self -> api_response($self -> api_errorhash('bad_op',
                                                                     $self -> {"template"} -> replace_langvar("API_BAD_OP")))
