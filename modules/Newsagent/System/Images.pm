@@ -198,7 +198,7 @@ sub get_image_url {
 
     # If the URL isn't absolute, make it so
     $url = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"}, $url)
-        unless($url =~ m|^https?://|);
+        unless(!defined($url) || $url =~ m|^https?://|);
 
     return $url;
 }
