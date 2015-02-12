@@ -49,17 +49,8 @@ sub _build_newsletter_article {
 
     # Generate the image urls
     my @images;
-
-    for(my $img = 0; $img < 2; ++$img) {
-        next if(!$article -> {"images"} -> [$img] || !$article -> {"images"} -> [$img] -> {"location"});
-
-        $images[$img] = $article -> {"images"} -> [$img] -> {"location"}
-        if($article -> {"images"} -> [$img] -> {"location"});
-
-        $images[$img] = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
-                                  $images[$img])
-            if($images[$img] && $images[$img] !~ /^http/);
-    }
+    $images[0] = $self -> {"article"} -> {"images"} -> get_image_url($article -> {"images"} -> [0], 'icon');
+    $images[1] = $self -> {"article"} -> {"images"} -> get_image_url($article -> {"images"} -> [1], 'large');
 
     # Wrap the images in html
     $images[0] = $self -> {"template"} -> load_template("newsletter/image.tem", {"***class***" => "leader",
