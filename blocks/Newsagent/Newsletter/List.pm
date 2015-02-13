@@ -28,6 +28,28 @@ use v5.12;
 use Data::Dumper;
 
 
+sub _toggle_ready {
+    my $self = shift;
+    my $newsletter = shift;
+    my $userid     = shift;
+    my $mindate    = shift;
+    my $maxdate    = shift;
+
+    # Toggle the user's readiness. The fourth argument is the timestamp to set for the toggle,
+    # and deciding that is a bit fiddly. For manual newsletters (with no schedule) it should be
+    # time(), while for scheduled releases it needs to be the earliest time in the schedule OR
+    # the current time if in the issue time range
+    my $readytime = time();
+    $readytime = $mindate
+        if($newsletter -> {"schedule"} && ($readytime < $mindate || $readytime > $maxdate));
+
+    $self -> {"schedule"} -> toggle_ready($newsletter -> {"id"}, $userid, $mindate, $readytime)
+        or return $self -> api_errorhash("api_error", $self -> {"schedule"} -> errstr());
+
+    return undef;
+}
+
+
 # ============================================================================
 #  Content support
 
@@ -344,12 +366,14 @@ sub _build_publish_response {
 sub _build_contributor_response {
     my $self = shift;
 
-
+    return $self -> _build_toggleready_response(1);
 }
 
 
 sub _build_toggleready_response {
-    my $self = shift;
+    my $self       = shift;
+    my $skiptoggle = shift;
+
     my $userid = $self -> {"session"} -> get_session_userid();
 
     # Obtain the name of the newsletter the user is looking at
@@ -383,16 +407,11 @@ sub _build_toggleready_response {
     # And work out the date range for the current newsletter
     my ($mindate, $maxdate, $usenext) = $self -> {"schedule"} -> get_newsletter_daterange($newsletter, $dates, \@issuedate);
 
-    # Toggle the user's readiness. The fourth argument is the timestamp to set for the toggle,
-    # and deciding that is a bit fiddly. For manual newsletters (with no schedule) it should be
-    # time(), while for scheduled releases it needs to be the earliest time in the schedule OR
-    # the current time if in the issue time range
-    my $readytime = time();
-    $readytime = $mindate
-        if($newsletter -> {"schedule"} && ($readytime < $mindate || $readytime > $maxdate));
-
-    $self -> {"schedule"} -> toggle_ready($newsletter -> {"id"}, $userid, $mindate, $readytime)
-        or return $self -> api_errorhash("api_error", $self -> {"schedule"} -> errstr());
+    # allow toggle to be skipped
+    if(!$skiptoggle) {
+        my $res = $self -> _toggle_ready($newsletter, $userid, $mindate, $maxdate);
+        return $res if($res);
+    }
 
     my $contributors = $self -> {"schedule"} -> get_newsletter_contributors($newsletter -> {"id"}, $mindate, $maxdate);
     return $self -> _build_contributor_list($contributors, $newsletter -> {"id"})
@@ -447,10 +466,10 @@ sub page_display {
     if(defined($apiop)) {
         # API call - dispatch to appropriate handler.
         given($apiop) {
-            when("publish")     { $self -> api_response($self -> _build_publish_response()); }
-            when("sortorder")   { $self -> api_response($self -> _build_sortorder_response()); }
-            when("contibutors") { $self -> api_html_response($self -> _build_contributor_response()); }
-            when("toggleready") { $self -> api_html_response($self -> _build_toggleready_response()); }
+            when("publish")      { $self -> api_response($self -> _build_publish_response()); }
+            when("sortorder")    { $self -> api_response($self -> _build_sortorder_response()); }
+            when("contributors") { $self -> api_html_response($self -> _build_contributor_response()); }
+            when("toggleready")  { $self -> api_html_response($self -> _build_toggleready_response()); }
             default {
                 return $self -> api_response($self -> api_errorhash('bad_op',
                                                                     $self -> {"template"} -> replace_langvar("API_BAD_OP")))

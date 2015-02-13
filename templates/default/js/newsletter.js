@@ -206,7 +206,28 @@ function attach_ready_toggle()
             }
         });
     });
+}
 
+
+function update_ready_list()
+{
+    if(!toggling) {
+        // kill the toggle boxes to prevent it scewing with the reload
+        $$('input.readytoggle').each(function(element) { element.set('disabled', true); });
+
+        var req = new Request.HTML({url: api_request_path("newsletters", "contributors"),
+                                    onSuccess: function(respTree, respElems, respHTML) {
+                                        $('newsletcontribs').getChildren().destroy().empty();
+                                        $('newsletcontribs').set('html', respHTML);
+
+                                        attach_ready_toggle();
+                                        setTimeout(update_ready_list, 30000);
+                                    }
+                                   });
+        req.post({ name: newsname });
+    } else {
+        setTimeout(update_ready_list, 30000);
+    }
 }
 
 window.addEvent('domready', function() {
@@ -232,4 +253,7 @@ window.addEvent('domready', function() {
 
     check_required_sections();
     attach_ready_toggle();
+
+    // Update the ready list 30 seconds from now.
+    setTimeout(update_ready_list, 30000);
 });
