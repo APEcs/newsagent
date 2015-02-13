@@ -11,8 +11,20 @@ messages = { saving:  "{L_NEWSLETTER_LIST_SAVING}",
              blocked: "{L_NEWSLETTER_PUBLISHBLOCK}",
              publish: "{L_NEWSLETTER_PUBLISH}",
              publishing: "{L_NEWSLETTER_PUBLISHING}",
-             continue: "{L_PAGE_CONTINUE}"
+             continue: "{L_PAGE_CONTINUE}",
+             confpublish: "{L_NEWSLETTER_CONFIRM}",
+             notready: "{L_NEWSLETTER_NOTREADY}",
+             cancel: "{L_COMPOSE_CANCEL}"
 };
+
+window.addEvent('domready', function() {
+    confbox = new LightFace({title: '{L_NEWSLETTER_PUBCONF}',
+                            draggable: false,
+                            overlayAll: true,
+                            width: "75%",
+                            content: '<table><tr><td class="nbox-image"><img src="{V_[scriptpath]}templates/default/images/error.png" width="48" height="48" alt="error" /></td><td class="nbox-text" id="confboxmsg"></td></tr></table>'
+    });
+});
 </script>
 <div id="newsletlist">
     <div class="shadowbox">

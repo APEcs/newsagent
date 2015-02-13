@@ -35,3 +35,7 @@ NEWSLETTER_REQUIRED    = required
 NEWSLETTER_CONTRIB     = Contributors
 NEWSLETTER_CONTRIBNAME = Name
 NEWSLETTER_CONTRIBDONE = Done?
+
+NEWSLETTER_PUBCONF     = Confirm publication
+NEWSLETTER_CONFIRM     = <p>Note that, once published, newsletters <i>can not be edited</i>. Please ensure that the articles in the newsletter are ready to be published and the layout of articles is correct before proceeding.</p>
+NEWSLETTER_NOTREADY    = <p>One or more potential contributors have yet to indicate that they have finished adding content to this newsletter. You can continue with the publication process despite this, but any new articles or updates from contributors will go into future issues.</p><p>Note that, once published, newsletters <i>can not be edited</i>. Please ensure that the articles in the newsletter are ready to be published, and the layout of articles is correct.</p>

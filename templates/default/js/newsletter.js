@@ -58,6 +58,29 @@ var do_publish = function()
 }
 
 
+function check_readiness()
+{
+    var not_ready_count = $$('td.readymark.notdone').length;
+
+    // If all are ready, do the publishing.
+    if(!not_ready_count) {
+        confbox.setButtons([ { title: messages['publish'], color: 'blue', event: function() { do_publish(); confbox.close(); } },
+                             { title: messages['cancel'] , color: 'blue', event: function() { confbox.close(); } }
+                           ]);
+        $('confboxmsg').set('html', messages['confpublish']);
+        confbox.open();
+
+    // Otherwise one or more contributors are not marked as ready, show the warning
+    } else {
+        confbox.setButtons([ { title: messages['publish'], color: 'red', event: function() { do_publish(); confbox.close(); } },
+                             { title: messages['cancel'] , color: 'blue', event: function() { confbox.close(); } }
+                           ]);
+        $('confboxmsg').set('html', messages['notready']);
+        confbox.open();
+    }
+}
+
+
 function check_required_sections()
 {
     var empty_required = false;
@@ -84,18 +107,16 @@ function check_required_sections()
         if(empty_required) {
             publish.addClass('disabled');
             mode = 'blocked';
-            publish.removeEvent('click', do_publish);
+            publish.removeEvents('click');
         } else {
             publish.removeClass('disabled');
-            publish.addEvent('click', do_publish);
+            publish.addEvent('click', function() { check_readiness(); });
         }
 
         publish.setProperty('title', messages[mode]);
         publish.getFirst('img').setProperty('src', pubimg[mode]);
     }
 }
-
-
 
 
 function save_sort_order()
