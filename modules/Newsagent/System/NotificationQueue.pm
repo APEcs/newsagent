@@ -453,6 +453,55 @@ sub get_notification_dataid {
 }
 
 
+
+## @method $ get_notification_articles($target, $method)
+# Given a target and method, or an array of them, attempt to locate articles that
+# have, or are going to have, notifications sent to that target via that method.
+#
+# @param target A notification target ID, or a reference to an array of IDs.
+# @param method A notification method ID, or a reference to an array of IDs.
+# @return A reference to an array of article hashes (exclusing summary and full text).
+sub get_notification_articles {
+    my $self   = shift;
+    my $target = shift;
+    my $method = shift;
+
+    $self -> clear_error();
+
+    my $recipmethods = $self -> _targetmethod_to_rm($target, $method)
+        or return undef;
+
+    # If there are no matching recipient/methods, give up
+    return [] if(!scalar(@{$recipmethods}));
+
+    # One or more recipmeths are available, build and run the query for them
+    my @params;
+    my $placeholders = "?";
+    push(@params, @{$recipmethods});
+    $placeholders .= (",?" x (scalar(@{$recipmethods}) - 1));
+
+    my $articleh = $self -> {"dbh"} -> prepare("SELECT `a`.`id`, `a`.`creator_id`, `a`.`created`, `a`.`release_time`, `rm`.`recip_meth_id`, `n`.`status`, `u`.`username`, `u`.`realname`, `u`.`email`,`r`.`name`,`r`.`shortname`
+                                                FROM `".$self -> {"settings"} -> {"database"} -> {"article_notify_rms"}."` AS `rm`,
+                                                     `".$self -> {"settings"} -> {"database"} -> {"article_notify"}."` AS `n`,
+                                                     `".$self -> {"settings"} -> {"database"} -> {"notify_matrix"}."` AS `m`,
+                                                     `".$self -> {"settings"} -> {"database"} -> {"notify_recipients"}."` AS `r`,
+                                                     `".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `a`,
+                                                     `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `u`
+                                                WHERE `a`.`id` = `n`.`article_id`
+                                                AND (`n`.`status` = 'pending' OR `n`.`status` = 'sent' OR `n`.`status` = 'sending')
+                                                AND `n`.`id` = `rm`.`article_notify_id`
+                                                AND `m`.`id` = `rm`.`recip_meth_id`
+                                                AND `r`.`id` = `m`.`recipient_id`
+                                                AND `u`.`user_id` = `a`.`creator_id`
+                                                AND `rm`.`recip_meth_id` IN ($placeholders)
+                                                ORDER BY `a`.`release_time`");
+    $articleh -> execute(@params)
+        or return $self -> self_error("Unable to perform article lookup: ".$self -> {"dbh"} -> errstr);
+
+    return $articleh -> fetchall_arrayref({});
+}
+
+
 # ============================================================================
 #  Private functions
 
@@ -639,6 +688,36 @@ sub _get_article_notifications {
 }
 
 
+sub _targetmethod_to_rm {
+    my $self = shift;
+    my $target = shift;
+    my $method = shift;
+
+    # Ensure the arguments are arrayrefs for ease of coding.
+    $target = [ $target ] unless(ref($target) eq "ARRAY");
+    $method = [ $method ] unless(ref($method) eq "ARRAY");
+
+    my @params;
+    my $where = "";
+
+    $self -> _build_param(\@params, \$where, "WHERE", 'recipient_id', $target);
+    $self -> _build_param(\@params, \$where, "AND"  , 'method_id'   , $method);
+
+    my $methodh = $self -> {"dbh"} -> prepare("SELECT `id`
+                                               FROM `".$self -> {"settings"} -> {"database"} -> {"notify_matrix"}."`
+                                               $where");
+    $methodh -> execute(@params)
+        or return $self -> self_error("Unable to execute recipinet/method lookup: ".$self -> {"dbh"} -> errstr);
+
+    my @recipmeths = ();
+    while(my $meth = $methodh -> fetchrow_arrayref()) {
+        push(@recipmeths, $meth -> [0]);
+    }
+
+    return \@recipmeths;
+}
+
+
 sub _build_param {
     my $self   = shift;
     my $params = shift;
@@ -649,9 +728,21 @@ sub _build_param {
     my $op     = shift;
 
     if(defined($value)) {
-        push(@{$params}, $value);
-        $$where .= " $lead `$field` $op ?";
+        if(ref($value) eq "ARRAY") {
+            push(@{$params}, @{$value});
+
+            my $placeholders = "?";
+            $placeholders .= (",?" x (scalar(@{$value}) - 1)) if(scalar(@{$value}) > 1);
+
+            $$where .= " $lead `$field` IN (".$placeholders.")";
+        } else {
+            push(@{$params}, $value);
+            $$where .= " $lead `$field` $op ?";
+        }
     }
 }
+
+
+
 
 1;
