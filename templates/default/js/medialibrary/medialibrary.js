@@ -27,10 +27,7 @@ var MediaLibrary = new Class({
                                       pad: 200,
                                       width: "1000px",
                                       height: "560px",
-                                      buttons: [ { title: this.options.selectTxt,
-                                                   color: 'blue',
-                                                   event: function() { this.selectImage(); }.bind(this) },
-                                                 { title: this.options.cancelTxt,
+                                      buttons: [ { title: this.options.cancelTxt,
                                                    color: 'blue',
                                                    event: function() { this.popup.close(); this.loadingBody(); }.bind(this) }
                                                ]});

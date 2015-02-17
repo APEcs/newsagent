@@ -25,6 +25,7 @@ XML::Simple
 
 Required modules, usuallny not in repost, install from CPAN:
 
+CSS::Inliner
 DateTime::Event::Cron
 Email::MIME::CreateHTML
 MediaWiki::API
