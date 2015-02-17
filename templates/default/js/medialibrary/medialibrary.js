@@ -26,7 +26,7 @@ var MediaLibrary = new Class({
                                       zIndex: 8001,
                                       pad: 200,
                                       width: "1000px",
-                                      height: "560px",
+                                      height: "582px",
                                       buttons: [ { title: this.options.cancelTxt,
                                                    color: 'blue',
                                                    event: function() { this.popup.close(); this.loadingBody(); }.bind(this) }

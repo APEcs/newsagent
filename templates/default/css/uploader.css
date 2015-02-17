@@ -181,3 +181,8 @@ ul.selector-imgmeta {
     padding: 0px;
     margin: 0px;
 }
+
+div.copynotice {
+    font-size: 9px;
+    color: #555;
+}
