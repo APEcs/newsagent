@@ -126,7 +126,7 @@ div.controlbox {
     box-shadow: 0 0 5px rgba(0, 0, 255, 1);
     -webkit-box-shadow: 0 0 5px rgba(0, 0, 255, 1);
     -moz-box-shadow: 0 0 5px rgba(0, 0, 255, 1);
-
+    cursor: pointer;
 }
 
 .selector-image.media {
