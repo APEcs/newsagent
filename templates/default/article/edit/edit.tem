@@ -37,7 +37,8 @@ confirm_messages = {   errors: "{L_EDIT_ERRORS}",
 window.addEvent('domready', function() {
     var multiselfeed = new MultiSelect('#comp-feed', { maxMonitorText: 0,
                                                             emptyText: 'Select feeds...',
-                                                          onListClose: function() { set_visible_levels(); }
+                                                          onListClose: function() { set_visible_levels(); },
+                                                            maxHeight: '250px'
                                                      });
 
     CKEDITOR.replace('comp-desc', { customConfig: '{V_[commonpath]}cke_configs/***ckeconfig***' });
