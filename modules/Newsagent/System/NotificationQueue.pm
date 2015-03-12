@@ -195,11 +195,14 @@ sub send_pending_notification {
         # Work out the status message
         my $message = "";
         if($results) {
+            my @states = ();
             foreach my $res (@{$results}) {
-                $message .= $res -> {"name"}.": ".$res -> {"state"};
-                $message .= (" (".$res -> {"message"}.");")
-                    if($res -> {"message"});
+                my $msg = $res -> {"name"}.": ".$res -> {"state"};
+                $msg .= (" (".$res -> {"message"}.")") if($res -> {"message"});
+                push(@states, $msg);
             }
+
+            $message = join("; ", @states);
         } else {
             $message = $self -> {"notify_methods"} -> {$notification -> {"name"}} -> errstr();
         }
