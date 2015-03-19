@@ -608,6 +608,7 @@ sub build_return_url {
 #              copies of the parameter are added to the query string, one for each
 #              value in the array.
 # * forcessl - If true, the URL is forced to https: rather than http:
+# * anchor   - A string containing the name of the anchor to set in the url
 #
 # @param args A hash of arguments to use when building the URL.
 # @return A string containing the URL.
@@ -655,6 +656,9 @@ sub build_url {
 
     $url =~ s/^http:/https:/
         if($args{"forcessl"} && $url =~ /^http:/);
+
+    $url .= '#'.$args{"anchor"}
+        if($args{"anchor"});
 
     return $url;
 }
