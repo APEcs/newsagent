@@ -55,3 +55,7 @@ input.fillwide.rss {
 label.disabled {
     color: #777;
 }
+
+dl.input > dt > span.option {
+    font-size: 9px;
+}

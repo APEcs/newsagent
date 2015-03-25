@@ -3,10 +3,8 @@ function get_selected_feeds()
 {
     var feeds = new Array();
 
-    $$('input.selfeed').each(function(element) {
-        if(element.get('checked')) {
-            feeds.push(element.get('id').substr(5));
-        }
+    $$('input.selfeed:checked').each(function(element) {
+        feeds.push(element.get('id').substr(5));
     });
 
     return feeds.join(",");
@@ -17,10 +15,8 @@ function get_selected_levels()
 {
     var levels = new Array();
 
-    $$('input.levels').each(function(element) {
-        if(element.get('checked')) {
-            levels.push(element.get('id').substr(6));
-        }
+    $$('input.levels:checked').each(function(element) {
+        levels.push(element.get('id').substr(6));
     });
 
     return levels.join(",");
@@ -112,9 +108,74 @@ function build_feedurl() {
     $('urlbox').set('value', url);
 }
 
+
+function set_subscribe_button() {
+    $('subadd').set('disabled', $$('input.selfeed:checked').length == 0);
+}
+
+
+function subscribe() {
+
+    // must have one or more feeds selected
+    if($$('input.selfeed:checked').length == 0) {
+        $('errboxmsg').set('html', '<p>'+messages['subnofeeds']+'</p>');
+        errbox.open();
+        return false;
+    }
+
+    // Users without login must set email
+    if($('user-login') && !$('subemail').get('value')) {
+        $('errboxmsg').set('html', '<p>'+messages['subnoemail']+'</p>');
+        errbox.open();
+        return false;
+    }
+
+    var feeds = new Array();
+    $$('input.selfeed:checked').each(function(element) {
+        feeds.push(element.get('id').substr(5));
+    });
+
+    var values = JSON.encode({'email': $('subemail').get('value'),
+                              'feeds': feeds });
+
+    var req = new Request({ url: api_request_path("subscribe", "add", basepath ),
+                            onRequest: function() {
+                                $('subspin').fade('in');
+                                $('subemail').set('disabled', true);
+                                $('subadd').set('disabled', true);
+                                $('subman').set('disabled', true);
+                            },
+                            onSuccess: function(respText, respXML) {
+                                $('subspin').fade('in');
+                                $('subemail').set('disabled', true);
+                                $('subadd').set('disabled', true);
+                                $('subman').set('disabled', true);
+
+                                var err = respXML.getElementsByTagName("error")[0];
+                                if(err) {
+                                    $('errboxmsg').set('html', '<p class="error">'+err.getAttribute('info')+'</p>');
+                                    errbox.open();
+
+                                    // No error, we have a response
+                                } else {
+                                    var res = respXML.getElementsByTagName("result")[0];
+                                    var button   = res.getAttribute('button');
+
+                                    var buttons = [  { title: button , color: 'blue', event: function() { popbox.close(); } } ];
+                                    popbox.setButtons(buttons);
+                                    popbox.setContent(res.innerHTML);
+                                    popbox.open();
+
+                                }
+                            }
+                          });
+    req.post({'values': values });
+}
+
+
 window.addEvent('domready', function() {
 
-    $$('input.selfeed').addEvent('change', function() { build_feedurl(); });
+    $$('input.selfeed').addEvent('change', function() { build_feedurl(); set_subscribe_button(); });
     $('fulltext').addEvent('change', function() { build_feedurl(); });
     $('desc').addEvent('change', function() { build_feedurl(); });
     $('viewer').addEvent('change', function() { build_feedurl(); });
@@ -122,6 +183,8 @@ window.addEvent('domready', function() {
 
     $('countdec').addEvent('click', function() { change_count(false); });
     $('countinc').addEvent('click', function() { change_count(true); });
+
+    $('subadd').addEvent('click', function() { subscribe(); });
 
     build_feedurl();
 });

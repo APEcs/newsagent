@@ -140,6 +140,10 @@ sub _generate_feedlist {
         $list = $self -> {"template"} -> load_template("feedlist/empty.tem")
             if(!$list);
 
+        # Is the user logged in?
+        my $anonymous = $self -> {"session"} -> anonymous_session();
+        my $mailoptional = $self -> {"template"} -> replace_langvar("FLIST_SUB_".($anonymous ? "REQUIRE" : "OPTION"));
+
         return ($self -> {"template"} -> replace_langvar("FLIST_PTITLE"),
                 $self -> {"template"} -> load_template("feedlist/content.tem", {"***feeds***"    => $list,
                                                                                 "***levels***"   => $self -> _build_level_options(),
@@ -149,6 +153,7 @@ sub _generate_feedlist {
                                                                                                                        block    => "rss",
                                                                                                                        params   => { },
                                                                                                                        pathinfo => [ ]),
+                                                                                "***subopt***"   => $mailoptional,
                                                                                })
                );
     } else {

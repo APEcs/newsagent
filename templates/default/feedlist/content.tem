@@ -1,3 +1,8 @@
+<script type="text/javascript">
+    messages = { subnofeeds: '{L_FLIST_SUB_ERR_NOFEEDS}',
+                 subnoemail: '{L_FLIST_SUB_ERR_NOEMAIL}'
+    };
+</script>
 <div id="feedpage">
     <ul id="feeds">
         <li id="feedlist" class="shadowbox">
@@ -12,44 +17,57 @@
             </div>
         </li>
     </ul>
-    <div id="feedgen" class="shadowbox">
-        <h2>{L_FLIST_MAKEBOX}</h2>
-        <div class="sbcontent">
-            <dl class="input">
-                <dt><label for="syslevels">{L_FLIST_LEVELS}</label></dt>
-                <dd><div id="syslevels" class="chromelike">
-                        ***levels***
-                    </div>
-                </dd>
-            </dl>
-            <dl class="input">
-                <dt><label for="fulltext">{L_FLIST_FTEXT}</label></dt>
-                <dd><select class="fillwide" id="fulltext" name="fullext">
-                        ***fulltext***
-                    </select>
-                </dd>
-            </dl>
-            <div><label for="desc" class="check"><input type="checkbox" id="desc" name="desc" /> {L_FLIST_FULLDESC}</label></div>
-            <dl class="input">
-                <dt><label for="count">{L_FLIST_COUNT}</label></dt>
-                <dd><div class="numeric">
-                        <input type="text" id="count" name="count" value="10" />
-                        <button id="countdec" name="minus">-</button>
-                        <button id="countinc" name="plus">+</button>
-                    </div>
-                </dd>
-            </dl>
-            <dl class="input">
-                <dt><strong>{L_FLIST_VIEWER}</strong></dt>
-                <dd><select class="fillwide" id="viewer" name="viewer" />
-                        ***viewops***
-                    </select>
-                </dd>
-            </dl>
-            <dl class="input">
-                <dt><label for="count">{L_FLIST_RSSURL}</label></dt>
-                <dd><input type="text" class="fillwide rss" id="urlbox" name="urlbox" /></dd>
-            </dl>
+    <div id="sidebar">
+        <div id="feedgen" class="shadowbox">
+            <h2>{L_FLIST_MAKEBOX}</h2>
+            <div class="sbcontent">
+                <dl class="input">
+                    <dt><label for="syslevels">{L_FLIST_LEVELS}</label></dt>
+                    <dd><div id="syslevels" class="chromelike">
+                            ***levels***
+                        </div>
+                    </dd>
+                </dl>
+                <dl class="input">
+                    <dt><label for="fulltext">{L_FLIST_FTEXT}</label></dt>
+                    <dd><select class="fillwide" id="fulltext" name="fullext">
+                            ***fulltext***
+                        </select>
+                    </dd>
+                </dl>
+                <div><label for="desc" class="check"><input type="checkbox" id="desc" name="desc" /> {L_FLIST_FULLDESC}</label></div>
+                <dl class="input">
+                    <dt><label for="count">{L_FLIST_COUNT}</label></dt>
+                    <dd><div class="numeric">
+                            <input type="text" id="count" name="count" value="10" />
+                            <button id="countdec" name="minus">-</button>
+                            <button id="countinc" name="plus">+</button>
+                        </div>
+                    </dd>
+                </dl>
+                <dl class="input">
+                    <dt><strong>{L_FLIST_VIEWER}</strong></dt>
+                    <dd><select class="fillwide" id="viewer" name="viewer">
+                            ***viewops***
+                        </select>
+                    </dd>
+                </dl>
+                <dl class="input">
+                    <dt><label for="count">{L_FLIST_RSSURL}</label></dt>
+                    <dd><input type="text" class="fillwide rss" id="urlbox" name="urlbox" /></dd>
+                </dl>
+            </div>
+        </div>
+        <div id="subscribe" class="shadowbox">
+            <h2>{L_FLIST_SUBSCRIBE}</h2>
+            <div class="sbcontent">
+                <div>{L_FLIST_SUB_ADD}</div>
+                <dl class="input">
+                    <dt><label for="subemail">{L_FLIST_SUB_EMAIL}</label> <span class="option">***subopt***</span></dt>
+                    <dd><input type="text" class="fillwide" id="subemail" name="subemail" /></dd>
+                </dl>
+                <div class="alignright" style="padding: 3px 0px"><img id="subspin" src="{V_[templatepath]}images/spinner.gif" width="16" height="16" alt="working" class="workspin" /> <input disabled="disabled" type="button" name="subadd" id="subadd" class="button blue" value="{L_FLIST_SUB_ADDBTN}" /> <input type="button" name="subman" id="subman" class="button blue" value="{L_FLIST_SUB_MANBTN}" /></div>
+            </div>
         </div>
     </div>
 </div>

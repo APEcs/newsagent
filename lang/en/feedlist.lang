@@ -25,3 +25,16 @@ FLIST_RSSURL      = Feed URL:
 FLIST_VIEWER      = Full article viewer:
 FLIST_VIEW_DEF    = Choose viewer automatically
 FLIST_VIEW_INT    = Use Newsagent article viewer
+
+FLIST_SUBSCRIBE   = Feed Subscription
+FLIST_SUB_ADD     = To subscribe to one or more feeds, tick the checkboxes in the "Available Newsagent Feeds" list and click 'Subscribe'.
+FLIST_SUB_ADDBTN  = Subscribe
+FLIST_SUB_EMAIL   = Email address
+FLIST_SUB_REQUIRE = <b>(required)</b>
+FLIST_SUB_OPTION  = (optional)
+
+FLIST_SUB_MANAGE  = To manage your subscriptions, click the Manage button.
+FLIST_SUB_MANBTN  = Manage
+
+FLIST_SUB_ERR_NOFEEDS = No feeds selected. You must select one or more feeds to subscribe to.
+FLIST_SUB_ERR_NOEMAIL = No email address provided. Users who have not logged in must provide an email address to send digest emails to.
