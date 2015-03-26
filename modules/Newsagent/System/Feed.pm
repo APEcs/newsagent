@@ -106,8 +106,7 @@ sub get_feeds {
     $feedsh -> execute()
         or return $self -> self_error("Unable to execute user feeds query: ".$self -> {"dbh"} -> errstr);
 
-    return $feedsh -> fetchall_arrayref({})
-        or return $self -> self_error("No system defined feeds available");
+    return ($feedsh -> fetchall_arrayref({}) || $self -> self_error("No system defined feeds available"));
 }
 
 

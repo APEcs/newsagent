@@ -193,8 +193,7 @@ sub get_year_data {
     $query -> execute($date)
         or return $self -> self_error("Unable to execute academic year lookup: ".$self -> {"udata_dbh"} -> errstr);
 
-    return $query -> fetchrow_hashref() ||
-        $self -> self_error("Unable to find academic year for date $date");
+    return ($query -> fetchrow_hashref() || $self -> self_error("Unable to find academic year for date $date"));
 }
 
 
@@ -431,7 +430,7 @@ sub get_user_addresses {
     my $query = "SELECT DISTINCT(`u`.`email`)
                  FROM $tables
                  WHERE $where";
-    print STDERR "Query: $query\n".Dumper(\@params);
+#    print STDERR "Query: $query\n".Dumper(\@params);
 
     my $queryh = $self -> {"udata_dbh"} -> prepare($query);
     $queryh -> execute(@params)

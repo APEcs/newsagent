@@ -353,7 +353,7 @@ sub user_has_rated {
 
     # If the user_id in the fetched row matches $userid, the user has rated the
     # tag implicitly (by adding it) or explicitly (by up/down rating it)
-    return $histrow -> [0] == $userid;
+    return ($histrow -> [0] == $userid);
 }
 
 

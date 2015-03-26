@@ -958,7 +958,7 @@ sub get_autosave {
     $geth -> execute($userid)
         or return $self -> self_error("Unable to execute autosave lookup: ".$self -> {"dbh"} -> errstr);
 
-    return $geth -> fetchrow_hashref() || {};
+    return ($geth -> fetchrow_hashref() || {});
 }
 
 
@@ -1298,7 +1298,7 @@ sub _article_user_match {
     # Convert to a hash for faster lookup
     my %userhash = map { $_ => $_ } @{$userlist};
 
-            # If the creator or editor is in the userlist, return true
+    # If the creator or editor is in the userlist, return true
     return ($userhash{$article -> {"creator_id"}} ||
             $userhash{$article -> {"updated_id"}});
 }

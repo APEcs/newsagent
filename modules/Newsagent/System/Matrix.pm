@@ -115,8 +115,7 @@ sub get_method_byid {
     $methods -> execute($methodid)
         or return $self -> self_error("Unable to look up available methods: ".$self -> {"dbh"} -> errstr);
 
-    return $methods -> fetchrow_hashref()
-        or return $self -> self_error("Request for unknown method '$methodid'");
+    return ($methods -> fetchrow_hashref() || $self -> self_error("Request for unknown method '$methodid'"));
 }
 
 
@@ -137,8 +136,7 @@ sub get_recipient_byid {
     $recipients -> execute($recipientid)
         or return $self -> self_error("Unable to look up available recipients: ".$self -> {"dbh"} -> errstr);
 
-    return $recipients -> fetchrow_hashref()
-        or return $self -> self_error("Request for unknown recipient '$recipientid'");
+    return ($recipients -> fetchrow_hashref() || $self -> self_error("Request for unknown recipient '$recipientid'"));
 }
 
 

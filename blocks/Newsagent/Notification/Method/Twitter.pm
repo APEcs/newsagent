@@ -132,8 +132,7 @@ sub get_data {
     $datah -> execute($dataid)
         or return $self -> self_error("Unable to perform data lookup: ".$self -> {"dbh"} -> errstr);
 
-    return $datah -> fetchrow_hashref()
-        or return $self -> self_error("No twitter-specific settings for article $articleid");
+    return ($datah -> fetchrow_hashref() || $self -> self_error("No twitter-specific settings for article $articleid"));
 }
 
 

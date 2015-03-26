@@ -54,6 +54,9 @@ sub new {
 }
 
 
+# ============================================================================
+#  API functions
+
 ## @method private $ _build_addsubscription_response()
 #
 sub _build_addsubscription_response {

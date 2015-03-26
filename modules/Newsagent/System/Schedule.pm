@@ -144,8 +144,7 @@ sub get_schedule_byid {
     $schedh -> execute($id)
         or return $self -> self_error("Unable to execute schedule lookup query: ".$self -> {"dbh"} -> errstr);
 
-    return $schedh -> fetchrow_hashref()
-        or return $self -> self_error("Request for non-existant schedule $id");
+    return ($schedh -> fetchrow_hashref() || $self -> self_error("Request for non-existant schedule $id"));
 }
 
 
@@ -169,8 +168,7 @@ sub get_schedule_byname {
     $shedh -> execute($name)
         or return $self -> self_error("Unable to execute schedule lookup query: ".$self -> {"dbh"} -> errstr);
 
-    return $shedh -> fetchrow_hashref()
-        or return $self -> self_error("Request for non-existant schedule $name");
+    return ($shedh -> fetchrow_hashref() || $self -> self_error("Request for non-existant schedule $name"));
 }
 
 
@@ -876,8 +874,7 @@ sub get_digest {
     $digesth -> execute($id)
         or return $self -> self_error("Unable to execute digest lookup query: ".$self -> {"dbh"} -> errstr);
 
-    return $digesth -> fetchrow_hashref()
-        or return $self -> self_error("Request for non-existant digest $id");
+    return ($digesth -> fetchrow_hashref() || $self -> self_error("Request for non-existant digest $id"));
 }
 
 
@@ -989,8 +986,7 @@ sub _create_digest {
     return $self -> self_error("Digest creation failed, no rows inserted") if($rows eq "0E0");
 
     # Get the new ID
-    return $self -> {"dbh"} -> {"mysql_insertid"}
-        or $self -> self_error("Unable to obtain id for new digest row");
+    return ($self -> {"dbh"} -> {"mysql_insertid"} || $self -> self_error("Unable to obtain id for new digest row"));
 }
 
 

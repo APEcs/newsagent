@@ -152,7 +152,7 @@ sub get_user_setting {
     $geth -> execute($uid, $name)
         or return $self -> self_error("Unable to fetch user setting: ".$self -> {"dbh"} -> errstr);
 
-    return $geth -> fetchrow_hashref() || {};
+    return ($geth -> fetchrow_hashref() || {});
 }
 
 

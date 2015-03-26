@@ -211,7 +211,7 @@ sub send_pending_notification {
         $self -> set_notification_status($notification -> {"id"}, $status || "failed", $message);
 
         # If the result is undef, propagate the error.
-        return $results || $self -> self_error($self -> {"notify_methods"} -> {$notification -> {"name"}} -> errstr());
+        return ($results || $self -> self_error($self -> {"notify_methods"} -> {$notification -> {"name"}} -> errstr()));
     } else {
         return [ { "name"    => "all",
                    "state"   => "skipped",
@@ -376,7 +376,7 @@ sub get_notification_status {
     $stateh -> execute(@params)
         or return $self -> self_error("Unable to execute notification lookup: ".$self -> {"dbh"} -> errstr());
 
-    return $stateh -> fetchrow_hashref() || {};
+    return ($stateh -> fetchrow_hashref() || {});
 }
 
 

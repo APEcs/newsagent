@@ -192,8 +192,7 @@ sub _get_import_source {
     $sourceh -> execute($source)
         or return $self -> self_error("Unable to look up import metadata: ".$self -> {"dbh"} -> errstr());
 
-    return $sourceh -> fetchrow_hashref()
-        or $self -> self_error("Request for unknown import source.");
+    return ($sourceh -> fetchrow_hashref() || $self -> self_error("Request for unknown import source."));
 }
 
 

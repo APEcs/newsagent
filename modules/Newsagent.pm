@@ -272,7 +272,7 @@ sub is_api_operation {
 
     # API mode is set by placing 'api' in the first api entry. The second api
     # entry is the operation.
-    return $api[1] || "" if($api[0] eq 'api');
+    return ($api[1] || "") if($api[0] eq 'api');
 
     return undef;
 }

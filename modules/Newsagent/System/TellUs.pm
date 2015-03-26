@@ -167,8 +167,7 @@ sub get_queue {
     $queueh -> execute($param)
         or return $self -> self_error("Unable to execute queue query: ".$self -> {"dbh"} -> errstr);
 
-    return $queueh -> fetchrow_hashref()
-        or $self -> self_error("Request for non-existent queue $param");
+    return ($queueh -> fetchrow_hashref() || $self -> self_error("Request for non-existent queue $param"));
 }
 
 
@@ -408,8 +407,7 @@ sub get_message {
     $geth -> execute($messageid)
         or return $self -> self_error("Unable to execute message query: ".$self -> {"dbh"} -> errstr);
 
-    return $geth -> fetchrow_hashref()
-        or $self -> self_error("Request for non-existent message with ID $messageid");
+    return ($geth -> fetchrow_hashref() || $self -> self_error("Request for non-existent message with ID $messageid"));
 }
 
 
