@@ -772,7 +772,7 @@ sub _build_feedlist {
         $realselect = $selected;
     }
 
-    return $self -> generate_multiselect("feed", "feed", "feed", $feeds, $realselect)
+    return $self -> generate_multiselect("feed", "feed", "feed", $feeds, $realselect);
 }
 
 
