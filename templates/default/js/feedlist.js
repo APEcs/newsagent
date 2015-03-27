@@ -146,10 +146,10 @@ function subscribe() {
                                 $('subman').set('disabled', true);
                             },
                             onSuccess: function(respText, respXML) {
-                                $('subspin').fade('in');
-                                $('subemail').set('disabled', true);
-                                $('subadd').set('disabled', true);
-                                $('subman').set('disabled', true);
+                                $('subspin').fade('out');
+                                $('subemail').set('disabled', false);
+                                $('subadd').set('disabled', false);
+                                $('subman').set('disabled', false);
 
                                 var err = respXML.getElementsByTagName("error")[0];
                                 if(err) {
