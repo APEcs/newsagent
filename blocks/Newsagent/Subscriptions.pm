@@ -23,6 +23,7 @@ use strict;
 use experimental qw(smartmatch);
 use base qw(Newsagent); # This class extends the Newsagent block class
 use Newsagent::System::Feed;
+use Newsagent::System::Subscriptions;
 use JSON;
 use v5.12;
 use Data::Dumper;
@@ -46,9 +47,18 @@ sub new {
     $self -> {"feed"} = Newsagent::System::Feed -> new(dbh      => $self -> {"dbh"},
                                                        settings => $self -> {"settings"},
                                                        logger   => $self -> {"logger"},
+                                                       session  => $self -> {"session"},
                                                        roles    => $self -> {"system"} -> {"roles"},
                                                        metadata => $self -> {"system"} -> {"metadata"})
-        or return Webperl::SystemModule::set_error("Article initialisation failed: ".$SystemModule::errstr);
+        or return Webperl::SystemModule::set_error("Feed initialisation failed: ".$SystemModule::errstr);
+
+    $self -> {"subscription"} = Newsagent::System::Subscriptions -> new(dbh      => $self -> {"dbh"},
+                                                                        settings => $self -> {"settings"},
+                                                                        logger   => $self -> {"logger"},
+                                                                        session  => $self -> {"session"},
+                                                                        roles    => $self -> {"system"} -> {"roles"},
+                                                                        metadata => $self -> {"system"} -> {"metadata"})
+        or return Webperl::SystemModule::set_error("Subscriptions initialisation failed: ".$SystemModule::errstr);
 
     return $self;
 }
