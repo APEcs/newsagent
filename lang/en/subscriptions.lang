@@ -1,0 +1,13 @@
+SUBS_ERR_NODATA     = No subscription information provided.
+SUBS_ERR_BADDATA    = Unable to parse the specified subscription information.
+SUBS_ERR_NOREQEMAIL = You must provide an email address to subscribe through.
+SUBS_ERR_BADEMAIL   = The specified email address is not valid.
+
+SUBS_ACTEMAIL       = Your subscription is currently inactive. An email has been sent to the address you entered with instructions for activating your subscription.
+SUBS_SUBSCRIBED     = You have been successfully subscribed to the selected feeds.
+
+SUBS_ACTCODE_SUBJECT  = Subscription (re)activation required.
+SUBS_ACTCODE_GREETING = Hi
+SUBS_ACTCODE_ACTREQ   = Someone, hopefully you, has used this email address when subscribing to one or more Newsagent feeds. In order to prevent abuse, the subscription has been deactivated, and subscription emails will not be sent until you activate them. In order to activate the delivery of emails containing your subscription, please click on the following link, or copy and paste it into your web browser:
+SUBS_ACTCODE_ALTACT   = Alternatively, enter the following code in the subscription activation form:
+SUBS_ACTCODE_REPORT   = If you did not set up this subscription, please reply to this email quoting the message, and we will look into it.

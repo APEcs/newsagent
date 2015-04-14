@@ -50,7 +50,7 @@ sub new {
 # ============================================================================
 #  Data access
 
-## @method $ requires_activation($userid, $email)
+## @method $ subscription_exists($userid, $email)
 # Determine whether the subscription for the specified userid or email is
 # active.
 #
@@ -58,9 +58,9 @@ sub new {
 #               not specified, the email address must be provided. If this is
 #               specified, the email address is ignored.
 # @param email  The email address to check the subscription for.
-# @return True if the account requires activation, false if it does not, undef
-#         on error.
-sub requires_activation {
+# @return A reference to a hash containing the subscription data on success,
+#         undef on error.
+sub subscription_exists {
     my $self   = shift;
     my $userid = shift;
     my $email  = shift;
@@ -72,8 +72,73 @@ sub requires_activation {
     my $subscription = $self -> _get_subscription($userid, $email)
         or return undef;
 
+    return $subscription -> {"id"} ? $subscription : $self -> self_error("No subscription exists for the specified user");
+}
+
+
+## @method $ requires_activation($userid, $email)
+# Determine whether the subscription for the specified userid or email is
+# active.
+#
+# @param userid The ID of the user to check the subscription for. If this is
+#               not specified, the email address must be provided. If this is
+#               specified, the email address is ignored.
+# @param email  The email address to check the subscription for.
+# @return True if the account requires activation, false if it does not, undef
+#         on error or no subscription exists.
+sub requires_activation {
+    my $self   = shift;
+    my $userid = shift;
+    my $email  = shift;
+
+    $self -> clear_error();
+
+    # Fetch the subscription header if possible. This will always
+    # return a defined value except on error.
+    my $subscription = $self -> subscription_exists($userid, $email)
+        or return undef;
+
     # Got a subscription, if it's not active it requires activation...
     return (!$subscription -> {"active"});
+}
+
+
+## @method $ get_activation_code($userid, $email, $newcode)
+# Fetch the activation code for the subscription associated with the specified
+# userid or email address.
+#
+# @param userid  The ID of the user to fetch the authcode for. If this is
+#                not specified, the email address must be provided. If this is
+#                specified, the email address is ignored.
+# @param email   The email address to fetch the authcode for.
+# @param newcode If true, a new authcode is set for the subscription, otherwise
+#                the existing authcode (if any) is returned. If a new actcode is
+#                set, the subscription is simultaenously deactivated.
+# @return The authcode for the subscription (or an empty string if no authcode
+#         has been set) on success, undef on error (including a request to
+#         fetch the authcode for a subscription that does not exist)
+sub get_activation_code {
+    my $self    = shift;
+    my $userid  = shift;
+    my $email   = shift;
+    my $newcode = shift;
+
+    $self -> clear_error();
+
+    # Fetch the subscription header if possible. This will always
+    # return a defined value except on error.
+    my $subscription = $self -> subscription_exists($userid, $email)
+        or return undef;
+
+    # No subscription
+    return $self -> self_error("No subscription found for the specified user")
+        if(!$subscription -> {"id"});
+
+    # Update the authcode if needed (this will clear activation, too)
+    $self -> _set_authcode($subscription, $self -> _generate_authcode()) or return undef
+        if($newcode);
+
+    return $subscription -> {"authcode"} || "";
 }
 
 
@@ -139,17 +204,10 @@ sub _create_subscription {
 
     $self -> clear_error();
 
-    # if the email has been set, check that the email is not already the user's email
-    if($userid && $email) {
-        my $user = $self -> {"session"} -> get_user_byid($userid)
-            or return $self -> self_error("Unable to locate data for user: ".$self -> {"session"} -> errstr());
+    return $self -> self_error("No userid or email specified")
+        if(!$userid && !$email);
 
-        # If the email addresses match, clear the specified email as it's redundant
-        $email = undef
-            if(lc($user -> {"email"}) eq lc($email));
-    }
-
-    # Get here with a defined email address, and the subscription can't start active
+    # If the email address is set the subscription can't start active
     my $active = !defined($email);
 
     # Need an auth code?
@@ -220,12 +278,12 @@ sub _get_subscription {
 
     # Try looking for a subscription via email
     } elsif($email) {
-        $subh = $self -> {"dbh"} -> prepare("SELECT  * FROM `".$self -> {"settings"} -> {"config"} -> {"subscriptions"}."`
-                                         WHERE `email` LIKE ?");
+        my $subh = $self -> {"dbh"} -> prepare("SELECT  * FROM `".$self -> {"settings"} -> {"config"} -> {"subscriptions"}."`
+                                                WHERE `email` LIKE ?");
         $subh -> execute($email)
             or return $self -> self_error("Unable to search for subscriptions by user id: ".$self -> {"dbh"} -> errstr());
 
-        $subdata = $subh -> fetchrow_hashref();
+        my $subdata = $subh -> fetchrow_hashref();
         return $subdata if($subdata);
     }
 
@@ -266,6 +324,33 @@ sub _set_subscription_feed {
     return $self -> self_error("Subscription/feed relation insert failed, no rows inserted") if($rows eq "0E0");
 
     return 1;
+}
+
+
+## @method private $ _set_authcode($subscription, $authcode)
+# Update the authcode associated with the specified subscription.
+#
+# @param subscription A reference to a hash containing the subscription data.
+# @param authcode     The new authcode to set for the subscription. This will also
+#                     set the subscription to inactive.
+# @return A reference to a hash containing the subscription data on success, undef
+#         on error.
+sub _set_authcode {
+    my $self         = shift;
+    my $subscription = shift;
+    my $authcode     = shift;
+
+    my $seth = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"subfeeds"}."`
+                                            SET `authcode` = ?, `active` = 0
+                                            WHERE `id` = ?");
+    my $rows = $seth -> execute($authcode, $subscription -> {"id"});
+    return $self -> self_error("Unable to perform subscription update: ". $self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("Subscription update failed, no rows inserted") if($rows eq "0E0");
+
+    $subscription -> {"active"}   = 0;
+    $subscription -> {"authcode"} = $authcode;
+
+    return $subscription;
 }
 
 

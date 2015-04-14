@@ -63,6 +63,58 @@ sub new {
     return $self;
 }
 
+# ============================================================================
+#  Emailer functions
+
+sub send_act_email {
+    my $self    = shift;
+    my $email   = shift;
+    my $actcode = shift;
+
+    # Build URLs to place in the email.
+    my $acturl  = $self -> build_url("fullurl"  => 1,
+                                     "block"    => "subscribe",
+                                     "pathinfo" => [],
+                                     "params"   => "actcode=".$actcode);
+    my $actform = $self -> build_url("fullurl"  => 1,
+                                     "block"    => "subscribe",
+                                     "pathinfo" => [ "activate" ]);
+
+    my $status = $self -> {"messages"} -> queue_message(subject => $self -> {"template"} -> replace_langvar("SUBS_ACTCODE_SUBJECT"),
+                                                        message => $self -> {"template"} -> load_template("subscription/email_actcode.tem",
+                                                                                                          {"***act_code***" => $actcode,
+                                                                                                           "***act_url***"  => $acturl,
+                                                                                                           "***act_form***" => $actform,
+                                                                                                          }),
+                                                         recipients       => [ $email ],
+                                                         send_immediately => 1);
+    return ($status ? undef : $self -> {"messages"} -> errstr());
+}
+
+
+# ============================================================================
+#  Support functions
+
+## @method private _build_feed_list($feeds)
+# Given a list of feed names, produce a lsit of feed IDs to pass to set_user_subscription().
+#
+# @param feeds A reference to an array of feed names
+# @return A reference to an array of feed IDs on success, an error message on error,
+sub _build_feed_list {
+    my $self  = shift;
+    my $feeds = shift;
+
+    my @feedids = ();
+    foreach my $feed (@{$feeds}) {
+        my $data = $self -> {"feed"} -> get_feed_byname($feed)
+            or return $self -> {"feed"} -> errstr();
+
+        push(@feedids, $data -> {"id"});
+    }
+
+    return \@feedids;
+}
+
 
 # ============================================================================
 #  API functions
@@ -85,10 +137,56 @@ sub _build_addsubscription_response {
     my $anonymous = $self -> {"session"} -> anonymous_session();
     my $userid = $self -> {"session"} -> get_session_userid();
 
-    print STDERR Dumper($settings);
+    # Anonymous users *must* provide an email address
+    return $self -> api_errorhash('bad_data', $self -> {"template"} -> replace_langvar("SUBS_ERR_NOREQEMAIL"))
+        if($anonymous && !$settings -> {"email"});
 
-    return { "result" => { "button" => $self -> {"template"} -> replace_langvar("PAGE_ERROROK"),
-                           "content" => "This is a test here..." } };
+    # If an email address has been provided, verify it is vaguely valid. As noted in Login.pm,
+    # this is not fully compliant, but madness follows that way.
+    return $self -> api_errorhash('bad_data', $self -> {"template"} -> replace_langvar("SUBS_ERR_BADEMAIL"))
+        if($settings -> {"email"} !~ /^[\w.+-]+\@([\w-]+\.)+\w+$/);
+
+    # if the email has been set, check that the email is not already the user's email
+    if($userid && $settings -> {"email"}) {
+        my $user = $self -> {"session"} -> get_user_byid($userid)
+            or return $self -> api_errorhash('internal', "Unable to locate data for user: ".$self -> {"session"} -> errstr());
+
+        # If the email addresses match, clear the specified email as it's redundant
+        # and would force subscription activation if it was retained.
+        $settings -> {"email"} = undef
+            if(lc($user -> {"email"}) eq lc($settings -> {"email"}));
+    }
+
+    my $feeds = $self -> _build_feed_list($settings -> {"feeds"});
+    return $self -> api_errorhash('internal', $feeds) if(!ref($feeds));
+
+    $self -> {"subscription"} -> set_user_subscription($anonymous ? undef : $userid,
+                                                       $settings -> {"email"},
+                                                       $feeds)
+        or return $self -> api_errorhash('internal', "Subscription failed: ".$self -> {"subscription"} -> errstr());
+
+    my $successmsg;
+    if($self -> {"subscription"} -> requires_activation($anonymous ? undef : $userid,
+                                                        $settings -> {"email"})) {
+
+        # Grab an activation code - this'll generate a new code each time.
+        my $actcode = $self -> {"subscription"} -> get_activation_code($anonymous ? undef : $userid,
+                                                                       $settings -> {"email"},
+                                                                       1)
+            or return $self -> api_errorhash('internal', $self -> {"subscription"} -> errstr());
+
+        # And send the activation email
+        $self -> send_act_email($settings -> {"email"}, $actcode);
+
+        $successmsg = $self -> {"template"} -> replace_langvar("SUBS_ACTEMAIL")
+    } else {
+        $successmsg = $self -> {"template"} -> replace_langvar("SUBS_SUBSCRIBED")
+    }
+
+    return { "result" => { "button"  => $self -> {"template"} -> replace_langvar("PAGE_ERROROK"),
+                           "content" => $successmsg
+                         }
+           };
 }
 
 
@@ -109,8 +207,6 @@ sub page_display {
     # Is this an API call, or a normal page operation?
     my $apiop = $self -> is_api_operation();
     if(defined($apiop)) {
-        print STDERR "Got apiop $apiop";
-
         # API call - dispatch to appropriate handler.
         given($apiop) {
             default {
