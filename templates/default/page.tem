@@ -47,6 +47,8 @@ window.addEvent('domready', function() {
     errbox = new LightFace({title: '{L_PAGE_ERROR}',
                             draggable: false,
                             overlayAll: true,
+                            pad: 200,
+                            width: '800px',
                             buttons: [
                                       { title: '{L_PAGE_ERROROK}', event: function() { errbox.close(); }, color: 'blue' },
                             ],

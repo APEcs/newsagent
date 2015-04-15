@@ -75,13 +75,16 @@ sub send_act_email {
     my $acturl  = $self -> build_url("fullurl"  => 1,
                                      "block"    => "subscribe",
                                      "pathinfo" => [],
+                                     "api"      => [],
                                      "params"   => "actcode=".$actcode);
     my $actform = $self -> build_url("fullurl"  => 1,
                                      "block"    => "subscribe",
-                                     "pathinfo" => [ "activate" ]);
+                                     "pathinfo" => [ "activate" ],
+                                     "api"      => [],
+                                     "params"   => "");
 
     my $status = $self -> {"messages"} -> queue_message(subject => $self -> {"template"} -> replace_langvar("SUBS_ACTCODE_SUBJECT"),
-                                                        message => $self -> {"template"} -> load_template("subscription/email_actcode.tem",
+                                                        message => $self -> {"template"} -> load_template("subscriptions/email_actcode.tem",
                                                                                                           {"***act_code***" => $actcode,
                                                                                                            "***act_url***"  => $acturl,
                                                                                                            "***act_form***" => $actform,
@@ -155,6 +158,14 @@ sub _build_addsubscription_response {
         # and would force subscription activation if it was retained.
         $settings -> {"email"} = undef
             if(lc($user -> {"email"}) eq lc($settings -> {"email"}));
+    }
+
+    # If an email has been set, check that it isn't an existing user's
+    if($settings -> {"email"}) {
+        my $emailuser = $self -> {"session"} -> {"auth"} -> {"app"} -> get_user_byemail($settings -> {"email"});
+
+        return $self -> api_errorhash('internal', $self -> {"template"} -> replace_langvar("SUBS_ERR_USEREMAIL"))
+            if($emailuser);
     }
 
     my $feeds = $self -> _build_feed_list($settings -> {"feeds"});

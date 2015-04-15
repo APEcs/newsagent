@@ -215,7 +215,7 @@ sub _create_subscription {
         if(!$active);
 
     # try to add the subscription data
-    my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"config"} -> {"subscriptions"}."`
+    my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
                                             (`user_id`, `email`, `active`, `authcode`)
                                             VALUES(?, ?, ?, ?)");
     my $rows = $newh -> execute($userid, $email, $active, $authcode);
@@ -228,7 +228,7 @@ sub _create_subscription {
 
     # And return the data (this could be made by hand here, but this ensures
     # the data really is in the database....
-    my $subh = $self -> {"dbh"} -> prepare("SELECT  * FROM `".$self -> {"settings"} -> {"config"} -> {"subscriptions"}."`
+    my $subh = $self -> {"dbh"} -> prepare("SELECT  * FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
                                             WHERE `id` = ?");
     $subh -> execute($newid)
         or return $self -> self_error("Unable to search for subscriptions by user id: ".$self -> {"dbh"} -> errstr());
@@ -266,7 +266,7 @@ sub _get_subscription {
 
     # Look up existing subscription by userid first, if one has been given
     if($userid) {
-        my $subh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"config"} -> {"subscriptions"}."`
+        my $subh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
                                                 WHERE `user_id` = ?");
         $subh -> execute($userid)
             or return $self -> self_error("Unable to search for subscriptions by user id: ".$self -> {"dbh"} -> errstr());
@@ -278,7 +278,7 @@ sub _get_subscription {
 
     # Try looking for a subscription via email
     } elsif($email) {
-        my $subh = $self -> {"dbh"} -> prepare("SELECT  * FROM `".$self -> {"settings"} -> {"config"} -> {"subscriptions"}."`
+        my $subh = $self -> {"dbh"} -> prepare("SELECT  * FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
                                                 WHERE `email` LIKE ?");
         $subh -> execute($email)
             or return $self -> self_error("Unable to search for subscriptions by user id: ".$self -> {"dbh"} -> errstr());
@@ -340,7 +340,7 @@ sub _set_authcode {
     my $subscription = shift;
     my $authcode     = shift;
 
-    my $seth = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"subfeeds"}."`
+    my $seth = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
                                             SET `authcode` = ?, `active` = 0
                                             WHERE `id` = ?");
     my $rows = $seth -> execute($authcode, $subscription -> {"id"});

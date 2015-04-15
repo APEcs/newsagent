@@ -6,8 +6,8 @@
 
 {L_SUBS_ACTCODE_ALTACT}
 
-***act_form***
-***act_code***
+{L_SUBS_ACTCODE_FORM}: ***act_form***
+{L_SUBS_ACTCODE_CODE}: ***act_code***
 
 {L_SUBS_ACTCODE_REPORT}
 --
