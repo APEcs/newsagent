@@ -1,0 +1,35 @@
+#subcore {
+    margin: 0px auto;
+    margin-top: 40px;
+    padding: 100px 0px 0px;
+}
+
+div.subcore {
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 40px;
+    width: 440px;
+}
+
+div.entry {
+    text-align: left;
+    margin: 0px auto;
+}
+
+div.entry label {
+    color: #222;
+}
+
+div.entry label input {
+    width: 100%;
+}
+
+div.submit {
+    text-align: right;
+}
+
+div.submit .contextlink {
+    float: left;
+    text-align: left;
+    font-size: 10px;
+}

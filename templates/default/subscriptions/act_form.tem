@@ -1,0 +1,19 @@
+***error***
+<div class="shadowbox subcore">
+    <h2>{L_SUBS_ACTFORM}</h2>
+    <div class="sbcontent">
+        <div class="actform">
+            <p>{L_SUBS_ACTFORM_INFO}</p>
+            <form id="actform" method="post" action="***target***">
+                <div class="entry">
+                    <label for="actcode">{L_SUBS_ACTFORM_CODE}:<br />
+                    <input type="text" id="actcode" name="actcode" class="highlight" size="64" maxlength="64" /></label>
+                </div>
+                <div class="submit">
+                    <div class="contextlink">(<a href="***url-resend***">{L_SUBS_ACTFORM_SENDACT}</a>)</div>
+                    <input type="submit" class="button blue" id="doactivate" name="doactivate" value="{L_SUBS_ACTFORM_ACTIVATE}" />
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

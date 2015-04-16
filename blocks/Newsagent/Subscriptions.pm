@@ -63,10 +63,18 @@ sub new {
     return $self;
 }
 
+
 # ============================================================================
 #  Emailer functions
 
-sub send_act_email {
+## @method private $ _send_act_email($email, $actcode)
+# Send an email to the specified address indicating that the subscription
+# has been disabled and an activation code must be entered to enable it.
+#
+# @method email   The email address to send the message to.
+# @method actcode The activation code to send to the user.
+# @return undef on success, otherwise an error message.
+sub _send_act_email {
     my $self    = shift;
     my $email   = shift;
     my $actcode = shift;
@@ -74,7 +82,7 @@ sub send_act_email {
     # Build URLs to place in the email.
     my $acturl  = $self -> build_url("fullurl"  => 1,
                                      "block"    => "subscribe",
-                                     "pathinfo" => [],
+                                     "pathinfo" => [ "activate" ],
                                      "api"      => [],
                                      "params"   => "actcode=".$actcode);
     my $actform = $self -> build_url("fullurl"  => 1,
@@ -120,10 +128,56 @@ sub _build_feed_list {
 
 
 # ============================================================================
+#  Validation functions
+
+
+
+
+
+# ============================================================================
+#  Content generation functions
+
+## @method private @ _generate_resend_form($error)
+# Generate a form through which the user may resend their subscription activation code.
+#
+# @param error A string containing errors related to resending, or undef.
+# @return An array of two values: the page title string, the code form
+sub _generate_resend_form {
+    my $self  = shift;
+    my $error = shift;
+
+    # Wrap the error message in a message box if we have one.
+    $error = $self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $error})
+        if($error);
+
+    return ($self -> {"template"} -> replace_langvar("SUBS_RESEND"),
+            $self -> {"template"} -> load_template("subscriptions/resend_form.tem", {"***error***"  => $error,
+                                                                                     "***target***" => $self -> build_url("block" => "subscribe", "pathinfo" => [ "resend" ]))}));
+}
+
+
+sub _generate_activate_form {
+    my $self = shift;
+    my $error = shift;
+
+    # Wrap the error message in a message box if we have one.
+    $error = $self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $error})
+        if($error);
+
+    return ($self -> {"template"} -> replace_langvar("SUBS_ACTFORM"),
+            $self -> {"template"} -> load_template("subscriptions/act_form.tem", {"***error***"      => $error,
+                                                                                  "***target***"     => $self -> build_url("block" => "subscribe"),
+                                                                                  "***url-resend***" => $self -> build_url("block" => "subscribe", "pathinfo" => [ "resend" ]),}));
+}
+
+# ============================================================================
 #  API functions
 
 ## @method private $ _build_addsubscription_response()
+# Generate the API response to requests to add feeds to a user's subscription
+# based on theri current session and/or a specified email address.
 #
+# @return A reference to a hash to send back to the client as an API response.
 sub _build_addsubscription_response {
     my $self = shift;
 
@@ -157,7 +211,7 @@ sub _build_addsubscription_response {
         # If the email addresses match, clear the specified email as it's redundant
         # and would force subscription activation if it was retained.
         $settings -> {"email"} = undef
-            if(lc($user -> {"email"}) eq lc($settings -> {"email"}));
+            if($user -> {"email"} && lc($user -> {"email"}) eq lc($settings -> {"email"}));
     }
 
     # If an email has been set, check that it isn't an existing user's
@@ -187,7 +241,7 @@ sub _build_addsubscription_response {
             or return $self -> api_errorhash('internal', $self -> {"subscription"} -> errstr());
 
         # And send the activation email
-        $self -> send_act_email($settings -> {"email"}, $actcode);
+        $self -> _send_act_email($settings -> {"email"}, $actcode);
 
         $successmsg = $self -> {"template"} -> replace_langvar("SUBS_ACTEMAIL")
     } else {
@@ -230,7 +284,9 @@ sub page_display {
     } else {
         my @pathinfo = $self -> {"cgi"} -> param('pathinfo');
 
-        given($pathinfo[2]) {
+        given($pathinfo[0]) {
+            when("activate")  { ($title, $content) = $self -> _generate_activate_form(); }
+            when("resend")    { ($title, $content) = $self -> _generate_resend_form();
             default {
                 ($title, $content) = $self -> _generate_manage();
             }
