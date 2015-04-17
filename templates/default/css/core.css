@@ -8,6 +8,10 @@
 @import url('controls.css');    /* sprite-based control buttons         */
 @import url('inputstyles.css'); /* general input styling                */
 
+#content {
+    margin-top: 40px;
+}
+
 .newsagent #topbar {
     position: absolute;
     left: 0px;
