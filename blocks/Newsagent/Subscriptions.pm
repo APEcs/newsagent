@@ -16,6 +16,60 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# Dealing with a mix of email address subscription and user account subscription
+# is a pain, because there are some hidden complexities in there (not just
+# because Email Hates The Living for a change...) For a start, there are three
+# bvious situations that may arise:
+#
+# 1. user is not logged in (and may not have an account), so an email address
+#    must be specified.
+# 2. user is logged in, but specifies an alternate email address.
+# 3. user is logged in, does not specify an alternate email address, so their
+#    default one is used.
+#
+# Handling is further complicated by the fact that a user could potentially set
+# up a subscription without logging in (or before having an account) using one
+# email address, and then log in and set up additional subscriptions using the
+# same address (either as their primary address, or as an alternative address).
+#
+# So, to handle these:
+#
+# - In case 1: the user should not be allowed to use an email address that has
+#   been set as the primary address or alternative address for a registered user.
+#   If the user has used the address they provide before, the feeds they have
+#   selected should be added to that address' subscriptions, the subscription
+#   deactivated, and a new activation email sent.
+#
+# - In case 2:
+#   a. if the alternate email address matches the logged-in user's default
+#      address, the alternate address can be ignored (set to undef). This is
+#      then handled in the same way as case 3.
+#   b. if the alternate email is not the default address, it must not match
+#      any other registered user's default or alternate email. The selected
+#      feeds are added to the user's subscriptions, the subscription is
+#      deactivated, and an activation email is sent to the email alternate
+#      email address. During activation, if the default or alternate email
+#      for a user matches an existing email-only subscription, the email-only
+#      subscription should be removed and the subscriptions it had merged with
+#      the user's subscriptions.
+#
+# - In case 3: selected feeds are added to the user's subscription, and
+#   activated immediately. If any email-only subscriptions exist that have the
+#   user's default email address, they should be merged into the user's
+#   subscriptions, and the email-only subscription removed.
+#
+# From these cases, some general rules can be derived:
+#
+# - when an email address has been specified, it must not match an existing user
+#   default or alternate address, unless the user is logged in with the matching
+#   account.
+#
+# - when activating a subscription as a logged-in user, email-only subscriptions
+#   with an address that matches the logged-in user's default or alternate email
+#   should be deleted and the subscriptions associated with the removed
+#   subscription should be moved to the user's subscription.
+#
+
 ## @class
 package Newsagent::Subscriptions;
 
@@ -131,31 +185,77 @@ sub _build_feed_list {
 #  Validation functions
 
 
+## @method $ _validate_resend()
+#
+sub _validate_resend {
+    my $self = shift;
+
+    my ($email, $err) = $self -> validate_string('email', { "required" => 0,
+                                                            "nicename" => $self -> {"template"} -> replace_langvar("SUBS_RESENDFORM_EMAIL"),
+                                                            "minlen"   => 2,
+                                                            "maxlen"   => 256
+                                                 });
+    return (0, $err) if(!$email);
+
+    # Check the email is vaguely valid
+    return $self -> {"template"} -> replace_langvar("SUBS_ERR_BADEMAIL")
+        if($email !~ /^[\w.+-]+\@([\w-]+\.)+\w+$/);
+
+    # Address is valid, try sending a new code
+    my $actcode = $self -> {"subscription"} -> get_activation_code(undef, $email, 1)
+        or return (0, $self -> {"subscription"} -> errstr());
+
+    # And send the activation email
+    $self -> _send_act_email($email, $actcode);
+
+    return 1;
+}
 
 
 
 # ============================================================================
 #  Content generation functions
 
-## @method private @ _generate_resend_form($error)
+## @method private @ _generate_resend_form()
 # Generate a form through which the user may resend their subscription activation code.
 #
-# @param error A string containing errors related to resending, or undef.
 # @return An array of two values: the page title string, the code form
 sub _generate_resend_form {
     my $self  = shift;
-    my $error = shift;
 
-    # Wrap the error message in a message box if we have one.
-    $error = $self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $error})
-        if($error);
+    my ($sent, $error) = $self -> _validate_resend();
 
-    return ($self -> {"template"} -> replace_langvar("SUBS_RESEND"),
-            $self -> {"template"} -> load_template("subscriptions/resend_form.tem", {"***error***"  => $error,
-                                                                                     "***target***" => $self -> build_url("block" => "subscribe", "pathinfo" => [ "resend" ]))}));
+    if($sent) {
+        my $url = $self -> build_url("block" => "subscribe", "pathinfo" => [ "activate" ]);
+        my $now = $self -> {"template"} -> format_time(time());
+
+        return ($self -> {"template"} -> replace_langvar("SUBS_RESEND_DONETITLE"),
+                $self -> {"template"} -> message_box($self -> {"template"} -> replace_langvar("SUBS_RESEND_DONETITLE"),
+                                                     "security",
+                                                     $self -> {"template"} -> replace_langvar("SUBS_RESEND_SUMMARY"),
+                                                     $self -> {"template"} -> replace_langvar("SUBS_RESEND_LONGDESC", {"***now***" => $now}),
+                                                     undef,
+                                                     "subcore",
+                                                     [ {"message" => $self -> {"template"} -> replace_langvar("SUBS_ACTFORM"),
+                                                        "colour"  => "blue",
+                                                        "action"  => "location.href='$url'"} ]));
+    } else {
+        # Wrap the error message in a message box if we have one.
+        $error = $self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $error})
+            if($error);
+
+        return ($self -> {"template"} -> replace_langvar("SUBS_RESENDFORM"),
+                $self -> {"template"} -> load_template("subscriptions/resend_form.tem", {"***error***"  => $error,
+                                                                                         "***target***" => $self -> build_url("block" => "subscribe", "pathinfo" => [ "resend" ])}));
+    }
 }
 
 
+## @method private @ _generate_activate_form($error)
+# Generate a form through which the user may enter their subscription activation code.
+#
+# @param error A string containing errors related to activation, or undef.
+# @return An array of two values: the page title string, the code form
 sub _generate_activate_form {
     my $self = shift;
     my $error = shift;
@@ -201,7 +301,7 @@ sub _build_addsubscription_response {
     # If an email address has been provided, verify it is vaguely valid. As noted in Login.pm,
     # this is not fully compliant, but madness follows that way.
     return $self -> api_errorhash('bad_data', $self -> {"template"} -> replace_langvar("SUBS_ERR_BADEMAIL"))
-        if($settings -> {"email"} !~ /^[\w.+-]+\@([\w-]+\.)+\w+$/);
+        if($settings -> {"email"} && $settings -> {"email"} !~ /^[\w.+-]+\@([\w-]+\.)+\w+$/);
 
     # if the email has been set, check that the email is not already the user's email
     if($userid && $settings -> {"email"}) {
@@ -216,10 +316,13 @@ sub _build_addsubscription_response {
 
     # If an email has been set, check that it isn't an existing user's
     if($settings -> {"email"}) {
+
         my $emailuser = $self -> {"session"} -> {"auth"} -> {"app"} -> get_user_byemail($settings -> {"email"});
 
         return $self -> api_errorhash('internal', $self -> {"template"} -> replace_langvar("SUBS_ERR_USEREMAIL"))
             if($emailuser);
+
+
     }
 
     my $feeds = $self -> _build_feed_list($settings -> {"feeds"});
@@ -286,7 +389,7 @@ sub page_display {
 
         given($pathinfo[0]) {
             when("activate")  { ($title, $content) = $self -> _generate_activate_form(); }
-            when("resend")    { ($title, $content) = $self -> _generate_resend_form();
+            when("resend")    { ($title, $content) = $self -> _generate_resend_form(); }
             default {
                 ($title, $content) = $self -> _generate_manage();
             }
