@@ -33,6 +33,7 @@ use Webperl::Modules;
 use Webperl::SessionHandler;
 use Webperl::Template;
 use Webperl::Auth;
+use Webperl::Logger qw(NOTICE);
 use Newsagent::AppUser;
 use Newsagent::System;
 use Newsagent::System;
@@ -217,14 +218,14 @@ sub _schedule_wait {
     my $wakeup = $self -> {"queue"} -> get_next_notification_time($now);
     if($wakeup) {
         my $next_schedule = DateTime -> from_epoch(epoch => $wakeup);
-        $self -> {"logger"} -> print(Webperl::Logger::NOTICE, "Next scheduled message is at $next_schedule");
+        $self -> {"logger"} -> print(NOTICE, "Next scheduled message is at $next_schedule");
 
         $wakeup = min($wakeup - $now, $self -> {"settings"} -> {"megaphone"} -> {"default_sleep"})
     } else {
         $wakeup = $self -> {"settings"} -> {"megaphone"} -> {"default_sleep"};
     }
 
-    $self -> {"logger"} -> print(Webperl::Logger::NOTICE, "Sleeping for $wakeup seconds");
+    $self -> {"logger"} -> print(NOTICE, "Sleeping for $wakeup seconds");
 
     # This sleep should be interrupted if the schedule is updated
     sleep($wakeup);
