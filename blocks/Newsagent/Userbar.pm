@@ -123,7 +123,7 @@ sub block_display {
         ($self -> {"template"} -> load_template("userbar/siteadmin_disabled.tem"),
          $self -> {"template"} -> load_template("userbar/msglist_disabled.tem"),
          $self -> {"template"} -> load_template("userbar/compose_disabled.tem"),
-         $self -> {"template"} -> load_template("userbar/profile_loggedout_http".($ENV{"HTTPS"} eq "on" ? "s" : "").".tem", {"***url-login***" => $loginurl}),
+         $self -> {"template"} -> load_template("userbar/profile_loggedout_http".(($ENV{"HTTPS"} && $ENV{"HTTPS"} eq "on") ? "s" : "").".tem", {"***url-login***" => $loginurl}),
          $self -> {"template"} -> load_template("userbar/presets_disabled.tem"),
          $self -> {"template"} -> load_template("userbar/doclink_disabled.tem"),
          $self -> {"template"} -> load_template("userbar/tellus_disabled.tem"),
