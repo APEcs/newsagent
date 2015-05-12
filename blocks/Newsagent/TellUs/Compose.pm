@@ -20,6 +20,7 @@
 package Newsagent::TellUs::Compose;
 
 use strict;
+use experimental 'smartmatch';
 use base qw(Newsagent::TellUs); # This class extends the TellUs block class
 use v5.12;
 
