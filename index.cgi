@@ -14,13 +14,12 @@ our ($scriptpath, $fallbackpath, $contact);
 # Handle very early startup tasks
 BEGIN {
     # Modify these two defaults to suit your environment
-    $fallbackpath = "/home/chris/newsagent/newsagent";
+    $fallbackpath = "/var/www/localhost/newsagent/newsagent";
     $contact      = 'chris@starforge.co.uk';
 
     # Location autodetect will fail under mod_perl, so use a hard-coded location.
     if($ENV{MOD_PERL}) {
         $scriptpath = $fallbackpath;
-
     # Otherwise use the script's location as the script path
     } elsif($FindBin::Bin =~ /(.*)/) {
         $scriptpath = $1;
