@@ -23,6 +23,7 @@
 package Newsagent::Importer;
 
 use strict;
+use experimental 'smartmatch';
 use base qw(Newsagent); # This class extends the Newsagent block class
 use Newsagent::System::Feed;
 use Newsagent::System::Article;
@@ -140,10 +141,10 @@ sub should_run {
     $checkh -> execute($source)
         or return $self -> self_error("Unable to look up source timing information: ".$self -> {"dbh"} -> errstr());
 
-    my $source = $checkh -> fetchrow_hashref()
+    my $sdata = $checkh -> fetchrow_hashref()
         or return $self -> self_error("Request for non-existent source $source");
 
-    return(time() >= ($source -> {"last_run"} + $source -> {"frequency"}));
+    return(time() >= ($sdata -> {"last_run"} + $sdata -> {"frequency"}));
 }
 
 
