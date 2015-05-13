@@ -1657,7 +1657,7 @@ CREATE TABLE IF NOT EXISTS `settings` (
 --
 
 INSERT INTO `settings` (`name`, `value`) VALUES
-('base', '/var/www/path/to/newsagent'),
+('base', '/var/www/localhost/newsagent/newsagent'),
 ('scriptpath', '/newsagent'),
 ('cookie_name', 'newsagent'),
 ('cookie_path', '/'),
@@ -1685,7 +1685,7 @@ INSERT INTO `settings` (`name`, `value`) VALUES
 ('Login:self_register_question', 'Which of these colours is also a fruit? Blue, orange, red'),
 ('site_name', 'Newsagent'),
 ('default_authmethod', '1'),
-('Article:upload_image_path', '/var/www/path/to/newsagent/images'),
+('Article:upload_image_path', '/var/www/localhost/newsagent/newsagent/images'),
 ('Article:upload_image_url', 'https://server.url/newsagent/images'),
 ('Feed:count', '10'),
 ('Feed:count_limit', '100'),
