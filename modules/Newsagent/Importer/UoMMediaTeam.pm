@@ -24,6 +24,7 @@
 package Newsagent::Importer::UoMMediaTeam;
 
 use strict;
+use experimental 'smartmatch';
 use base qw(Newsagent::Importer); # This class extends the Newsagent block class
 use v5.12;
 use DateTime;
@@ -106,25 +107,25 @@ sub _create_import {
 
     $self -> clear_error();
 
-    my $aid = $self -> {"article"} -> add_article({"images"  => {"a" => { "url" => $article -> {"images"} -> {"small"},
-                                                                          "mode" => "url",
-                                                                        },
-                                                                 "b" => { "url" => $article -> {"images"} -> {"large"},
-                                                                          "mode" => "url",
-                                                                        },
-                                                                },
-                                                   "levels"  => { 'home' => 1, 'leader' => 1, 'group' => 1 },
-                                                   "feeds"   => [ $self -> {"args"} -> {"feed"} ],
-                                                   "release_mode" => 'visible',
-                                                   "relmode"      => 0,
-                                                   "full_summary" => 0,
-                                                   "minor_edit"   => 0,
-                                                   "sticky"       => 0,
-                                                   "title"   => $article -> {"headline"},
-                                                   "summary" => $article -> {"strapline"},
-                                                   "article" => $article -> {"mainbody"},
-                                                  },
-                                                  $self -> {"args"} -> {"userid"})
+    my $attrs = {"levels"  => { 'home' => 1, 'leader' => 1, 'group' => 1 },
+                 "feeds"   => [ $self -> {"args"} -> {"feed"} ],
+                 "release_mode" => 'visible',
+                 "relmode"      => 0,
+                 "full_summary" => 0,
+                 "minor_edit"   => 0,
+                 "sticky"       => 0,
+                 "title"   => $article -> {"headline"},
+                 "summary" => $article -> {"strapline"},
+                 "article" => $article -> {"mainbody"},
+    };
+
+    $attrs -> {"images"} -> {"a"} = { "url" => $article -> {"images"} -> {"small"}, "mode" => "url" }
+        if($article -> {"images"} && $article -> {"images"} -> {"small"});
+
+    $attrs -> {"images"} -> {"b"} = { "url" => $article -> {"images"} -> {"large"}, "mode" => "url" }
+        if($article -> {"images"} && $article -> {"images"} -> {"large"});
+
+    my $aid = $self -> {"article"} -> add_article($attrs, $self -> {"args"} -> {"userid"})
         or return $self -> self_error("Article addition failed: ".$self -> {"article"} -> errstr());
 
     return $self -> _add_import_meta($aid, $article -> {"a"} -> {"name"});
