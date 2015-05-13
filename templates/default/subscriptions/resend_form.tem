@@ -1,0 +1,18 @@
+***error***
+<div class="shadowbox subcore">
+    <h2>{L_SUBS_RESENDFORM}</h2>
+    <div class="sbcontent">
+        <div class="subform">
+            <p class="alignleft">{L_SUBS_RESENDFORM_INFO}</p>
+            <form id="actform" method="post" action="***target***">
+                <div class="entry">
+                    <label for="email">{L_SUBS_RESENDFORM_EMAIL}:<br />
+                    <input type="text" id="email" name="email" class="highlight" size="64" maxlength="255" /></label>
+                </div>
+                <div class="submit">
+                    <input type="submit" class="button blue" id="doresend" name="doresend" value="{L_SUBS_RESENDFORM_RESEND}" />
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

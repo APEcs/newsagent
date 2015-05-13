@@ -15,8 +15,16 @@ SUBS_ACTCODE_FORM     = Form URL
 SUBS_ACTCODE_CODE     = Activation Code
 SUBS_ACTCODE_REPORT   = If you did not set up this subscription, please reply to this email quoting the message, and we will look into it.
 
-SUBS_ACTFORM          = Activate subscription
-SUBS_ACTFORM_INFO     = In order to prevent abuse, new or modified email-based subscriptions are deactivated until you enter an activation code. The activation code has been sent to the email address you entered when subscribing, please enter the code in the box below to activate your subscription.
-SUBS_ACTFORM_CODE     = Activation Code
-SUBS_ACTFORM_SENDACT  = Resend activation code
-SUBS_ACTFORM_ACTIVATE = Activate
+SUBS_ACTFORM           = Activate subscription
+SUBS_ACTFORM_INFO      = In order to prevent abuse, new or modified email-based subscriptions are deactivated until you enter an activation code. The activation code has been sent to the email address you entered when subscribing, please enter the code in the box below to activate your subscription.
+SUBS_ACTFORM_CODE      = Activation Code
+SUBS_ACTFORM_SENDACT   = Resend activation code
+SUBS_ACTFORM_ACTIVATE  = Activate
+
+SUBS_RESENDFORM        = Resend activation code
+SUBS_RESENDFORM_INFO   = If you have accidentally deleted your subscription activation email, or you have not received an an activation email, enter the email address you subscribed with below to be sent your activation code again.<br /><br/><strong>IMPORTANT</strong>: requesting a new copy of your activation code will generate a new code. If you later receive the original activation email, the code it contains will not work and should be ignored.
+SUBS_RESENDFORM_EMAIL  = Email address
+SUBS_RESENDFORM_RESEND = Resend code
+SUBS_RESEND_DONETITLE  = New code sent
+SUBS_RESEND_SUMMARY    = A new activation code has been sent
+SUBS_RESEND_LONGDESC   = A new subscription activation code has been sent to the email address you specified. Any old activation codes are now invalid and will not work; please use the code from the email sent at ***now***.

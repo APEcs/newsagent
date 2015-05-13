@@ -185,6 +185,15 @@ sub set_user_subscription {
 }
 
 
+sub activate_subscription {
+    my $self = shift;
+    my $code = shift;
+
+
+
+
+}
+
 # ============================================================================
 #  Internal implementation
 
@@ -279,7 +288,7 @@ sub _get_subscription {
     # Try looking for a subscription via email
     } elsif($email) {
         my $subh = $self -> {"dbh"} -> prepare("SELECT  * FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
-                                                WHERE `email` LIKE ?");
+                                                WHERE `email` LIKE ? AND `user_id` IS NULL");
         $subh -> execute($email)
             or return $self -> self_error("Unable to search for subscriptions by user id: ".$self -> {"dbh"} -> errstr());
 
