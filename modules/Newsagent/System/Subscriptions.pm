@@ -48,7 +48,97 @@ sub new {
 
 
 # ============================================================================
-#  Data access
+#  Terrifying vistas of madness
+
+## @method $ check_email($address, $userid)
+# Determine whether the user is allowed to use the email address specified. This
+# will implement restriction A described in the Newsagent::Subscriptions class
+# documentation. This will only return true if the email address specified is
+# not the default or alternate email address for a user, or it matches the
+# alternate address for the user with the specified ID.
+#
+# @param address The email address to check the validity of.
+# @param userid  The userid of the user wanting to use the email. If there is no
+#                logged in user, this should be undef.
+# @return true if the email is available/valid for use, false otherwise.
+sub check_email {
+    my $self    = shift;
+    my $address = shift;
+    my $userid  = shift;
+
+    # First, simple lookup - does a user exist with the email address as a default?
+    my $user = $self -> {"session"} -> {"auth"} -> {"app"} -> get_user_byemail($address);
+    if($user && $user -> {"user_id"}) {
+        # If the email address belongs to the specified user, it's okay to use it
+        # (realistically, this should never happen, as this should not be called
+        # if the email address belongs to the user, but handle it anyway...)
+        # this will return false, unless the email address belongs to the user.
+        return ($userid && $user -> {"user_id"} == $userid);
+    }
+
+    # Is the email in use as a subscription address (either as an alternate, or
+    # email-only subscription)?
+    my $sub = $self -> _get_subscription_byemail($address);
+    if($sub && $sub -> {"id"}) {
+        # The email is in use as an alternate address. Is it one already used by this
+        # user? If so, they can continue to use it - if it's in use by another user
+        # then this one can't use it. If no users have claimed the address (ie: it
+        # is a subscription set up by a user without an account/not logged it), then
+        # it's okay to use it.
+        return (!$sub -> {"user_id"} || $sub -> {"user_id"} == $userid);
+    }
+
+    # Get here and it appears that the address is not in use, so it
+    # should be available to the user
+    return 1;
+}
+
+
+## @method $ set_user_subscription($userid, $email, $feeds)
+# Ensure that the user's subscription exists, and add any feeds supplied to the
+# list of feeds the user is subscribed to.
+#
+# @param userid The ID of the user to set the subscription for. If not specified,
+#               the email address must be provided.
+# @param email  The email address to set for the subscription. If userid is specified,
+#               and this does not match the user's email address, this is used as
+#               the user's subscription address.
+# @param feeds  A reference to a list of feed IDs.
+# @return A reference to the subscription header on success, undef on error.
+sub set_user_subscription {
+    my $self   = shift;
+    my $userid = shift;
+    my $email  = shift;
+    my $feeds  = shift;
+
+    $self -> clear_error();
+
+    # Fetch the subscription header if possible. This will always produce a defined
+    # value - even if it's just a reference to an empty hash - except on error.
+    my $subscription = $self -> _get_subscription_header($userid, $email)
+        or return undef;
+
+    # check that a sub header exists, and that it has the right email
+    if($subscription -> {"id"}) {
+        # In theory, this should only ever run when userid is not undef - if it is, the email
+        # will always match the subscription email, otherwise _get_subscription_header() couldn't
+        # have found it to begin with.
+        $self -> _set_subscription_email($subscription -> {"id"}, $email)
+            or return undef;
+    } else {
+        $subscription = $self -> _create_subscription_header($userid, $email)
+            or return undef;
+    }
+
+    # and make sure the feeds are setup
+    foreach my $feed (@{$feeds}) {
+        $self -> _set_subscription_feed($subscription -> {"id"}, $feed)
+            or return undef;
+    }
+
+    return $self -> _get_subscription_byid($subscription -> {"id"});
+}
+
 
 ## @method $ subscription_exists($userid, $email)
 # Determine whether the subscription for the specified userid or email is
@@ -69,20 +159,22 @@ sub subscription_exists {
 
     # Fetch the subscription header if possible. This will always
     # return a defined value except on error.
-    my $subscription = $self -> _get_subscription($userid, $email)
+    my $subscription = $self -> _get_subscription_header($userid, $email)
         or return undef;
 
     return $subscription -> {"id"} ? $subscription : $self -> self_error("No subscription exists for the specified user");
 }
 
 
+# ============================================================================
+#  Activation related
+
 ## @method $ requires_activation($userid, $email)
 # Determine whether the subscription for the specified userid or email is
 # active.
 #
 # @param userid The ID of the user to check the subscription for. If this is
-#               not specified, the email address must be provided. If this is
-#               specified, the email address is ignored.
+#               not specified, the email address must be provided.
 # @param email  The email address to check the subscription for.
 # @return True if the account requires activation, false if it does not, undef
 #         on error or no subscription exists.
@@ -142,49 +234,6 @@ sub get_activation_code {
 }
 
 
-## @method $ set_user_subscription($userid, $email, $feeds)
-# Ensure that the user's subscription exists, and add any feeds supplied to the
-# list of feeds the user is subscribed to.
-#
-# @param userid The ID of the user to set the subscription for. If not specified,
-#               the email address must be provided.
-# @param email  The email address to set for the subscription. If userid is specified,
-#               and this does not match the user's email address, this is used as
-#               the user's subscription address.
-# @param feeds  A reference to a list of feed IDs.
-# @return A reference to the subscription header on success, undef on error.
-sub set_user_subscription {
-    my $self   = shift;
-    my $userid = shift;
-    my $email  = shift;
-    my $feeds  = shift;
-
-    $self -> clear_error();
-
-    # Fetch the subscription header if possible. This will always
-    # return a defined value except on error.
-    my $subscription = $self -> _get_subscription($userid, $email)
-        or return undef;
-
-    # check that a sub header exists, and that it has the right email
-    if($subscription -> {"id"}) {
-        $self -> _set_subscription_email($subscription -> {"id"}, $email) or return undef
-            if($email && $subscription -> {"email"} ne $email);
-
-    } else {
-        $subscription = $self -> _create_subscription($userid, $email)
-            or return undef;
-    }
-
-    foreach my $feed (@{$feeds}) {
-        $self -> _set_subscription_feed($subscription -> {"id"}, $feed)
-            or return undef;
-    }
-
-    return $subscription;
-}
-
-
 sub activate_subscription {
     my $self = shift;
     my $code = shift;
@@ -194,10 +243,11 @@ sub activate_subscription {
 
 }
 
-# ============================================================================
-#  Internal implementation
 
-## @method private $ _create_subscription($userid, $email)
+# ============================================================================
+#  Internal implementation - Header handling
+
+## @method private $ _create_subscription_header($userid, $email)
 # Create a new subscription header. If the email address is specfied, the subscription
 # must be confirmed before subscription messages will be sent.
 #
@@ -206,7 +256,7 @@ sub activate_subscription {
 # @param email  The optional alternative email address to use for the subscription.
 # @return A reference to a hash containing the subscription header on success,
 #         undef on error.
-sub _create_subscription {
+sub _create_subscription_header {
     my $self   = shift;
     my $userid = shift;
     my $email  = shift;
@@ -216,7 +266,8 @@ sub _create_subscription {
     return $self -> self_error("No userid or email specified")
         if(!$userid && !$email);
 
-    # If the email address is set the subscription can't start active
+    # If the email address is set the subscription can't start active, even if
+    # the userid is present.
     my $active = !defined($email);
 
     # Need an auth code?
@@ -249,7 +300,7 @@ sub _create_subscription {
 }
 
 
-## @method private $ _get_subscription($userid, $email)
+## @method private $ _get_subscription_header($userid, $email)
 # Fetch the subscription information for the user or email specified. This attempts
 # to locate the subscription information based on first the user id specified - if
 # one is available - and then the email. At least one of userid or email must be
@@ -266,7 +317,7 @@ sub _create_subscription {
 # @return A reference to a hash containing the subscription data on success, a
 #         reference to an empty hash if no subscription data can be located, undef
 #         on error.
-sub _get_subscription {
+sub _get_subscription_header {
     my $self   = shift;
     my $userid = shift;
     my $email  = shift;
@@ -300,6 +351,76 @@ sub _get_subscription {
 }
 
 
+# ============================================================================
+#  Internal implementation - Lookup
+
+## @method private $ _get_subscription_byid($subid)
+# Given a subscription ID, fetch the data for the subscription (including feeds)
+# if such a subscription exists.
+#
+# @param subid the Id of the subscription to fetch the data for.
+# @return A reference to a hash containing the subscription data on success, a
+#         reference to an empty hash if the subscription does not exist, or
+#         undef if an error occurred.
+sub _get_subscription_byid {
+    my $self  = shift;
+    my $subid = shift;
+
+    $self -> clear_error();
+
+    my $subh = $self -> {"dbh"} -> prepare("SELECT  * FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
+                                            WHERE `id` = ?");
+    $subh -> execute($subid)
+        or return $self -> self_error("Unable to search for subscription by ID: ".$self -> {"dbh"} -> errstr());
+
+    my $subdata = $subh -> fetchrow_hashref();
+
+    # If the header has been found, pull in the feed list too.
+    if($subdata) {
+        $subdata -> {"feeds"} = $self -> _get_subscription_feeds($subdata -> {"id"})
+            or return undef;
+    }
+
+    return ($subdata || {});
+}
+
+
+## @method private $ _get_subscription_byemail($email)
+# Search for subscriptions set up to use the specified email address as the email
+# to send digests to. This will search for subscriptions with or without userid
+# information set - it purely looks for subscriptions with the specified email.
+#
+# @param email The email address to search for.
+# @return A reference to a hash containing the subscription information if the
+#         email address has been used for one, an empty hashref if it has not,
+#         undef on error.
+sub _get_subscription_byemail {
+    my $self  = shift;
+    my $email = shift;
+
+    $self -> clear_error();
+
+    my $subh = $self -> {"dbh"} -> prepare("SELECT  * FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
+                                            WHERE `email` LIKE ?
+                                            LIMIT 1"); # LIMIT should be redundant, but better to be sure.
+    $subh -> execute($email)
+        or return $self -> self_error("Unable to search for subscriptions by email: ".$self -> {"dbh"} -> errstr());
+
+    my $subdata = $subh -> fetchrow_hashref();
+
+    # If the header has been found, pull in the feed list too.
+    if($subdata) {
+        $subdata -> {"feeds"} = $self -> _get_subscription_feeds($subdata -> {"id"})
+            or return undef;
+    }
+
+    return ($subdata || {});
+}
+
+
+# ============================================================================
+#  Internal implementation - feed handling
+
 ## @method private $ _set_subscription_feed($subid, $feedid)
 # Add the specified feed to the list of feeds the user is subscribed to.
 #
@@ -331,6 +452,43 @@ sub _set_subscription_feed {
     my $rows = $addh -> execute($subid, $feedid);
     return $self -> self_error("Unable to perform sub/feed relation insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Subscription/feed relation insert failed, no rows inserted") if($rows eq "0E0");
+
+    return 1;
+}
+
+
+# ============================================================================
+#  Internal implementation - email and related
+
+## @method private $ _set_subscription_email($subid, $email)
+# Update the email address associated with the specified subscription. If the
+# email address is set,
+#
+# @param subid The ID of the subscription header to update the email for.
+# @param email The email address to set; this may be undef to NULL the
+#              email setting (ONLY do this when the subscription user_id
+#              is not NULL, otherwise the subscription will become unusable)
+# @return true on success, undef on error.
+sub _set_subscription_email {
+    my $self  = shift;
+    my $subid = shift;
+    my $email = shift;
+
+    $self -> clear_error();
+
+    # If the email address is set the subscription must be deactivated
+    my $active = !defined($email);
+
+    # Need an auth code?
+    my $authcode = $self -> _generate_authcode()
+        if(!$active);
+
+    my $seth = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
+                                            SET `email` = ?, `active` = ?, `authcode` = ?
+                                            WHERE `id` = ?");
+    my $rows = $seth -> execute($email, $active, $authcode, $subid);
+    return $self -> self_error("Unable to perform subscription email update: ". $self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("Subscription email update failed, no rows inserted") if($rows eq "0E0");
 
     return 1;
 }

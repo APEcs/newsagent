@@ -16,10 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+## @class
 # Dealing with a mix of email address subscription and user account subscription
 # is a pain, because there are some hidden complexities in there (not just
 # because Email Hates The Living for a change...) For a start, there are three
-# bvious situations that may arise:
+# obvious situations that may arise:
 #
 # 1. user is not logged in (and may not have an account), so an email address
 #    must be specified.
@@ -60,17 +61,20 @@
 #
 # From these cases, some general rules can be derived:
 #
-# - when an email address has been specified, it must not match an existing user
-#   default or alternate address, unless the user is logged in with the matching
-#   account.
+# A. when an email address has been specified, it must not match an existing user
+#    default or alternate address, unless the user is logged in with the matching
+#    account.
 #
-# - when activating a subscription as a logged-in user, email-only subscriptions
-#   with an address that matches the logged-in user's default or alternate email
-#   should be deleted and the subscriptions associated with the removed
-#   subscription should be moved to the user's subscription.
+# B. when activating a subscription as a logged-in user, email-only subscriptions
+#    with an address that matches the logged-in user's default or alternate email
+#    should be deleted and the subscriptions associated with the removed
+#    subscription should be moved to the user's subscription. Note that "activating
+#    a subscription as a logged-in user" means two things here:
 #
-
-## @class
+#   B1. the implicit, hidden activation involved in enabling the subscriptions for
+#       a user's default account address.
+#   B2. the explicit activation involved in validating an activation code for an
+#       alternative address.
 package Newsagent::Subscriptions;
 
 use strict;
@@ -270,6 +274,7 @@ sub _generate_activate_form {
                                                                                   "***url-resend***" => $self -> build_url("block" => "subscribe", "pathinfo" => [ "resend" ]),}));
 }
 
+
 # ============================================================================
 #  API functions
 
@@ -314,15 +319,12 @@ sub _build_addsubscription_response {
             if($user -> {"email"} && lc($user -> {"email"}) eq lc($settings -> {"email"}));
     }
 
-    # If an email has been set, check that it isn't an existing user's
+    # If an email has been set, and is still present, check that it isn't an existing user's default or alternative
     if($settings -> {"email"}) {
-
-        my $emailuser = $self -> {"session"} -> {"auth"} -> {"app"} -> get_user_byemail($settings -> {"email"});
+        my $accept_email = $self -> {"subscription"} -> check_email($settings -> {"email"}, $anonymous ? undef : $userid);
 
         return $self -> api_errorhash('internal', $self -> {"template"} -> replace_langvar("SUBS_ERR_USEREMAIL"))
-            if($emailuser);
-
-
+            if(!$accept_email);
     }
 
     my $feeds = $self -> _build_feed_list($settings -> {"feeds"});
