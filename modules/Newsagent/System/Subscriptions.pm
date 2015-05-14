@@ -204,7 +204,7 @@ sub requires_activation {
 #                specified, the email address is ignored.
 # @param email   The email address to fetch the authcode for.
 # @param newcode If true, a new authcode is set for the subscription, otherwise
-#                the existing authcode (if any) is returned. If a new actcode is
+#                the existing authcode (if any) is returned. If a new authcode is
 #                set, the subscription is simultaenously deactivated.
 # @return The authcode for the subscription (or an empty string if no authcode
 #         has been set) on success, undef on error (including a request to
@@ -234,13 +234,43 @@ sub get_activation_code {
 }
 
 
-sub activate_subscription {
+## @method $ activate_subscription_bycode($code)
+# Activate the subscription that has the specified activation code set. This will
+# clear the activation code for the subscription and enable it.
+sub activate_subscription_bycode {
     my $self = shift;
     my $code = shift;
 
+    $self -> clear_error();
+
+    my $subscription = $self -> _get_subscription_bycode($code);
+    return $self -> self_error("No subscriptions have the specified activation code.")
+        unless($subscription && $subscription -> {"id"});
+
+    return $self -> activate_subscription_byid($subscription -> {"id"});
+}
 
 
+## @method $ activate_subscription_byid($subid)
+# Activate the subscription specified. This will clear the activation code for
+# the subscription and enable it, potentially merging any email-only subscriptions
+# that have the same address as the specified subscription, if it is a user
+# subscription.
+sub activate_subscription_byid {
+    my $self  = shift;
+    my $subid = shift;
 
+    $self -> clear_error();
+
+    # Clear the subscription authcode. The checks after the execute should handle bad IDs
+    my $seth = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
+                                            SET `active` = 1, `authcode` = NULL
+                                            WHERE `id` = ?");
+    my $rows = $seth -> execute($subid);
+    return $self -> self_error("Unable to perform subscription activation: ". $self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("Subscription activation failed, no rows updated") if($rows eq "0E0");
+
+    # handle merging...
 }
 
 
@@ -288,7 +318,8 @@ sub _create_subscription_header {
 
     # And return the data (this could be made by hand here, but this ensures
     # the data really is in the database....
-    my $subh = $self -> {"dbh"} -> prepare("SELECT  * FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
+    my $subh = $self -> {"dbh"} -> prepare("SELECT  *
+                                            FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
                                             WHERE `id` = ?");
     $subh -> execute($newid)
         or return $self -> self_error("Unable to search for subscriptions by user id: ".$self -> {"dbh"} -> errstr());
@@ -326,7 +357,8 @@ sub _get_subscription_header {
 
     # Look up existing subscription by userid first, if one has been given
     if($userid) {
-        my $subh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
+        my $subh = $self -> {"dbh"} -> prepare("SELECT *
+                                                FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
                                                 WHERE `user_id` = ?");
         $subh -> execute($userid)
             or return $self -> self_error("Unable to search for subscriptions by user id: ".$self -> {"dbh"} -> errstr());
@@ -338,7 +370,8 @@ sub _get_subscription_header {
 
     # Try looking for a subscription via email
     } elsif($email) {
-        my $subh = $self -> {"dbh"} -> prepare("SELECT  * FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
+        my $subh = $self -> {"dbh"} -> prepare("SELECT *
+                                                FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
                                                 WHERE `email` LIKE ? AND `user_id` IS NULL");
         $subh -> execute($email)
             or return $self -> self_error("Unable to search for subscriptions by user id: ".$self -> {"dbh"} -> errstr());
@@ -368,7 +401,8 @@ sub _get_subscription_byid {
 
     $self -> clear_error();
 
-    my $subh = $self -> {"dbh"} -> prepare("SELECT  * FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
+    my $subh = $self -> {"dbh"} -> prepare("SELECT *
+                                            FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
                                             WHERE `id` = ?");
     $subh -> execute($subid)
         or return $self -> self_error("Unable to search for subscription by ID: ".$self -> {"dbh"} -> errstr());
@@ -400,11 +434,45 @@ sub _get_subscription_byemail {
 
     $self -> clear_error();
 
-    my $subh = $self -> {"dbh"} -> prepare("SELECT  * FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
+    my $subh = $self -> {"dbh"} -> prepare("SELECT *
+                                            FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
                                             WHERE `email` LIKE ?
                                             LIMIT 1"); # LIMIT should be redundant, but better to be sure.
     $subh -> execute($email)
         or return $self -> self_error("Unable to search for subscriptions by email: ".$self -> {"dbh"} -> errstr());
+
+    my $subdata = $subh -> fetchrow_hashref();
+
+    # If the header has been found, pull in the feed list too.
+    if($subdata) {
+        $subdata -> {"feeds"} = $self -> _get_subscription_feeds($subdata -> {"id"})
+            or return undef;
+    }
+
+    return ($subdata || {});
+}
+
+
+## @method private $ _get_subscription_bycode($code)
+# Given a subscription activation code, fetch the data for the subscription
+# (including feeds) if such a subscription exists.
+#
+# @param code The activation code to search for.
+# @return A reference to a hash containing the subscription data on success, a
+#         reference to an empty hash if the subscription does not exist, or
+#         undef if an error occurred.
+sub _get_subscription_bycode {
+    my $self = shift;
+    my $code = shift;
+
+    $self -> clear_error();
+
+    # First, look up the code to see whether there is a match to activate
+    my $subh = $self -> {"dbh"} -> prepare("SELECT *
+                                            FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
+                                            WHERE `authcode` = ?");
+    $subh -> execute($code)
+        or return $self -> self_error("Unable to search for subscriptions by activation code: ".$self -> {"dbh"} -> errstr());
 
     my $subdata = $subh -> fetchrow_hashref();
 
@@ -436,7 +504,8 @@ sub _set_subscription_feed {
     $self -> clear_error();
 
     # does a sub/feed relation exist?
-    my $checkh = $self -> {"dbh"} -> prepare("SELECT `id` FROM `".$self -> {"settings"} -> {"database"} -> {"subfeeds"}."`
+    my $checkh = $self -> {"dbh"} -> prepare("SELECT `id`
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {"subfeeds"}."`
                                               WHERE `sub_id` = ?
                                               AND `feed_id` = ?");
     $checkh -> execute($subid, $feedid)
