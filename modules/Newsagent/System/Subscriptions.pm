@@ -237,6 +237,8 @@ sub get_activation_code {
 ## @method $ activate_subscription_bycode($code)
 # Activate the subscription that has the specified activation code set. This will
 # clear the activation code for the subscription and enable it.
+#
+# @param code The authcode to
 sub activate_subscription_bycode {
     my $self = shift;
     my $code = shift;
@@ -270,7 +272,11 @@ sub activate_subscription_byid {
     return $self -> self_error("Unable to perform subscription activation: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Subscription activation failed, no rows updated") if($rows eq "0E0");
 
+    my $subdata = $self -> _get_subscription_byid($subid);
+    return undef unless($subdata && $subdata -> {"id"});
+
     # handle merging...
+    return $self -> _merge_subscriptions($subid, $subdata -> {"user_id"}, $subdata -> {"email"});
 }
 
 
@@ -489,6 +495,34 @@ sub _get_subscription_bycode {
 # ============================================================================
 #  Internal implementation - feed handling
 
+## @method private $ _delete_subscription_byid($subid)
+# Delete the subscription with the specified ID and all its associated feed
+# subscriptions.
+#
+# @param subid The ID of the subscription to delete
+# @return true on success, undef on error.
+sub _delete_subscription_byid {
+    my $self  = shift;
+    my $subid = shift;
+
+    $self -> clear_error();
+
+    # remove the header first...
+    my $nukeh = $self -> {"dbh"} -> prepare("DELETE FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
+                                             WHERE `sub_id` = ?");
+    $nukeh -> execute($subid)
+        or return $self -> self_error("Unable to delete subscription $subid: ".$self -> {"dbh"} -> errstr);
+
+    # ... and all feed relations
+    $nukeh = $self -> {"dbh"} -> prepare("DELETE FROM `".$self -> {"settings"} -> {"database"} -> {"subfeeds"}."`
+                                             WHERE `sub_id` = ?");
+    $nukeh -> execute($subid)
+        or return $self -> self_error("Unable to delete feed subscriptions for subscription $subid: ".$self -> {"dbh"} -> errstr);
+
+    return 1;
+}
+
+
 ## @method private $ _set_subscription_feed($subid, $feedid)
 # Add the specified feed to the list of feeds the user is subscribed to.
 #
@@ -509,7 +543,7 @@ sub _set_subscription_feed {
                                               WHERE `sub_id` = ?
                                               AND `feed_id` = ?");
     $checkh -> execute($subid, $feedid)
-        or return $self -> self_error("Unable to search for subscription/feed relation");
+        or return $self -> self_error("Unable to search for subscription/feed relation: ".$self -> {"dbh"} -> errstr);
 
     my $exists = $checkh -> fetchrow_arrayref();
     return 1 if($exists && $exists -> [0]);
@@ -521,6 +555,90 @@ sub _set_subscription_feed {
     my $rows = $addh -> execute($subid, $feedid);
     return $self -> self_error("Unable to perform sub/feed relation insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Subscription/feed relation insert failed, no rows inserted") if($rows eq "0E0");
+
+    return 1;
+}
+
+
+## @method private $ _get_subscription_feeds($subid)
+# Fetch the list of feed IDs the specified subscription is subscribed to.
+#
+# @param subid The subscription ID to fetch the feed list for.
+# @return A reference to an array of feed IDs on success (which may be
+#         an empty array if there are no feeds set up for the subscription),
+#         or undef on error.
+sub _get_subscription_feeds {
+    my $self  = shift;
+    my $subid = shift;
+    my @feeds = ();
+
+    $self -> clear_error();
+
+    my $feedh = $self -> {"dbh"} -> prepare("SELECT `feed_id`
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"subfeeds"}."`
+                                             WHERE `sub_id` = ?
+                                             ORDER BY `feed_id`");
+    $feedh -> execute($subid)
+        or return $self -> self_error("Unable to fetch subscription/feed relations: ".$self -> {"dbh"} -> errstr);
+
+    while(my $feed = $feedh -> fetchrow_arrayref()) {
+        push(@feeds, $feed -> [0]);
+    }
+
+    return \@feeds;
+}
+
+
+## @method private $ _merge_subscriptions($subid, $userid, $email)
+# Attempt to merge any email-only subscriptions associated with the specified
+# user's default email address, or the alternate address provided, into the
+# subscription with the specified ID.
+#
+# @param subid  The ID of the subscription to merge feed subscriptions into.
+# @param userid The ID of the user merging the subscriptions.
+# @param email  The alternate email address to merge subscriptions from.
+# @return true on success, undef on error.
+sub _merge_subscriptions {
+    my $self   = shift;
+    my $subid  = shift;
+    my $userid = shift;
+    my $email  = shift;
+
+    # If there is no userid, there's nothing to do here
+    return 1 if(!$userid);
+
+    # There's a userid, so search for any subscriptions to merge into the user's subscription:
+    # 1: look for email-only subscriptions using the user's default email, and merge them
+    # 2: look for email-only subscriptions using the email address specified, and merge them
+
+    # We need the user's email, so...
+    my $user = $self -> {"session"} -> get_user_byid($userid)
+        or return $self -> self_error("Unable to merge subscriptions: unknown user $userid");
+
+    foreach my $addr ($user -> {"email"}, $email) {
+        # note that this *doesn't* use _get_subscription_byemail()! That function will search
+        # by email alone, whereas what we want to do is look specifically
+        my $header = $self -> _get_subscription_header(undef, $addr);
+
+        # If there's a subscription associated with the email address, fetch the feeds
+        # associated with it...
+        if($header) {
+            my $feeds = $self -> _get_subscription_feeds($header -> {"id"});
+
+            # If there are any feeds set for the subscription, they should be copied into
+            # the list of feed subscriptions for the user's main subcription
+            if($feeds && scalar(@{$feeds})) {
+                foreach my $feed (@{$feeds}) {
+                    $self -> _set_subscription_feed($subid, $feed)
+                        or return undef;
+                }
+            }
+
+            # And now remove the redundant subscription
+            $self -> _delete_subscription_byid($header -> {"id"})
+                or return undef;
+        }
+    }
 
     return 1;
 }
