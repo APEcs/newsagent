@@ -1,3 +1,7 @@
+// If this is true, selected feeds and email address will be cleared
+// when the user clicks the subscribe button.
+var clear_on_sub = true;
+
 
 function get_selected_feeds()
 {
@@ -114,7 +118,7 @@ function set_subscribe_button() {
 }
 
 
-function subscribe() {
+function subscribe(clear_feeds) {
 
     // must have one or more feeds selected
     if($$('input.selfeed:checked').length == 0) {
@@ -130,25 +134,34 @@ function subscribe() {
         return false;
     }
 
+    // The subscribe button can be disabled here, as the feeds are cleared below.
+    if(clear_feeds)
+        $('subadd').set('disabled', true);
+
     var feeds = new Array();
     $$('input.selfeed:checked').each(function(element) {
         feeds.push(element.get('id').substr(5));
+
+        if(clear_feeds)
+            element.set('checked', false);  // No need to keep the selected feeds
     });
 
     var values = JSON.encode({'email': $('subemail').get('value'),
                               'feeds': feeds });
 
+    // possible clear the email, too
+    if(clear_feeds)
+        $('subemail').set('value', '');
+
     var req = new Request({ url: api_request_path("subscribe", "add", basepath ),
                             onRequest: function() {
                                 $('subspin').fade('in');
                                 $('subemail').set('disabled', true);
-                                $('subadd').set('disabled', true);
                                 $('subman').set('disabled', true);
                             },
                             onSuccess: function(respText, respXML) {
                                 $('subspin').fade('out');
                                 $('subemail').set('disabled', false);
-                                $('subadd').set('disabled', false);
                                 $('subman').set('disabled', false);
 
                                 var err = respXML.getElementsByTagName("error")[0];
@@ -184,7 +197,7 @@ window.addEvent('domready', function() {
     $('countdec').addEvent('click', function() { change_count(false); });
     $('countinc').addEvent('click', function() { change_count(true); });
 
-    $('subadd').addEvent('click', function() { subscribe(); });
+    $('subadd').addEvent('click', function() { subscribe(clear_on_sub); });
 
     build_feedurl();
 });
