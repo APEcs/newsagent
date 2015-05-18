@@ -82,7 +82,7 @@ use experimental qw(smartmatch);
 use base qw(Newsagent); # This class extends the Newsagent block class
 use Newsagent::System::Feed;
 use Newsagent::System::Subscriptions;
-use JSON;
+use JSON();
 use v5.12;
 use Data::Dumper;
 
@@ -291,7 +291,7 @@ sub _build_addsubscription_response {
         or return $self -> api_errorhash('bad_data',
                                          $self -> {"template"} -> replace_langvar("SUBS_ERR_NODATA"));
 
-    my $settings = eval { decode_json($values) }
+    my $settings = eval { JSON::decode_json($values) }
         or return $self -> api_errorhash('bad_data',
                                          $self -> {"template"} -> replace_langvar("SUBS_ERR_BADDATA"));
 
