@@ -144,16 +144,20 @@ sub _generate_feedlist {
         my $anonymous = $self -> {"session"} -> anonymous_session();
         my $mailoptional = $self -> {"template"} -> replace_langvar("FLIST_SUB_".($anonymous ? "REQUIRE" : "OPTION"));
 
+        # Fetch the subscription option
+        my $submode = $self -> check_permission("subscribe") ? "feedlist/subscribe-enabled.tem" : "feedlist/subscribe-disabled.tem";
+        my $subopts = $self -> {"template"} -> load_template($submode, {"***subopt***" => $mailoptional });
+
         return ($self -> {"template"} -> replace_langvar("FLIST_PTITLE"),
-                $self -> {"template"} -> load_template("feedlist/content.tem", {"***feeds***"    => $list,
-                                                                                "***levels***"   => $self -> _build_level_options(),
-                                                                                "***fulltext***" => $self -> {"template"} -> build_optionlist($self -> {"fulltext"}),
-                                                                                "***viewops***"  => $self -> {"template"} -> build_optionlist($self -> {"viewer"}),
-                                                                                "***rss_url***"  => $self -> build_url(fullurl  => 1,
-                                                                                                                       block    => "rss",
-                                                                                                                       params   => { },
-                                                                                                                       pathinfo => [ ]),
-                                                                                "***subopt***"   => $mailoptional,
+                $self -> {"template"} -> load_template("feedlist/content.tem", {"***feeds***"     => $list,
+                                                                                "***levels***"    => $self -> _build_level_options(),
+                                                                                "***fulltext***"  => $self -> {"template"} -> build_optionlist($self -> {"fulltext"}),
+                                                                                "***viewops***"   => $self -> {"template"} -> build_optionlist($self -> {"viewer"}),
+                                                                                "***rss_url***"   => $self -> build_url(fullurl  => 1,
+                                                                                                                        block    => "rss",
+                                                                                                                        params   => { },
+                                                                                                                        pathinfo => [ ]),
+                                                                                "***subscribe***" => $subopts,
                                                                                })
                );
     } else {

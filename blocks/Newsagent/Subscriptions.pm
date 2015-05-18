@@ -382,6 +382,30 @@ sub page_display {
 
     # NOTE: no need to check login here, this module can be used without logging in.
 
+    # However, we do want to make sure that the subscribe control is enforced
+    if(!$self -> check_permission("subscribe")) {
+        $self -> log("error:subscribe:permission", "User does not have permission to subscribe to feeds");
+
+        my $userbar = $self -> {"module"} -> load_module("Newsagent::Userbar");
+        my $message = $self -> {"template"} -> message_box("{L_PERMISSION_FAILED_TITLE}",
+                                                           "error",
+                                                           "{L_PERMISSION_FAILED_SUMMARY}",
+                                                           "{L_PERMISSION_SUBSCRIBE_DESC}",
+                                                           undef,
+                                                           "errorcore",
+                                                           [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
+                                                              "colour"  => "blue",
+                                                              "action"  => "location.href='".$self -> build_url(block => "feeds", pathinfo => [])."'"} ]);
+
+        return $self -> {"template"} -> load_template("error/general.tem",
+                                                      {"***title***"     => "{L_PERMISSION_FAILED_TITLE}",
+                                                       "***message***"   => $message,
+                                                       "***extrahead***" => "",
+                                                       "***userbar***"   => $userbar -> block_display("{L_PERMISSION_FAILED_TITLE}"),
+                                                      })
+    }
+
+
     # Is this an API call, or a normal page operation?
     my $apiop = $self -> is_api_operation();
     if(defined($apiop)) {
