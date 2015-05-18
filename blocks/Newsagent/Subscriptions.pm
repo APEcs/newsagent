@@ -330,9 +330,11 @@ sub _build_addsubscription_response {
     my $feeds = $self -> _build_feed_list($settings -> {"feeds"});
     return $self -> api_errorhash('internal', $feeds) if(!ref($feeds));
 
-    $self -> {"subscription"} -> set_user_subscription($anonymous ? undef : $userid,
-                                                       $settings -> {"email"},
-                                                       $feeds)
+    # Set up the subscription - this will add the selected feeds to the user's
+    # subscription, and hand back the subscription header we'll need later.
+    my $subscription = $self -> {"subscription"} -> set_user_subscription($anonymous ? undef : $userid,
+                                                                          $settings -> {"email"},
+                                                                          $feeds)
         or return $self -> api_errorhash('internal', "Subscription failed: ".$self -> {"subscription"} -> errstr());
 
     my $successmsg;
@@ -350,6 +352,12 @@ sub _build_addsubscription_response {
 
         $successmsg = $self -> {"template"} -> replace_langvar("SUBS_ACTEMAIL")
     } else {
+        # activate the subscription directly. This won't actually do anything as far as activation
+        # is concerned - the subscription isn't inactive - but it will do subscription merging as
+        # required by point B (specifically B1) in the class description
+        $self -> {"subscription"} -> activate_subscription_byid($subscription -> {"id"})
+            or return $self -> api_errorhash('internal', $self -> {"subscription"} -> errstr());
+
         $successmsg = $self -> {"template"} -> replace_langvar("SUBS_SUBSCRIBED")
     }
 
