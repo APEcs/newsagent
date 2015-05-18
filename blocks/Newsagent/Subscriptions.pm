@@ -188,6 +188,28 @@ sub _build_feed_list {
 # ============================================================================
 #  Validation functions
 
+## @method $ _validate_activate()
+#
+sub _validate_activate {
+    my $self = shift;
+
+    # Has the user entered an activation code?
+    my ($code, $error) = $self -> validate_string('actcode', { "required"   => 0,
+                                                               "nicename"   => $self -> {"template"} -> replace_langvar("SUBS_ACTCODE_CODE"),
+                                                               "minlen"     => 64,
+                                                               "maxlen"     => 64,
+                                                               "formattest" => '^[a-zA-Z0-9]+$',
+                                                               "formatdesc" => $self -> {"template"} -> replace_langvar("SUBS_ACTCODE_CODEFMT"),
+                                                  });
+
+    # If there's a code, attempt to activate the subscription associated with it
+    if($code) {
+        my $activated = $self -> {"subscription"} -> activate_subscription_bycode($code);
+
+
+    }
+}
+
 
 ## @method $ _validate_resend()
 #
@@ -197,7 +219,8 @@ sub _validate_resend {
     my ($email, $err) = $self -> validate_string('email', { "required" => 0,
                                                             "nicename" => $self -> {"template"} -> replace_langvar("SUBS_RESENDFORM_EMAIL"),
                                                             "minlen"   => 2,
-                                                            "maxlen"   => 256
+                                                            "maxlen"   => 256,
+
                                                  });
     return (0, $err) if(!$email);
 

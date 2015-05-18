@@ -18,6 +18,7 @@ SUBS_ACTCODE_REPORT   = If you did not set up this subscription, please reply to
 SUBS_ACTFORM           = Activate subscription
 SUBS_ACTFORM_INFO      = In order to prevent abuse, new or modified email-based subscriptions are deactivated until you enter an activation code. The activation code has been sent to the email address you entered when subscribing, please enter the code in the box below to activate your subscription.
 SUBS_ACTFORM_CODE      = Activation Code
+SUBS_ACTFORM_CODEFMT   = Activation codes may only contain the characters a to z, A to Z, or 0 to 9.
 SUBS_ACTFORM_SENDACT   = Resend activation code
 SUBS_ACTFORM_ACTIVATE  = Activate
 
