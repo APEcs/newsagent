@@ -62,9 +62,9 @@ sub new {
 #                logged in user, this should be undef.
 # @return true if the email is available/valid for use, false otherwise.
 sub check_email {
-    my $self    = shift;
-    my $address = shift;
-    my $userid  = shift;
+    my $self      = shift;
+    my $address   = shift;
+    my $userid    = shift;
 
     # First, simple lookup - does a user exist with the email address as a default?
     my $user = $self -> {"session"} -> {"auth"} -> {"app"} -> get_user_byemail($address);
@@ -76,16 +76,13 @@ sub check_email {
         return ($userid && $user -> {"user_id"} == $userid);
     }
 
-    # Is the email in use as a subscription address (either as an alternate, or
-    # email-only subscription)?
-    my $sub = $self -> _get_subscription_byemail($address);
+    # Is the email in use as an alternate subscription address?
+    my $sub = $self -> _get_subscription_byemail($address, 1);
     if($sub && $sub -> {"id"}) {
         # The email is in use as an alternate address. Is it one already used by this
         # user? If so, they can continue to use it - if it's in use by another user
-        # then this one can't use it. If no users have claimed the address (ie: it
-        # is a subscription set up by a user without an account/not logged it), then
-        # it's okay to use it.
-        return (!$sub -> {"user_id"} || $sub -> {"user_id"} == $userid);
+        # then this one can't use it.
+        return ($userid && $sub -> {"user_id"} == $userid);
     }
 
     # Get here and it appears that the address is not in use, so it
@@ -304,7 +301,7 @@ sub _create_subscription_header {
 
     # If the email address is set the subscription can't start active, even if
     # the userid is present.
-    my $active = !defined($email);
+    my $active = !$email;
 
     # Need an auth code?
     my $authcode = $self -> _generate_authcode()
@@ -425,24 +422,29 @@ sub _get_subscription_byid {
 }
 
 
-## @method private $ _get_subscription_byemail($email)
+## @method private $ _get_subscription_byemail($email, $reqalt)
 # Search for subscriptions set up to use the specified email address as the email
 # to send digests to. This will search for subscriptions with or without userid
 # information set - it purely looks for subscriptions with the specified email.
 #
-# @param email The email address to search for.
+# @param email  The email address to search for.
+# @param reqalt If true, the email address
 # @return A reference to a hash containing the subscription information if the
 #         email address has been used for one, an empty hashref if it has not,
 #         undef on error.
 sub _get_subscription_byemail {
-    my $self  = shift;
-    my $email = shift;
+    my $self   = shift;
+    my $email  = shift;
+    my $reqalt = shift;
 
     $self -> clear_error();
+
+    my $userpart = $reqalt ? "AND `user_id` IS NOT NULL" : "";
 
     my $subh = $self -> {"dbh"} -> prepare("SELECT *
                                             FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
                                             WHERE `email` LIKE ?
+                                            $userpart
                                             LIMIT 1"); # LIMIT should be redundant, but better to be sure.
     $subh -> execute($email)
         or return $self -> self_error("Unable to search for subscriptions by email: ".$self -> {"dbh"} -> errstr());
@@ -509,13 +511,13 @@ sub _delete_subscription_byid {
 
     # remove the header first...
     my $nukeh = $self -> {"dbh"} -> prepare("DELETE FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
-                                             WHERE `sub_id` = ?");
+                                             WHERE `id` = ?");
     $nukeh -> execute($subid)
         or return $self -> self_error("Unable to delete subscription $subid: ".$self -> {"dbh"} -> errstr);
 
     # ... and all feed relations
     $nukeh = $self -> {"dbh"} -> prepare("DELETE FROM `".$self -> {"settings"} -> {"database"} -> {"subfeeds"}."`
-                                             WHERE `sub_id` = ?");
+                                          WHERE `sub_id` = ?");
     $nukeh -> execute($subid)
         or return $self -> self_error("Unable to delete feed subscriptions for subscription $subid: ".$self -> {"dbh"} -> errstr);
 
@@ -616,6 +618,8 @@ sub _merge_subscriptions {
         or return $self -> self_error("Unable to merge subscriptions: unknown user $userid");
 
     foreach my $addr ($user -> {"email"}, $email) {
+        next if(!$addr); # Skip empty emails
+
         # note that this *doesn't* use _get_subscription_byemail()! That function will search
         # by email alone, whereas what we want to do is look specifically
         my $header = $self -> _get_subscription_header(undef, $addr);
@@ -664,11 +668,13 @@ sub _set_subscription_email {
     $self -> clear_error();
 
     # If the email address is set the subscription must be deactivated
-    my $active = !defined($email);
+    my $active = !$email;
 
     # Need an auth code?
     my $authcode = $self -> _generate_authcode()
         if(!$active);
+
+    print STDERR "setting sub email,email = $email,  active = $active, auth = $authcode";
 
     my $seth = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
                                             SET `email` = ?, `active` = ?, `authcode` = ?
