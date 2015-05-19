@@ -1,5 +1,6 @@
 BLOCK_VALIDATE_NOTSET    = No value provided for '***field***', this field is required.
 BLOCK_VALIDATE_TOOLONG   = The value provided for '***field***' is too long. No more than ***maxlen*** characters can be provided for this field.
+BLOCK_VALIDATE_TOOSHORT  = The value provided for '***field***' is too short. At least ***minlen*** characters must be provided for this field.
 BLOCK_VALIDATE_BADCHARS  = The value provided for '***field***' contains illegal characters. ***desc***
 BLOCK_VALIDATE_BADFORMAT = The value provided for '***field***' is not valid. ***desc***
 BLOCK_VALIDATE_DBERR     = Unable to look up the value for '***field***' in the database. Error was: ***dberr***.

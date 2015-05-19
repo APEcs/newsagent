@@ -188,26 +188,34 @@ sub _build_feed_list {
 # ============================================================================
 #  Validation functions
 
-## @method $ _validate_activate()
+## @method private @ _validate_activate()
+# Validate, and possibly activate, a subscription based on an authorisation code.
 #
+# @return An array of two values; the first is true if the activation was successful,
+#         and false if it was not (no code specified, or an error occurred). The
+#         second is a possible error message if one is available.
 sub _validate_activate {
     my $self = shift;
 
     # Has the user entered an activation code?
-    my ($code, $error) = $self -> validate_string('actcode', { "required"   => 0,
+    my ($code, $error) = $self -> validate_string('actcode', { "required"   => 1,
                                                                "nicename"   => $self -> {"template"} -> replace_langvar("SUBS_ACTCODE_CODE"),
                                                                "minlen"     => 64,
                                                                "maxlen"     => 64,
                                                                "formattest" => '^[a-zA-Z0-9]+$',
-                                                               "formatdesc" => $self -> {"template"} -> replace_langvar("SUBS_ACTCODE_CODEFMT"),
+                                                               "formatdesc" => $self -> {"template"} -> replace_langvar("SUBS_ACTFORM_CODEFMT"),
                                                   });
 
+    # If there's no code to process, we can't do anything else in here, but it's not
+    # necessarily an error condition
+    return (0, $error) if(!$code || $error);
+
     # If there's a code, attempt to activate the subscription associated with it
-    if($code) {
-        my $activated = $self -> {"subscription"} -> activate_subscription_bycode($code);
+    my $activated = $self -> {"subscription"} -> activate_subscription_bycode($code)
+        or return (0, $self -> {"subscription"} -> errstr());
 
-
-    }
+    # Get here and the activation has been successful.
+    return (1, undef);
 }
 
 
@@ -278,23 +286,38 @@ sub _generate_resend_form {
 }
 
 
-## @method private @ _generate_activate_form($error)
+## @method private @ _generate_activate_form()
 # Generate a form through which the user may enter their subscription activation code.
 #
-# @param error A string containing errors related to activation, or undef.
 # @return An array of two values: the page title string, the code form
 sub _generate_activate_form {
     my $self = shift;
-    my $error = shift;
+
+    my ($active, $error) = $self -> _validate_activate()
+        if($self -> {"cgi"} -> param("actcode"));
 
     # Wrap the error message in a message box if we have one.
     $error = $self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $error})
         if($error);
 
-    return ($self -> {"template"} -> replace_langvar("SUBS_ACTFORM"),
-            $self -> {"template"} -> load_template("subscriptions/act_form.tem", {"***error***"      => $error,
-                                                                                  "***target***"     => $self -> build_url("block" => "subscribe"),
-                                                                                  "***url-resend***" => $self -> build_url("block" => "subscribe", "pathinfo" => [ "resend" ]),}));
+    if(!$active) {
+        return ($self -> {"template"} -> replace_langvar("SUBS_ACTFORM"),
+                $self -> {"template"} -> load_template("subscriptions/act_form.tem", {"***error***"      => $error,
+                                                                                      "***target***"     => $self -> build_url("block" => "subscribe"),
+                                                                                      "***url-resend***" => $self -> build_url("block" => "subscribe", "pathinfo" => [ "resend" ]),}));
+    } else {
+        my $url = $self -> build_url("block" => "feeds", "pathinfo" => [], "params" => []);
+        return ($self -> {"template"} -> replace_langvar("SUBS_ACTFORM"),
+                $self -> {"template"} -> message_box($self -> {"template"} -> replace_langvar("SUBS_ACTIVATE_DONETITLE"),
+                                                     "security",
+                                                     $self -> {"template"} -> replace_langvar("SUBS_ACTIVATE_SUMMARY"),
+                                                     $self -> {"template"} -> replace_langvar("SUBS_ACTIVATE_LONGDESC"),
+                                                     undef,
+                                                     "subcore",
+                                                     [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
+                                                        "colour"  => "blue",
+                                                        "action"  => "location.href='$url'"} ]));
+    }
 }
 
 

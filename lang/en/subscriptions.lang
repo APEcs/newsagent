@@ -29,3 +29,7 @@ SUBS_RESENDFORM_RESEND = Resend code
 SUBS_RESEND_DONETITLE  = New code sent
 SUBS_RESEND_SUMMARY    = A new activation code has been sent
 SUBS_RESEND_LONGDESC   = A new subscription activation code has been sent to the email address you specified. Any old activation codes are now invalid and will not work; please use the code from the email sent at ***now***.
+
+SUBS_ACTIVATE_DONETITLE = Subscription activated.
+SUBS_ACTIVATE_SUMMARY   = Your subscription has been activated.
+SUBS_ACTIVATE_LONGDESC  = Articles added to the feeds you have selected will be sent to you in a digest email once per day. Instructions for managing or deleting your subscription will be included at the end of each email.
