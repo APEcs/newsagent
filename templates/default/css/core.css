@@ -339,3 +339,7 @@ div.clear {
     color: #FF3300;
     font-weight: bold;
 }
+
+.warning {
+    color: #DD00CA;
+}

@@ -4,6 +4,7 @@
     <div class="sbcontent">
         <div class="subform">
             <p class="alignleft">{L_SUBS_RESENDFORM_INFO}</p>
+            ***anonwarn***
             <form id="actform" method="post" action="***target***">
                 <div class="entry">
                     <label for="email">{L_SUBS_RESENDFORM_EMAIL}:<br />
