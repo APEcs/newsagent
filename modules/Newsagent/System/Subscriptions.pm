@@ -22,6 +22,7 @@ package Newsagent::System::Subscriptions;
 use Crypt::Random qw(makerandom);
 use strict;
 use base qw(Webperl::SystemModule); # This class extends the Newsagent block class
+use Webperl::Utils qw(hash_or_hashref);
 use v5.12;
 
 ## @cmethod $ new(%args)
@@ -196,6 +197,42 @@ sub subscription_exists {
 }
 
 
+## @method $ delete_subscription(%args)
+# Remove the subscription identified by either a subscription ID or a
+# authorisation code. The specified arguments should contain either
+#
+# - sub_id: The ID of the subscription to delete.
+# - authcode: The authcode of the subscription to delete.
+#
+# @param args A hash, or reference to a hash, containing the arguments.
+# @return true on successful deletion, undef on error.
+sub delete_subscription {
+    my $self = shift;
+    my $args = hash_or_hashref(@_);
+
+    $self -> clear_error();
+
+    return $self -> self_error("No subscription identifier available")
+        if(!$args -> {"sub_id"} && !$args -> {"authcode"});
+
+    # Easy case is when an ID is provided
+    return $self -> _delete_subscription_byid($args -> {"subid"})
+        if($args -> {"subid"});
+
+    # Otherwise, a code must be available, and a matching subscription provided
+    return $self -> self_error("Authorisation code required")
+        unless($args -> {"authcode"});
+
+    my $subscription = $self -> _get_subscription_bycode($args -> {"authcode"})
+        or return undef;
+
+    return $self -> self_error("No subscription matches the provided authorisation code")
+        if(!$subscription -> {"id"});
+
+    return $self -> _delete_subscription_byid($subscription -> {"id"});
+}
+
+
 # ============================================================================
 #  Activation related
 
@@ -300,9 +337,9 @@ sub activate_subscription_byid {
 
     # Clear the subscription authcode. The checks after the execute should handle bad IDs
     my $seth = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
-                                            SET `active` = 1, `authcode` = NULL
+                                            SET `active` = 1, `authcode` = ?
                                             WHERE `id` = ?");
-    my $rows = $seth -> execute($subid);
+    my $rows = $seth -> execute($self -> _generate_authcode(), $subid);
     return $self -> self_error("Unable to perform subscription activation: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Subscription activation failed, no matching subscription found") if($rows eq "0E0");
 
@@ -714,8 +751,6 @@ sub _set_subscription_email {
     # Need an auth code?
     my $authcode = $self -> _generate_authcode()
         if(!$active);
-
-    print STDERR "setting sub email,email = $email,  active = $active, auth = $authcode";
 
     my $seth = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
                                             SET `email` = ?, `active` = ?, `authcode` = ?

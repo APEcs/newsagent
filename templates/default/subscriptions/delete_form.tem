@@ -1,0 +1,18 @@
+***error***
+<div class="shadowbox subcore">
+    <h2>{L_SUBS_DELFORM}</h2>
+    <div class="sbcontent">
+        <div class="actform">
+            <p>{L_SUBS_DELFORM_INFO}</p>
+            <form id="actform" method="post" action="***target***">
+                <div class="entry">
+                    <label for="actcode">{L_SUBS_DELFORM_CODE}:<br />
+                    <input type="text" id="authcode" name="authcode" class="highlight" size="64" maxlength="64" /></label>
+                </div>
+                <div class="submit">
+                    <input type="submit" class="button blue" id="dodelete" name="dodelete" value="{L_SUBS_DELFORM_DELETE}" />
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -220,9 +220,16 @@ sub _validate_activate {
 
 
 ## @method $ _validate_resend()
+# Determine whether the user has specified an email address, and if it is valid
+# send a new code to the address if appropriate.
 #
+# @return An array of two values; the first is true if the code has been sent, false
+#         if it has not. The second is a possible error message if one is available.
 sub _validate_resend {
     my $self = shift;
+
+    my $anonymous = $self -> {"session"} -> anonymous_session();
+    my $userid = $self -> {"session"} -> get_session_userid();
 
     my ($email, $err) = $self -> validate_string('email', { "required" => 0,
                                                             "nicename" => $self -> {"template"} -> replace_langvar("SUBS_RESENDFORM_EMAIL"),
@@ -236,25 +243,54 @@ sub _validate_resend {
     return $self -> {"template"} -> replace_langvar("SUBS_ERR_BADEMAIL")
         if($email !~ /^[\w.+-]+\@([\w-]+\.)+\w+$/);
 
-    # Address is valid, try sending a new code
-    my $actcode = $self -> {"subscription"} -> get_activation_code(undef, $email, 1)
+    # Address is possibly valid, try sending a new code
+    my $actcode = $self -> {"subscription"} -> get_activation_code($anonymous ? undef : $userid, $email, 1)
         or return (0, $self -> {"subscription"} -> errstr());
 
     # And send the activation email
     $self -> _send_act_email($email, $actcode);
 
-    return 1;
+    return (1, undef);
 }
 
+
+## @method private @ _validate_delete()
+# Validate, and possibly delete a subscription based on an authorisation code.
+#
+# @return An array of two values; the first is true if the activation was successful,
+#         and false if it was not (no code specified, or an error occurred). The
+#         second is a possible error message if one is available.
+sub _validate_delete {
+    my $self = shift;
+
+    # Has the user entered an authorisation code?
+    my ($code, $error) = $self -> validate_string('authcode', { "required"   => 1,
+                                                                "nicename"   => $self -> {"template"} -> replace_langvar("SUBS_DELFORM_CODE"),
+                                                                "minlen"     => 64,
+                                                                "maxlen"     => 64,
+                                                                "formattest" => '^[a-zA-Z0-9]+$',
+                                                                "formatdesc" => $self -> {"template"} -> replace_langvar("SUBS_DELFORM_CODEFMT"),
+                                                  });
+
+    # If there's no code to process, we can't do anything else in here, but it's not
+    # necessarily an error condition
+    return (0, $error) if(!$code || $error);
+
+    my $deleted = $self -> {"subscription"} -> delete_subscription("authcode" => $code)
+        or return (0, $self -> {"subscription"} -> errstr());
+
+    # Get here and the activation has been successful.
+    return (1, undef);
+}
 
 
 # ============================================================================
 #  Content generation functions
 
 ## @method private @ _generate_resend_form()
-# Generate a form through which the user may resend their subscription activation code.
+# Generate a form through which the user may request a new subscription activation code.
 #
-# @return An array of two values: the page title string, the code form
+# @return An array of two values: the page title string, the code form or success box.
 sub _generate_resend_form {
     my $self  = shift;
 
@@ -275,13 +311,17 @@ sub _generate_resend_form {
                                                         "colour"  => "blue",
                                                         "action"  => "location.href='$url'"} ]));
     } else {
+        my $anonwarn = $self -> {"template"} -> load_template("subscriptions/resend_anonwarn.tem")
+            if($self -> {"session"} -> anonymous_session());
+
         # Wrap the error message in a message box if we have one.
         $error = $self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $error})
             if($error);
 
         return ($self -> {"template"} -> replace_langvar("SUBS_RESENDFORM"),
-                $self -> {"template"} -> load_template("subscriptions/resend_form.tem", {"***error***"  => $error,
-                                                                                         "***target***" => $self -> build_url("block" => "subscribe", "pathinfo" => [ "resend" ])}));
+                $self -> {"template"} -> load_template("subscriptions/resend_form.tem", {"***error***"    => $error,
+                                                                                         "***anonwarn***" => $anonwarn,
+                                                                                         "***target***"   => $self -> build_url("block" => "subscribe", "pathinfo" => [ "resend" ])}));
     }
 }
 
@@ -289,7 +329,7 @@ sub _generate_resend_form {
 ## @method private @ _generate_activate_form()
 # Generate a form through which the user may enter their subscription activation code.
 #
-# @return An array of two values: the page title string, the code form
+# @return An array of two values: the page title string, the code form or success box.
 sub _generate_activate_form {
     my $self = shift;
 
@@ -311,6 +351,40 @@ sub _generate_activate_form {
                 $self -> {"template"} -> message_box($self -> {"template"} -> replace_langvar("SUBS_ACTIVATE_DONETITLE"),
                                                      "security",
                                                      $self -> {"template"} -> replace_langvar("SUBS_ACTIVATE_SUMMARY"),
+                                                     $self -> {"template"} -> replace_langvar("SUBS_ACTIVATE_LONGDESC"),
+                                                     undef,
+                                                     "subcore",
+                                                     [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
+                                                        "colour"  => "blue",
+                                                        "action"  => "location.href='$url'"} ]));
+    }
+}
+
+
+## @method private @ _generate_delete_form()
+# Generate a form through which the user may enter an auth code to delete a subscription.
+#
+# @return An array of two values: the page title string, the code form or success box.
+sub _generate_delete_form {
+    my $self = shift;
+
+    my ($deleted, $error) = $self -> _validate_delete()
+        if($self -> {"cgi"} -> param("authcode"));
+
+    # Wrap the error message in a message box if we have one.
+    $error = $self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $error})
+        if($error);
+
+    if(!$deleted) {
+        return ($self -> {"template"} -> replace_langvar("SUBS_DELFORM"),
+                $self -> {"template"} -> load_template("subscriptions/delete_form.tem", {"***error***"      => $error,
+                                                                                         "***target***"     => $self -> build_url("block" => "subscribe")}));
+    } else {
+        my $url = $self -> build_url("block" => "feeds", "pathinfo" => [], "params" => []);
+        return ($self -> {"template"} -> replace_langvar("SUBS_DELFORM"),
+                $self -> {"template"} -> message_box($self -> {"template"} -> replace_langvar("SUBS_DELETE_DONETITLE"),
+                                                     "security",
+                                                     $self -> {"template"} -> replace_langvar("SUBS_DELETE_SUMMARY"),
                                                      $self -> {"template"} -> replace_langvar("SUBS_ACTIVATE_LONGDESC"),
                                                      undef,
                                                      "subcore",
@@ -470,6 +544,7 @@ sub page_display {
         given($pathinfo[0]) {
             when("activate")  { ($title, $content) = $self -> _generate_activate_form(); }
             when("resend")    { ($title, $content) = $self -> _generate_resend_form(); }
+            when("delete")    { ($title, $content) = $self -> _generate_delete_form(); }
             default {
                 ($title, $content) = $self -> _generate_manage();
             }

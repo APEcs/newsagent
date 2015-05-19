@@ -23,9 +23,10 @@ SUBS_ACTFORM_SENDACT   = Resend activation code
 SUBS_ACTFORM_ACTIVATE  = Activate
 
 SUBS_RESENDFORM        = Resend activation code
-SUBS_RESENDFORM_INFO   = If you have accidentally deleted your subscription activation email, or you have not received an an activation email, enter the email address you subscribed with below to be sent your activation code again.<br /><br/><strong>IMPORTANT</strong>: requesting a new copy of your activation code will generate a new code. If you later receive the original activation email, the code it contains will not work and should be ignored.
+SUBS_RESENDFORM_INFO   = If you have accidentally deleted your subscription activation email, or you have not received an an activation email, enter the email address you subscribed with below to be sent a new activation code via email.<br /><br/><strong>IMPORTANT</strong>: requesting a new copy of your activation code will generate a new code. If you later receive the original activation email, the code it contains will not work and should be ignored.
 SUBS_RESENDFORM_EMAIL  = Email address
 SUBS_RESENDFORM_RESEND = Resend code
+SUBS_RESENDFORM_ANON   = WARNING: if you are attempting to resend the activation code for a subscription you created while logged in, please log in before requesting a new code.
 SUBS_RESEND_DONETITLE  = New code sent
 SUBS_RESEND_SUMMARY    = A new activation code has been sent
 SUBS_RESEND_LONGDESC   = A new subscription activation code has been sent to the email address you specified. Any old activation codes are now invalid and will not work; please use the code from the email sent at ***now***.
@@ -33,3 +34,12 @@ SUBS_RESEND_LONGDESC   = A new subscription activation code has been sent to the
 SUBS_ACTIVATE_DONETITLE = Subscription activated.
 SUBS_ACTIVATE_SUMMARY   = Your subscription has been activated.
 SUBS_ACTIVATE_LONGDESC  = Articles added to the feeds you have selected will be sent to you in a digest email once per day. Instructions for managing or deleting your subscription will be included at the end of each email.
+
+SUBS_DELFORM           = Delete subscription
+SUBS_DELFORM_INFO      = In order to prevent abuse, an authorisation code must be entered before you can delete your subscription. You can find your authorisation code in the footer of feed digest emails sent to you. Please enter your authcode in the box below to delete your subscription.
+SUBS_DELFORM_CODE      = Authorisation Code
+SUBS_DELFORM_CODEFMT   = Authorisation codes may only contain the characters a to z, A to Z, or 0 to 9.
+SUBS_DELFORM_DELETE    = Delete subscription
+SUBS_DELETE_DONETITLE  = Subscription deleted
+SUBS_DELETE_SUMMARY    = Your subscription has been deleted.
+SUBS_DELETE_LONGDESC   = Your subscription has been removed, and you will no longer be sent digests of feeds.
