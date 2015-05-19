@@ -117,6 +117,39 @@ sub set_user_subscription {
 
     # check that a sub header exists, and that it has the right email
     if($subscription -> {"id"}) {
+        # Note: herein lies a problem. At this point, we have a pre-existing subscription, that
+        # may or may not be a user's. If it is a user's, it may be active, or have an inactive
+        # alternate email associated with it - potentially sharing an email with an email-only
+        # subscription. Consider the following:
+        #
+        #  Anonymous User sets up subscription s0 to f0, f1 using email e0, system sends auth
+        #  code to e0, user activates it to prove ownership.
+        #  Anonymous user later gets an account, but it is set up to use email e1. User logs in,
+        #  and creates subscription s1 to f1 and f2 using alternate email e0, system sends auth
+        #  code to e0 (ie: s1 is inactive, note s0 is unaffected at this point). Now one of two
+        #  things can happen:
+        #
+        #  - user activates s1 using authcode sent to e0. This will automatically merge s0 into
+        #    s1 as the system detects the common e0 and gives priority to s1.
+        #  - user does not activate s1, but returns later to modfy s1 to remove e0. This
+        #    will automatically activate s1 sending emails to e1, but it will NOT merge the
+        #    existing s0 into s1 as there is now no common email. This means that now the user
+        #    is getting f0,f1 sent to e0, and f1,f2 sent to e1.
+        #
+        #  If the subscription is both not activated and activated, how tall is Imhotep?
+        #
+        # The user has two options - they can either add e0 back into s1, activate, and thus get
+        # s0 merged into s1; alternatively each message sent to e0 for s0 will contain an unsub
+        # link that should let the user delete s0.
+        #
+        # An alternative, more dangerous option is to uncomment the following:
+        #
+        # $self -> _merge_subscriptions($subscription -> {"id"}, $subscription -> {"user_id"}, $subscription -> {"email"})
+        #     if($subscription -> {"user_id"} && $subscription -> {"email"});
+        #
+        # that will merge any email only subscriptions for a user, even if they haven't activated
+        # the subscription. Butit opens the door for subscription hijacking and deletion.
+
         # In theory, this should only ever run when userid is not undef - if it is, the email
         # will always match the subscription email, otherwise _get_subscription_header() couldn't
         # have found it to begin with.
@@ -235,7 +268,8 @@ sub get_activation_code {
 # Activate the subscription that has the specified activation code set. This will
 # clear the activation code for the subscription and enable it.
 #
-# @param code The authcode to
+# @param code The authcode to locate an inactive subscription for.
+# @return true on success, undef on error (including no matching authcode).
 sub activate_subscription_bycode {
     my $self = shift;
     my $code = shift;
@@ -255,6 +289,9 @@ sub activate_subscription_bycode {
 # the subscription and enable it, potentially merging any email-only subscriptions
 # that have the same address as the specified subscription, if it is a user
 # subscription.
+#
+# @param subid The ID of the subscription to activate (even if it's already active!)
+# @return true on success, undef on error.
 sub activate_subscription_byid {
     my $self  = shift;
     my $subid = shift;
@@ -267,10 +304,13 @@ sub activate_subscription_byid {
                                             WHERE `id` = ?");
     my $rows = $seth -> execute($subid);
     return $self -> self_error("Unable to perform subscription activation: ". $self -> {"dbh"} -> errstr) if(!$rows);
-    return $self -> self_error("Subscription activation failed, no rows updated") if($rows eq "0E0");
+    return $self -> self_error("Subscription activation failed, no matching subscription found") if($rows eq "0E0");
 
+    # Fetch the subscription data, as we need the userid and email address stored therein.
+    # Note that the return /should/ be
     my $subdata = $self -> _get_subscription_byid($subid);
-    return undef unless($subdata && $subdata -> {"id"});
+    return $self -> self_error("Request for unknown subscription with id $subid")
+        unless($subdata && $subdata -> {"id"});
 
     # handle merging...
     return $self -> _merge_subscriptions($subid, $subdata -> {"user_id"}, $subdata -> {"email"});
@@ -606,7 +646,8 @@ sub _merge_subscriptions {
     my $userid = shift;
     my $email  = shift;
 
-    # If there is no userid, there's nothing to do here
+    # If there is no userid, there's nothing to do here, but return true as
+    # this has been 'successful' at doing nothing.
     return 1 if(!$userid);
 
     # There's a userid, so search for any subscriptions to merge into the user's subscription:
