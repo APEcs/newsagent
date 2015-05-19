@@ -395,6 +395,35 @@ sub _generate_delete_form {
 }
 
 
+sub _generate_manage_form {
+    my $self = shift;
+    my $args;
+
+    my $anonymous = $self -> {"session"} -> anonymous_session();
+    if($anonymous) {
+        # Anonymous sessions must have an authcode set in the session data
+        my $code = $self -> {"session"} -> get_variable('authcode', '');
+
+        return $self -> _generate_manage_authreq_form()
+            unless($code);
+
+        $args -> {"authcode"} = $code;
+    } else {
+        $args -> {"user_id"} = $self -> {"session"} -> get_session_userid();
+    }
+
+    my $subscription = $self -> {"subscription"} -> get_subscription($args);
+
+    if($subscription && $subscription -> {"id"}) {
+        # Generate the form body
+
+    } else {
+        # No subscription found, complain.
+
+    }
+}
+
+
 # ============================================================================
 #  API functions
 
@@ -545,6 +574,7 @@ sub page_display {
             when("activate")  { ($title, $content) = $self -> _generate_activate_form(); }
             when("resend")    { ($title, $content) = $self -> _generate_resend_form(); }
             when("delete")    { ($title, $content) = $self -> _generate_delete_form(); }
+            when("manage")    { ($title, $content) = $self -> _generate_manage_form(); }
             default {
                 ($title, $content) = $self -> _generate_manage();
             }
