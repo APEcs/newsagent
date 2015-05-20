@@ -162,7 +162,7 @@ sub generate_multiselect {
     my $selected = shift;
 
     # Convert the selected list to a hash for faster lookup
-    my %active = map { $_ => 1} @{$selected};
+    my %active = map { $_ => 1 } @{$selected};
 
     my $result = "";
     foreach my $option (@{$options}) {
