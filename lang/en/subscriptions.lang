@@ -43,3 +43,9 @@ SUBS_DELFORM_DELETE    = Delete subscription
 SUBS_DELETE_DONETITLE  = Subscription deleted
 SUBS_DELETE_SUMMARY    = Your subscription has been deleted.
 SUBS_DELETE_LONGDESC   = Your subscription has been removed, and you will no longer be sent digests of feeds.
+
+
+SUBS_MANAGE                = Manage subscription
+SUBS_MANAGE_NOSUBFOUND     = No subscription
+SUBS_MANAGE_NOSUB_SUMMARY  = No subscription information found.
+SUBS_MANAGE_NOSUB_LONGDESC = Newsagent has been unable to locate any subscription information for you. This could mean that you are logged in as a user with no subscriptions, or if you entered an authorisation code it may be invalid or outdated. If you entered an authorisation code, please ensure it is from the most recent digest email sent to your subscription address.

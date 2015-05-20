@@ -164,7 +164,7 @@ sub _send_act_email {
 # ============================================================================
 #  Support functions
 
-## @method private _build_feed_list($feeds)
+## @method private $ _build_feed_list($feeds)
 # Given a list of feed names, produce a lsit of feed IDs to pass to set_user_subscription().
 #
 # @param feeds A reference to an array of feed names
@@ -182,6 +182,25 @@ sub _build_feed_list {
     }
 
     return \@feedids;
+}
+
+
+## @method private $ _build_feedopts($allfeeds, $subscribed)
+#
+#
+sub _build_feedopts {
+    my $self       = shift;
+    my $allfeeds   = shift;
+    my $subscribed = shift;
+
+    my $multidata = [];
+    foreach my $feed (@{$allfeeds}) {
+        push(@{$multidata}, {"desc" => $feed -> {"description"},
+                             "name" => $feed -> {"name"},
+                             "id"   => $feed -> {"id"}});
+    }
+
+    return $self -> generate_multiselect("feeds", "feed", "feed", $multidata);
 }
 
 
@@ -417,9 +436,29 @@ sub _generate_manage_form {
     if($subscription && $subscription -> {"id"}) {
         # Generate the form body
 
+        # First fetch the list of all available feeds, and a filtered list only
+        # including the feeds subscribed to by the user.
+        my $allfeeds = $self -> {"feed"} -> get_feeds();
+        my $subfeeds = $self -> {"feed"} -> get_feeds($subscription -> {"feeds"});
+
+        my $feedtable = $self -> _generate_feedstable($subfeeds);
+        my $feedopts  = $self -> _build_feedopts($allfeeds, $subfeeds);
+
+
     } else {
         # No subscription found, complain.
+        my $url = $self -> build_url("block" => "feeds", "pathinfo" => [], "params" => []);
 
+        return ($self -> {"template"} -> replace_langvar("SUBS_MANAGE"),
+                $self -> {"template"} -> message_box($self -> {"template"} -> replace_langvar("SUBS_MANAGE_NOSUBFOUND"),
+                                                     "error",
+                                                     $self -> {"template"} -> replace_langvar("SUBS_MANAGE_NOSUB_SUMMARY"),
+                                                     $self -> {"template"} -> replace_langvar("SUBS_MANAGE_NOSUB_LONGDESC"),
+                                                     undef,
+                                                     "subcore",
+                                                     [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
+                                                        "colour"  => "blue",
+                                                        "action"  => "location.href='$url'"} ]));
     }
 }
 
