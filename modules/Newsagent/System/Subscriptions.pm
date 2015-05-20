@@ -24,6 +24,7 @@ use strict;
 use base qw(Webperl::SystemModule); # This class extends the Newsagent block class
 use Webperl::Utils qw(hash_or_hashref);
 use v5.12;
+use Data::Dumper;
 
 ## @cmethod $ new(%args)
 # Create a new Subscriptions object to manage tag allocation and lookup.
@@ -194,6 +195,30 @@ sub subscription_exists {
         or return undef;
 
     return $subscription -> {"id"} ? $subscription : $self -> self_error("No subscription exists for the specified user");
+}
+
+
+## @method $ get_subscription(%args)
+# Attempt to fetch the data associated with a subscription. Supported arguments
+# are:
+#
+# - user_id: Locate the subscription associated with the specified user.
+# - authcode: Locate the subscription with the specified auth code
+#
+# @return A reference to a subscription data hash on success, an empty hash
+#         reference if there is no data available, undef on error.
+sub get_subscription {
+    my $self = shift;
+    my $args = hash_or_hashref(@_);
+
+    if($args -> {"user_id"}) {
+        return $self -> _get_subscription_byuserid($args -> {"user_id"});
+
+    } elsif($args -> {"authcode"}) {
+        return $self -> _get_subscription_bycode($args -> {"authcode"});
+    }
+
+    return $self -> self_error("No supported search parameters provided to get_subscription");
 }
 
 
@@ -560,6 +585,40 @@ sub _get_subscription_bycode {
         or return $self -> self_error("Unable to search for subscriptions by activation code: ".$self -> {"dbh"} -> errstr());
 
     my $subdata = $subh -> fetchrow_hashref();
+
+    # If the header has been found, pull in the feed list too.
+    if($subdata) {
+        $subdata -> {"feeds"} = $self -> _get_subscription_feeds($subdata -> {"id"})
+            or return undef;
+    }
+
+    return ($subdata || {});
+}
+
+
+## @method private $ _get_subscription_byuserid($userid)
+# Given a userid, attempt to locate the subscription associated with the user.
+#
+# @param userid The ID of the user to locate a subscription for.
+# @return A reference to a hash containing the subscription data on success, a
+#         reference to an empty hash if the subscription does not exist, or
+#         undef if an error occurred.
+sub _get_subscription_byuserid {
+    my $self   = shift;
+    my $userid = shift;
+
+    $self -> clear_error();
+    print STDERR "Searcing for subs for user '$userid'";
+
+    # First, look up the code to see whether there is a match to activate
+    my $subh = $self -> {"dbh"} -> prepare("SELECT *
+                                            FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
+                                            WHERE `user_id` = ?");
+    $subh -> execute($userid)
+        or return $self -> self_error("Unable to search for subscriptions by email address: ".$self -> {"dbh"} -> errstr());
+
+    my $subdata = $subh -> fetchrow_hashref();
+    print STDERR "subscription result: ".Dumper($subdata);
 
     # If the header has been found, pull in the feed list too.
     if($subdata) {
