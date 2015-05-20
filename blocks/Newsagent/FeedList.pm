@@ -146,7 +146,12 @@ sub _generate_feedlist {
 
         # Fetch the subscription option
         my $submode = $self -> check_permission("subscribe") ? "feedlist/subscribe-enabled.tem" : "feedlist/subscribe-disabled.tem";
-        my $subopts = $self -> {"template"} -> load_template($submode, {"***subopt***" => $mailoptional });
+        my $subopts = $self -> {"template"} -> load_template($submode, {"***subopt***"    => $mailoptional,
+                                                                        "***manageurl***" => $self -> build_url(fullurl  => 1,
+                                                                                                                block    => "subscribe",
+                                                                                                                params   => { },
+                                                                                                                pathinfo => [ "manage" ])
+                                                                       });
 
         return ($self -> {"template"} -> replace_langvar("FLIST_PTITLE"),
                 $self -> {"template"} -> load_template("feedlist/content.tem", {"***feeds***"     => $list,
