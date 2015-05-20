@@ -22,6 +22,7 @@ package Newsagent::System::Feed;
 use strict;
 use base qw(Webperl::SystemModule); # This class extends the Newsagent block class
 use v5.12;
+use Data::Dumper;
 
 ## @cmethod $ new(%args)
 # Create a new Article object to manage tag allocation and lookup.
@@ -89,21 +90,34 @@ sub create_feed {
 }
 
 
-## @method $ get_feeds()
+## @method $ get_feeds($filter)
 # Fetch a list of all feeds defined in the system. This will generate an array
 # containing the data for all the feeds, whether the user has any author
 # access or not. This is intended to support listing pages like FeedList.
 #
+# @param filter An optional reference to an array of feed IDs to filter on.
 # @return A reference to an array of hashrefs, each hashref contains feed
 #         information, or undef on error.
 sub get_feeds {
-    my $self = shift;
+    my $self   = shift;
+    my $filter = shift;
 
     $self -> clear_error();
 
+    print STDERR "Filter: ".($filter ? Dumper($filter) : "not set")."\n";
+
+    # If filters have been specified, build the filtering parameter
+    my @params = ();
+    my $query = "";
+    if($filter) {
+        push(@params, @{$filter});
+        $query = "WHERE `id` IN(?".(",?" x (scalar(@{$filter}) - 1)).")";
+    }
+
     my $feedsh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"feeds"}."`
+                                              $filter
                                               ORDER BY `description`");
-    $feedsh -> execute()
+    $feedsh -> execute(@params)
         or return $self -> self_error("Unable to execute user feeds query: ".$self -> {"dbh"} -> errstr);
 
     return ($feedsh -> fetchall_arrayref({}) || $self -> self_error("No system defined feeds available"));
