@@ -185,7 +185,6 @@ function subscribe(clear_feeds) {
     req.post({'values': values });
 }
 
-
 window.addEvent('domready', function() {
 
     $$('input.selfeed').addEvent('change', function() { build_feedurl(); set_subscribe_button(); });
@@ -197,7 +196,9 @@ window.addEvent('domready', function() {
     $('countdec').addEvent('click', function() { change_count(false); });
     $('countinc').addEvent('click', function() { change_count(true); });
 
-    $('subadd').addEvent('click', function() { subscribe(clear_on_sub); });
+    if($('subscribe')) {
+        $('subadd').addEvent('click', function() { subscribe(clear_on_sub); });
+    }
 
     build_feedurl();
 });
