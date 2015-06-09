@@ -31,3 +31,67 @@ div.submit .contextlink {
     text-align: left;
     font-size: 10px;
 }
+
+ul.feedsel {
+    margin: 0px;
+    padding: 0px;
+}
+
+ul.feedsel > li {
+    padding: 0px;
+    list-style-type: none;
+    display: inline-block;
+    vertical-align: middle;
+    line-height: 30px;
+}
+
+ul#manager {
+    width: 95%;
+    padding: 0px;
+    margin: 0px auto;
+}
+
+#feedlist h3 {
+    padding-top: 3px;
+    clear: both;
+    border-bottom: 1px solid #aaa;
+    font-size: 14px;
+}
+
+
+ul.feedsel {
+    text-align: right;
+}
+
+table.listtable {
+    border-collapse: collapse;
+}
+
+table.listtable tr td {
+    border-bottom: 1px solid #ddd;
+    padding: 7px 3px;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+table.listtable tr:last-child td {
+    border-bottom: none;
+}
+
+td.ticky {
+    width: 40px;
+    text-align: center;
+}
+
+td.feed {
+    width: 100%;
+}
+
+td.feed label {
+    font-weight: normal;
+    font-size: 100%;
+}
+
+table.listtable tr.selected td {
+    background-color: #FAEBB1 !important;
+}

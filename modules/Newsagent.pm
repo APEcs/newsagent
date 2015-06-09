@@ -31,6 +31,7 @@ use HTML::WikiConverter;
 use Time::Local;
 use Lingua::EN::Sentence qw(get_sentences);
 use XML::Simple;
+use Data::Dumper;
 
 # ============================================================================
 #  Constructor
@@ -350,9 +351,11 @@ sub api_response {
         unless(defined($xmlopts{"NoEscape"}));
 
     eval { $xmldata = XMLout($data, %xmlopts); };
-    $xmldata = $self -> {"template"} -> load_template("xml/error_response.tem", { "***code***"  => "encoding_failed",
-                                                                                  "***error***" => "Error encoding XML response: $@"})
-        if($@);
+    if($@) {
+        $xmldata = $self -> {"template"} -> load_template("api/html_error.tem", { "***code***"  => "encoding_failed",
+                                                                                  "***info***" => "Error encoding XML response: $@"});
+        $self -> log("API encoding error", "Error encoding XML response: '$@' XML Options: ".Dumper(\%xmlopts)." Data: ".Dumper($data));
+    }
 
     print $self -> {"cgi"} -> header(-type => 'text/xml',
                                      -charset => 'utf-8');

@@ -171,7 +171,7 @@ function subscribe(clear_feeds) {
 
                                     // No error, we have a response
                                 } else {
-                                    var res = respXML.getElementsByTagName("result")[0];
+                                    var res = respXML.getElementsByTagName("response")[0];
                                     var button   = res.getAttribute('button');
 
                                     var buttons = [  { title: button , color: 'blue', event: function() { popbox.close(); } } ];

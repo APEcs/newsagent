@@ -5,6 +5,7 @@ var SelectControl = new Class(
 
     options: {
         checkClass: 'input.selctrl-opt',
+        checkRowClass: 'selected',
         newClass: 'new',
         readClass: 'read',
 		offset: { x: 0, y: 0 }
@@ -115,6 +116,16 @@ var SelectControl = new Class(
                 this.mode.setStyle('background-position', '-32px 0px');
             }
         }
+
+        options.each(function(element) {
+            var row = element.getParent('tr');
+
+            if(element.get('checked')) {
+                row.addClass(this.options.checkRowClass);
+            } else {
+                row.removeClass(this.options.checkRowClass);
+            }
+        }, this);
     },
 
     updateBoxes: function(element)

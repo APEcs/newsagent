@@ -111,11 +111,11 @@ sub get_feeds {
     my $query = "";
     if($filter) {
         push(@params, @{$filter});
-        $query = "WHERE `id` IN(?".(",?" x (scalar(@{$filter}) - 1)).")";
+        $query = "WHERE `id` IN (?".(",?" x (scalar(@{$filter}) - 1)).")";
     }
 
     my $feedsh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"feeds"}."`
-                                              $filter
+                                              $query
                                               ORDER BY `description`");
     $feedsh -> execute(@params)
         or return $self -> self_error("Unable to execute user feeds query: ".$self -> {"dbh"} -> errstr);

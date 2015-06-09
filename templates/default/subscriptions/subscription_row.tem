@@ -1,0 +1,4 @@
+<tr id="feedrow-***id***">
+    <td class="ticky"><input type="checkbox" class="selctrl-opt selfeed" name="feed-***id***" id="feed-***name***" value="***id***" /></td>
+    <td class="feed"><label for="feed-***name***">***description***</label></td>
+</tr>

@@ -1,1 +1,14 @@
+    <script type="text/javascript" src="{V_[jspath]}api.js"></script>
+
+    <script src="{V_[jspath]}MultiSelect/Source/MultiSelect.js" type="text/javascript"></script>
+    <link href="{V_[jspath]}MultiSelect/css/MultiSelect.css" rel="stylesheet" />
+
     <link href="{V_[csspath]}subscribe.css" rel="stylesheet" />
+
+    <link href="{V_[jspath]}selectctrl/css/selectctrl.css" rel="stylesheet" />
+    <script type="text/javascript" src="{V_[jspath]}selectctrl/SelectControl.js"></script>
+
+    <link href="{V_[jspath]}messagecontrol/css/messagecontrol.css" rel="stylesheet" />
+    <script type="text/javascript" src="{V_[jspath]}messagecontrol/MessageControl.js"></script>
+
+    <script type="text/javascript" src="{V_[jspath]}subscription.js"></script>

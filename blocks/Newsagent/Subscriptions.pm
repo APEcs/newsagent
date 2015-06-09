@@ -185,9 +185,31 @@ sub _build_feed_list {
 }
 
 
+sub _build_feedstable {
+    my $self  = shift;
+    my $feeds = shift;
+    my $rows  = "";
+
+    foreach my $feedid (@{$feeds}) {
+        my $feed = $self -> {"feed"} -> get_feed_byid($feedid);
+        print STDERR "Got feed: ".Dumper($feed);
+
+        $rows .= $self -> {"template"} -> load_template("subscriptions/subscription_row.tem", {"***id***"          => $feed -> {"id"},
+                                                                                               "***description***" => $feed -> {"description"},
+                                                                                               "***name***"        => $feed -> {"name"}
+                                                        })
+            if($feed);
+    }
+
+    return $rows;
+}
+
+
 ## @method private $ _build_feedopts($allfeeds, $subscribed)
+# Build the multiselect list that lets the user select additional feeds to subscribe to.
 #
-#
+# @param allfeeds A refrence to an array of feed hashes.
+# @return A string containing the multiselect list contents.
 sub _build_feedopts {
     my $self       = shift;
     my $allfeeds   = shift;
@@ -414,6 +436,8 @@ sub _generate_delete_form {
 }
 
 
+## @method private $ _generate_manage_form()
+
 sub _generate_manage_form {
     my $self = shift;
     my $args;
@@ -441,10 +465,13 @@ sub _generate_manage_form {
         my $allfeeds = $self -> {"feed"} -> get_feeds();
         my $subfeeds = $self -> {"feed"} -> get_feeds($subscription -> {"feeds"});
 
-        my $feedtable = $self -> _generate_feedstable($subfeeds);
+        my $feedtable = $self -> _build_feedstable($subscription -> {"feeds"});
         my $feedopts  = $self -> _build_feedopts($allfeeds, $subfeeds);
 
-
+        return ($self -> {"template"} -> replace_langvar("SUBS_MANAGE"),
+                $self -> {"template"} -> load_template("subscriptions/subscription.tem", {"***feeds***"    => $feedtable,
+                                                                                          "***feedopts***" => $feedopts,
+                                                       }));
     } else {
         # No subscription found, complain.
         my $url = $self -> build_url("block" => "feeds", "pathinfo" => [], "params" => []);
@@ -465,6 +492,23 @@ sub _generate_manage_form {
 
 # ============================================================================
 #  API functions
+
+## @method private $ _build_currentsub_list($subdata)
+#
+sub _build_currentsub_list {
+    my $self    = shift;
+    my $subdata = shift;
+    my @feedlist;
+
+    foreach my $feedid (@{$subdata -> {"feeds"}}) {
+        my $feed = $self -> {"feed"} -> get_feed_byid($feedid);
+
+        push(@feedlist, $feed );
+    }
+
+    return \@feedlist;
+}
+
 
 ## @method private $ _build_addsubscription_response()
 # Generate the API response to requests to add feeds to a user's subscription
@@ -549,10 +593,113 @@ sub _build_addsubscription_response {
         $successmsg = $self -> {"template"} -> replace_langvar("SUBS_SUBSCRIBED")
     }
 
-    return { "result" => { "button"  => $self -> {"template"} -> replace_langvar("PAGE_ERROROK"),
-                           "content" => $successmsg
-                         }
-           };
+    my $resp = { "result" => { "response" => { "button"  => $self -> {"template"} -> replace_langvar("PAGE_ERROROK"),
+                                               "content" => $successmsg,
+                               },
+                               "feeds" => $self -> _build_currentsub_list($subscription)
+                 }
+    };
+
+    return $resp;
+}
+
+
+sub _build_appendsubscription_response {
+    my $self = shift;
+    my $args = {};
+
+    # Work out how to get hold of the subscription we're deleting from...
+    my $anonymous = $self -> {"session"} -> anonymous_session();
+    if($anonymous) {
+        # Anonymous sessions must have an authcode set in the session data
+        my $code = $self -> {"session"} -> get_variable('authcode', '');
+
+        return $self -> api_errorhash('auth', $self -> {"template"} -> replace_langvar("SUBS_ERR_NOUSERDATA"))
+            unless($code);
+
+        $args -> {"authcode"} = $code;
+    } else {
+        $args -> {"user_id"} = $self -> {"session"} -> get_session_userid();
+    }
+
+    # ...and now try to fetch the subscription; if there is no data, there's no subscription for the user
+    # This can only really happen if there's no subscription, or the authcode is bad.
+    my $subscription = $self -> {"subscription"} -> get_subscription($args);
+    return $self -> api_errorhash('auth', $self -> {"template"} -> replace_langvar("SUBS_ERR_NOUSUBSCRPT"))
+        if(!$subscription || !$subscription -> {"id"});
+
+    my $values = $self -> {"cgi"} -> param('values')
+        or return $self -> api_errorhash('bad_data',
+                                         $self -> {"template"} -> replace_langvar("SUBS_ERR_NODATA"));
+
+    my $settings = eval { JSON::decode_json($values) }
+        or return $self -> api_errorhash('bad_data',
+                                         $self -> {"template"} -> replace_langvar("SUBS_ERR_BADDATA"));
+
+    my $rows = $self -> {"subscription"} -> add_to_subscription($subscription -> {"id"}, $settings -> {"feeds"});
+    return $self -> api_errorhash("internal", $self -> {"subscription"} -> errstr)
+        if(!defined($rows));
+
+    my $resp = { "result" => { "response" => { "button"  => $self -> {"template"} -> replace_langvar("PAGE_ERROROK"),
+                                               "content" => $self -> {"template"} -> replace_langvar("SUBS_SUBSCRIBED"),
+                               },
+                               "feeds" => $self -> _build_currentsub_list($subscription)
+                 }
+    };
+
+    return $resp;
+}
+
+
+## @method private $ _build_remsubscription_response()
+# Generate the API response to requests to remove feeds from a user's subscription
+# based on their current session or an authcode.
+#
+# @return A reference to a hash to send back to the client as an API response.
+sub _build_remsubscription_response {
+    my $self = shift;
+    my $args = {};
+
+    # Work out how to get hold of the subscription we're deleting from...
+    my $anonymous = $self -> {"session"} -> anonymous_session();
+    if($anonymous) {
+        # Anonymous sessions must have an authcode set in the session data
+        my $code = $self -> {"session"} -> get_variable('authcode', '');
+
+        return $self -> api_errorhash('auth', $self -> {"template"} -> replace_langvar("SUBS_ERR_NOUSERDATA"))
+            unless($code);
+
+        $args -> {"authcode"} = $code;
+    } else {
+        $args -> {"user_id"} = $self -> {"session"} -> get_session_userid();
+    }
+
+    # ...and now try to fetch the subscription; if there is no data, there's no subscription for the user
+    # This can only really happen if there's no subscription, or the authcode is bad.
+    my $subscription = $self -> {"subscription"} -> get_subscription($args);
+    return $self -> api_errorhash('auth', $self -> {"template"} -> replace_langvar("SUBS_ERR_NOUSUBSCRPT"))
+        if(!$subscription || !$subscription -> {"id"});
+
+    my $values = $self -> {"cgi"} -> param('values')
+        or return $self -> api_errorhash('bad_data',
+                                         $self -> {"template"} -> replace_langvar("SUBS_ERR_NODATA"));
+
+    my $settings = eval { JSON::decode_json($values) }
+        or return $self -> api_errorhash('bad_data',
+                                         $self -> {"template"} -> replace_langvar("SUBS_ERR_BADDATA"));
+
+    my $rows = $self -> {"subscription"} -> remove_from_subscription($subscription -> {"id"}, $settings -> {"feeds"});
+    return $self -> api_errorhash("internal", $self -> {"subscription"} -> errstr)
+        if(!defined($rows));
+
+    my $resp = { "result" => { "response" => { "button"  => $self -> {"template"} -> replace_langvar("PAGE_ERROROK"),
+                                               "content" => $self -> {"template"} -> replace_langvar("SUBS_UNSUBSCRIBED"),
+                               },
+                               "feeds" => $self -> _build_currentsub_list($subscription)
+                 }
+    };
+
+    return $resp;
 }
 
 
@@ -600,7 +747,9 @@ sub page_display {
         # API call - dispatch to appropriate handler.
         given($apiop) {
             default {
-                when('add') { return $self -> api_response($self -> _build_addsubscription_response()); }
+                when('add')    { return $self -> api_response($self -> _build_addsubscription_response()   , KeyAttr => { 'feeds' => 'id' }); }
+                when('append') { return $self -> api_response($self -> _build_appendsubscription_response(), KeyAttr => { 'feeds' => 'id' }); }
+                when('rem')    { return $self -> api_response($self -> _build_remsubscription_response()   , KeyAttr => { 'feeds' => 'id' }); }
 
                 return $self -> api_html_response($self -> api_errorhash('bad_op',
                                                                          $self -> {"template"} -> replace_langvar("API_BAD_OP")))

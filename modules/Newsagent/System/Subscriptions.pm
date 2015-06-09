@@ -172,6 +172,36 @@ sub set_user_subscription {
 }
 
 
+## @method $ remove_from_subscription($subid, $feeds)
+# Remove the specified feeds from the user's subscription. This attempts to remove
+# the feeds specified in the feeds array from the user's subscription, if they are
+# subscribed to by the user.
+#
+# @param subid The ID of the subscription to remove the feeds from.
+# @param feeds A reference to an array of IDs of feeds to remove from the subscription.
+# @return The number of feeds removed, or undef on error.
+sub remove_from_subscription {
+    my $self  = shift;
+    my $subid = shift;
+    my $feeds = shift;
+
+    # Can't do anything if there's no feeds to remove
+    return 0 if(!scalar(@{$feeds}));
+
+    my @params = ($subid, @{$feeds});
+    my $query  = "AND `feed_id` IN (?".(",?" x (scalar(@{$feeds}) - 1)).")";
+
+    my $removeh = $self -> {"dbh"} -> prepare("DELETE FROM `".$self -> {"settings"} -> {"database"} -> {"subfeeds"}."`
+                                               WHERE `sub_id` = ?
+                                               $query");
+    my $rows = $removeh -> execute(@params);
+    return $self -> self_error("Unable to perform feed removal: ".$self -> {"dbh"} -> errstr) if(!$rows);
+    $rows = 0 if($rows eq "0E0");
+
+    return $rows;
+}
+
+
 ## @method $ subscription_exists($userid, $email)
 # Determine whether the subscription for the specified userid or email is
 # active.
@@ -712,10 +742,12 @@ sub _get_subscription_feeds {
 
     $self -> clear_error();
 
-    my $feedh = $self -> {"dbh"} -> prepare("SELECT `feed_id`
-                                             FROM `".$self -> {"settings"} -> {"database"} -> {"subfeeds"}."`
-                                             WHERE `sub_id` = ?
-                                             ORDER BY `feed_id`");
+    my $feedh = $self -> {"dbh"} -> prepare("SELECT `s`.`feed_id`
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"subfeeds"}."` AS `s`,
+                                                  `".$self -> {"settings"} -> {"database"} -> {"feeds"}."` AS `f`
+                                             WHERE `s`.`sub_id` = ?
+                                             AND `f`.`id` = `s`.`feed_id`
+                                             ORDER BY `f`.`name`");
     $feedh -> execute($subid)
         or return $self -> self_error("Unable to fetch subscription/feed relations: ".$self -> {"dbh"} -> errstr);
 

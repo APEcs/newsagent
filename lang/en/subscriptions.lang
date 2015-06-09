@@ -3,9 +3,12 @@ SUBS_ERR_BADDATA    = Unable to parse the specified subscription information.
 SUBS_ERR_NOREQEMAIL = You must provide an email address to subscribe through.
 SUBS_ERR_BADEMAIL   = The specified email address is not valid.
 SUBS_ERR_USEREMAIL  = The specified email address is already in use by a registered user. If this is your email address, please log into Newsagent before trying to set up your subscription.
+SUBS_ERR_NOUSERDATA = No authcode data associated with this session; unable to delete feeds from subscription.
+SUBS_ERR_NOSUBSCRPT = The selected account has no subscription associated with it.
 
 SUBS_ACTEMAIL       = Your subscription has been recorded, but to prevent abuse your subscription has been deactivated until you confirmation ownership of the email address entered.<br /><br />An email has been sent to the address you entered with instructions for activating your subscription.
 SUBS_SUBSCRIBED     = You have been successfully subscribed to the selected feeds.
+SUBS_UNSUBSCRIBED   = The selected feeds have been removed from your subscription.
 
 SUBS_ACTCODE_SUBJECT  = Newsagent feed subscription (re)activation required.
 SUBS_ACTCODE_GREETING = Hi
@@ -44,8 +47,14 @@ SUBS_DELETE_DONETITLE  = Subscription deleted
 SUBS_DELETE_SUMMARY    = Your subscription has been deleted.
 SUBS_DELETE_LONGDESC   = Your subscription has been removed, and you will no longer be sent digests of feeds.
 
-
 SUBS_MANAGE                = Manage subscription
 SUBS_MANAGE_NOSUBFOUND     = No subscription
 SUBS_MANAGE_NOSUB_SUMMARY  = No subscription information found.
 SUBS_MANAGE_NOSUB_LONGDESC = Newsagent has been unable to locate any subscription information for you. This could mean that you are logged in as a user with no subscriptions, or if you entered an authorisation code it may be invalid or outdated. If you entered an authorisation code, please ensure it is from the most recent digest email sent to your subscription address.
+SUBS_MANAGE_FEEDSEL        = Select feeds...
+SUBS_MANAGE_FEEDS          = Available feeds:
+SUBS_MANAGE_SUBSCRIBE      = Add Subscription
+
+SUBS_MANAGE_TITLE          = Manage subscriptions
+SUBS_MANAGE_EXISTING       = Currently subscribed feeds
+SUBS_MANAGE_REMOVE         = Unsubscribe from selected feeds
