@@ -172,6 +172,34 @@ sub set_user_subscription {
 }
 
 
+## @method $ add_to_subscription($subid, $feeds)
+# Add the specified feeds from the user's subscription. This attempts to add
+# the feeds specified in the feeds array from the user's subscription, if they are
+# not already in the subscription.
+#
+# @param subid The ID of the subscription to add the feeds to.
+# @param feeds A reference to an array of IDs of feeds to add from the subscription.
+# @return The number of feeds added, or undef on error.
+sub add_to_subscription {
+    my $self  = shift;
+    my $subid = shift;
+    my $feeds = shift;
+
+    # Can't do anything if there's no feeds to remove
+    return 0 if(!scalar(@{$feeds}));
+
+    my $count = 0;
+    foreach my $feed (@{$feeds}) {
+        my $added = $self -> _set_subscription_feed($subid, $feed);
+        return undef if(!defined($added));
+
+        $count += $added;
+    }
+
+    return $count;
+}
+
+
 ## @method $ remove_from_subscription($subid, $feeds)
 # Remove the specified feeds from the user's subscription. This attempts to remove
 # the feeds specified in the feeds array from the user's subscription, if they are

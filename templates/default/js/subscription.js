@@ -3,7 +3,7 @@
 var clear_on_sub = true;
 var controls;
 var selects;
-
+var multiselfeed;
 
 function subscribe()
 {
@@ -22,16 +22,18 @@ function subscribe()
             element.set('checked', false);  // No need to keep the selected feeds
     });
 
+    multiselfeed.update();
+
     var values = JSON.encode({'feeds': feeds });
 
     var req = new Request({ url: api_request_path("subscribe", "append", basepath ),
                             onRequest: function() {
                                 $('subspin').fade('in');
-                                $('subman').set('disabled', true);
+                                $('subadd').set('disabled', true);
                             },
                             onSuccess: function(respText, respXML) {
                                 $('subspin').fade('out');
-                                $('subman').set('disabled', false);
+                                $('subadd').set('disabled', false);
 
                                 var err = respXML.getElementsByTagName("error")[0];
                                 if(err) {
@@ -105,4 +107,5 @@ window.addEvent('domready', function() {
     selects = new SelectControl('select-ctrl', { onUpdate: function() { controls.updateVis(); controls.updateSelected(); }});
 
     $('subadd').addEvent('click', function() { subscribe(clear_on_sub); });
+
 });

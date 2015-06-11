@@ -44,10 +44,9 @@
 </div>
 <script type="text/javascript">
 window.addEvent('domready', function() {
-    var multiselfeed = new MultiSelect('#feeds', { maxMonitorText: 0,
-                                                        emptyText: '{L_SUBS_MANAGE_FEEDSEL}',
-                                                      onListClose: function() { $('subadd').set('disabled', $$('input.feed:checked').length == 0); }
-                                                 });
-
+    multiselfeed = new MultiSelect('#feeds', { maxMonitorText: 0,
+                                               emptyText: '{L_SUBS_MANAGE_FEEDSEL}',
+                                               onListClose: function() { $('subadd').set('disabled', $$('input.feed:checked').length == 0); }
+                                             });
 });
 </script>

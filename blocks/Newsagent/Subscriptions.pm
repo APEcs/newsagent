@@ -622,6 +622,8 @@ sub _build_appendsubscription_response {
         $args -> {"user_id"} = $self -> {"session"} -> get_session_userid();
     }
 
+    print STDERR "Appending subscription";
+
     # ...and now try to fetch the subscription; if there is no data, there's no subscription for the user
     # This can only really happen if there's no subscription, or the authcode is bad.
     my $subscription = $self -> {"subscription"} -> get_subscription($args);
@@ -635,6 +637,9 @@ sub _build_appendsubscription_response {
     my $settings = eval { JSON::decode_json($values) }
         or return $self -> api_errorhash('bad_data',
                                          $self -> {"template"} -> replace_langvar("SUBS_ERR_BADDATA"));
+
+
+    print STDERR "Settings: ".Dumper($settings);
 
     my $rows = $self -> {"subscription"} -> add_to_subscription($subscription -> {"id"}, $settings -> {"feeds"});
     return $self -> api_errorhash("internal", $self -> {"subscription"} -> errstr)
@@ -744,6 +749,7 @@ sub page_display {
     # Is this an API call, or a normal page operation?
     my $apiop = $self -> is_api_operation();
     if(defined($apiop)) {
+        print STDERR "Got op $apiop";
         # API call - dispatch to appropriate handler.
         given($apiop) {
             default {
