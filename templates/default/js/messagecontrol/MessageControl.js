@@ -83,13 +83,7 @@ var MessageControl = new Class(
                                });
         }
 
-        // Update the visibility when any checkboxes are changed
-        $$(this.options.checkClass).each(function(element) {
-            element.addEvent('change', function(event) {
-                                 this.updateSelected(event.target);
-                                 this.updateVis();
-                             }.bind(this));
-        }, this);
+        this.attachCheckboxEvents();
 
         // Fire events when buttons are clicked
         this.mark   = this.element.getFirst('li.msgctrl-mark');
@@ -101,6 +95,16 @@ var MessageControl = new Class(
         if(this.del)    this.del.addEvent('click', function() { this.fireEvent('deleteMsg', [this.selectedMsgs()]); }.bind(this));
 
         this.updateVis();
+    },
+
+    attachCheckboxEvents: function() {
+        // Update the visibility when any checkboxes are changed
+        $$(this.options.checkClass).each(function(element) {
+            element.addEvent('change', function(event) {
+                                 this.updateSelected(event.target);
+                                 this.updateVis();
+                             }.bind(this));
+        }, this);
     },
 
     updateVis: function() {
