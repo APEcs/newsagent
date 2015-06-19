@@ -36,7 +36,8 @@
 ***feedopts***
                         </div>
                     </li>
-                    <li><input type="button" class="button blue" name="subadd" id="subadd" disabled="disabled" value="{L_SUBS_MANAGE_SUBSCRIBE}" /></li>
+                    <li><input type="button" class="button blue" name="subadd" id="subadd" disabled="disabled" value="{L_SUBS_MANAGE_SUBADD}" /></li>
+                    <li><input type="button" class="button red"  name="subdel" id="subdel" value="{L_SUBS_MANAGE_DELETE}" onclick="location.href='***del-url***'" /></li>
                 </ul>
             </div>
         </li>

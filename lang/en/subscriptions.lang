@@ -68,3 +68,10 @@ SUBS_AUTHCODE_DONETITLE    = Authorisation code accepted
 SUBS_AUTHCODE_SUMMARY      = Your authorisation code has been accepted.
 SUBS_AUTHCODE_LONGDESC     = The supplied authorisation code is valid and has a subscription associated with it. Click the continur button below to be taken to the subscription management page.
 SUBS_AUTHCODE_CODEFMT      = Authorisation codes may only contain the characters a to z, A to Z, or 0 to 9.
+
+SUBS_MANAGE_SUBADD         = Add to subscription
+SUBS_MANAGE_DELETE         = Delete subscription
+
+SUBS_MANAGE_DELETED         = Subscription deleted
+SUBS_MANAGE_DELETE_SUMMARY  = Your subscription has been deleted.
+SUBS_MANAGE_DELETE_LONGDESC = You have been unsubscribed from all feeds, and your subscription has been deleted. To return to the feeds page, click on the Continue button below.

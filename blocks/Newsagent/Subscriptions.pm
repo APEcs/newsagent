@@ -536,11 +536,66 @@ sub _generate_manage_form {
         return ($self -> {"template"} -> replace_langvar("SUBS_MANAGE"),
                 $self -> {"template"} -> load_template("subscriptions/subscription.tem", {"***feeds***"    => $feedtable,
                                                                                           "***feedopts***" => $feedopts,
+                                                                                          "***del-url***"  => $self -> build_url("block" => "subscribe", "pathinfo" => [ "managedel" ], "params" => [])
                                                        }));
     } else {
         # No subscription found, complain.
         my $url = $self -> build_url("block" => "feeds", "pathinfo" => [], "params" => []);
 
+        return ($self -> {"template"} -> replace_langvar("SUBS_MANAGE"),
+                $self -> {"template"} -> message_box($self -> {"template"} -> replace_langvar("SUBS_MANAGE_NOSUBFOUND"),
+                                                     "error",
+                                                     $self -> {"template"} -> replace_langvar("SUBS_MANAGE_NOSUB_SUMMARY"),
+                                                     $self -> {"template"} -> replace_langvar("SUBS_MANAGE_NOSUB_LONGDESC"),
+                                                     undef,
+                                                     "subcore",
+                                                     [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
+                                                        "colour"  => "blue",
+                                                        "action"  => "location.href='$url'"} ]));
+    }
+}
+
+
+## @method private @ _generate_manage_delete()
+# Delete the subscription associated with the user's account.
+#
+# @return An array containing the page title and page content.
+sub _generate_manage_delete {
+    my $self = shift;
+    my $args = {};
+
+    my $anonymous = $self -> {"session"} -> anonymous_session();
+    if($anonymous) {
+        # Anonymous sessions must have an authcode set in the session data
+        my $code = $self -> {"session"} -> get_variable('authcode', '');
+
+        return $self -> _generate_manage_authreq_form()
+            unless($code);
+
+        $args -> {"authcode"} = $code;
+    } else {
+        $args -> {"user_id"} = $self -> {"session"} -> get_session_userid();
+    }
+
+    my $subscription = $self -> {"subscription"} -> get_subscription($args);
+
+    my $url = $self -> build_url("block" => "feeds", "pathinfo" => [], "params" => []);
+    if($subscription && $subscription -> {"id"}) {
+        my $deleted = $self -> {"subscription"} -> delete_subscription("subid" => $subscription -> {"id"})
+            or $self -> {"logger"} -> die_log("internal", $self -> {"subscription"} -> errstr());
+
+        return ($self -> {"template"} -> replace_langvar("SUBS_MANAGE_DELETED"),
+                $self -> {"template"} -> message_box($self -> {"template"} -> replace_langvar("SUBS_MANAGE_DELETED"),
+                                                     "error",
+                                                     $self -> {"template"} -> replace_langvar("SUBS_MANAGE_DELETE_SUMMARY"),
+                                                     $self -> {"template"} -> replace_langvar("SUBS_MANAGE_DELETE_LONGDESC"),
+                                                     undef,
+                                                     "subcore",
+                                                     [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
+                                                        "colour"  => "blue",
+                                                        "action"  => "location.href='$url'"} ]));
+    } else {
+        # No subscription data found; complain about that.
         return ($self -> {"template"} -> replace_langvar("SUBS_MANAGE"),
                 $self -> {"template"} -> message_box($self -> {"template"} -> replace_langvar("SUBS_MANAGE_NOSUBFOUND"),
                                                      "error",
@@ -669,6 +724,11 @@ sub _build_addsubscription_response {
 }
 
 
+## @method private $ _build_appendsubscription_response()
+# Generate the API response to requests to add feeds to a user's subscription
+# based on their current session or an authcode.
+#
+# @return A reference to a hash to send back to the client as an API response.
 sub _build_appendsubscription_response {
     my $self = shift;
     my $args = {};
@@ -830,6 +890,8 @@ sub page_display {
             when("resend")    { ($title, $content) = $self -> _generate_resend_form(); }
             when("delete")    { ($title, $content) = $self -> _generate_delete_form(); }
             when("manage")    { ($title, $content) = $self -> _generate_manage_form(); }
+            when("managedel") { ($title, $content) = $self -> _generate_manage_delete(); }
+
             default {
                 ($title, $content) = $self -> _generate_manage();
             }
