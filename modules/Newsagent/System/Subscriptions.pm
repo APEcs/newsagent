@@ -261,7 +261,8 @@ sub subscription_exists {
 # are:
 #
 # - user_id: Locate the subscription associated with the specified user.
-# - authcode: Locate the subscription with the specified auth code
+# - authcode: Locate the subscription with the specified auth code.
+# - id: Locate the subscription with the specified ID.
 #
 # @return A reference to a subscription data hash on success, an empty hash
 #         reference if there is no data available, undef on error.
@@ -274,6 +275,9 @@ sub get_subscription {
 
     } elsif($args -> {"authcode"}) {
         return $self -> _get_subscription_bycode($args -> {"authcode"});
+
+    } elsif($args -> {"id"}) {
+        return $self -> _get_subscription_byid($args -> {"id"});
     }
 
     return $self -> self_error("No supported search parameters provided to get_subscription");

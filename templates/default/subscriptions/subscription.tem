@@ -25,7 +25,7 @@
                 </div>
                 <h3>{L_SUBS_MANAGE_EXISTING}</h3>
                 <table class="listtable">
-                    <tbody>
+                    <tbody id="subfeeds">
                         ***feeds***
                     </tbody>
                 </table>

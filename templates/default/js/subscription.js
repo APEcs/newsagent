@@ -5,6 +5,44 @@ var controls;
 var selects;
 var multiselfeed;
 
+function build_feed_row(feed)
+{
+    var row = new Element('tr', { 'id': 'feedrow-'+feed.getAttribute('id') });
+
+    var ticky = new Element('td', { 'class': 'ticky' }).adopt(new Element('input', { 'id': 'feed-'+feed.getAttribute('name'),
+                                                                                     'value': feed.getAttribute('id'),
+                                                                                     'name': 'feed-'+feed.getAttribute('id'),
+                                                                                     'type': 'checkbox',
+                                                                                     'class': 'selctrl-opt selfeed'}));
+    var label = new Element('td', { 'class': 'feed' }).adopt(new Element('label', { 'for': 'feed-'+feed.getAttribute('name'),
+                                                                                    'text': feed.getAttribute('description') }));
+
+    row.adopt(ticky, label);
+
+    return row;
+}
+
+
+function build_feed_list(feedlist)
+{
+    var rows = new Elements();
+
+    // feedlist is a HTMLCollection, which doesn't do .each, so make an Array from it
+    feeds = Array.from(feedlist);
+
+    // and now construct the rows.
+    feeds.each(function(feed) {
+        rows.push(build_feed_row(feed));
+    });
+
+    $('subfeeds').getChildren().destroy().empty();
+    $('subfeeds').adopt(rows);
+
+    // rebuild the checkbox connection to the messagecontrol box.
+    controls.attachCheckboxEvents();
+}
+
+
 function subscribe()
 {
     // must have one or more feeds selected
@@ -50,6 +88,7 @@ function subscribe()
                                     popbox.setContent(res.innerHTML);
                                     popbox.open();
 
+                                    build_feed_list(respXML.getElementsByTagName("feed"));
                                 }
                             }
                           });

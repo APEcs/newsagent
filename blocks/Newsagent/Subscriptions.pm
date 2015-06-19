@@ -185,6 +185,12 @@ sub _build_feed_list {
 }
 
 
+## @method private $ _build_feedstable($feeds);
+# Generate the table containing the users's subscribed feeds, and a select box that
+# allows users to select the feed for unsubscription.
+#
+# @param feeds A reference to an array of feed data hashrefs.
+# @return A string containing the feed table rows.
 sub _build_feedstable {
     my $self  = shift;
     my $feeds = shift;
@@ -192,7 +198,6 @@ sub _build_feedstable {
 
     foreach my $feedid (@{$feeds}) {
         my $feed = $self -> {"feed"} -> get_feed_byid($feedid);
-        print STDERR "Got feed: ".Dumper($feed);
 
         $rows .= $self -> {"template"} -> load_template("subscriptions/subscription_row.tem", {"***id***"          => $feed -> {"id"},
                                                                                                "***description***" => $feed -> {"description"},
@@ -257,6 +262,28 @@ sub _validate_activate {
 
     # Get here and the activation has been successful.
     return (1, undef);
+}
+
+
+## @method private @ _validate_authcode()
+# Validate an authorisation code for a subscription
+#
+# @return An array of two values; the first is the code if it has been provided and
+#         is valid, or undef if it is not. The second is a possible error message if
+#         one is available.
+sub _validate_authcode {
+    my $self       = shift;
+
+    # Has the user entered an activation code?
+    my ($code, $error) = $self -> validate_string('authcode', { "required"   => 1,
+                                                                "nicename"   => $self -> {"template"} -> replace_langvar("SUBS_AUTHCODE_CODE"),
+                                                                "minlen"     => 64,
+                                                                "maxlen"     => 64,
+                                                                "formattest" => '^[a-zA-Z0-9]+$',
+                                                                "formatdesc" => $self -> {"template"} -> replace_langvar("SUBS_AUTHCODE_CODEFMT"),
+                                                  });
+    $code = undef if(!$code || $error);
+    return ($code, $error);
 }
 
 
@@ -436,8 +463,46 @@ sub _generate_delete_form {
 }
 
 
-## @method private $ _generate_manage_form()
+## @method private @ _generate_manage_authreq_form()
+# Generate the form that allows the user to enter an authentication code and edit
+# their subscription
+sub _generate_manage_authreq_form {
+    my $self = shift;
 
+    my ($authcode, $error) = $self -> _validate_authcode()
+        if($self -> {"cgi"} -> param("authcode"));
+
+    # Wrap the error message in a message box if we have one.
+    $error = $self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $error})
+        if($error);
+
+    if(!$authcode) {
+        return ($self -> {"template"} -> replace_langvar("SUBS_AUTHCODE_TITLE"),
+                $self -> {"template"} -> load_template("subscriptions/authcode_form.tem", {"***error***"      => $error,
+                                                                                           "***target***"     => $self -> build_url("block" => "subscribe"),
+                                                                                           "***url-resend***" => $self -> build_url("block" => "subscribe", "pathinfo" => [ "authreq" ]),}));
+    } else {
+        $self -> {"session"} -> set_variable('authcode', $authcode);
+
+        my $url = $self -> build_url("block" => "subscribe", "pathinfo" => [ "manage" ], "params" => []);
+        return ($self -> {"template"} -> replace_langvar("SUBS_AUTHCODE_TITLE"),
+                $self -> {"template"} -> message_box($self -> {"template"} -> replace_langvar("SUBS_AUTHCODE_DONETITLE"),
+                                                     "security",
+                                                     $self -> {"template"} -> replace_langvar("SUBS_AUTHCODE_SUMMARY"),
+                                                     $self -> {"template"} -> replace_langvar("SUBS_AUTHCODE_LONGDESC"),
+                                                     undef,
+                                                     "subcore",
+                                                     [ {"message" => $self -> {"template"} -> replace_langvar("SITE_CONTINUE"),
+                                                        "colour"  => "blue",
+                                                        "action"  => "location.href='$url'"} ]));
+    }
+}
+
+
+## @method private @ _generate_manage_form()
+# Generate the page teh user can edit their subscription through.
+#
+# @return An array containing the page title and page content.
 sub _generate_manage_form {
     my $self = shift;
     my $args;
@@ -622,8 +687,6 @@ sub _build_appendsubscription_response {
         $args -> {"user_id"} = $self -> {"session"} -> get_session_userid();
     }
 
-    print STDERR "Appending subscription";
-
     # ...and now try to fetch the subscription; if there is no data, there's no subscription for the user
     # This can only really happen if there's no subscription, or the authcode is bad.
     my $subscription = $self -> {"subscription"} -> get_subscription($args);
@@ -638,17 +701,15 @@ sub _build_appendsubscription_response {
         or return $self -> api_errorhash('bad_data',
                                          $self -> {"template"} -> replace_langvar("SUBS_ERR_BADDATA"));
 
-
-    print STDERR "Settings: ".Dumper($settings);
-
     my $rows = $self -> {"subscription"} -> add_to_subscription($subscription -> {"id"}, $settings -> {"feeds"});
     return $self -> api_errorhash("internal", $self -> {"subscription"} -> errstr)
         if(!defined($rows));
 
+    $subscription = $self -> {"subscription"} -> get_subscription("id" => $subscription -> {"id"});
     my $resp = { "result" => { "response" => { "button"  => $self -> {"template"} -> replace_langvar("PAGE_ERROROK"),
                                                "content" => $self -> {"template"} -> replace_langvar("SUBS_SUBSCRIBED"),
                                },
-                               "feeds" => $self -> _build_currentsub_list($subscription)
+                               "feed" => $self -> _build_currentsub_list($subscription)
                  }
     };
 
@@ -700,7 +761,7 @@ sub _build_remsubscription_response {
     my $resp = { "result" => { "response" => { "button"  => $self -> {"template"} -> replace_langvar("PAGE_ERROROK"),
                                                "content" => $self -> {"template"} -> replace_langvar("SUBS_UNSUBSCRIBED"),
                                },
-                               "feeds" => $self -> _build_currentsub_list($subscription)
+                               "feed" => $self -> _build_currentsub_list($subscription)
                  }
     };
 

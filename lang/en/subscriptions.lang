@@ -58,3 +58,13 @@ SUBS_MANAGE_SUBSCRIBE      = Add Subscription
 SUBS_MANAGE_TITLE          = Manage subscriptions
 SUBS_MANAGE_EXISTING       = Currently subscribed feeds
 SUBS_MANAGE_REMOVE         = Unsubscribe from selected feeds
+
+SUBS_AUTHCODE_TITLE        = Enter authorisation code
+SUBS_AUTHCODE_FORM         = Enter your unique authorisation code below. You can find this code at the end of subscription digest emails sent to your email address. Please note that a new code is generated for each email - if you're not sure what your authorisation code is, please use the 'send a new authorisation code' option below.
+SUBS_AUTHCODE_RESEND       = send a new authorisation code
+SUBS_AUTHCODE_CODE         = Authorisation code
+SUBS_AUTHCODE_AUTH         = Authorise
+SUBS_AUTHCODE_DONETITLE    = Authorisation code accepted
+SUBS_AUTHCODE_SUMMARY      = Your authorisation code has been accepted.
+SUBS_AUTHCODE_LONGDESC     = The supplied authorisation code is valid and has a subscription associated with it. Click the continur button below to be taken to the subscription management page.
+SUBS_AUTHCODE_CODEFMT      = Authorisation codes may only contain the characters a to z, A to Z, or 0 to 9.
