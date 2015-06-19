@@ -39,7 +39,8 @@ window.addEvent('domready', function() {
     var multiselfeed = new MultiSelect('#comp-feed', { maxMonitorText: 0,
                                                             emptyText: 'Select feeds...',
                                                           onListClose: function() { set_visible_levels(); },
-                                                            maxHeight: '250px'
+                                                            maxHeight: '250px',
+                                                            form: 'fullform'
                                                      });
 
     CKEDITOR.replace('comp-desc', { customConfig: '{V_[commonpath]}cke_configs/***ckeconfig***' });
