@@ -300,7 +300,7 @@ sub delete_subscription {
     $self -> clear_error();
 
     return $self -> self_error("No subscription identifier available")
-        if(!$args -> {"sub_id"} && !$args -> {"authcode"});
+        if(!$args -> {"subid"} && !$args -> {"authcode"});
 
     # Easy case is when an ID is provided
     return $self -> _delete_subscription_byid($args -> {"subid"})
