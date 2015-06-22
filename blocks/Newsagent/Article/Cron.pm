@@ -2,6 +2,11 @@
 # This file contains the implementation of the cron-triggered notification
 # dispatcher
 #
+# @deprecated
+# This entrypoint is deprecated and may be removed in future versions. The
+# features provided by this module are part of the megaphone.pl and
+# modules/Newsagent/System/Megaphone.pm daemon implementation code.
+#
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
 #
 # This program is free software: you can redistribute it and/or modify

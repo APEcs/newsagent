@@ -90,7 +90,7 @@ use Data::Dumper;
 #  Constructor
 
 ## @cmethod $ new(%args)
-# Overloaded constructor for the Subscriptions facility, loads the System::Article model
+# Overloaded constructor for the Subscriptions facility, loads the System::Feed model
 # and other classes required to generate the subscriptions pages.
 #
 # @param args A hash of values to initialise the object with. See the Block docs
@@ -870,7 +870,7 @@ sub page_display {
     # Is this an API call, or a normal page operation?
     my $apiop = $self -> is_api_operation();
     if(defined($apiop)) {
-        print STDERR "Got op $apiop";
+
         # API call - dispatch to appropriate handler.
         given($apiop) {
             default {
