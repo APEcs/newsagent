@@ -107,6 +107,12 @@ sub _validate_settings {
     $settings -> {"images"} = 1
         if(defined($self -> {"cgi"} -> param("images")));
 
+    ($settings -> {"viewer"}, $error) = $self -> validate_string("viewer", {"required"   => 0,
+                                                                            "default"    => "",
+                                                                            "formattest" => '^\w+$',
+                                                                            "formatdesc" => "",
+                                                                            "nicename"   => ""});
+
     # count and offset are easy
     ($settings -> {"id"}, $error)  = $self -> validate_numeric("id", {"required" => 0,
                                                                       "intonly"  => 1,
@@ -116,6 +122,11 @@ sub _validate_settings {
                                                                       });
     $settings -> {"id"} = $settings -> {"articleid"}
         if(!$settings -> {"id"} && $settings -> {"articleid"});
+
+    # If an ID has been specified, the remaining settings are essentially irrelivant: the user has
+    # specified an ID they are interested in, regardless of the feed, age, or anything else.
+    return $settings
+        if($settings -> {"id"});
 
     ($settings -> {"count"}, $error)  = $self -> validate_numeric("count", {"required" => 0,
                                                                             "intonly"  => 1,
@@ -156,12 +167,6 @@ sub _validate_settings {
                                                                           "nicename"   => ""});
     my @levels = split(/,/, $settings -> {"level"} || "");
     $settings -> {"levels"} = \@levels;
-
-    ($settings -> {"viewer"}, $error) = $self -> validate_string("viewer", {"required"   => 0,
-                                                                            "default"    => "",
-                                                                            "formattest" => '^\w+$',
-                                                                            "formatdesc" => "",
-                                                                            "nicename"   => ""});
 
     # If a maximum age is specified, convert it to a unix timestamp to use for filtering
     ($settings -> {"maxage"}, $error) = $self -> validate_string("maxage", {"required"   => 0,
