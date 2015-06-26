@@ -153,16 +153,23 @@ sub get_user_levels {
 # containing matching data. The following settings may be specified in the settings
 # argument:
 #
-# - `id`: obtain the article with the specified ID. Note that, even though this will
-#   only ever match at most one record, the returned value is still a reference to an
-#   array of hashrefs.
-# - `level`: obtain articles that are visible at the named level. Note that this is
+# - `id`: The ID of the article to retrieve, or a reference to an array of IDs. Note
+#   that, even it this only matches one record, the returned value is still a
+#   reference to an array of hashrefs. If an `id` is specified, all other settings
+#   are ignored - if a specified id corresponds to a valid article, it will be returned,
+#   regardless of which feed, level, or date it was published with. If this is a
+#   scalar, the article with the ID is returned; if it is an arrayref multiple articles
+#   can be requested.
+# - `levels`: obtain articles that are visible at the named level. Note that this is
 #   the *name* of the level, not the level id, for readability. Valid levels are
 #   defined in the `levels` table. Unknown/invalid levels will produce no matches.
 #   If no level is specified, all levels are matched.
-# - `feed`: obtain articles published by the specified feed or group. This is the
-#   feed name, not the feed ID, and valid feeds are defined in the `feeds` table.
+# - `feeds`: obtain articles published by the specified feed or feeds. This should be
+#   a reference to an array of feed names, valid feeds are defined in the `feeds` table.
 #   If no feed is specified, all feeds with messages at the current level are matched.
+#   If specified, any feedid array specified is ignored.
+# - `feedid`: a reference to an array of feed ids. If this is specified, any feed
+#   array provided is ignored.
 # - `count`: how many articles to return. If not specified, this defaults to the
 #   system-wide setting defined in `Feed:count` in the settings table.
 # - `offset`: article offset, first returned article is at offset 0.
@@ -205,57 +212,71 @@ sub get_feed_articles {
     my $from  = "`".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `article`
                  LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `user`
                      ON `user`.`user_id` = `article`.`creator_id`";
+
+    # Initial where clause ensures that only articles that are explicitly visible, or have passed their
+    # timed release threshold, are included in the results - this will block deleted/edited/etc
     my $where = "(`article`.`release_mode` = 'visible'
                    OR (`article`.`release_mode` = 'timed'
                         AND `article`.`release_time` <= UNIX_TIMESTAMP()
                       )
                  )";
 
-    # The next lot are extensions to the above to support filters requested by the caller.
+    # If an article ID is specified, no further filtering should be done - if the ID corresponds
+    # to a visible article, the feed, level, or anything else doesn't matter.
     if($settings -> {"id"}) {
-        $where .= " AND `article`.`id` = ?";
-        push(@params, $settings -> {"id"});
-    }
+        if(ref($settings -> {"id"}) eq "ARRAY" && scalar(@{$settings -> {"id"}})) {
+            $where .= " AND `article`.`id` IN (?".(",?" x (scalar(@{$settings -> {"id"}}) - 1)).")";
+            push(@params, @{$settings -> {"id"}});
+        } else {
+            $where .= " AND `article`.`id` = ?";
+            push(@params, $settings -> {"id"});
+        }
+    } else {
 
-    # There can be multiple, comma separated feeds specified in the settings, so split them
-    # and create an OR clause for the lot
-    if($settings -> {"feeds"} && scalar(@{$settings -> {"feeds"}})) {
-        my $feedfrag = "";
+        # There can be multiple feeds specified.
+        if($settings -> {"feeds"} && scalar(@{$settings -> {"feeds"}})) {
+            my $feedfrag = "";
 
-        foreach my $feed (@{$settings -> {"feeds"}}) {
-            $feedfrag .= " OR " if($feedfrag);
-            $feedfrag .= "`feed`.`name` LIKE ?";
-            push(@params, $feed);
+            foreach my $feed (@{$settings -> {"feeds"}}) {
+                $feedfrag .= " OR " if($feedfrag);
+                $feedfrag .= "`feed`.`name` LIKE ?";
+                push(@params, $feed);
+            }
+
+            $from  .= ", `".$self -> {"settings"} -> {"database"} -> {"feeds"}."` AS `feed`,
+                         `".$self -> {"settings"} -> {"database"} -> {"articlefeeds"}."` AS `artfeeds`";
+            $where .= " AND ($feedfrag)
+                        AND `artfeeds`.`article_id` = `article`.`id`
+                        AND `artfeeds`.`feed_id` = `feed`.`id`";
+
+        } elsif($settings -> {"feedids"} && scalar(@{$settings -> {"feedids"}})) {
+            $from  .= ", `".$self -> {"settings"} -> {"database"} -> {"articlefeeds"}."` AS `artfeeds`";
+
+            $where .= " AND `artfeeds`.`feed_id` IN (?".(",?" x (scalar(@{$settings -> {"feedids"}}) - 1)).")";
+            push(@params, @{$settings -> {"feedids"}});
         }
 
-        $from  .= ", `".$self -> {"settings"} -> {"database"} -> {"feeds"}."` AS `feed`,
-                     `".$self -> {"settings"} -> {"database"} -> {"articlefeeds"}."` AS `artfeeds`";
-        $where .= " AND ($feedfrag)
-                    AND `artfeeds`.`article_id` = `article`.`id`
-                    AND `artfeeds`.`feed_id` = `feed`.`id`";
-    }
+        # Level filtering
+        if($settings -> {"levels"} && scalar(@{$settings -> {"levels"}})) {
+            my $levelfrag = "";
 
-    # Level filtering is a bit trickier, as it needs to do more joining, and has to deal with
-    # comma separated values, to
-    if($settings -> {"levels"} && scalar(@{$settings -> {"levels"}})) {
-        my $levelfrag = "";
+            foreach my $level (@{$settings -> {"levels"}}) {
+                $levelfrag .= " OR " if($levelfrag);
+                $levelfrag .= "`level`.`level` = ?";
+                push(@params, $level);
+            }
 
-        foreach my $level (@{$settings -> {"levels"}}) {
-            $levelfrag .= " OR " if($levelfrag);
-            $levelfrag .= "`level`.`level` = ?";
-            push(@params, $level);
+            $from  .= ", `".$self -> {"settings"} -> {"database"} -> {"levels"}."` AS `level`,
+                         `".$self -> {"settings"} -> {"database"} -> {"articlelevels"}."` AS `artlevels`";
+            $where .= " AND ($levelfrag)
+                        AND `artlevels`.`article_id` = `article`.`id`
+                        AND `artlevels`.`level_id` = `level`.`id`";
         }
 
-        $from  .= ", `".$self -> {"settings"} -> {"database"} -> {"levels"}."` AS `level`,
-                     `".$self -> {"settings"} -> {"database"} -> {"articlelevels"}."` AS `artlevels`";
-        $where .= " AND ($levelfrag)
-                    AND `artlevels`.`article_id` = `article`.`id`
-                    AND `artlevels`.`level_id` = `level`.`id`";
-    }
-
-    if($settings -> {"maxage"}) {
-        $where .= " AND `article`.`release_time` > ?";
-        push(@params, $settings -> {"maxage"});
+        if($settings -> {"maxage"}) {
+            $where .= " AND `article`.`release_time` > ?";
+            push(@params, $settings -> {"maxage"});
+        }
     }
 
     my $sql = "SELECT DISTINCT $fields
