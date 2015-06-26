@@ -104,8 +104,6 @@ sub get_feeds {
 
     $self -> clear_error();
 
-    print STDERR "Filter: ".($filter ? Dumper($filter) : "not set")."\n";
-
     # If filters have been specified, build the filtering parameter
     my @params = ();
     my $query = "";
