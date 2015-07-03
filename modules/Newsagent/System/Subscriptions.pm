@@ -256,34 +256,6 @@ sub subscription_exists {
 }
 
 
-## @method $ get_subscription(%args)
-# Attempt to fetch the data associated with a subscription. Supported arguments
-# are:
-#
-# - user_id: Locate the subscription associated with the specified user.
-# - authcode: Locate the subscription with the specified auth code.
-# - id: Locate the subscription with the specified ID.
-#
-# @return A reference to a subscription data hash on success, an empty hash
-#         reference if there is no data available, undef on error.
-sub get_subscription {
-    my $self = shift;
-    my $args = hash_or_hashref(@_);
-
-    if($args -> {"user_id"}) {
-        return $self -> _get_subscription_byuserid($args -> {"user_id"});
-
-    } elsif($args -> {"authcode"}) {
-        return $self -> _get_subscription_bycode($args -> {"authcode"});
-
-    } elsif($args -> {"id"}) {
-        return $self -> _get_subscription_byid($args -> {"id"});
-    }
-
-    return $self -> self_error("No supported search parameters provided to get_subscription");
-}
-
-
 ## @method $ delete_subscription(%args)
 # Remove the subscription identified by either a subscription ID or a
 # authorisation code. The specified arguments should contain either
@@ -317,6 +289,81 @@ sub delete_subscription {
         if(!$subscription -> {"id"});
 
     return $self -> _delete_subscription_byid($subscription -> {"id"});
+}
+
+
+# ============================================================================
+#  Lookup related
+
+
+## @method $ get_subscription(%args)
+# Attempt to fetch the data associated with a subscription. Supported arguments
+# are:
+#
+# - user_id: Locate the subscription associated with the specified user.
+# - authcode: Locate the subscription with the specified auth code.
+# - id: Locate the subscription with the specified ID.
+#
+# @return A reference to a subscription data hash on success, an empty hash
+#         reference if there is no data available, undef on error.
+sub get_subscription {
+    my $self = shift;
+    my $args = hash_or_hashref(@_);
+
+    if($args -> {"user_id"}) {
+        return $self -> _get_subscription_byuserid($args -> {"user_id"});
+
+    } elsif($args -> {"authcode"}) {
+        return $self -> _get_subscription_bycode($args -> {"authcode"});
+
+    } elsif($args -> {"id"}) {
+        return $self -> _get_subscription_byid($args -> {"id"});
+    }
+
+    return $self -> self_error("No supported search parameters provided to get_subscription");
+}
+
+
+## @method $ get_pending_subscriptions($threshold)
+# Fetch a list of subscriptions that should be checked for digesting. This
+# fetches a list of subscriptions that have not been checked since the
+# threshold specified.
+#
+# @param threshold The date before which subscriptions should be checked.
+# @return A reference to an array of hashes, one entry for each subscription
+#         that must be checked on success, undef on error.. Note that this may be a reference to an
+#         empty array if there are no pending subscriptions.
+sub get_pending_subscriptions {
+    my $self      = shift;
+    my $threshold = shift;
+
+    $self -> clear_error();
+
+    print STDERR "Query: SELECT `id`
+                         FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
+                         WHERE `active` = 1
+                         AND (`lastrun` IS NULL
+                               OR `lastrun` < ?";
+
+    my $pendh = $self -> {"dbh"} -> prepare("SELECT `id`
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
+                                             WHERE `active` = 1
+                                             AND (`lastrun` IS NULL
+                                                   OR `lastrun` < ?)");
+    $pendh -> execute($threshold)
+        or return $self -> self_error("Unable to search for subscriptions that need checking for digests after '$threshold': ".$self -> {"dbh"} -> errstr());
+
+    # Go through each of the subscriptions, pulling in the data for each one.
+    # This will include the feeds the subscription is subscribed to.
+    my @subs;
+    while(my $subid = $pendh -> fetchrow_arrayref()) {
+        my $subdata = $self -> _get_subscription_byid($subid -> [0])
+            or return undef;
+
+        push(@subs, $subdata);
+    }
+
+    return \@subs;
 }
 
 

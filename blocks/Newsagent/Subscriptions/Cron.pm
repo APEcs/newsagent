@@ -21,9 +21,12 @@
 package Newsagent::Subscriptions::Cron;
 
 use strict;
+use experimental qw(smartmatch);
 use base qw(Newsagent::Subscriptions); # This class extends the Subscriptions block class
 use v5.12;
-
+use Webperl::Utils qw(path_join trimspace);
+use Digest::MD5 qw(md5_hex);
+use Data::Dumper;
 
 # ============================================================================
 #  Constructor
@@ -41,6 +44,8 @@ sub new {
     my $class    = ref($invocant) || $invocant;
     my $self     = $class -> SUPER::new(@_)
         or return undef;
+
+    $self -> {"digest_schedule"} = $self -> {"settings"} -> {"config"} -> {"Subscription:digest_schedule"} || 86400;
 
     $self -> {"schedule"} = Newsagent::System::Schedule -> new(dbh      => $self -> {"dbh"},
                                                                settings => $self -> {"settings"},
@@ -65,11 +70,128 @@ sub new {
 # ============================================================================
 #  Cron job implementation
 
+sub _build_update {
+    my $self    = shift;
+    my $article = shift;
 
+    $article -> {"images"} -> [0] -> {"location"} = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"},
+                                                              $self -> {"settings"} -> {"config"} -> {"HTML:default_image"})
+        if(!$article -> {"images"} -> [0] -> {"location"} && $self -> {"settings"} -> {"config"} -> {"HTML:default_image"});
+
+    my $image;
+    $image = $self -> {"article"} -> {"images"} -> get_image_url($article -> {"images"} -> [1], 'large');
+
+    $image = $self -> {"template"} -> load_template("Notification/Method/Email/image.tem", {"***class***"  => "article",
+                                                                                            "***url***"    => $image,
+                                                                                            "***alt***"    => "article image"})
+        if($image);
+
+    $article -> {"article"} = $self -> cleanup_entities($article -> {"article"});
+
+    my $pubdate = $self -> {"template"} -> format_time($article -> {"release_time"}, "%a, %d %b %Y %H:%M:%S %z");
+    my $subject = $article -> {"title"} || $pubdate;
+
+    my @feeds = ();
+    foreach my $feed (@{$article -> {"feeds"}}) {
+        push(@feeds, $feed -> {"description"});
+    }
+
+    return $self -> {"template"} -> load_template("subscriptions/email_update.tem", {"***body***"     => $article -> {"fulltext"},
+                                                                                     "***feeds***"    => join(", ", @feeds),
+                                                                                     "***title***"    => $article -> {"title"} || $pubdate,
+                                                                                     "***date***"     => $pubdate,
+                                                                                     "***summary***"  => $article -> {"summary"},
+                                                                                     "***img2***"     => $image,
+                                                                                     "***logo_url***" => $self -> {"settings"} -> {"config"} -> {"Article:logo_img_url"},
+                                                                                     "***name***"     => $article -> {"realname"} || $article -> {"username"},
+                                                                                     "***gravhash***" => md5_hex(lc(trimspace($article -> {"email"} || ""))) });
+
+}
+
+
+sub _send_subscription_digest {
+    my $self     = shift;
+    my $subs     = shift;
+    my $articles = shift;
+
+    my $updates = "";
+
+    foreach my $article (@{$articles}) {
+        $updates .= $self -> _build_update($article);
+    }
+
+    my $title = $self -> {"template"} -> replace_langvar(scalar(@{$articles}) != 1  ? "SUBS_DIGEST_TITLES" : "SUBS_DIGEST_TITLE",
+                                                         {"***new***" => scalar(@{$articles}) || $self -> {"template"} -> replace_langvar("SUBS_DIGEST_NONE") });
+
+    my $recipient = $subs -> {"email"} || $subs -> {"user_id"};
+
+    # FIXME: This will not work unless message support HTML!
+    my $status = $self -> {"messages"} -> queue_message(subject => $title,
+                                                        message => $self -> {"template"} -> load_template("subscriptions/email.tem", {"***img1***"    => "",
+                                                                                                                                      "***title***"   => $title,
+                                                                                                                                      "***updates***" => $updates }),
+                                                        recipients       => [ $recipient ],
+                                                        send_immediately => 1);
+
+    return $status ? "<p>Sent digest message containing ".scalar(@{$articles})." update(s)s to $recipient</p>"
+                   : "<p>Send to $recipient failed: ".$self -> {"messages"} -> errstr()."</p>";
+}
+
+
+## @method $ _run_cronjob()
+# Perform the cron job process - this checks for subscriptions that need to be
+# processed, and processes them, sending out digest messages to subscribers/
+#
+# @return A string containing the status information generated during processing.
+#         Note that this is *not* a valid body - it needs wrapping in something
+#         more sensible before returning to the user.
 sub _run_cronjob {
     my $self = shift;
+    my $now  = time();
+
+    my $after = $now - $self -> {"digest_schedule"} * 10;
+
+    # Get a list of all subscriptions that need to be sent digests
+    my $subscriptions = $self -> {"subscription"} -> get_pending_subscriptions($after)
+        or return $self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $self -> {"subscription"} -> errstr()});
+
+    my $status = "";
+    if(scalar(@{$subscriptions})) {
+        foreach my $subscription (@{$subscriptions}) {
+            # do nothing if there are no feeds to check
+            next unless($subscription -> {"feeds"} && scalar(@{$subscription -> {"feeds"}}));
+
+            # Feeds are present, so pull in the list of articles published since either the last run
+            # for this subscription, or the 'after' date, as appropriate. Note that it's fine
+            # for get_feed_articles() to return a ref to an empty array, but not undef!
+            my $articles = $self -> {"article"} -> get_feed_articles('feedid' => $subscription -> {"feeds"},
+                                                                     'maxage' => $subscription -> {"lastrun"} || $after,
+                                                                     'fulltext_mode' => 1)
+                or return $status.$self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $self -> {"article"} -> errstr()});
+
+            my $update = $self -> _send_subscription_digest($subscription, $articles)
+                or return $status.$self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $self -> errstr()});
+
+            $status .= $update;
+        }
+
+        return $status;
+    } else {
+        return $self -> {"template"} -> replace_langvar("SUBS_CRON_NOSUBS");
+    }
+
+}
 
 
+## @method $ _build_cronjob()
+# A wrapper function around _run_cronjob() to enclose its output in appropriate markup.
+#
+# @return An array of two values: the page title string, and the cron status page body.
+sub _build_cronjob {
+    my $self = shift;
+
+    return ($self -> {"template"} -> replace_langvar("SUBS_CRON_TITLE"),
+            $self -> {"template"} -> load_template("subscriptions/cron.tem", {"***status***" => $self -> _run_cronjob() }));
 }
 
 
@@ -102,7 +224,7 @@ sub page_display {
         given($pathinfo[0]) {
 
             default {
-                ($title, $content) = $self -> _run_cronjob();
+                ($title, $content) = $self -> _build_cronjob();
             }
         }
 

@@ -1,0 +1,11 @@
+<div id="managepage">
+    <ul id="manager">
+        <li id="feedlist" class="shadowbox">
+            <h2>{L_SUBS_CRON_TITLE}</h2>
+            <div class="sbcontent">
+                <p>{L_SUBS_CRON_STATUS}</p>
+                ***status***
+            </div>
+        </li>
+    </ul>
+</div>

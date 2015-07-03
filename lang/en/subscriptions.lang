@@ -75,3 +75,10 @@ SUBS_MANAGE_DELETE         = Delete subscription
 SUBS_MANAGE_DELETED         = Subscription deleted
 SUBS_MANAGE_DELETE_SUMMARY  = Your subscription has been deleted.
 SUBS_MANAGE_DELETE_LONGDESC = You have been unsubscribed from all feeds, and your subscription has been deleted. To return to the feeds page, click on the Continue button below.
+
+SUBS_CRON_TITLE            = Subscription processing
+SUBS_CRON_STATUS           = Subscription processing status:
+
+SUBS_DIGEST_TITLE          = ***new*** new article.
+SUBS_DIGEST_TITLES         = ***new*** new articles.
+SUBS_DIGEST_NONE           = No

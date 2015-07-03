@@ -148,7 +148,7 @@ sub get_user_levels {
 
 
 ## @method $ get_feed_articles($settings)
-# Obtain the details of artibles from the database. This will search the database
+# Obtain the details of articles from the database. This will search the database
 # using the specified parameters, and return a reference to an array of records
 # containing matching data. The following settings may be specified in the settings
 # argument:
@@ -160,16 +160,16 @@ sub get_user_levels {
 #   regardless of which feed, level, or date it was published with. If this is a
 #   scalar, the article with the ID is returned; if it is an arrayref multiple articles
 #   can be requested.
-# - `levels`: obtain articles that are visible at the named level. Note that this is
-#   the *name* of the level, not the level id, for readability. Valid levels are
+# - `levels`: obtain articles that are visible at the named levels. This should be
+#   a reference to an array of level names, not level ids, for readability. Valid levels are
 #   defined in the `levels` table. Unknown/invalid levels will produce no matches.
 #   If no level is specified, all levels are matched.
 # - `feeds`: obtain articles published by the specified feed or feeds. This should be
-#   a reference to an array of feed names, valid feeds are defined in the `feeds` table.
-#   If no feed is specified, all feeds with messages at the current level are matched.
-#   If specified, any feedid array specified is ignored.
-# - `feedid`: a reference to an array of feed ids. If this is specified, any feed
-#   array provided is ignored.
+#   a reference to an array of feed names, and valid feeds are defined in the `feeds`
+#   table. If no feeds or feedids are specified, all feeds with messages at the
+#   current level are matched. If specified, any feedid array specified is ignored.
+# - `feedids`: a reference to an array of feed ids.
+# - `maxage`:
 # - `count`: how many articles to return. If not specified, this defaults to the
 #   system-wide setting defined in `Feed:count` in the settings table.
 # - `offset`: article offset, first returned article is at offset 0.
@@ -335,7 +335,8 @@ sub get_feed_articles {
             }
 
             # Fetch the year info
-            $article -> {"acyear"} = $self -> {"userdata"} -> get_year_data($article -> {"release_time"});
+            $article -> {"acyear"} = $self -> {"userdata"} -> get_year_data($article -> {"release_time"})
+                if($self -> {"userdata"});
         }
     } # if(scalar(@{$articles})) {
 
