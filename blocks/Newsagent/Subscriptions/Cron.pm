@@ -70,6 +70,11 @@ sub new {
 # ============================================================================
 #  Cron job implementation
 
+## @method private $ _build_update($article)
+# Build an individual email section based on the specified article.
+#
+# @param article The article to generate the email from.
+# @return The html containing the article.
 sub _build_update {
     my $self    = shift;
     my $article = shift;
@@ -109,10 +114,16 @@ sub _build_update {
 }
 
 
+## @method private $ _send_subscription_digest($subscription, $articles)
+# Send the provided articles to the subscription specified.
+#
+# @param subscription The subscription to send the email to.
+# @param articles     The articles to put into the email.
+# @return A status message indicating the success or failure of the send.
 sub _send_subscription_digest {
-    my $self     = shift;
-    my $subs     = shift;
-    my $articles = shift;
+    my $self         = shift;
+    my $subscription = shift;
+    my $articles     = shift;
 
     my $updates = "";
 
@@ -123,7 +134,7 @@ sub _send_subscription_digest {
     my $title = $self -> {"template"} -> replace_langvar(scalar(@{$articles}) != 1  ? "SUBS_DIGEST_TITLES" : "SUBS_DIGEST_TITLE",
                                                          {"***new***" => scalar(@{$articles}) || $self -> {"template"} -> replace_langvar("SUBS_DIGEST_NONE") });
 
-    my $recipient = $subs -> {"email"} || $subs -> {"user_id"};
+    my $recipient = $subscription -> {"email"} || $subscription -> {"user_id"};
 
     # FIXME: This will not work unless message support HTML!
     my $status = $self -> {"messages"} -> queue_message(subject => $title,
