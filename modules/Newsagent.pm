@@ -27,7 +27,6 @@ use CGI::Util qw(escape);
 use Devel::StackTrace;
 use DateTime::TimeZone;
 use HTML::Entities;
-use HTML::WikiConverter;
 use Time::Local;
 use Lingua::EN::Sentence qw(get_sentences);
 use XML::Simple;
@@ -46,20 +45,7 @@ use Data::Dumper;
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    my $self     = $class -> SUPER::new(entitymap => { '&ndash;'  => '-',
-                                                       '&mdash;'  => '-',
-                                                       '&rsquo;'  => "'",
-                                                       '&lsquo;'  => "'",
-                                                       '&ldquo;'  => '"',
-                                                       '&rdquo;'  => '"',
-                                                       '&hellip;' => '...',
-                                                       '&gt;'     => '>',
-                                                       '&lt;'     => '<',
-                                                       '&amp;'    => '&',
-                                                       '&nbsp;'   => ' ',
-                                                       '&#x200B;' => '',
-                                        },
-                                        @_)
+    my $self     = $class -> SUPER::new(@_)
         or return undef;
 
     return $self;
@@ -484,33 +470,9 @@ sub make_markdown_body {
     my $html   = shift;
     my $images = shift || [];
 
-    # Handle html entities that are going to break...
-    foreach my $entity (keys(%{$self -> {"entitymap"}})) {
-        $html =~ s/$entity/$self->{entitymap}->{$entity}/g;
-    }
-
-    my $converter = new HTML::WikiConverter(dialect => 'Markdown',
-                                            link_style => 'inline',
-                                            image_tag_fallback => 0,
-                                            encoding => 'utf8');
-    my $body = $converter -> html2wiki($html);
-
-    # Clean up html the converter misses consistently
-    $body =~ s|<br\s*/>|\n|g;
-    $body =~ s|&gt;|>|g;
-
-    my $imglist = "";
-    for(my $i = 0; $i < 3; ++$i) {
-        next unless($images -> [$i] -> {"location"});
-
-        $imglist .= $self -> {"template"} -> load_template("Notification/Method/Email/md_image.tem", {"***url***" => $images -> [$i] -> {"location"}});
-    }
-
-    my $imageblock = $self -> {"template"} -> load_template("Notification/Method/Email/md_images.tem", {"***images***" => $imglist})
-        if($imglist);
-
-    return $self -> {"template"} -> load_template("Notification/Method/Email/markdown.tem", {"***text***" => $body,
-                                                                                             "***images***" => $imageblock});
+    return $self -> {"template"} -> html_to_markdown($html, $images, {"image"    => "Notification/Method/Email/md_image.tem",
+                                                                      "images"   => "Notification/Method/Email/md_images.tem",
+                                                                      "markdown" => "Notification/Method/Email/markdown.tem" });
 }
 
 
