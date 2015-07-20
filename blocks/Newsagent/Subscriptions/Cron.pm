@@ -97,7 +97,7 @@ sub _build_update {
     }
 
     return $self -> {"template"} -> load_template("subscriptions/email_update.tem", {"***body***"     => $article -> {"fulltext"},
-                                                                                     "***feeds***"    => join(", ", @feeds),
+                                                                                     "***feeds***"    => join("; ", @feeds),
                                                                                      "***title***"    => $article -> {"title"} || $pubdate,
                                                                                      "***date***"     => $pubdate,
                                                                                      "***summary***"  => $article -> {"summary"},
@@ -131,7 +131,8 @@ sub _send_subscription_digest {
                                                                                                                                       "***title***"   => $title,
                                                                                                                                       "***updates***" => $updates }),
                                                         recipients       => [ $recipient ],
-                                                        send_immediately => 1);
+                                                        send_immediately => 1,
+                                                        format           => 'html');
 
     return $status ? "<p>Sent digest message containing ".scalar(@{$articles})." update(s)s to $recipient</p>"
                    : "<p>Send to $recipient failed: ".$self -> {"messages"} -> errstr()."</p>";
@@ -149,7 +150,7 @@ sub _run_cronjob {
     my $self = shift;
     my $now  = time();
 
-    my $after = $now - $self -> {"digest_schedule"} * 10;
+    my $after = $now - $self -> {"digest_schedule"};
 
     # Get a list of all subscriptions that need to be sent digests
     my $subscriptions = $self -> {"subscription"} -> get_pending_subscriptions($after)
@@ -171,6 +172,9 @@ sub _run_cronjob {
 
             my $update = $self -> _send_subscription_digest($subscription, $articles)
                 or return $status.$self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $self -> errstr()});
+
+            $self -> {"subscription"} -> mark_run($subscription -> {"id"})
+                or return $self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $self -> {"subscription"} -> errstr()});
 
             $status .= $update;
         }
