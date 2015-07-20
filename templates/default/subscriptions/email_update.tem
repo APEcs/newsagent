@@ -2,7 +2,7 @@
     <div style="font-weight: bold; font-size: 20px; line-height: 22px; vertical-align: center">***title***</div>
 </div>
 <div class="newsagent-full">
-    <div style="color: #7496AF; font-size: 11px; padding: 10px 0px">Published ***date*** in feeds ***feeds***</div>
+    <div style="color: #7496AF; font-size: 11px; padding: 10px 0px">Published ***date*** in feeds: ***feeds***</div>
     ***img2***
     <div style="padding: 0px 4px 5px 4px" >***body***</div>
     <div style="border-top: 1px solid #aaa; font-size: 14px; line-height: 16px; vertical-align: middle; clear: both;"><img src="https://gravatar.com/avatar/***gravhash***?s=16&amp;d=mm&amp;r=g" alt="gravatar" class="newsagent-avatar" width="16" height="16" /> ***name***</div>
