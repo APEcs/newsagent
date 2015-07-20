@@ -339,12 +339,6 @@ sub get_pending_subscriptions {
 
     $self -> clear_error();
 
-    print STDERR "Query: SELECT `id`
-                         FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
-                         WHERE `active` = 1
-                         AND (`lastrun` IS NULL
-                               OR `lastrun` < ?";
-
     my $pendh = $self -> {"dbh"} -> prepare("SELECT `id`
                                              FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
                                              WHERE `active` = 1
