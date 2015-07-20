@@ -292,6 +292,29 @@ sub delete_subscription {
 }
 
 
+## @method $ mark_run($subid)
+# Mark the lastrun time on the specified subscription. This updates the
+# lastrun time, so that the subscription cron job can keep track of which
+# subscriptions need to be sent.
+#
+# @param subid The Id of the subscription to update the lastrun time for.
+# @return true on success, undef on error.
+sub mark_run {
+    my $self  = shift;
+    my $subid = shift;
+
+    $self -> clear_error();
+
+    my $touch = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
+                                             SET `lastrun` = UNIX_TIMESTAMP()
+                                             WHERE `id` = ?");
+    $touch -> execute($subid)
+        or return $self -> self_error("Unable to update subscription $subid: ".$self -> {"dbh"} -> errstr());
+
+    return 1;
+}
+
+
 # ============================================================================
 #  Lookup related
 
