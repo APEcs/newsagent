@@ -27,6 +27,8 @@ use v5.12;
 use Webperl::Utils qw(path_join trimspace);
 use Digest::MD5 qw(md5_hex);
 use Data::Dumper;
+use Newsagent::System::Schedule;
+use Newsagent::System::Article;
 
 # ============================================================================
 #  Constructor
