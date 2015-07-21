@@ -31,7 +31,7 @@
                 </table>
                 <ul class="feedsel">
                     <li><span class="feedlabel">{L_SUBS_MANAGE_FEEDS}</span></li>
-                    <li class="padright">
+                    <li class="padright" style="width: 20em;">
                         <div id="feeds" class="chromelike">
 ***feedopts***
                         </div>
