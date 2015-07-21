@@ -131,8 +131,12 @@ sub _send_subscription_digest {
         $updates .= $self -> _build_update($article);
     }
 
+    my $date = $self -> {"template"} -> format_time(time(), "%A, %d%o %b, %Y");
+
     my $title = $self -> {"template"} -> replace_langvar(scalar(@{$articles}) != 1  ? "SUBS_DIGEST_TITLES" : "SUBS_DIGEST_TITLE",
-                                                         {"***new***" => scalar(@{$articles}) || $self -> {"template"} -> replace_langvar("SUBS_DIGEST_NONE") });
+                                                         {"***new***"  => scalar(@{$articles}) || $self -> {"template"} -> replace_langvar("SUBS_DIGEST_NONE"),
+                                                          "***date***" => $date
+                                                         });
 
     my $recipient = $subscription -> {"email"} || $subscription -> {"user_id"};
 
@@ -178,7 +182,8 @@ sub _run_cronjob {
             # for get_feed_articles() to return a ref to an empty array, but not undef!
             my $articles = $self -> {"article"} -> get_feed_articles('feedid' => $subscription -> {"feeds"},
                                                                      'maxage' => $subscription -> {"lastrun"} || $after,
-                                                                     'fulltext_mode' => 1)
+                                                                     'fulltext_mode' => 1,
+                                                                     'order' => 'asc.nosticky')
                 or return $status.$self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $self -> {"article"} -> errstr()});
 
             my $update = $self -> _send_subscription_digest($subscription, $articles)

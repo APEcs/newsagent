@@ -279,10 +279,21 @@ sub get_feed_articles {
         }
     }
 
+    my $ordering = "";
+    given($settings -> {"order"}) {
+        when("asc.nosticky" ) { $ordering = "`article`.`release_time` ASC"; }
+        when("asc.sticky")    { $ordering = "`article`.`is_sticky` ASC, `article`.`release_time` ASC"; }
+        when("desc.nosticky") { $ordering = "`article`.`release_time` DESC"; }
+        when("desc.sticky")   { $ordering = "`article`.`is_sticky` DESC, `article`.`release_time` DESC"; }
+        default {
+            $ordering = "`article`.`is_sticky` DESC, `article`.`release_time` DESC";
+        }
+    }
+
     my $sql = "SELECT DISTINCT $fields
                FROM $from
                WHERE $where
-               ORDER BY `article`.`is_sticky` DESC, `article`.`release_time` DESC
+               ORDER BY $ordering
                LIMIT ".$settings -> {"offset"}.", ".$settings -> {"count"};
 
     # Now put it all together and fire it at the database

@@ -80,6 +80,6 @@ SUBS_CRON_TITLE            = Subscription processing
 SUBS_CRON_STATUS           = Subscription processing status:
 SUBS_CRON_NOSUBS           = No subscriptions need sending.
 
-SUBS_DIGEST_TITLE          = [Newsagent] ***new*** new article.
-SUBS_DIGEST_TITLES         = [Newsagent] ***new*** new articles.
+SUBS_DIGEST_TITLE          = [Newsagent] Articles for ***date***: ***new*** new article.
+SUBS_DIGEST_TITLES         = [Newsagent] Articles for ***date***: ***new*** new articles.
 SUBS_DIGEST_NONE           = No
