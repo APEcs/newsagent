@@ -185,7 +185,8 @@ sub _run_cronjob {
             my $articles = $self -> {"article"} -> get_feed_articles('feedids' => $subscription -> {"feeds"},
                                                                      'maxage'  => $subscription -> {"lastrun"} || $after,
                                                                      'fulltext_mode' => 1,
-                                                                     'order' => 'asc.nosticky')
+                                                                     'order' => 'asc.nosticky',
+                                                                     'count' => 999)
                 or return $status.$self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $self -> {"article"} -> errstr()});
 
             my $update = $self -> _send_subscription_digest($subscription, $articles)

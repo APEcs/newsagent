@@ -252,7 +252,8 @@ sub get_feed_articles {
         } elsif($settings -> {"feedids"} && scalar(@{$settings -> {"feedids"}})) {
             $from  .= ", `".$self -> {"settings"} -> {"database"} -> {"articlefeeds"}."` AS `artfeeds`";
 
-            $where .= " AND `artfeeds`.`feed_id` IN (?".(",?" x (scalar(@{$settings -> {"feedids"}}) - 1)).")";
+            $where .= " AND `artfeeds`.`feed_id` IN (?".(",?" x (scalar(@{$settings -> {"feedids"}}) - 1)).")
+                        AND `artfeeds`.`article_id` = `article`.`id`";
             push(@params, @{$settings -> {"feedids"}});
         }
 
