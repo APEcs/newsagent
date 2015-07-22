@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 
 use v5.12;
+use experimental qw(smartmatch);
 use Proc::Daemon;
 use FindBin;
 use List::Util qw(min);
