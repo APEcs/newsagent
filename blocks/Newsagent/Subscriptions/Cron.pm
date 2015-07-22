@@ -182,8 +182,8 @@ sub _run_cronjob {
             # Feeds are present, so pull in the list of articles published since either the last run
             # for this subscription, or the 'after' date, as appropriate. Note that it's fine
             # for get_feed_articles() to return a ref to an empty array, but not undef!
-            my $articles = $self -> {"article"} -> get_feed_articles('feedid' => $subscription -> {"feeds"},
-                                                                     'maxage' => $subscription -> {"lastrun"} || $after,
+            my $articles = $self -> {"article"} -> get_feed_articles('feedids' => $subscription -> {"feeds"},
+                                                                     'maxage'  => $subscription -> {"lastrun"} || $after,
                                                                      'fulltext_mode' => 1,
                                                                      'order' => 'asc.nosticky')
                 or return $status.$self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $self -> {"article"} -> errstr()});
