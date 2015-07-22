@@ -39,10 +39,12 @@
 window.addEvent('domready', function() {
     var multiselmode = new MultiSelect('#filter-mode', { maxMonitorText: 0,
                                                               emptyText: '{L_ALIST_MODESEL}',
+                                                                   form: 'mode-control',
                                                             onListClose: function() { $('mode-control').submit(); }
                                                        });
     var multiselfeed = new MultiSelect('#filter-feed', { maxMonitorText: 0,
                                                               emptyText: '{L_ALIST_FEEDSEL}',
+                                                                   form: 'feed-control',
                                                             onListClose: function() { $('feed-control').submit(); }
                                                        });
 });
