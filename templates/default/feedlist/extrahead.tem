@@ -4,3 +4,5 @@
 
     <script src="{V_[jspath]}MultiSelect/Source/MultiSelect.js" type="text/javascript"></script>
     <link href="{V_[jspath]}MultiSelect/css/MultiSelect.css" rel="stylesheet" />
+
+    <script src="{V_[jspath]}ZeroClipboard/ZeroClipboard.js" type="text/javascript"></script>

@@ -38,3 +38,5 @@ FLIST_SUB_MANBTN  = Manage
 
 FLIST_SUB_ERR_NOFEEDS = No feeds selected. You must select one or more feeds to subscribe to.
 FLIST_SUB_ERR_NOEMAIL = No email address provided. Users who have not logged in must provide an email address to send digest emails to.
+
+FLIST_CLIPBOARD = Copy to clipboard

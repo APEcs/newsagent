@@ -54,7 +54,7 @@
                 </dl>
                 <dl class="input">
                     <dt><label for="count">{L_FLIST_RSSURL}</label></dt>
-                    <dd><input type="text" class="fillwide rss" id="urlbox" name="urlbox" /></dd>
+                    <dd><input type="text" class="fillwide rssbox" id="urlbox" name="urlbox" /><input src="{V_[templatepath]}images/clipboard.png" name="clip" id="rssclip" type="image" title="{L_FLIST_CLIPBOARD}"/></dd>
                 </dl>
             </div>
         </div>
@@ -70,5 +70,11 @@ window.addEvent('domready', function() {
                                                             emptyText: '{L_FLIST_LEVSEL}',
                                                           onListClose: function() { build_feedurl(); }
                                                        });
+    var clip = new ZeroClipboard($('rssclip'));
+    clip.on( 'ready', function(event) {
+        clip.on( 'copy', function(event) {
+            event.clipboardData.setData('text/plain', $('urlbox').get('value'));
+        } );
+    });
 });
 </script>
