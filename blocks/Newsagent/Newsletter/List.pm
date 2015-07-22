@@ -28,8 +28,19 @@ use v5.12;
 use Data::Dumper;
 
 
+# ============================================================================
+#  Readiness handling.
+
+## @method private $ _toggle_ready($newsletter, $userid, $mindate, $maxdate)
+# Toggle the readiness of the specified user for a given newsletter issue.
+#
+# @param newsletter A reference to a hash containing the newsletter issue.
+# @param userid     The ID of the user toggling their readiness
+# @param mindate    The minimum date of the newsletter issue.
+# @param maxdate    The maximum date of the newsletter issue.
+# @return true on success, undef on error.
 sub _toggle_ready {
-    my $self = shift;
+    my $self       = shift;
     my $newsletter = shift;
     my $userid     = shift;
     my $mindate    = shift;
@@ -46,7 +57,7 @@ sub _toggle_ready {
     $self -> {"schedule"} -> toggle_ready($newsletter -> {"id"}, $userid, $mindate, $readytime)
         or return $self -> api_errorhash("api_error", $self -> {"schedule"} -> errstr());
 
-    return undef;
+    return 1;
 }
 
 
@@ -363,6 +374,12 @@ sub _build_publish_response {
 }
 
 
+
+## @method $ _build_contributor_response()
+# Generate a string containing the response to a contributor list update request.
+#
+# @return A string containing the HTML for the contributor list on success,
+#         a reference to an error hash on failure.
 sub _build_contributor_response {
     my $self = shift;
 
@@ -370,6 +387,13 @@ sub _build_contributor_response {
 }
 
 
+## @method $ _build_toggleready_response()
+# Generate a string containing the response to a contributor status update request.
+#
+# @param skiptoggle If true, the user's readiness status is not toggled, otherwise
+#                   the user's readiness status will be changed.
+# @return A string containing the HTML for the contributor list on success,
+#         a reference to an error hash on failure.
 sub _build_toggleready_response {
     my $self       = shift;
     my $skiptoggle = shift;
@@ -409,8 +433,8 @@ sub _build_toggleready_response {
 
     # allow toggle to be skipped
     if(!$skiptoggle) {
-        my $res = $self -> _toggle_ready($newsletter, $userid, $mindate, $maxdate);
-        return $res if($res);
+        $self -> _toggle_ready($newsletter, $userid, $mindate, $maxdate)
+            or return $self -> api_errorhash("api_error", $self -> errstr());
     }
 
     my $contributors = $self -> {"schedule"} -> get_newsletter_contributors($newsletter -> {"id"}, $mindate, $maxdate);
