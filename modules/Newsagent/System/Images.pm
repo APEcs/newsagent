@@ -30,6 +30,8 @@ use File::Copy;
 use File::Type;
 use Webperl::Utils qw(path_join trimspace);
 
+# ============================================================================
+#  Constructor
 
 ## @cmethod $ new(%args)
 # Create a new Images object to manage image storage and information.
@@ -62,6 +64,9 @@ sub new {
     return $self;
 }
 
+
+# ============================================================================
+#  Interface
 
 ## @method $ get_file_images($userid, $sortfield, $offset, $count)
 # Obtain a list of all images currently stored in the system. This generates
@@ -370,6 +375,9 @@ sub add_image_relation {
     return $newid;
 }
 
+
+# ============================================================================
+#  Internals
 
 ## @method private $ _build_destdir($id)
 # Given a file id, determine which directory the corresponding file should be stored
