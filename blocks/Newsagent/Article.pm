@@ -174,6 +174,7 @@ sub new {
             cellpadding => 1,
             style       => 1,
             class       => 1,
+            border      => 1,
             '*'         => 0,
         },
         td => {
