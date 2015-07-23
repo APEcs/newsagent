@@ -168,7 +168,7 @@ sub get_image_info {
 
 
 ## @method $ get_image_url($image, $mode, $defurl)
-# Given an image has or ID, generate the URL the image may be found out
+# Given an image hash or ID, generate the URL the image may be found at
 # based on the image type and mode.
 #
 # @param image  A reference to an image hash, or the Id of the image.
