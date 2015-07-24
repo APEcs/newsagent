@@ -18,3 +18,4 @@ templates/default/js/ZeroClipboard
 templates/default/js_*
 templates/default/css_*
 modules/Net
+uploads
