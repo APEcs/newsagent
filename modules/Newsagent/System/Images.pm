@@ -142,7 +142,8 @@ sub get_file_images {
 #
 # @param id    The ID of the image to fetch the information for.
 # @param order Sort position indicator for ordering.
-# @return A reference to the image data on success, undef on error.
+# @return A reference to the image data on success, a reference to an
+#         empty hash if the image does not exist, undef on error.
 sub get_image_info {
     my $self  = shift;
     my $id    = shift;
@@ -157,18 +158,20 @@ sub get_image_info {
         or return $self -> self_error("Unable to execute image lookup: ".$self -> {"dbh"} -> errstr);
 
     my $data = $imgh -> fetchrow_hashref();
-    foreach my $size (keys(%{$self -> {"image_sizes"}})) {
-        if($data -> {"type"} eq "file") {
-            $data -> {"path"} -> {$size} = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"}, $size, $data -> {"location"});
-        } else {
-            $data -> {"path"} -> {$size} = $data -> {"location"};
+    if($data) {
+        foreach my $size (keys(%{$self -> {"image_sizes"}})) {
+            if($data -> {"type"} eq "file") {
+                $data -> {"path"} -> {$size} = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"}, $size, $data -> {"location"});
+            } else {
+                $data -> {"path"} -> {$size} = $data -> {"location"};
+            }
         }
+
+        # copy in the order
+        $data -> {"order"} = $order;
     }
 
-    # copy in the order
-    $data -> {"order"} = $order;
-
-    return $data;
+    return $data || {};
 }
 
 
@@ -193,7 +196,7 @@ sub get_image_url {
             unless(ref($image) eq "HASH");
 
         # If image is still defined, we have a hash...
-        if($image) {
+        if($image && $image -> {"id"}) {
             given($image -> {"type"}) {
                 when("url")  { $url = $image -> {"location"}; }
                 when('file') { $url = $image -> {"path"} -> {$mode}; }

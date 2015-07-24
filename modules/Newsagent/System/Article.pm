@@ -27,6 +27,7 @@ use v5.12;
 use DateTime;
 use Webperl::Utils qw(path_join hash_or_hashref);
 use Newsagent::System::Images;
+use Newsagent::System::Files;
 use Data::Dumper;
 
 # ============================================================================
@@ -57,7 +58,12 @@ sub new {
     $self -> {"images"} = Newsagent::System::Images -> new(dbh      => $self -> {"dbh"},
                                                            settings => $self -> {"settings"},
                                                            logger   => $self -> {"logger"})
-        or return Webperl::SystemModule::set_error("Article initialisation failed: ".$Webperl::SystemModule::errstr);
+        or return Webperl::SystemModule::set_error("Images initialisation failed: ".$Webperl::SystemModule::errstr);
+
+    $self -> {"files"} = Newsagent::System::Files -> new(dbh      => $self -> {"dbh"},
+                                                         settings => $self -> {"settings"},
+                                                         logger   => $self -> {"logger"})
+        or return Webperl::SystemModule::set_error("Files initialisation failed: ".$Webperl::SystemModule::errstr);
 
     # Allowed sort fields
     $self -> {"allowed_fields"} = {"creator_id"   => "creator_id",
@@ -302,7 +308,7 @@ sub get_feed_articles {
     $query -> execute(@params)
         or return $self -> self_error("Unable to execute article query: ".$self -> {"dbh"} -> errstr);
 
-    # Fetch all the matching articles, and if there are any go and shove in the level list and images
+    # Fetch all the matching articles, and if there are any go and shove in the level list, images, files and other info
     my $articles = $query -> fetchall_arrayref({});
     if(scalar(@{$articles})) {
         my $levelh = $self -> {"dbh"} -> prepare("SELECT `level`.`level`
@@ -323,6 +329,11 @@ sub get_feed_articles {
                                                   WHERE `artimgs`.`article_id` = ?
                                                   ORDER BY `artimgs`.`order`");
 
+        my $fileh = $self -> {"dbh"} -> prepare("SELECT `artfiles`.`file_id`, `artfiles`.`order`
+                                                 FROM `".$self -> {"settings"} -> {"database"} -> {"articlefiles"}."` AS `artfiles`
+                                                 WHERE `artfiles`.`article_id` = ?
+                                                 ORDER BY `artfiles`.`order`");
+
         foreach my $article (@{$articles}) {
             $levelh -> execute($article -> {"id"})
                 or return $self -> self_error("Unable to execute article level query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
@@ -337,13 +348,27 @@ sub get_feed_articles {
             $article -> {"levels"} = $levelh -> fetchall_arrayref({});
             $article -> {"feeds"}  = $feedh -> fetchall_arrayref({});
 
+            # Pull in the image data
             $imageh -> execute($article -> {"id"})
                 or return $self -> self_error("Unable to execute article image query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
 
             $article -> {"images"} = [];
             # Place the images into the images array based using the order as the array position
             while(my $image = $imageh -> fetchrow_hashref()) {
-                $article -> {"images"} -> [$image -> {"order"}] = $self -> {"images"} -> get_image_info($image -> {"image_id"}, $image -> {"order"});
+                my $data = $self -> {"images"} -> get_image_info($image -> {"image_id"}, $image -> {"order"});
+
+                $article -> {"images"} -> [$image -> {"order"}] = $data
+                    if($data && $data -> {"id"});
+            }
+
+            # Pull in the file data
+            $fileh -> execute($article -> {"id"})
+                or return $self -> self_error("Unable to execute article file query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
+
+            $article -> {"files"} = [];
+            # Place the files into the files array based using the order as the array position
+            while(my $file = $fileh -> fetchrow_hashref()) {
+                $article -> {"files"} -> [$file -> {"order"}] = $self -> {"files"} -> get_file_info($file -> {"file_id"}, $file -> {"order"});
             }
 
             # Fetch the year info
@@ -603,6 +628,12 @@ sub get_article {
                                               FROM `".$self -> {"settings"} -> {"database"} -> {"articleimages"}."` AS `artimgs`
                                               WHERE `artimgs`.`article_id` = ?
                                               ORDER BY `artimgs`.`order`");
+
+    my $fileh = $self -> {"dbh"} -> prepare("SELECT `artfiles`.`file_id`, `artfiles`.`order`
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"articlefiles"}."` AS `artfiles`
+                                             WHERE `artfiles`.`article_id` = ?
+                                             ORDER BY `artfiles`.`order`");
+
     $articleh -> execute($articleid)
         or return $self -> self_error("Unable to execute article query: ".$self -> {"dbh"} -> errstr);
 
@@ -635,8 +666,22 @@ sub get_article {
         or return $self -> self_error("Unable to execute article image query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
 
     my $images = $imageh -> fetchall_arrayref({});
+    $article -> {"images"} = [];
     foreach my $image (@{$images}) {
-        $article -> {"images"} -> [$image -> {"order"}] = $self -> {"images"} -> get_image_info($image -> {"image_id"}, $image -> {"order"});
+        my $data = $self -> {"images"} -> get_image_info($image -> {"image_id"}, $image -> {"order"});
+
+        $article -> {"images"} -> [$image -> {"order"}] = $data
+            if($data && $data -> {"id"});
+    }
+
+    # finally, files
+    $fileh -> execute($article -> {"id"})
+        or return $self -> self_error("Unable to execute article file query for article '".$article -> {"id"}."': ".$self -> {"dbh"} -> errstr);
+
+    my $files = $fileh -> fetchall_arrayref({});
+    $article -> {"files"} = [];
+    foreach my $file (@{$files}) {
+        $article -> {"files"} -> [$file -> {"order"}] = $self -> {"files"} -> get_file_info($file -> {"file_id"}, $file -> {"order"});
     }
 
     return $article;
@@ -647,8 +692,7 @@ sub get_article {
 #  Storage and addition functions
 
 
-
-## @method $ add_article($article, $userid, $previd, $mode)
+## @method $ add_article($article, $userid, $previd, $mode, $newid)
 # Add an article to the system's database. This function adds an article to the system
 # using the contents of the specified hash to fill in the article fields in the db.
 #
@@ -722,6 +766,15 @@ sub add_article {
 
     $self -> {"images"} -> add_image_relation($newid, $article -> {"images"} -> {"b"} -> {"img"}, 1) or return undef
         if($article -> {"images"} -> {"b"} -> {"img"});
+
+    # Add file/image relations
+    if($article -> {"files"} && scalar(@{$article -> {"files"}})) {
+        my $order = 1;
+        foreach my $fileid (@{$article -> {"files"}}) {
+            $self -> {"files"} -> add_file_relation($newid, $fileid, $order++)
+                or return $self -> self_error($self -> {"files"} -> errstr());
+        }
+    }
 
     # Normal articles need feed and level relations
     if($mode == 0) {
@@ -920,6 +973,8 @@ sub renumber_article {
     $self -> _change_article_relation($articleid, $newid, 'articlefeeds')
         or return undef;
     $self -> _change_article_relation($articleid, $newid, 'articleimages')
+        or return undef;
+    $self -> _change_article_relation($articleid, $newid, 'articlefiles')
         or return undef;
     $self -> _change_article_relation($articleid, $newid, 'articlelevels')
         or return undef;

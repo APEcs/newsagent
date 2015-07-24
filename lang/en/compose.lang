@@ -136,3 +136,6 @@ COMPOSE_NEWSLETTER_INTRO  = Your article will appear in the following newsletter
 COMPOSE_SAVEDRAFT         = Your article will be saved as a draft message and will not be published in its current form. You can edit or clone the article through your article list when you are ready to edit it for release.
 COMPOSE_TIMED_NORMAL      = Your article has been set to be released at a specific date and time. If the date has already past, your article will appear in feeds as if it had been published at that time. The release time you have set is:
 COMPOSE_TIMED_NEWSLETTER  = Your article has been set to be published in a newsletter at or after a specific time. It will not be published in newsletters before that time, and it will appear in the next newsletter published after that time. The release time you have set is:
+
+COMPOSE_FILES  = File attachments
+COMPOSE_FORMAT = This field should only contain comma separated file IDs

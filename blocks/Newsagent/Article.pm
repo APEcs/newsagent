@@ -272,6 +272,36 @@ sub _validate_article_image {
 }
 
 
+## @method private $ _validate_article_files($args)
+# Validate the files field for an article. This checks the values set for
+# the files attached to the article.
+#
+# @param args  A reference to a hash to store validated data in.
+# @return empty string on succss, otherwise an error string.
+sub _validate_article_files {
+    my $self = shift;
+    my $args = shift;
+
+    my ($files, $error) = $self -> validate_string("files", {"required"   => 0,
+                                                             "nicename"   => $self -> {"template"} -> replace_langvar("COMPOSE_FILES"),
+                                                             "formattest" => '^\d+(,\d+)*$',
+                                                             "formatdesc" => $self -> {"template"} -> replace_langvar("COMPOSE_FORMAT")
+                                                   });
+    return $error if($error);
+
+    if($files) {
+        my @fileids = split(/,/, $files);
+
+        # check that the file IDs are valid...
+        foreach my $id (@fileids) {
+        }
+    }
+
+
+    return "";
+}
+
+
 ## @method private $ _validate_feeds_levels($args, $userid)
 # Validate the selected feeds and posting levels submitted by the user.
 #
@@ -582,6 +612,9 @@ sub _validate_article_fields {
     $errors .= $self -> _validate_article_image($args, "a");
     $errors .= $self -> _validate_article_image($args, "b");
 
+    # And files
+    $errors .= $self -> _validate_article_files($args);
+
     return $errors;
 }
 
@@ -717,7 +750,7 @@ sub _build_image_options {
     if($imgopt -> {"mode"} eq "img") {
         my $imgdata = $self -> {"article"} -> {"images"} -> get_image_info($imgopt -> {"img"});
         $button = '<img src="'.$imgdata -> {"path"} -> {$mode}.'" />'
-            if($imgdata);
+            if($imgdata && $imgdata -> {"id"});
     }
 
     return ($self -> {"template"} -> build_optionlist($self -> {"imgops"}, $imgopt -> {"mode"}), $button);
