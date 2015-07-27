@@ -1,5 +1,6 @@
-MEDIA_SELECT  = Select an image...
-MEDIA_UPLOAD  = ... or upload a new one
+MEDIA_SELECT   = Select an image...
+MEDIA_UPLOAD   = ... or upload a new one
+MEDIA_NOUPLOAD = You do not have permission to upload new images
 
 UPLOADER_DROPHERE = Drop an image file to upload here
 

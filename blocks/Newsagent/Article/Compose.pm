@@ -157,6 +157,9 @@ sub _generate_compose {
     # permission-based access to image button
     my $ckeconfig = $self -> check_permission('freeimg') ? "image_open.js" : "basic_open.js";
 
+    # Medialib height depends on whether the user can upload images.
+    my $mlibheight = $self -> check_permission("upload") ? "582px" : "450px";
+
     # And generate the page title and content.
     return ($self -> {"template"} -> replace_langvar("COMPOSE_FORM_TITLE"),
             $self -> {"template"} -> load_template("article/compose/compose.tem", {"***errorbox***"         => $error,
@@ -190,6 +193,7 @@ sub _generate_compose {
                                                                                    "***ckeconfig***"        => $ckeconfig,
                                                                                    "***loadcount***"        => $self -> {"settings"} -> {"config"} -> {"Media:fetch_count"},
                                                                                    "***initialcount***"     => $self -> {"settings"} -> {"config"} -> {"Media:initial_count"},
+                                                                                   "***mlibheight***"       => $mlibheight,
                                                    }));
 }
 

@@ -59,11 +59,13 @@ window.addEvent('domready', function() {
     if($('imagea_mediabtn'))
         new MediaLibrary('imagea_mediabtn', 'imagea_imgid', { mode: 'icon',
                                                               loadCount: ***loadcount***,
-                                                              initialCount: ***initialcount***});
+                                                              initialCount: ***initialcount***,
+                                                              height: "***mlibheight***" });
 
     if($('imageb_mediabtn'))
         new MediaLibrary('imageb_mediabtn', 'imageb_imgid', { loadCount: ***loadcount***,
-                                                              initialCount: ***initialcount***});
+                                                              initialCount: ***initialcount***,
+                                                              height: "***mlibheight***"});
 });
 </script>
 <div id="composeform">

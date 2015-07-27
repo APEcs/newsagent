@@ -235,8 +235,11 @@ sub _build_mediaopen_response {
                                                                 min      => 1,
                                                                 nicename => "Count"});
 
+    my $tem = $self -> check_permission("upload") ? "upload.tem" : "noupload.tem";
+
     return $self -> {"template"} -> load_template("medialibrary/content.tem",
-                                                  { "***initial***" => $self -> _build_media_selector($mode, undef, 'uploaded', 0, $count)
+                                                  { "***initial***" => $self -> _build_media_selector($mode, undef, 'uploaded', 0, $count),
+                                                    "***upload***"  => $self -> {"template"} -> load_template("medialibrary/$tem")
                                                   }
                                                  );
 }

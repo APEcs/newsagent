@@ -9,6 +9,7 @@ var MediaLibrary = new Class({
         loadingTxt: 'Loading, please wait...',
         mode: 'media', /* valid values: icon, media, thumb, large */
         width: '1000px',
+        height: "582px",
         loadCount: 12,
         initialCount: 24
     },
@@ -25,8 +26,8 @@ var MediaLibrary = new Class({
                                       content: '',
                                       zIndex: 8001,
                                       pad: 200,
-                                      width: "1000px",
-                                      height: "582px",
+                                      width: this.options.width,
+                                      height: this.options.height,
                                       buttons: [ { title: this.options.cancelTxt,
                                                    color: 'blue',
                                                    event: function() { this.popup.close(); this.loadingBody(); }.bind(this) }
@@ -65,35 +66,37 @@ var MediaLibrary = new Class({
                                               this.popup.messageBox.fade('out').get('tween').chain(function() {
                                                   this.popup.messageBox.set('html', respHTML);
 
-                                                  this.uploader = new Form.Uploader('ml-dropzone', 'ml-progress', 'ml-progressmsg',
-                                                                                    { url: api_request_path("webapi", "media.upload", basepath),
-                                                                                      args: {'mode': this.options.mode },
-                                                                                      onSuccess: function(respText, respXML) {
-                                                                                          var err = respXML.getElementsByTagName("error")[0];
-                                                                                          if(err) {
-                                                                                              $('errboxmsg').set('html', '<p class="error">'+err.getAttribute('info')+'</p>');
-                                                                                              errbox.open();
-                                                                                          } else {
-                                                                                              var resp = respXML.getElementsByTagName("result");
-                                                                                              if(resp) {
-                                                                                                  this.idstore.set('value', resp[0].getAttribute('imageid'));
-                                                                                                  this.button.set('html', '<img src="' + resp[0].getAttribute('path') + '" />');
-
-                                                                                                  this.popup.close();
-                                                                                                  this.loadingBody();
-                                                                                              } else {
-                                                                                                  $('errboxmsg').set('html', '<p class="error">No result found in response data.</p>');
+                                                  if($('ml-dropzone')) {
+                                                      this.uploader = new Form.Uploader('ml-dropzone', 'ml-progress', 'ml-progressmsg',
+                                                                                        { url: api_request_path("webapi", "media.upload", basepath),
+                                                                                          args: {'mode': this.options.mode },
+                                                                                          onSuccess: function(respText, respXML) {
+                                                                                              var err = respXML.getElementsByTagName("error")[0];
+                                                                                              if(err) {
+                                                                                                  $('errboxmsg').set('html', '<p class="error">'+err.getAttribute('info')+'</p>');
                                                                                                   errbox.open();
+                                                                                              } else {
+                                                                                                  var resp = respXML.getElementsByTagName("result");
+                                                                                                  if(resp) {
+                                                                                                      this.idstore.set('value', resp[0].getAttribute('imageid'));
+                                                                                                      this.button.set('html', '<img src="' + resp[0].getAttribute('path') + '" />');
+
+                                                                                                      this.popup.close();
+                                                                                                      this.loadingBody();
+                                                                                                  } else {
+                                                                                                      $('errboxmsg').set('html', '<p class="error">No result found in response data.</p>');
+                                                                                                      errbox.open();
+                                                                                                  }
                                                                                               }
-                                                                                          }
-                                                                                      }.bind(this),
-                                                                                      onFailure: function() { alert("Upload failed!"); },
-                                                                                      onDragenter: function() { $('ml-droparea').addClass('hover'); },
-			                                                                          onDragleave: function() { $('ml-droparea').removeClass('hover'); },
-			                                                                          onDrop: function() { $('ml-droparea').removeClass('hover'); },
-			                                                                          onRequest: function() { $('ml-droparea').addClass('disabled'); },
-			                                                                          onComplete: function() { $('ml-droparea').removeClass('disabled'); }
-                                                                                    });
+                                                                                          }.bind(this),
+                                                                                          onFailure: function() { alert("Upload failed!"); },
+                                                                                          onDragenter: function() { $('ml-droparea').addClass('hover'); },
+			                                                                              onDragleave: function() { $('ml-droparea').removeClass('hover'); },
+			                                                                              onDrop: function() { $('ml-droparea').removeClass('hover'); },
+			                                                                              onRequest: function() { $('ml-droparea').addClass('disabled'); },
+			                                                                              onComplete: function() { $('ml-droparea').removeClass('disabled'); }
+                                                                                        });
+                                                  }
 
                                                   this.attachClickListeners($$('div.selector-image'));
                                                   this.attachScrollSpy('selector');

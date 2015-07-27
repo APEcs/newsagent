@@ -1,0 +1,12 @@
+    <li><h3>{L_MEDIA_UPLOAD}</h3>
+        <div id="uploader">
+            <div id="ml-droparea">
+                <div id="ml-dropzone">{L_UPLOADER_DROPHERE}</div>
+            </div>
+            <div id="ml-progressbox">
+                <div id="ml-progress"></div>
+                <div id="ml-progressmsg"></div>
+            </div>
+        </div>
+        <div class="copynotice">{L_MEDIA_COPYRIGHT}</div>
+    </li>
