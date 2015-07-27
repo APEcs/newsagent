@@ -29,6 +29,7 @@ use File::Path qw(make_path);
 use File::Copy;
 use File::Type;
 use Webperl::Utils qw(path_join trimspace);
+use File::Scan::ClamAV;
 
 
 # ============================================================================
@@ -147,6 +148,9 @@ sub store_file {
     my @types = sort(values(%{$self -> {"allowed_types"}}));
     return $self -> self_error("$filename is not a supported file format. Permitted formats are: ".join(", ", @types))
         unless($type && $self -> {"allowed_types"} -> {$type});
+
+    $self -> _virus_check($srcfile)
+        or return undef;
 
     # Now, calculate the md5 of the file so that duplicate checks can be performed
     open(IMG, $srcfile)
@@ -383,6 +387,34 @@ sub _update_location {
     my $result = $updateh -> execute($location, $id);
     return $self -> self_error("Unable to update file location: ".$self -> {"dbh"} -> errstr) if(!$result);
     return $self -> self_error("File location update failed: no rows updated.") if($result eq "0E0");
+
+    return 1;
+}
+
+
+## @method private $ _virus_check($srcfile)
+# Run ClamAV on the specified file. This determines whether the file contains
+# any viruses recorgnised by ClamAV.
+#
+# @param srcfile The name of the file to check with ClamAV.
+# @return true if the file is clean, false if it contains a virus or an
+#         error occurred during checking.
+sub _virus_check {
+    my $self    = shift;
+    my $srcfile = shift;
+
+    $self -> clear_error();
+
+    my $clamav = File::Scan::ClamAV -> new();
+    return $self -> self_error("File upload failed: ClamAV is not running")
+        unless($clamav -> ping());
+
+    my ($file, $virus) = $clamav -> scan($srcfile);
+    return $self -> self_error("File upload failed: virus '$virus' found in uploaded file.")
+        if($virus);
+
+    return $self -> self_error("File upload failed: ".$clamav -> errstr())
+        if(!$file && $clamav -> errstr());
 
     return 1;
 }
