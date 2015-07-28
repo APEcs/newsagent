@@ -27,7 +27,7 @@ use v5.12;
 use Digest;
 use File::Path qw(make_path);
 use File::Copy;
-use File::Type;
+use File::LibMagic;
 use Webperl::Utils qw(path_join trimspace);
 
 # ============================================================================
@@ -230,12 +230,12 @@ sub store_image {
     $self -> clear_error();
 
     # Determine whether the file is allowed
-    my $filetype = File::Type -> new();
-    my $type = $filetype -> mime_type($srcfile);
+    my $filetype = File::LibMagic -> new();
+    my $info = $filetype -> info_from_filename($srcfile);
 
     my @types = sort(values(%{$self -> {"allowed_types"}}));
     return $self -> self_error("$filename is not a supported image format. Permitted formats are: ".join(", ", @types))
-        unless($type && $self -> {"allowed_types"} -> {$type});
+        unless($type && $self -> {"allowed_types"} -> {$info -> {"mime_type"}});
 
     # Now, calculate the md5 of the file so that duplicate checks can be performed
     open(IMG, $srcfile)

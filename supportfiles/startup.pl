@@ -31,6 +31,7 @@ use Newsagent::Notification::Method;
 use Newsagent::System;
 use Newsagent::System::Article;
 use Newsagent::System::Feed;
+use Newsagent::System::Files;
 use Newsagent::System::Images;
 use Newsagent::System::Matrix;
 use Newsagent::System::Megaphone;
