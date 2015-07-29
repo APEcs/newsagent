@@ -141,7 +141,14 @@ window.addEvent('domready', function() {
                     </dl>
                 </div>
                 <div class="content">
-Not here yet.
+                    <dl class="input iblock">
+                        <dt><label>{L_COMPOSE_ATTACHED}</label></dt>
+                        <dd><ul id="filelist">
+***files***
+                            </ul>
+                        </dd>
+                    </dl>
+***filedrag***
                 </div>
             </div>
         </div>

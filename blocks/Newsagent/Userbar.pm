@@ -38,7 +38,8 @@ sub new {
                                                              settings => $self -> {"settings"},
                                                              logger   => $self -> {"logger"},
                                                              roles    => $self -> {"system"} -> {"roles"},
-                                                             metadata => $self -> {"system"} -> {"metadata"})
+                                                             metadata => $self -> {"system"} -> {"metadata"},
+                                                             magic    => $self -> {"system"} -> {"magic"})
         or return Webperl::SystemModule::set_error("Article initialisation failed: ".$SystemModule::errstr);
 
     $self -> {"tellus"} = Newsagent::System::TellUs -> new(dbh      => $self -> {"dbh"},

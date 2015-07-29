@@ -87,7 +87,7 @@ sub _validate_image_file {
     return (undef, undef, $self -> {"article"} -> {"images"} -> errstr())
         unless($imgdata  && $imgdata -> {"id"});
 
-    # All that _validate_article_image() needs is the new ID
+    # Save successful, return the image information
     return ($imgdata -> {"id"}, $imgdata -> {"path"} -> {$mode}, undef);
 }
 
@@ -95,29 +95,34 @@ sub _validate_image_file {
 ## @method @ _validate_article_file()
 # Determine whether the file uploaded is valid.
 #
-# @return Three values: the file id and path on success, undef on error, and an error message
+# @return Fivee values: the file id, name, size, and URL on success, undef on error, and an error message
 #         if needed.
 sub _validate_article_file {
     my $self = shift;
 
     my $filename = $self -> {"cgi"} -> param("upload");
-    return (undef, undef, $self -> {"template"} -> replace_langvar("FILE_ERR_NOFILEDATA"))
+    return (undef, undef, undef, undef, $self -> {"template"} -> replace_langvar("FILE_ERR_NOFILEDATA"))
         if(!$filename);
 
     my $tmpfile = $self -> {"cgi"} -> tmpFileName($filename)
-        or return (undef, undef, $self -> {"template"} -> replace_langvar("FILE_ERR_NOTMP"));
+        or return (undef, undef, undef, undef, $self -> {"template"} -> replace_langvar("FILE_ERR_NOTMP"));
 
     my ($name, $path, $extension) = fileparse($filename, '\..*');
     $filename = $name.$extension;
     $filename =~ tr/ /_/;
     $filename =~ s/[^a-zA-Z0-9_.-]//g;
 
-    my $filedata = $self -> {"article"} -> {"files"} -> store_file($tmpfile, $filename, $self -> {"session"} -> get_session_userid())
-        or return (undef, undef, $self -> {"article"} -> {"files"} -> errstr());
+    # As with Newsagent::System::Images::store_file(), this will handle moving the file into
+    # the upload tree, and inserted the data into the database - or it'll return undef and
+    # set an error message.
+    my $filedata = $self -> {"article"} -> {"files"} -> store_file($tmpfile, $filename, $self -> {"session"} -> get_session_userid());
+    return (undef, undef, undef, undef, $self -> {"article"} -> {"files"} -> errstr())
+        unless($filedata  && $filedata -> {"id"});
 
-    # All that _validate_article_image() needs is the new ID
-    return ($filedata -> {"id"}, $filedata -> {"path"}, undef);
+    # Save successful, return the file information
+    return ($filedata -> {"id"}, $filedata -> {"name"}, $filedata -> {"size"}, $self -> {"article"} -> {"files"} -> get_file_url($filedata -> {"id"}), undef);
 }
+
 
 # ============================================================================
 #  API functions
@@ -348,16 +353,16 @@ sub _build_fileupload_response {
     # User has permission, validate the submission and store it
     $self -> log("debug:filelibrary:upload", "Permission granted, attempting store of uploaded image");
 
-    my ($id, $path, $error) = $self -> _validate_article_file();
+    my ($id, $name, $size, $url, $error) = $self -> _validate_article_file();
     return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $error}))
         if($error);
 
     $self -> log("debug:filelibrary:upload", "Store complete, file saved with id $id");
-    return { "result" => { "status" => "saved",
-                           "fileid" => $id,
-                           "path"   => $path
-                         }
-           };
+    return $self -> {"template"} -> load_template("fileupload/file_row.tem", {"***id***"       => $id,
+                                                                              "***url***"      => $url,
+                                                                              "***filename***" => $name,
+                                                                              "***size***"     => $self -> {"template"} -> bytes_to_human($size)
+                                                  });
 }
 
 
@@ -528,7 +533,7 @@ sub page_display {
             when("media.stream") { return $self -> api_html_response($self -> _build_mediastream_response()); }
 
             # API operations related to file handling
-            when("file.upload")  { return $self -> api_response($self -> _build_fileupload_response()); }
+            when("file.upload")  { return $self -> api_html_response($self -> _build_fileupload_response()); }
 
             default {
                 return $self -> api_response($self -> api_errorhash('bad_op',

@@ -27,8 +27,9 @@ use v5.12;
 use Digest;
 use File::Path qw(make_path);
 use File::Copy;
-use File::LibMagic;
+use File::Slurp;
 use Webperl::Utils qw(path_join trimspace);
+use Data::Dumper;
 
 # ============================================================================
 #  Constructor
@@ -229,24 +230,21 @@ sub store_image {
 
     $self -> clear_error();
 
+    # Slurp the file into memory. This is possibly a Bad Idea, but File::LibMagic
+    # can not handle reading from $srcfile directly.
+    my $data = read_file($srcfile, binmode => ':raw');
+
     # Determine whether the file is allowed
-    my $filetype = File::LibMagic -> new();
-    my $info = $filetype -> info_from_filename($srcfile);
+    my $info = $self -> {"magic"} -> info_from_string($data);
 
     my @types = sort(values(%{$self -> {"allowed_types"}}));
-    return $self -> self_error("$filename is not a supported image format. Permitted formats are: ".join(", ", @types))
-        unless($type && $self -> {"allowed_types"} -> {$info -> {"mime_type"}});
+    return $self -> self_error("$filename is not a supported image format (".$info -> {"mime_type"}."). Permitted formats are: ".join(", ", @types))
+        unless($info && $self -> {"allowed_types"} -> {$info -> {"mime_type"}});
 
     # Now, calculate the md5 of the file so that duplicate checks can be performed
-    open(IMG, $srcfile)
-        or return $self -> self_error("Unable to open uploaded file '$srcfile': $!");
-    binmode(IMG); # probably redundant, but hey
-
     eval {
         $digest = Digest -> new("MD5");
-        $digest -> addfile(*IMG);
-
-        close(IMG);
+        $digest -> add($data);
     };
     return $self -> self_error("An error occurred while processing '$filename': $@")
         if($@);

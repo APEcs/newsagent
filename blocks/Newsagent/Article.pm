@@ -65,7 +65,8 @@ sub new {
                                                              settings => $self -> {"settings"},
                                                              logger   => $self -> {"logger"},
                                                              roles    => $self -> {"system"} -> {"roles"},
-                                                             metadata => $self -> {"system"} -> {"metadata"})
+                                                             metadata => $self -> {"system"} -> {"metadata"},
+                                                             magic    => $self -> {"system"} -> {"magic"})
         or return Webperl::SystemModule::set_error("Article initialisation failed: ".$Webperl::SystemModule::errstr);
 
     $self -> {"queue"} = Newsagent::System::NotificationQueue -> new(dbh      => $self -> {"dbh"},
@@ -225,7 +226,7 @@ sub new {
 # ============================================================================
 #  Validation code
 
-## @method private $ _validate_article_image($args, $imgid)
+## @method protected $ _validate_article_image($args, $imgid)
 # Validate the image field for an article. This checks the values set for one
 # of the possible images attached to an article.
 #
@@ -272,7 +273,7 @@ sub _validate_article_image {
 }
 
 
-## @method private $ _validate_article_files($args)
+## @method protected $ _validate_article_files($args)
 # Validate the files field for an article. This checks the values set for
 # the files attached to the article.
 #
@@ -293,16 +294,22 @@ sub _validate_article_files {
         my @fileids = split(/,/, $files);
 
         # check that the file IDs are valid...
+        my $count = 1;
         foreach my $id (@fileids) {
+            my $file = $self -> {"article"} -> {"files"} -> get_file_info($id, $count);
+            return $self -> {"article"} -> {"files"} -> errstr() if(!$file); # Bail on errors
+            next if(!$file -> {"id"}); # Skip unknown files (Should this bail too? Possibly!)
+
+            push(@{$args -> {"files"}}, $file);
+            ++$count;
         }
     }
-
 
     return "";
 }
 
 
-## @method private $ _validate_feeds_levels($args, $userid)
+## @method protected $ _validate_feeds_levels($args, $userid)
 # Validate the selected feeds and posting levels submitted by the user.
 #
 # @param args   A reference to a hash to store validated data in. This will populate two
@@ -390,7 +397,7 @@ sub _validate_feeds_levels {
 }
 
 
-## @method private $ _validate_summary_text($args)
+## @method protected $ _validate_summary_text($args)
 # Determine whether the summary and article texts are valid.
 #
 # @param args A reference to a hash to store validated data in.
@@ -429,7 +436,7 @@ sub _validate_summary_text {
 }
 
 
-## @method private _validate_standard_release($args, $userid)
+## @method protected _validate_standard_release($args, $userid)
 # Check whether the values specified for the standard release options are
 # valid, and record them if they are.
 #
@@ -476,7 +483,7 @@ sub _validate_standard_release {
 }
 
 
-## @method private _validate_schedule_release($args, $userid)
+## @method protected _validate_schedule_release($args, $userid)
 # Check whether the values specified for the schedule release options are
 # valid, and record them if they are.
 #
@@ -538,7 +545,7 @@ sub _validate_schedule_release {
 }
 
 
-## @method private $ _validate_article_fields($args, $userid)
+## @method protected $ _validate_article_fields($args, $userid)
 # Validate the contents of the fields in the article form. This will validate the
 # fields, and perform any background file-wrangling operations necessary to deal
 # with the submitted images (if any).
@@ -619,7 +626,7 @@ sub _validate_article_fields {
 }
 
 
-## @method private $ _validate_article($articleid)
+## @method protected $ _validate_article($articleid)
 # Validate the article data submitted by the user, and potentially add
 # a new article to the system. Note that this will not return if the article
 # fields validate; it will redirect the user to the new article and exit.
@@ -730,7 +737,7 @@ sub _validate_article {
 # ============================================================================
 #  Form generators
 
-## @method private $ _build_image_options($imgopt, $mode)
+## @method protected $ _build_image_options($imgopt, $mode)
 # Generate a string containing the options to provide for image selection.
 #
 # @param imgopt The image data to work on.
@@ -757,7 +764,7 @@ sub _build_image_options {
 }
 
 
-## @method private $ _build_image_options($levels, $setlevels)
+## @method protected $ _build_image_options($levels, $setlevels)
 # Generate the level options available in the system.
 #
 # @param levels    A reference to a hash of available levels.
@@ -782,7 +789,7 @@ sub _build_level_options {
 }
 
 
-## @method private $ _build_feedlist($feeds, $selected)
+## @method protected $ _build_feedlist($feeds, $selected)
 # Generate a series of checkboxes for each feed specified in the provided array
 #
 # @param feeds    A reference to an array of feed data hashrefs
@@ -810,7 +817,7 @@ sub _build_feedlist {
 }
 
 
-## @method private $ _build_feed_levels($user_levels, $levels)
+## @method protected $ _build_feed_levels($user_levels, $levels)
 # Generate a block of javascript that can be used to control the levels available to
 # users for each feed they have access to.
 #
@@ -837,7 +844,7 @@ sub _build_feed_levels {
 }
 
 
-## @method private $ _build_levels_jsdata($levels)
+## @method protected $ _build_levels_jsdata($levels)
 # Given an array of level descriptions hashrefs, create an array of level names that
 # the level autoselector javascript can use.
 #
@@ -855,5 +862,33 @@ sub _build_levels_jsdata {
     my $array = "level_list = new Array(".join(",", @names).");";
 }
 
+
+## @method protected @ _build_files_block($files)
+# Build the content to show in the file upload block in the compose and edit forms.
+#
+# @param $files A reference to an array of file hashes.
+# @return A string to use as the file list, and a file upload/no upload block.
+sub _build_files_block {
+    my $self  = shift;
+    my $files = shift;
+
+    my $filelist = "";
+    if($files && scalar(@{$files})) {
+        foreach my $file (@{$files}) {
+            my $url = $self -> {"article"} -> {"files"} -> get_file_url($file);
+
+            $filelist .= $self -> {"template"} -> load_template("fileupload/file_row.tem", {"***id***"       => $file -> {"id"},
+                                                                                            "***url***"      => $url,
+                                                                                            "***filename***" => $file -> {"name"},
+                                                                                            "***size***"     => $self -> {"template"} -> bytes_to_human($file -> {"size"})
+                                                                });
+        }
+    }
+
+    my $tem = $self -> check_permission("file.upload") ? "upload.tem" : "noupload.tem";
+    my $upload = $self -> {"template"} -> load_template("fileupload/$tem");
+
+    return ($filelist, $upload);
+}
 
 1;

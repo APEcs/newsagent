@@ -1,1 +1,1 @@
-    <li><div>{L_MEDIA_NOUPLOAD}</div></li>
+    <li class="noupload"><div>{L_MEDIA_NOUPLOAD}</div></li>

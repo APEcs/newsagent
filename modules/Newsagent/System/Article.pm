@@ -57,12 +57,14 @@ sub new {
 
     $self -> {"images"} = Newsagent::System::Images -> new(dbh      => $self -> {"dbh"},
                                                            settings => $self -> {"settings"},
-                                                           logger   => $self -> {"logger"})
+                                                           logger   => $self -> {"logger"},
+                                                           magic    => $self -> {"magic"})
         or return Webperl::SystemModule::set_error("Images initialisation failed: ".$Webperl::SystemModule::errstr);
 
     $self -> {"files"} = Newsagent::System::Files -> new(dbh      => $self -> {"dbh"},
                                                          settings => $self -> {"settings"},
-                                                         logger   => $self -> {"logger"})
+                                                         logger   => $self -> {"logger"},
+                                                         magic    => $self -> {"magic"})
         or return Webperl::SystemModule::set_error("Files initialisation failed: ".$Webperl::SystemModule::errstr);
 
     # Allowed sort fields
@@ -368,7 +370,10 @@ sub get_feed_articles {
             $article -> {"files"} = [];
             # Place the files into the files array based using the order as the array position
             while(my $file = $fileh -> fetchrow_hashref()) {
-                $article -> {"files"} -> [$file -> {"order"}] = $self -> {"files"} -> get_file_info($file -> {"file_id"}, $file -> {"order"});
+                my $data = $self -> {"files"} -> get_file_info($file -> {"file_id"}, $file -> {"order"});
+
+                $article -> {"files"} -> [$file -> {"order"}] =  $data
+                    if($data && $data -> {"id"});
             }
 
             # Fetch the year info
@@ -681,7 +686,10 @@ sub get_article {
     my $files = $fileh -> fetchall_arrayref({});
     $article -> {"files"} = [];
     foreach my $file (@{$files}) {
-        $article -> {"files"} -> [$file -> {"order"}] = $self -> {"files"} -> get_file_info($file -> {"file_id"}, $file -> {"order"});
+        my $data = $self -> {"files"} -> get_file_info($file -> {"file_id"}, $file -> {"order"});
+
+        $article -> {"files"} -> [$file -> {"order"}] = $data
+            if($data && $data -> {"id"});
     }
 
     return $article;
@@ -760,18 +768,18 @@ sub add_article {
     return $self -> self_error("Unable to obtain id for new article row")
         if(!$newid);
 
-    # Now set up image, feed, and level associations
+    # Now set up image, file, feed, and level associations
     $self -> {"images"} -> add_image_relation($newid, $article -> {"images"} -> {"a"} -> {"img"}, 0) or return undef
         if($article -> {"images"} -> {"a"} -> {"img"});
 
     $self -> {"images"} -> add_image_relation($newid, $article -> {"images"} -> {"b"} -> {"img"}, 1) or return undef
         if($article -> {"images"} -> {"b"} -> {"img"});
 
-    # Add file/image relations
+    # Add file relations
     if($article -> {"files"} && scalar(@{$article -> {"files"}})) {
         my $order = 1;
-        foreach my $fileid (@{$article -> {"files"}}) {
-            $self -> {"files"} -> add_file_relation($newid, $fileid, $order++)
+        foreach my $file (@{$article -> {"files"}}) {
+            $self -> {"files"} -> add_file_relation($newid, $file -> {"id"}, $order++)
                 or return $self -> self_error($self -> {"files"} -> errstr());
         }
     }

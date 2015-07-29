@@ -15,23 +15,23 @@ button.medialib {
  */
 
 /* outer drop area styling */
-#ml-droparea {
+#ml-droparea, #file-droparea {
 	background: #545A74;
 	padding: 10px;
 	clear: both;
 	text-align: center;
 }
 
-#ml-droparea.hover {
+#ml-droparea.hover, #file-droparea.hover {
 	background: #121a3f;
 }
 
-#ml-droparea.disabled {
+#ml-droparea.disabled, #file-droparea.disabled {
 	background: #666;
 }
 
 /* inner drop area */
-#ml-dropzone {
+#ml-dropzone, #file-dropzone {
 	border: #ddd 1px dashed;
     margin: 0px 0px;
 	color: white;
@@ -43,7 +43,7 @@ button.medialib {
  * so that the progress message can be overlaid over the progress
  * bar with absolute positioning.
  */
-#ml-progressbox {
+#ml-progressbox,#file-progressbox {
 	border-radius: 3px;
     position: relative;
 	margin: 5px 0;
@@ -51,7 +51,7 @@ button.medialib {
 	background: #545A74;
 }
 
-#ml-progress {
+#ml-progress, #file-progress {
 	border-radius: 3px;
     position: absolute;
     left: 0px;
@@ -62,7 +62,7 @@ button.medialib {
 	background: #dd5A74 url('../images/upload.gif') repeat-x top left;
 }
 
-#ml-progressmsg {
+#ml-progressmsg, #file-progressmsg {
 	border-radius: 3px;
     position: absolute;
     left: 0px;

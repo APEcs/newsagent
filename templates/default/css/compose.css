@@ -200,3 +200,27 @@ div.autosavebox {
 #autoloadopt {
     opacity: 0;
 }
+
+/* file upload stuff */
+ul#filelist {
+    margin: 0px;
+    padding: 0px;
+}
+
+ul#filelist li {
+    cursor: move;
+    list-style-type: none;
+    border-bottom: 1px solid #ddd;
+    padding: 7px 3px;
+}
+
+ul#filelist li:last-child {
+    border-bottom: none;
+}
+
+.droplist {
+    border: 1px solid #F92 !important;
+    box-shadow: 0 0 8px rgba(255, 189, 112, 1);
+    -webkit-box-shadow: 0 0 8px rgba(255, 189, 112, 1);
+    -moz-box-shadow: 0 0 8px rgba(255, 189, 112, 1);
+}

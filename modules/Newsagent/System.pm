@@ -29,6 +29,7 @@ use Newsagent::System::Metadata;
 use Newsagent::System::Roles;
 use Newsagent::System::Tags;
 use Newsagent::System::UserDataBridge;
+use File::LibMagic;
 
 ## @method $ init(%args)
 # Initialise the Newsagent System's references to other system objects. This
@@ -78,6 +79,9 @@ sub init {
                                                                      metadata => $self -> {"metadata"},
                                                                      roles    => $self -> {"roles"})
         or return $self -> self_error("UserData system init failed: ".$Webperl::SystemModule::errstr);
+
+    $self -> {"magic"} = File::LibMagic -> new()
+        or return $self -> self_error("File magic init failed: ".$Webperl::SystemModule::errstr);
 
     return 1;
 }

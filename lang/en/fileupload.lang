@@ -1,0 +1,5 @@
+
+FILE_COPYRIGHT = Before uploading files, ensure that the University has permission to distribute them.
+FILE_NOUPLOAD  = You do not have permission to attach files to articles.
+FILE_UPLOAD    = Attach files
+FILE_DROPHERE  = Drop a file to attach here<br />Supported formats are: ***formats***

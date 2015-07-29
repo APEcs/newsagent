@@ -27,7 +27,7 @@ use v5.12;
 use Digest;
 use File::Path qw(make_path);
 use File::Copy;
-use File::LibMagic;
+use File::Slurp;
 use Webperl::Utils qw(path_join trimspace);
 use File::Scan::ClamAV;
 
@@ -52,9 +52,26 @@ sub new {
         or return undef;
 
     # Allowed file types
-    $self -> {"allowed_types"} = { "image/x-png" => "png",
-                                   "image/jpeg"  => "jpg",
-                                   "image/gif"   => "gif",
+    $self -> {"allowed_types"} = {
+        "application/msword"                                                        => "doc",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"   => "docx",
+
+        "application/vnd.ms-powerpoint"                                             => "ppt",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation" => "pptx",
+
+        "application/vnd.ms-excel"                                                  => "xls",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"         => "xlsx",
+
+        "application/pdf"                                                           => "pdf",
+
+        "application/zip"                                                           => "zip",
+
+        "text/html"                                                                 => "html",
+
+        "image/x-png"                                                               => "png",
+        "image/jpeg"                                                                => "jpg",
+        "image/gif"                                                                 => "gif",
+        "image/svg+xml"                                                             => "svg",
     };
 
     return $self;
@@ -93,16 +110,14 @@ sub get_file_info {
 }
 
 
-## @method $ get_file_url($file, $mode, $defurl)
+## @method $ get_file_url($file, $defurl)
 # Given an file hash or ID, generate the URL for the file.
 #
 # @param file  A reference to an file hash, or the Id of the file.
-# @param mode   The file mode, must be one of 'icon', 'thumb', 'media', or 'large'
 # @param defurl The URL to return if the file is not available.
 sub get_file_url {
     my $self   = shift;
     my $file   = shift;
-    my $mode   = shift;
     my $defurl = shift;
 
     my $url = $defurl;
@@ -141,28 +156,24 @@ sub store_file {
 
     $self -> clear_error();
 
+    # Slurp the file into memory. This is possibly a Bad Idea, but File::LibMagic
+    # can not handle reading from $srcfile directly.
+    my $data = read_file($srcfile, binmode => ':raw');
+
     # Determine whether the file is allowed
-    my $filetype = File::LibMagic -> new();
-    my $info = $filetype -> info_from_filename($srcfile);
+    my $info = $self -> {"magic"} -> info_from_string($data);
 
     my @types = sort(values(%{$self -> {"allowed_types"}}));
     return $self -> self_error("$filename is not a supported file format. Permitted formats are: ".join(", ", @types))
-        unless($type && $self -> {"allowed_types"} -> {$info -> {"mime_type"}});
+        unless($info && $self -> {"allowed_types"} -> {$info -> {"mime_type"}});
 
     # File is allowed type, but might be infected
-    $self -> _virus_check($srcfile)
+    $self -> _virus_check($srcfile, \$data)
         or return undef;
-
-    # Now, calculate the md5 of the file so that duplicate checks can be performed
-    open(IMG, $srcfile)
-        or return $self -> self_error("Unable to open uploaded file '$srcfile': $!");
-    binmode(IMG); # probably redundant, but hey
 
     eval {
         $digest = Digest -> new("MD5");
-        $digest -> addfile(*IMG);
-
-        close(IMG);
+        $digest -> add($data);
     };
     return $self -> self_error("An error occurred while processing '$filename': $@")
         if($@);
@@ -183,7 +194,7 @@ sub store_file {
     # File does not appear to be a duplicate, so moving it into the tree should be okay.
     # The first stage of this is to obtain a new file record ID to use as a unique
     # directory name.
-    my $newid = $self -> _add_file($filename, $md5, $userid)
+    my $newid = $self -> _add_file($filename, -s $srcfile, $md5, $userid)
         or return undef;
 
     # Convert the id to a destination directory
@@ -194,7 +205,7 @@ sub store_file {
         if($self -> _update_location($newid, $outname)) {
             $self -> {"logger"} -> log('notice', $userid, undef, "Storing file $filename in $outname, file id $newid");
 
-            move($srcfile, $outname)
+            move($srcfile, path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_file_path"}, $outname))
                 or return $self -> self_error("Unable to move $filename into filestore: $!");
 
             # If all worked, return the information
@@ -247,6 +258,7 @@ sub add_file_relation {
     return $newid;
 }
 
+
 # ============================================================================
 #  Internals
 
@@ -272,13 +284,14 @@ sub _build_destdir {
 
     # Now pull out the bits, and rejoin them into the required form
     my ($base, $sub) = $padded =~ /^(\d\d)(\d\d)/;
-    my $fullpath = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_file_path"}, $base, $sub, $id);
+    my $location = path_join($base, $sub, $id);
+    my $fullpath = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_file_path"}, $location);
 
     eval { make_path($fullpath); };
     return $self -> self_error("Unable to create file store directory: $@")
         if($@);
 
-    return $fullpath;
+    return $location;
 }
 
 
@@ -320,15 +333,16 @@ sub _md5_lookup {
 sub _add_file {
     my $self   = shift;
     my $name   = shift;
+    my $size   = shift;
     my $md5    = shift;
     my $userid = shift;
 
     $self -> clear_error();
 
     my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"files"}."`
-                                            (md5, name, uploader, uploaded)
-                                            VALUES(?, ?, ?, UNIX_TIMESTAMP())");
-    my $rows = $newh -> execute($md5, $name, $userid);
+                                            (md5, name, size, uploader, uploaded)
+                                            VALUES(?, ?, ?, ?, UNIX_TIMESTAMP())");
+    my $rows = $newh -> execute($md5, $name, $size, $userid);
     return $self -> self_error("Unable to perform file insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("File insert failed, no rows inserted") if($rows eq "0E0");
 
@@ -393,29 +407,31 @@ sub _update_location {
 }
 
 
-## @method private $ _virus_check($srcfile)
+## @method private $ _virus_check($srcfile, $dataref)
 # Run ClamAV on the specified file. This determines whether the file contains
 # any viruses recorgnised by ClamAV.
 #
 # @param srcfile The name of the file to check with ClamAV.
+# @param dataref A reference to a scalar containing the data to check.
 # @return true if the file is clean, false if it contains a virus or an
 #         error occurred during checking.
 sub _virus_check {
     my $self    = shift;
     my $srcfile = shift;
+    my $dataref = shift;
 
     $self -> clear_error();
 
-    my $clamav = File::Scan::ClamAV -> new();
+    my $clamav = File::Scan::ClamAV -> new(port => $self -> {"settings"} -> {"config"} -> {"ClamAV:socket"});
     return $self -> self_error("File upload failed: ClamAV is not running")
         unless($clamav -> ping());
 
-    my ($file, $virus) = $clamav -> scan($srcfile);
-    return $self -> self_error("File upload failed: virus '$virus' found in uploaded file.")
-        if($virus);
+    my ($code, $virus) = $clamav -> streamscan($$dataref);
+    return $self -> self_error("File rejected: virus '$virus' found in uploaded file.")
+        if($code eq "FOUND");
 
     return $self -> self_error("File upload failed: ".$clamav -> errstr())
-        if(!$file && $clamav -> errstr());
+        if(!$code && $clamav -> errstr());
 
     return 1;
 }

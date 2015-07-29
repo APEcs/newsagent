@@ -1,0 +1,10 @@
+<div id="file-upload">
+    <div id="file-droparea">
+        <div id="file-dropzone">{L_FILE_DROPHERE}</div>
+    </div>
+    <div id="file-progressbox">
+        <div id="file-progress"></div>
+        <div id="file-progressmsg"></div>
+    </div>
+</div>
+<div class="copynotice">{L_FILE_COPYRIGHT}</div>

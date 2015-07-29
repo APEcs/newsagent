@@ -629,6 +629,8 @@ function check_valid(relmode, summary, fulltext, feeds, levels, publish, pubtime
 
 function confirm_submit()
 {
+    fixup_files();
+
     if($('stopconfirm').get('value') == '1') {
         window.onbeforeunload = null;
         $('fullform').submit();
@@ -762,6 +764,18 @@ function twitter_fielduse(textbox, counter)
     if(articleimg == 'file' || articleimg == 'img') len += 24; // Space for the image link + space
 
     textcount_display(counter, len, 140);
+}
+
+
+/*******************************************************************************
+ *  Utility
+ */
+
+function fixup_files()
+{
+    var files = fileupload.serialize();
+
+    $('files').set('value', files.join(","));
 }
 
 
