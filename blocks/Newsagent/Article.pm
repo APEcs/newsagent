@@ -294,7 +294,7 @@ sub _validate_article_files {
         my @fileids = split(/,/, $files);
 
         # check that the file IDs are valid...
-        my $count = 1;
+        my $count = 0;
         foreach my $id (@fileids) {
             my $file = $self -> {"article"} -> {"files"} -> get_file_info($id, $count);
             return $self -> {"article"} -> {"files"} -> errstr() if(!$file); # Bail on errors
