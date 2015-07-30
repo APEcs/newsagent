@@ -119,6 +119,20 @@ sub generate_feed {
                                                                                                 "***link***"    => $feedurl,
                                                              });
 
+        # build the files
+        my $files = "";
+        if($result -> {"files"} && scalar(@{$result -> {"files"}})) {
+            foreach my $file (@{$result -> {"files"}}) {
+                $files .= $self -> {"template"} -> load_template("feeds/html/file.tem", {"***name***" => $file -> {"name"},
+                                                                                         "***size***" => $self -> {"template"} -> bytes_to_human($file -> {"size"}),
+                                                                                         "***url***"  => $self -> {"article"} -> {"files"} -> get_file_url($file)});
+            }
+
+            $files = $self -> {"template"} -> load_template("feeds/html/files.tem", {"***files***" => $files})
+                if($files);
+        }
+
+
         # Put the item together!
         $items .= $self -> {"template"} -> load_template("feeds/html/item-$mode.tem", {"***title***"       => $result -> {"title"} || $pubdate,
                                                                                        "***summary***"     => $summary,
@@ -133,6 +147,7 @@ sub generate_feed {
                                                                                        "***email***"       => $result -> {"email"},
                                                                                        "***name***"        => $result -> {"realname"} || $result -> {"username"},
                                                                                        "***fulltext***"    => $result -> {"fulltext"},
+                                                                                       "***files***"       => $files,
                                                                                        "***gravhash***"    => md5_hex(lc(trimspace($result -> {"email"} || ""))),
                                                              });
     }
