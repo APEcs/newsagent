@@ -30,7 +30,7 @@ use Webperl::Utils qw(trimspace path_join);
 use HTML::FormatText;
 use HTML::Entities;
 use v5.12;
-
+use Data::Dumper;
 # ============================================================================
 #  Content generators
 
@@ -57,6 +57,12 @@ sub embed_fulltext_image {
 }
 
 
+## @method private $ _build_rss_image($image, $type)
+# Generate an image entry for the RSS feed.
+#
+# @param image A reference to a hash containing the image date.
+# @param type  The image type - should be 'lead', 'thumb', or 'article'
+# @return A string containing the image entry.
 sub _build_rss_image {
     my $self  = shift;
     my $image = shift;
@@ -95,7 +101,7 @@ sub generate_feed {
     my $items   = "";
     my $maxdate = 0;
     foreach my $result (@{$results}) {
-        my ($images, $extra) = ("", "");
+        my ($images, $files, $extra) = ("", "", "");
 
         # Keep track of the latest date (should be the first result, really)
         $maxdate = $result -> {"release_time"}
@@ -112,6 +118,18 @@ sub generate_feed {
 
         $images = $self -> {"template"} -> load_template("feeds/rss/images.tem", {"***images***" => $images})
             if($images);
+
+        # Build the files list
+        if($result -> {"files"} && scalar(@{$result -> {"files"}})) {
+            foreach my $file (@{$result -> {"files"}}) {
+                $files .= $self -> {"template"} -> load_template("feeds/rss/file.tem", {"***name***" => $file -> {"name"},
+                                                                                        "***size***" => $file -> {"size"},
+                                                                                        "***url***"  => $self -> {"article"} -> {"files"} -> get_file_url($file)});
+            }
+
+            $files = $self -> {"template"} -> load_template("feeds/rss/files.tem", {"***files***" => $files})
+                if($files);
+        }
 
         # Handle fulltext transform
         my $showsum = $result -> {"full_summary"} ? "summary.tem" : "nosummary.tem";
@@ -165,6 +183,7 @@ sub generate_feed {
         $items .= $self -> {"template"} -> load_template("feeds/rss/item.tem", {"***title***"       => $result -> {"title"} || $pubdate,
                                                                                 "***description***" => $result -> {"use_fulltext_desc"} ? $result -> {"fulltext"} : $result -> {"summary"},
                                                                                 "***images***"      => $images,
+                                                                                "***files***"       => $files,
                                                                                 "***feeds***"       => $feeds,
                                                                                 "***extra***"       => $extra,
                                                                                 "***date***"        => $pubdate,
