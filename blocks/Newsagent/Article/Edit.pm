@@ -335,6 +335,8 @@ sub _generate_edit {
     # Medialib height depends on whether the user can upload images.
     my $mlibheight = $self -> check_permission("upload") ? "582px" : "450px";
 
+    my ($filelist, $attblock) = $self -> _build_files_block($args -> {"files"});
+
     # And generate the page title and content.
     return ($self -> {"template"} -> replace_langvar($titlemsg),
             $self -> {"template"} -> load_template("article/edit/edit.tem", {"***errorbox***"         => $error,
@@ -373,6 +375,8 @@ sub _generate_edit {
                                                                              "***loadcount***"        => $self -> {"settings"} -> {"config"} -> {"Media:fetch_count"},
                                                                              "***initialcount***"     => $self -> {"settings"} -> {"config"} -> {"Media:initial_count"},
                                                                              "***mlibheight***"       => $mlibheight,
+                                                                             "***files***"            => $filelist,
+                                                                             "***filedrag***"         => $attblock,
                                                    }));
 }
 
