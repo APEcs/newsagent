@@ -1,1 +1,1 @@
-<li id="file-***id***" class="filerow"><img src="{V_[templatepath]}images/remove.png" width="16" height="16" alt="remove" /> <a href="***url***">***filename*** (***size***)</a></li>
+<li id="file-***id***" class="filerow"><div><img src="{V_[templatepath]}images/remove.png" width="16" height="16" alt="remove" /> <a href="***url***">***filename*** (***size***)</a></div></li>

@@ -211,11 +211,22 @@ ul#filelist li {
     cursor: move;
     list-style-type: none;
     border-bottom: 1px solid #ddd;
-    padding: 7px 3px;
+    padding: 2px;
+    margin: 2px;
 }
 
 ul#filelist li:last-child {
     border-bottom: none;
+}
+
+ul#filelist li div img {
+    cursor: pointer;
+}
+
+ul#filelist li div {
+    height: 20px;
+    display: table-cell;
+    vertical-align: middle;
 }
 
 .droplist {

@@ -42,7 +42,7 @@ Form.Uploader = new Class({
         url: "",
         param: 'upload',
         uploadmsg: 'Uploading file: {loaded} of {total} ({percent}% complete)',
-        uploadedmsg: 'Upload complete. Processing image, please wait...',
+        uploadedmsg: 'Upload complete. Processing file, please wait...',
         donemsg: 'Upload complete.',
         args: { }/*,
         onSuccess:,

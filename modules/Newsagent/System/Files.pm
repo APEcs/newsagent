@@ -67,8 +67,9 @@ sub new {
         "application/zip"                                                           => "zip",
 
         "text/html"                                                                 => "html",
+        "text/plain"                                                                => "txt",
 
-        "image/x-png"                                                               => "png",
+        "image/png"                                                                 => "png",
         "image/jpeg"                                                                => "jpg",
         "image/gif"                                                                 => "gif",
         "image/svg+xml"                                                             => "svg",

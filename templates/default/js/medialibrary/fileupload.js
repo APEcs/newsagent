@@ -6,18 +6,15 @@ var FileUpload = new Class({
                dropelem: null,
                progelem: null,
                progtextelem: null,
-               sortlist: null
+               sortlist: null,
+               dupmsg: "Uploaded file is already attached to this article"
     },
 
     initialize: function(options) {
         this.setOptions(options);
 
-        this.sortlist = new CustomSortable(this.options.sortlist, { //clone: true,
-		                                                            revert: true,
+        this.sortlist = new CustomSortable(this.options.sortlist, { revert: true,
 		                                                            opacity: 0.5,
-                                                                    //dropClass: 'droplist',
-                                                                    onStart: function() {  },
-                                                                    onComplete: function() {  }
 	                                         });
 
         this.uploader = new Form.Uploader($(this.options.dropelem), $(this.options.progelem), $(this.options.progtextelem),
@@ -38,11 +35,33 @@ var FileUpload = new Class({
 
                                                 // No error, content should be row.
                                                 } else {
-                                                    row.setStyle('display', 'none');
-                                                    $('filelist').adopt(row);
-                                                    row.reveal();
+                                                    // check whether the file is already attached...
+                                                    var newid = row.get('id');
 
-                                                    this.sortlist.addItems(row);
+                                                    // If the ID doesn't exist in the document, add the row
+                                                    if(!$(newid)) {
+                                                        row.setStyle('display', 'none');
+                                                        $('filelist').adopt(row);
+                                                        row.reveal();
+
+                                                        this.sortlist.addItems(row);
+
+                                                        /// Attach a remover
+                                                        var delbtn = row.getElement('img');
+                                                        if(delbtn) {
+                                                            delbtn.addEvent('click', function(event) {
+                                                                var row = event.target.getParent('li');
+
+                                                                row.dissolve().get('reveal').chain(function() {
+                                                                    this.sortlist.removeItems(row);
+                                                                    row.destroy();
+                                                                }.bind(this));
+                                                            }.bind(this));
+                                                        }
+                                                    } else {
+                                                        $('errboxmsg').set('html', this.options.dupmsg);
+                                                        errbox.open();
+                                                    }
                                                 }
                                             }.bind(this),
                                             onFailure: function()   { alert("Upload failed!"); }.bind(this),
@@ -53,6 +72,17 @@ var FileUpload = new Class({
 			                                onComplete: function()  { $(this.options.droparea).removeClass('disabled'); }.bind(this)
                                           });
 
+        $$('li.filerow').each(function(item) {
+            this.sortlist.addItems(item);
+            item.addEvent('click', function(event) {
+                var row = event.target.getParent('li');
+
+                row.dissolve().get('reveal').chain(function() {
+                    this.sortlist.removeItems(row);
+                    row.destroy();
+                }.bind(this));
+            }.bind(this));
+        }.bind(this));
     },
 
     serialize: function() {

@@ -63,6 +63,13 @@ window.addEvent('domready', function() {
     if($('imageb_mediabtn'))
         new MediaLibrary('imageb_mediabtn', 'imageb_imgid', { loadCount: ***loadcount***,
                                                               initialCount: ***initialcount***});
+
+    if($('file-dropzone'))
+        fileupload = new FileUpload({ droparea: 'file-droparea',
+                                      dropelem: 'file-dropzone',
+                                      progelem: 'file-progress',
+                                      progtextelem: 'file-progressmsg',
+                                      sortlist: '#filelist' });
 });
 </script>
 <div id="composeform">
@@ -141,7 +148,7 @@ window.addEvent('domready', function() {
                     </dl>
                 </div>
                 <div class="content">
-                    <dl class="input iblock">
+                    <dl class="input">
                         <dt><label>{L_COMPOSE_ATTACHED}</label></dt>
                         <dd><ul id="filelist">
 ***files***
@@ -209,6 +216,7 @@ window.addEvent('domready', function() {
 ***batchstuff***
                 </div>
                 <input type="hidden" name="relmode" id="relmode" value="***relmode***" />
+                <input type="hidden" name="files" id="files" value="" />
             </div>
         </div>
     </div>

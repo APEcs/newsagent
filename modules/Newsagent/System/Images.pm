@@ -51,9 +51,9 @@ sub new {
         or return undef;
 
     # Allowed file types
-    $self -> {"allowed_types"} = { "image/x-png" => "png",
-                                   "image/jpeg"  => "jpg",
-                                   "image/gif"   => "gif",
+    $self -> {"allowed_types"} = { "image/png"  => "png",
+                                   "image/jpeg" => "jpg",
+                                   "image/gif"  => "gif",
     };
 
     $self -> {"image_sizes"} = { "icon"  => '-resize 130x63^ -gravity Center -crop 130x63+0+0 +repage',
