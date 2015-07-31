@@ -777,7 +777,7 @@ sub add_article {
 
     # Add file relations
     if($article -> {"files"} && scalar(@{$article -> {"files"}})) {
-        my $order = 1;
+        my $order = 0;
         foreach my $file (@{$article -> {"files"}}) {
             $self -> {"files"} -> add_file_relation($newid, $file -> {"id"}, $order++)
                 or return $self -> self_error($self -> {"files"} -> errstr());
