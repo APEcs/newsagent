@@ -81,6 +81,19 @@ sub new {
 # ============================================================================
 #  Interface
 
+## @method $ get_formats()
+# Return a string containing the information about the supported formats.
+#
+# @return The formats users can upload to Newsagent.
+sub get_formats {
+    my $self = shift;
+
+    my @types = sort(values(%{$self -> {"allowed_types"}}));
+
+    return join(", ", @types);
+}
+
+
 ## @method $ get_file_info($id, $order)
 # Obtain the storage information for the file with the specified id.
 #
@@ -163,8 +176,7 @@ sub store_file {
     # Determine whether the file is allowed
     my $info = $self -> {"magic"} -> info_from_string($data);
 
-    my @types = sort(values(%{$self -> {"allowed_types"}}));
-    return $self -> self_error("$filename is not a supported file format. Permitted formats are: ".join(", ", @types))
+    return $self -> self_error("$filename (".$info -> {"mime_type"}.") is not a supported file format. Permitted formats are: ".$self -> get_formats())
         unless($info && $self -> {"allowed_types"} -> {$info -> {"mime_type"}});
 
     # File is allowed type, but might be infected

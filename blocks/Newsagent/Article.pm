@@ -886,7 +886,7 @@ sub _build_files_block {
     }
 
     my $tem = $self -> check_permission("file.upload") ? "upload.tem" : "noupload.tem";
-    my $upload = $self -> {"template"} -> load_template("fileupload/$tem");
+    my $upload = $self -> {"template"} -> load_template("fileupload/$tem", {"***formats***" => $self -> {"article"} -> {"files"} -> get_formats()});
 
     return ($filelist, $upload);
 }
