@@ -37,7 +37,6 @@ use Try::Tiny;
 use Webperl::Utils qw(trimspace path_join);
 use v5.12;
 
-
 ## @cmethod Newsagent::Notification::Method::Email new(%args)
 # Create a new Email object. This will create an object
 # that may be used to send messages to recipients over SMTP.
@@ -274,6 +273,22 @@ sub send {
     my $subject = $article -> {"title"} || $pubdate;
     $subject = $prefix." ".$subject if($prefix);
 
+    # build the files
+    my $files = "";
+    if($article -> {"files"} && scalar(@{$article -> {"files"}})) {
+        foreach my $file (@{$article -> {"files"}}) {
+            $files .= $self -> {"template"} -> load_template("Notification/Method/Email/file.tem", {"***name***" => $file -> {"name"},
+                                                                                                    "***size***" => $self -> {"template"} -> bytes_to_human($file -> {"size"}),
+                                                                                                    "***url***"  => $queue -> {"article"} -> {"files"} -> get_file_url($file)});
+        }
+
+        $files = $self -> {"template"} -> load_template("Notification/Method/Email/files.tem", {"***files***" => $files})
+            if($files);
+    }
+
+    # And the list of feeds
+    my @feeds = map { $_ -> {"description"} } @{$article -> {"feeds"}};
+
     my $htmlbody = $self -> {"template"} -> load_template("Notification/Method/Email/email.tem", {"***body***"     => $article -> {"article"},
                                                                                                   "***title***"    => $article -> {"title"} || $pubdate,
                                                                                                   "***date***"     => $pubdate,
@@ -283,8 +298,12 @@ sub send {
                                                                                                   "***logo_url***" => $self -> {"settings"} -> {"config"} -> {"Article:logo_img_url"},
                                                                                                   "***name***"     => $article -> {"realname"} || $article -> {"username"},
                                                                                                   "***recips***"   => $self -> _build_recipients($allrecips),
+                                                                                                  "***files***"    => $files,
+                                                                                                  "***feeds***"    => join(", ", @feeds),
                                                                                                   "***gravhash***" => md5_hex(lc(trimspace($article -> {"email"} || ""))) });
     my $articlebody = $self -> {"template"} -> load_template("Notification/Method/Email/body.tem", {"***body***"   => $article -> {"article"},
+                                                                                                    "***files***"  => $files,
+                                                                                                    "***feeds***"  => join(", ", @feeds),
                                                                                                     "***name***"   => $article -> {"realname"} || $article -> {"username"},
                                                                                                     "***recips***" => $self -> _build_recipients($allrecips),
                                                              });

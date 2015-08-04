@@ -2,10 +2,11 @@
     <div style="font-weight: bold; font-size: 30px; line-height: 63px; vertical-align: center">***img1***{L_EMAIL_SOCSTITLE}</div>
 </div>
 <div class="newsagent-full">
-    <h1 style="font-size: 20px">***title***</h1>
-    <div style="color: #7496AF; font-size: 11px; margin-bottom: 10px; padding: 10px 0px">Published: ***date***</div>
+    <h1 style="font-size: 20px; margin: 0px; padding: 5px 0px;">***title***</h1>
+    <div style="color: #7496AF; font-size: 11px; margin-bottom: 5px; padding: 0px">Published: ***date***</div>
     ***img2***
     <div style="border-bottom: 1px solid #aaa; padding: 0px 4px 5px 4px" >***body***</div>
-    <div style="font-size: 14px; line-height: 32px; vertical-align: center;"><img src="https://gravatar.com/avatar/***gravhash***?s=32&amp;d=mm&amp;r=g" alt="gravatar" class="newsagent-avatar" width="32" height="32" /> ***name***</div>
+***files***<div style="font-size: 14px; line-height: 32px; vertical-align: center;"><img src="https://gravatar.com/avatar/***gravhash***?s=32&amp;d=mm&amp;r=g" alt="gravatar" class="newsagent-avatar" width="32" height="32" /> ***name***</div>
     <div style="font-size: 12px;">{L_EMAIL_SENTBY} ***recips***</div>
+    <div style="font-size: 12px;">{L_EMAIL_FEEDS} ***feeds***</div>
 </div>

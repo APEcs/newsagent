@@ -1,0 +1,6 @@
+<div style="border-bottom: 1px solid #aaa; padding: 0px 4px 5px 4px">
+    <h4 style="margin: 2px 0px">{L_FEED_FILES}</h4>
+    <ul style="margin: 0px; padding: 0px 0px 0px 10px;">
+***files***
+    </ul>
+</div>
