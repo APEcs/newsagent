@@ -39,10 +39,10 @@ use Data::Dumper;
 # @param template The name of the template to use for the article.
 # @return A string containing the templated article.
 sub _build_newsletter_article {
-    my $self     = shift;
-    my $article  = shift;
-    my $template = shift;
-    my $oddrow   = shift;
+    my $self      = shift;
+    my $article   = shift;
+    my $templates = shift;
+    my $oddrow    = shift;
 
     # The date can be needed in both the title and date fields.
     my $pubdate = $self -> {"template"} -> format_time($article -> {"release_time"}, $self -> {"timefmt"});
@@ -53,29 +53,43 @@ sub _build_newsletter_article {
     $images[1] = $self -> {"article"} -> {"images"} -> get_image_url($article -> {"images"} -> [1], 'large');
 
     # Wrap the images in html
-    $images[0] = $self -> {"template"} -> load_template("newsletter/image.tem", {"***class***" => "leader",
-                                                                                 "***url***"   => $images[0],
-                                                                                 "***title***" => $article -> {"title"}})
+    $images[0] = $self -> {"template"} -> load_template($templates -> {"image"}, {"***class***" => "leader",
+                                                                                  "***url***"   => $images[0],
+                                                                                  "***title***" => $article -> {"title"}})
         if($images[0]);
 
-    $images[1] = $self -> {"template"} -> load_template("newsletter/image.tem", {"***class***" => "article",
-                                                                                 "***url***"   => $images[1],
-                                                                                 "***title***" => $article -> {"title"}})
+    $images[1] = $self -> {"template"} -> load_template($templates -> {"image"}, {"***class***" => "article",
+                                                                                  "***url***"   => $images[1],
+                                                                                  "***title***" => $article -> {"title"}})
         if($images[1]);
 
     $article -> {"article"} = $self -> cleanup_entities($article -> {"article"})
         if($article -> {"article"});
 
-    return $self -> {"template"} -> load_template($template, { "***id***"          => $article -> {"id"},
-                                                               "***title***"       => $article -> {"title"} || $pubdate,
-                                                               "***summary***"     => $article -> {"summary"},
-                                                               "***leaderimg***"   => $images[0],
-                                                               "***articleimg***"  => $images[1],
-                                                               "***email***"       => $article -> {"email"},
-                                                               "***name***"        => $article -> {"realname"} || $article -> {"username"},
-                                                               "***fulltext***"    => $article -> {"article"},
-                                                               "***gravhash***"    => md5_hex(lc(trimspace($article -> {"email"} || ""))),
-                                                               "***row***"         => $oddrow ? "odd" : "even"
+    # build the files
+    my $files = "";
+    if($article -> {"files"} && scalar(@{$article -> {"files"}})) {
+        foreach my $file (@{$article -> {"files"}}) {
+            $files .= $self -> {"template"} -> load_template($templates -> {"file"}, {"***name***" => $file -> {"name"},
+                                                                                      "***size***" => $self -> {"template"} -> bytes_to_human($file -> {"size"}),
+                                                                                      "***url***"  => $self -> {"article"} -> {"files"} -> get_file_url($file)});
+        }
+
+        $files = $self -> {"template"} -> load_template($templates -> {"files"}, {"***files***" => $files})
+            if($files);
+    }
+
+    return $self -> {"template"} -> load_template($templates -> {"article"}, { "***id***"          => $article -> {"id"},
+                                                                               "***title***"       => $article -> {"title"} || $pubdate,
+                                                                               "***summary***"     => $article -> {"summary"},
+                                                                               "***leaderimg***"   => $images[0],
+                                                                               "***articleimg***"  => $images[1],
+                                                                               "***email***"       => $article -> {"email"},
+                                                                               "***name***"        => $article -> {"realname"} || $article -> {"username"},
+                                                                               "***fulltext***"    => $article -> {"article"},
+                                                                               "***gravhash***"    => md5_hex(lc(trimspace($article -> {"email"} || ""))),
+                                                                               "***row***"         => $oddrow ? "odd" : "even",
+                                                                               "***files***"       => $files,
                                                   });
 }
 
@@ -107,43 +121,45 @@ sub build_newsletter {
     if($newsletter) {
         my ($body, $menu)  = ("", "");
         foreach my $section (@{$newsletter -> {"messages"}}) {
-            next unless(scalar(@{$section -> {"messages"}}) || $section -> {"required"} || $section -> {"empty_tem"});
+            next unless(scalar(@{$section -> {"messages"}}) ||
+                        $section -> {"required"} ||
+                        $newsletter -> {"template"} -> {"section"} -> {$section -> {"name"}} -> {"empty"});
 
             my $articles = "";
             my $row = 0;
             foreach my $message (@{$section -> {"messages"}}) {
                 my $article = $self -> {"article"} -> get_article($message -> {"id"});
 
-                $articles .= $self -> _build_newsletter_article($article, $section -> {"article_tem"}, ++$row % 2);
+                $articles .= $self -> _build_newsletter_article($article, $newsletter -> {"template"} -> {"section"} -> {$section -> {"name"}}, ++$row % 2);
             }
 
             # If the section contains no articles, use the empty template.
-            $articles = $self -> {"template"} -> load_template($section -> {"empty_tem"})
-                if(!$articles && $section -> {"empty_tem"});
+            $articles = $self -> {"template"} -> load_template($newsletter -> {"template"} -> {"section"} -> {$section -> {"name"}} -> {"empty"})
+                if(!$articles && $newsletter -> {"template"} -> {"section"} -> {$section -> {"name"}} -> {"empty"});
 
             # If it's not filled, and required, mark it as such
-            $articles .= $self -> {"template"} -> load_template(path_join($newsletter -> {"template"}, "required-section.tem"), {"***count***"    => scalar(@{$section -> {"messages"}}),
-                                                                                                                                 "***required***" => $section -> {"required"}})
-                if($section -> {"required"} && scalar(@{$section -> {"messages"}}) < $section -> {"required"});
+            $articles .= $self -> {"template"} -> load_template($newsletter -> {"template"} -> {"section"} -> {$section -> {"name"}} -> {"required"}, {"***count***"    => scalar(@{$section -> {"messages"}}),
+                                                                                                                                                       "***required***" => $section -> {"required"}})
+                if($newsletter -> {"template"} -> {"section"} -> {$section -> {"name"}} -> {"required"} && scalar(@{$section -> {"messages"}}) < $section -> {"required"});
 
             # And add this section to the accumulating page
-            $body .= $self -> {"template"} -> load_template($section -> {"template"}, {"***articles***" => $articles,
-                                                                                       "***title***"    => $section -> {"name"},
-                                                                                       "***id***"       => $section -> {"id"}});
-            $menu .= $self -> {"template"} -> load_template(path_join($newsletter -> {"template"}, "section-menu-item.tem"), {"***title***"    => $section -> {"name"},
-                                                                                                                              "***id***"       => $section -> {"id"}});
+            $body .= $self -> {"template"} -> load_template($newsletter -> {"template"} -> {"section"} -> {$section -> {"name"}} -> {"template"}, {"***articles***" => $articles,
+                                                                                                                                                   "***title***"    => $section -> {"name"},
+                                                                                                                                                   "***id***"       => $section -> {"id"}});
+            $menu .= $self -> {"template"} -> load_template($newsletter -> {"template"} -> {"section"} -> {$section -> {"name"}} -> {"menu"}, {"***title***"    => $section -> {"name"},
+                                                                                                                                               "***id***"       => $section -> {"id"}});
         }
 
-        $content .= $self -> {"template"} -> load_template(path_join($newsletter -> {"template"}, "body.tem"), {"***name***"        => $newsletter -> {"name"},
-                                                                                                                "***description***" => $newsletter -> {"description"},
-                                                                                                                "***id***"          => $newsletter -> {"id"},
-                                                                                                                "***body***"        => $body,
-                                                                                                                "***menu***"        => $menu});
+        $content .= $self -> {"template"} -> load_template($newsletter -> {"template"} -> {"body"}, {"***name***"        => $newsletter -> {"name"},
+                                                                                                     "***description***" => $newsletter -> {"description"},
+                                                                                                     "***id***"          => $newsletter -> {"id"},
+                                                                                                     "***body***"        => $body,
+                                                                                                     "***menu***"        => $menu});
     }
 
     # If there is any newsletter content, convert any styles to inline
     if($content) {
-        my $html = $self -> {"template"} -> load_template("newsletter/harness.tem", {"***header***" => $self -> {"template"} -> load_template(path_join($newsletter -> {"template"}, "extrahead.tem")),
+        my $html = $self -> {"template"} -> load_template("newsletter/harness.tem", {"***header***" => $self -> {"template"} -> load_template($newsletter -> {"template"} -> {"head"}),
                                                                                      "***body***"   => $content});
 
         my $inliner = new CSS::Inliner;

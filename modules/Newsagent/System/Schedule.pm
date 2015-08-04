@@ -20,10 +20,12 @@
 package Newsagent::System::Schedule;
 
 use strict;
+use base qw(Webperl::SystemModule); # This class extends the Newsagent block class
 use DateTime::Event::Cron;
 use List::Util qw(min);
 use JSON;
-use base qw(Webperl::SystemModule); # This class extends the Newsagent block class
+use XML::Simple;
+use Webperl::Utils qw(path_join);
 use v5.12;
 use Data::Dumper;
 
@@ -201,7 +203,7 @@ sub get_section {
 }
 
 
-## @method $ get_newsletter($name, $userid, $full)
+## @method $ get_newsletter($name, $userid, $full, $issue)
 # Locate a newsletter by name.
 #
 # @param name   The name of the newsletter to fetch.
@@ -242,6 +244,10 @@ sub get_newsletter {
 
     # Fetch the messages set for the current newsletter
     ($newsletter -> {"messages"}, $newsletter -> {"blocked"}) = $self -> get_newsletter_messages($newsletter -> {"id"}, $userid, $usenext, $mindate, $maxdate);
+
+    # load the template config
+    $newsletter -> {"template"} = $self -> _load_template_config($newsletter -> {"template"})
+        or return undef;
 
     return $newsletter;
 }
@@ -1272,6 +1278,39 @@ sub _fetch_ready_users {
     }
 
     return \@users;
+}
+
+
+## @method private $ _load_template_config($path)
+# Load the configuration file for the newsletter template.
+#
+# @param path The template-base relative path to the directory containing the
+#             theme config.xml file
+# @return A reference to a hash containing the config on success, undef on error.
+sub _load_template_config {
+    my $self = shift;
+    my $path = shift;
+
+    $self -> clear_error();
+
+    $path = path_join($self -> {"template"} -> {"basepath"}, $self -> {"template"} -> {"theme"}, $path, "config.xml");
+    my $xml = eval { XMLin($path, SuppressEmpty => undef); };
+
+    return $self -> self_error("Unable to load newsletter theme config: $@") if($@);
+
+    # Convert base-relative template names to absolute
+    foreach my $section (keys(%{$xml -> {"section"}})) {
+        foreach my $tem (keys(%{$xml -> {"section"} -> {$section}})) {
+            next unless($xml -> {"section"} -> {$section} -> {$tem});
+
+            $xml -> {"section"} -> {$section} -> {$tem} = path_join($xml -> {"base"}, $xml -> {"section"} -> {$section} -> {$tem});
+        }
+    }
+
+    $xml -> {"body"} = path_join($xml -> {"base"}, $xml -> {"body"});
+    $xml -> {"head"} = path_join($xml -> {"base"}, $xml -> {"head"});
+
+    return $xml;
 }
 
 1;

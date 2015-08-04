@@ -48,6 +48,7 @@ h2.na-testnews-section {
 table.na-testnews-articles {
     margin: 0px;
     padding: 0px;
+    width: 100%;
 }
 
 hr.na-testnews-section {
@@ -93,4 +94,18 @@ img.na-testnews-avatar {
 div.na-testnews-clear {
     clear: both;
 }
+
+div.newsagent-files {
+    padding: 0px 4px 5px 4px
+}
+
+div.newsagent-files h4 {
+    margin: 2px 0px
+}
+
+div.newsagent-files ul {
+    margin: 0px;
+    padding: 0px 0px 0px 20px;
+}
+
 </style>
