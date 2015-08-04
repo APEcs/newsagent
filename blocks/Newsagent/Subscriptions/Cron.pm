@@ -103,7 +103,21 @@ sub _build_update {
         push(@feeds, $feed -> {"description"});
     }
 
+    # build the files
+    my $files = "";
+    if($article -> {"files"} && scalar(@{$article -> {"files"}})) {
+        foreach my $file (@{$article -> {"files"}}) {
+            $files .= $self -> {"template"} -> load_template("subscriptions/file.tem", {"***name***" => $file -> {"name"},
+                                                                                        "***size***" => $self -> {"template"} -> bytes_to_human($file -> {"size"}),
+                                                                                        "***url***"  => $self -> {"article"} -> {"files"} -> get_file_url($file)});
+        }
+
+        $files = $self -> {"template"} -> load_template("subscriptions/files.tem", {"***files***" => $files})
+            if($files);
+    }
+
     return $self -> {"template"} -> load_template("subscriptions/email_update.tem", {"***body***"     => $article -> {"fulltext"},
+                                                                                     "***files***"    => $files,
                                                                                      "***feeds***"    => join("; ", @feeds),
                                                                                      "***title***"    => $article -> {"title"} || $pubdate,
                                                                                      "***date***"     => $pubdate,
