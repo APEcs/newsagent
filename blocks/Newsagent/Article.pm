@@ -55,6 +55,7 @@ sub new {
     $self -> {"schedule"} = Newsagent::System::Schedule -> new(dbh      => $self -> {"dbh"},
                                                                settings => $self -> {"settings"},
                                                                logger   => $self -> {"logger"},
+                                                               template => $self -> {"template"},
                                                                roles    => $self -> {"system"} -> {"roles"},
                                                                metadata => $self -> {"system"} -> {"metadata"})
         or return Webperl::SystemModule::set_error("Article initialisation failed: ".$Webperl::SystemModule::errstr);
