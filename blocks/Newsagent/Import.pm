@@ -20,6 +20,7 @@
 package Newsagent::Import;
 
 use strict;
+use experimental qw(smartmatch);
 use base qw(Newsagent); # This class extends the Newsagent block class
 use v5.12;
 use Data::Dumper;
