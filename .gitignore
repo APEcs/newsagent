@@ -19,3 +19,6 @@ templates/default/js_*
 templates/default/css_*
 modules/Net
 uploads
+robots.txt
+run
+
