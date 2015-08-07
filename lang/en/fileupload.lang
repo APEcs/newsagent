@@ -2,4 +2,4 @@
 FILE_COPYRIGHT = Before uploading files, ensure that the University has permission to distribute them. <strong>WARNING</strong>: files uploaded here <em>are not subject to access control</em>: <strong>DO NOT upload files that should not be publicly distributed.</strong>
 FILE_NOUPLOAD  = You do not have permission to attach files to articles.
 FILE_UPLOAD    = Attach files
-FILE_DROPHERE  = Drop a file to attach here. Allowed formats are:<br />***formats***
+FILE_DROPHERE  = Drop a file to attach here. Max size: ***size***. Allowed formats are:<br />***formats***

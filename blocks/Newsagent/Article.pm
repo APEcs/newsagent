@@ -887,8 +887,8 @@ sub _build_files_block {
     }
 
     my $tem = $self -> check_permission("file.upload") ? "upload.tem" : "noupload.tem";
-    my $upload = $self -> {"template"} -> load_template("fileupload/$tem", {"***formats***" => $self -> {"article"} -> {"files"} -> get_formats()});
-
+    my $upload = $self -> {"template"} -> load_template("fileupload/$tem", {"***formats***" => $self -> {"article"} -> {"files"} -> get_formats(),
+                                                                            "***size***"    => $self -> {"template"} -> bytes_to_human($CGI::POST_MAX) });
     return ($filelist, $upload);
 }
 
