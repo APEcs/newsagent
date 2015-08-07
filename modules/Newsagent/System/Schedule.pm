@@ -681,6 +681,13 @@ sub get_newsletter_articledata {
 }
 
 
+## @method private $ reorder_articles_fromsortdata($sortdata, $userid)
+# Update the order of articles within a newsletter based on the provided sort data.
+#
+# @param sortdata A reference to an array of sort directive entries. Each element should
+#                 be a string of the form list-<schedule_id>-<section_id>_msg-<article_id>
+# @param userid   The ID of the user reordering the articles.
+# @return true on success, undef on error.
 sub reorder_articles_fromsortdata {
     my $self     = shift;
     my $sortdata = shift;
@@ -689,8 +696,8 @@ sub reorder_articles_fromsortdata {
     $self -> clear_error();
 
     # Each entry in $sortdata should be of the form list-<schedule_id>-<section_id>_msg-<article_id>
-    # to each section has its own ordering, so the list needs parsing and processing to make updating
-    # a bit more sane...
+    # This allows us to parse the sort data into a hash of sections, each value being an array of
+    # article IDs in the section in the required order.
     my $sections;
     my $sid = 1;
     my $schedule_id;
@@ -707,13 +714,14 @@ sub reorder_articles_fromsortdata {
         push(@{$sections -> {$section} -> {"articles"}}, $article);
     }
 
+    # Process the sections, reordering articles if allowed.
     foreach my $section_id (sort { $sections -> {$a} -> {"order"} <=> $sections -> {$b} -> {"order"} } keys(%{$sections})) {
         # Make sure the user has permission to do anything in the section
         my $section = $self -> get_section($section_id)
             or return undef;
 
         if($self -> {"roles"} -> user_has_capability($section -> {"metadata_id"}, $userid, "newsletter.layout")) {
-            # User can edit the section, so set the roder of the articles within it
+            # User can edit the section, so set the order of the articles within it
             for(my $pos = 0; $pos < scalar(@{$sections -> {$section_id} -> {"articles"}}); ++$pos) {
                 $self -> update_section_relation($sections -> {$section_id} -> {"articles"} -> [$pos], $schedule_id, $section_id, $pos + 1)
                     or return undef;
