@@ -156,11 +156,21 @@ sub _send_subscription_digest {
 
     my $recipient = $subscription -> {"email"} || $subscription -> {"user_id"};
 
+    my $tem    = ($subscription -> {"email"} && !$subscription -> {"user_id"}) ? "emailauth.tem" : "noauth.tem";
+    my $params = ($subscription -> {"email"} && !$subscription -> {"user_id"}) ? { authcode => $subscription -> {"authcode"} } : {};
+    my $authblock = $self -> {"template"} -> load_template("subscriptions/$tem", {"***authcode***" => $subscription -> {"authcode"},
+                                                                                  "***url***"      => $self -> build_url(block    => "subscribe",
+                                                                                                                         pathinfo => [ 'manage' ],
+                                                                                                                         params   => $params,
+                                                                                                                         forcessl => 1,
+                                                                                                                         fullurl  => 1) });
+
     # FIXME: This will not work unless message support HTML!
     my $status = $self -> {"messages"} -> queue_message(subject => $title,
                                                         message => $self -> {"template"} -> load_template("subscriptions/email.tem", {"***img1***"    => "",
                                                                                                                                       "***title***"   => $title,
-                                                                                                                                      "***updates***" => $updates }),
+                                                                                                                                      "***updates***" => $updates,
+                                                                                                                                      "***auth***"    => $authblock }),
                                                         recipients       => [ $recipient ],
                                                         send_immediately => 1,
                                                         format           => 'html');

@@ -377,6 +377,14 @@ sub get_pending_subscriptions {
         my $subdata = $self -> _get_subscription_byid($subid -> [0])
             or return undef;
 
+        # Regenerate the authcode for email-only subscriptions to prevent reuse
+        if($subdata -> {"email"} && !$subdata -> {"user_id"}) {
+            $subdata -> {"authcode"} = $self -> _generate_authcode();
+
+            $self -> _set_authcode($subdata, $subdata -> {"authcode"}, 1)
+                or return undef;
+        }
+
         push(@subs, $subdata);
     }
 
@@ -950,27 +958,31 @@ sub _set_subscription_email {
 }
 
 
-## @method private $ _set_authcode($subscription, $authcode)
+## @method private $ _set_authcode($subscription, $authcode, $active)
 # Update the authcode associated with the specified subscription.
 #
 # @param subscription A reference to a hash containing the subscription data.
 # @param authcode     The new authcode to set for the subscription. This will also
 #                     set the subscription to inactive.
+# @param active       If true, keep the subscription active.
 # @return A reference to a hash containing the subscription data on success, undef
 #         on error.
 sub _set_authcode {
     my $self         = shift;
     my $subscription = shift;
     my $authcode     = shift;
+    my $active       = shift;
+
+    $active = $active && $subscription -> {"active"};
 
     my $seth = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
-                                            SET `authcode` = ?, `active` = 0
+                                            SET `authcode` = ?, `active` = ?
                                             WHERE `id` = ?");
-    my $rows = $seth -> execute($authcode, $subscription -> {"id"});
+    my $rows = $seth -> execute($authcode, $active, $subscription -> {"id"});
     return $self -> self_error("Unable to perform subscription update: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("Subscription update failed, no rows inserted") if($rows eq "0E0");
 
-    $subscription -> {"active"}   = 0;
+    $subscription -> {"active"}   = $active;
     $subscription -> {"authcode"} = $authcode;
 
     return $subscription;

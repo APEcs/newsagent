@@ -66,7 +66,7 @@ SUBS_AUTHCODE_CODE         = Authorisation code
 SUBS_AUTHCODE_AUTH         = Authorise
 SUBS_AUTHCODE_DONETITLE    = Authorisation code accepted
 SUBS_AUTHCODE_SUMMARY      = Your authorisation code has been accepted.
-SUBS_AUTHCODE_LONGDESC     = The supplied authorisation code is valid and has a subscription associated with it. Click the continur button below to be taken to the subscription management page.
+SUBS_AUTHCODE_LONGDESC     = The supplied authorisation code is valid and has a subscription associated with it. Click the continue button below to be taken to the subscription management page.
 SUBS_AUTHCODE_CODEFMT      = Authorisation codes may only contain the characters a to z, A to Z, or 0 to 9.
 
 SUBS_MANAGE_SUBADD         = Add to subscription
@@ -83,3 +83,6 @@ SUBS_CRON_NOSUBS           = No subscriptions need sending.
 SUBS_DIGEST_TITLE          = [Newsagent] Articles for ***date***: ***new*** new article.
 SUBS_DIGEST_TITLES         = [Newsagent] Articles for ***date***: ***new*** new articles.
 SUBS_DIGEST_NONE           = No
+
+SUBS_EMAIL_MANAGE          = Manage your subscription
+SUBS_EMAIL_AUTHCODE        = Authcode

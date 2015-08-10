@@ -1,0 +1,5 @@
+<hr />
+<dl>
+<dd>{L_SUBS_EMAIL_MANAGE}: <a href="***url***">***url***</a></dd>
+<dd>{L_SUBS_EMAIL_AUTHCODE}: ***authcode***</dd>
+</dl>
