@@ -4,6 +4,7 @@ CKEDITOR.editorConfig = function( config )
     config.toolbarStartupExpanded = false;
     config.toolbar = 'NewsagentBasic';
     config.resize_dir = 'vertical';
+    config.disableNativeSpellChecker = false;
 
     config.toolbar_NewsagentBasic = [
 	    { name: 'operations', items : [ 'Source','-','Cut','Copy','Paste','-','Undo','Redo' ] },
