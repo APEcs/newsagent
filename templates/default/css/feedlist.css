@@ -25,6 +25,7 @@
 
 table.listtable {
     width: 100%;
+    border-collapse: collapse;
 }
 
 table.listtable tr td {
@@ -78,4 +79,8 @@ input[type=text].rssbox {
 
 #rssclip.zeroclipboard-is-active {
     border: 1px inset grey;
+}
+
+table.listtable tr.selected td {
+    background-color: #FAEBB1 !important;
 }

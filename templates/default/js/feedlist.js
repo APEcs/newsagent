@@ -118,6 +118,20 @@ function set_subscribe_button() {
 }
 
 
+function set_highlight_rows() {
+
+    $$('input.selfeed').each(function(element) {
+        var row = element.getParent('tr');
+
+        if(element.get('checked')) {
+            row.addClass('selected');
+        } else {
+            row.removeClass('selected');
+        }
+    });
+}
+
+
 function subscribe(clear_feeds) {
 
     // must have one or more feeds selected
@@ -187,7 +201,7 @@ function subscribe(clear_feeds) {
 
 window.addEvent('domready', function() {
 
-    $$('input.selfeed').addEvent('change', function() { build_feedurl(); set_subscribe_button(); });
+    $$('input.selfeed').addEvent('change', function() { build_feedurl(); set_subscribe_button(); set_highlight_rows(); });
     $('fulltext').addEvent('change', function() { build_feedurl(); });
     $('desc').addEvent('change', function() { build_feedurl(); });
     $('viewer').addEvent('change', function() { build_feedurl(); });
