@@ -134,7 +134,7 @@ sub set_config {
 #
 # @param articleid     The ID of the article to add the notifications for.
 # @param article       A reference to a hash containing the article data.
-# @param userid        A reference to a hash containing the user's data.
+# @param userid        The ID of the user storing the data.
 # @param is_draft      True if the article is a draft, false otherwise.
 # @param recip_methods A reference to an array containing the recipient/method
 #                      map IDs for the recipients this method is being used to

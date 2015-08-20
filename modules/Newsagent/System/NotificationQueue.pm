@@ -67,7 +67,7 @@ sub get_methods {
 #
 # @param articleid    The ID of the article to add the notifications for.
 # @param article      A reference to a hash containing the article data.
-# @param userid       A reference to a hash containing the user's data.
+# @param userid       The ID of the user queueing the article.
 # @param is_draft     True if the article is a draft, false otherwise.
 # @param used_methods A reference to a hash of used methods. Each key should be the name
 #                     of a notification method, and the value for each key should be a
@@ -544,7 +544,7 @@ sub _load_notification_method_modules {
 #
 # @param articleid     The ID of the article to add the notifications for.
 # @param article       A reference to a hash containing the article data.
-# @param userid        A reference to a hash containing the user's data.
+# @param userid        The ID of the user queueing the article.
 # @param methodid      The ID of the method this is a notification through.
 # @param is_draft      True if the article is a draft, false otherwise.
 # @param send_mode     The send mode (UI convenience value), one of 'immediate', 'delay', 'timed'.
