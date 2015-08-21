@@ -114,7 +114,7 @@ sub generate_feed {
     my $items   = "";
     my $maxdate = 0;
     foreach my $result (@{$results}) {
-        my ($images, $files, $extra) = ("", "", "");
+        my ($images, $levels, $files, $extra) = ("", "", "", "");
 
         # Keep track of the latest date (should be the first result, really)
         $maxdate = $result -> {"release_time"}
@@ -142,6 +142,11 @@ sub generate_feed {
 
             $files = $self -> {"template"} -> load_template("feeds/rss/files.tem", {"***files***" => $files})
                 if($files);
+        }
+
+        # Build the level list
+        foreach my $level (@{$result -> {"levels"}}) {
+            $levels .= $self -> {"template"} -> load_template("feeds/rss/level.tem", {"***level***" => $level -> {"level"}});
         }
 
         # Handle fulltext transform
@@ -198,6 +203,7 @@ sub generate_feed {
                                                                                 "***images***"      => $images,
                                                                                 "***files***"       => $files,
                                                                                 "***feeds***"       => $feeds,
+                                                                                "***levels***"      => $levels,
                                                                                 "***extra***"       => $extra,
                                                                                 "***date***"        => $pubdate,
                                                                                 "***acyear***"      => $result -> {"acyear"} ? $result -> {"acyear"} -> {"start_year"} : "",

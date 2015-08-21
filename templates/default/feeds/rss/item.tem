@@ -7,5 +7,6 @@
       <author>***email*** (***name***)</author>
       <newsagent:gravatar>https://gravatar.com/avatar/***gravhash***</newsagent:gravatar>
       <newsagent:feeds>***feeds***</newsagent:feeds>
+      <newsagent:levels>***levels***</newsagent:levels>
       <newsagent:acyear>***acyear***</newsagent:acyear>
 ***images******files******extra***    </item>
