@@ -95,6 +95,19 @@ sub generate_feed {
     my $self     = shift;
 
     my $settings = $self -> _validate_settings();
+
+    # Potentially tweak the levels based on pathinfo
+    my @pathinfo = $self -> {"cgi"} -> param("pathinfo");
+
+    # Only update the level settings if no parameters have been set, and the
+    # pathinfo contains a valid level
+    if($pathinfo[0] && $pathinfo[0] =~ /^\w+$/ && (!$settings -> {"levels"} || !scalar(@{$settings -> {"levels"}}))) {
+        my $levelid = $self -> {"article"} -> _get_level_byname($pathinfo[0]);
+
+        push(@{$settings -> {"levels"}}, $pathinfo[0])
+            if($levelid);
+    }
+
     my $results  = $self -> {"article"} -> get_feed_articles($settings);
     my $now      = time();
 
