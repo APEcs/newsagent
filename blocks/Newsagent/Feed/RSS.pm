@@ -71,7 +71,8 @@ sub _build_rss_image {
     # Convenience hash to map image modes to internal sizes.
     my $modes = { "lead"    => "icon",
                   "thumb"   => "thumb",
-                  "article" => "large" };
+                  "article" => "large",
+                  "tactus"  => "tactus" };
 
     # Do nothing if there is no image data available.
     return "" if(!$image);
@@ -127,6 +128,7 @@ sub generate_feed {
         if($result -> {"images"} -> [1]) {
             $images .= $self -> _build_rss_image($result -> {"images"} -> [1], 'thumb');
             $images .= $self -> _build_rss_image($result -> {"images"} -> [1], 'article');
+            $images .= $self -> _build_rss_image($result -> {"images"} -> [1], 'tactus');
         }
 
         $images = $self -> {"template"} -> load_template("feeds/rss/images.tem", {"***images***" => $images})
@@ -263,17 +265,27 @@ sub generate_feed {
 }
 
 
+## @method $ html_strip($text)
+# Remove HTML from the specified text. This converts the specified text from
+# HTML to plain text, with various fixes for images and horizontal rules.
+#
+# @param text The text to convert to HTML
 sub html_strip {
     my $self = shift;
     my $text = shift;
 
+    # FIXME: Convert to latin-1. This is horrible and annoying, and should not be needed
+    #        but not converting it produces borken output. Find out WTF and fix it.
     $text = Encode::encode("iso-8859-1", $text);
-    $text =~ s|<img(.*?)/?>|convert_img($1)|iseg;
+
+    # pre-convert images to avoid losing them during conversion.
+    $text =~ s|<img(.*?)/?>|_convert_img($1)|iseg;
     my $tree = HTML::TreeBuilder -> new_from_content($text);
 
     my $formatter = HTML::FormatText -> new(leftmargin => 0, rightmargin => 50000);
     $text = $formatter -> format($tree);
 
+    # clean up images.
     $text =~ s/(img: [^\s]+?) /$1\n/g;
 
     my $bar = "-" x 80;
@@ -282,8 +294,14 @@ sub html_strip {
     return $text;
 }
 
-
-sub convert_img {
+## @fn private $ _convert_img($attrs);
+# Given the guts of an image tag, discard everything but the src URL.
+# This takes the contents of an image tag, looks for the src attribute,
+# and returns the URL it contains - everything else is ignored.
+#
+# @param attrs A string containing the image tag attributes.
+# @return A string containing the image URL.
+sub _convert_img {
     my $attrs = shift;
 
     my ($src) = $attrs =~ /src=["'](.*?)["']/;

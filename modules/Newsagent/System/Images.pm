@@ -56,10 +56,21 @@ sub new {
                                    "image/gif"  => "gif",
     };
 
+                                 # fill the 130x63 area (extending outside as needed), crop the image to 130x63 from the centre, repage to discard out-of-bounds canvas
     $self -> {"image_sizes"} = { "icon"  => '-resize 130x63^ -gravity Center -crop 130x63+0+0 +repage',
+
+                                 # fill the 128x128 area (extending outside as needed), crop the image to 128x129 from the centre, repage to discard out-of-bounds canvas
                                  "media" => '-resize 128x128^ -gravity Center -crop 128x128+0+0 +repage' ,
+
+                                 # Fill the 350x167 area (extending outside as needed to preserve aspect)
                                  "thumb" => '-resize 350x167^',
-                                 "large" => '-resize 450x450\>'
+
+                                 # Resize images down that are larger than 450x450, preserving aspect.
+                                 # Images that fit completely within 450x450 are not scaled
+                                 "large" => '-resize 450x450\>',
+
+                                 # Resize images to fit into the 2560x1440 tactus size, preserving aspect
+                                 "tactus" => '-resize 2560x1440',
     };
 
     return $self;
@@ -162,7 +173,9 @@ sub get_image_info {
     if($data) {
         foreach my $size (keys(%{$self -> {"image_sizes"}})) {
             if($data -> {"type"} eq "file") {
-                $data -> {"path"} -> {$size} = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"}, $size, $data -> {"location"});
+                # Only include the image at this size if it exists.
+                $data -> {"path"} -> {$size} = path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_url"}, $size, $data -> {"location"})
+                    if(-f path_join($self -> {"settings"} -> {"config"} -> {"Article:upload_image_path"}, $size, $data -> {"location"}));
             } else {
                 $data -> {"path"} -> {$size} = $data -> {"location"};
             }
