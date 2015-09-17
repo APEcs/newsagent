@@ -43,6 +43,7 @@ window.addEvent('domready', function() {
                                                             form: 'fullform'
                                                      });
 
+    CKEDITOR.plugins.addExternal( 'newline', '{V_[commonpath]}cke_plugins/newline/plugin.js' );
     CKEDITOR.replace('comp-desc', { customConfig: '{V_[commonpath]}cke_configs/***ckeconfig***' });
 
     settingPane = new TabPane('relmode-tabs', {onChange: function(select) { $('relmode').set('value', select); } }, ***relmode***);
