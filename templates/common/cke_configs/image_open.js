@@ -18,4 +18,7 @@ CKEDITOR.editorConfig = function( config )
 	    { name: 'colors', items : [ 'TextColor','BGColor' ] }
     ];
 
+    config.keystrokes = [
+        [ CKEDITOR.CTRL + 13, 'shiftEnter' ],    // Ctrl+Enter
+    ];
 };
