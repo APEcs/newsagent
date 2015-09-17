@@ -7,7 +7,7 @@ CKEDITOR.plugins.add( 'newline', {
             }
         });
         editor.ui.addButton( 'Newline', {
-            label: 'Insert a literal newline',
+            label: 'Insert a line break',
             command: 'insertNewline',
             toolbar: 'insert'
         });
