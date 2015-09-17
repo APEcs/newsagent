@@ -45,8 +45,8 @@ delete @ENV{qw(PATH IFS CDPATH ENV BASH_ENV)}; # Clean up ENV
 sub handle_errors {
     my $msg = shift;
     print "<h1>Software error</h1>\n";
-    print '<p>Server time: ',scalar(localtime()),'<br/>Error was:</p><pre>',$msg,'</pre>';
-    print '<p>Please report this error to ',$contact,' giving the text of this error and the time and date at which it occured</p>';
+    print '<p>Server time: ',scalar(localtime()),'<br/>A serious software error has occurred.</p>';
+    print '<p>Please report this error to ',$contact,' giving the time and date at which it occured</p>';
 }
 set_message(\&handle_errors);
 
