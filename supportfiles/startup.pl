@@ -25,6 +25,7 @@ use Newsagent::AppUser;
 use Newsagent::Article;
 use Newsagent::BlockSelector;
 use Newsagent::Feed;
+use Newsagent::Import;
 use Newsagent::Importer;
 use Newsagent::Newsletter;
 use Newsagent::Notification::Method;

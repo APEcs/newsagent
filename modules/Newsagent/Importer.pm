@@ -25,6 +25,7 @@ package Newsagent::Importer;
 use strict;
 use experimental 'smartmatch';
 use base qw(Newsagent); # This class extends the Newsagent block class
+use List::Flatten;
 use Newsagent::System::Feed;
 use Newsagent::System::Article;
 use v5.12;
@@ -98,6 +99,7 @@ sub load_importer {
         or $self -> self_error("Unable to load import module '$source': ".$self -> {"module"} -> errstr());
 }
 
+
 # ============================================================================
 #  Interface
 
@@ -121,6 +123,53 @@ sub find_by_sourceid {
         or return $self -> self_error("Unable to look up import metadata: ".$self -> {"dbh"} -> errstr());
 
     return $datah -> fetchrow_hashref() || 0;
+}
+
+
+## @method valid_source($source)
+# Determine whether the specified source is a valid source. This looks for the
+# source in the import sources table, and if it is a valid source the ID of
+# the source is returned.
+#
+# @param source The name of the source to check.
+# @return The importer source ID if the source name is valid, 0 if it is not,
+#         or undef on error.
+sub valid_source {
+    my $self   = shift;
+    my $source = shift;
+
+    $self -> clear_error();
+
+    my $checkh = $self -> {"dbh"} -> prepare("SELECT `id`
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {"import_sources"}."`
+                                              WHERE `shortname` LIKE ?");
+    $checkh -> execute($source)
+        or return $self -> self_error("Unable to look up source timing information: ".$self -> {"dbh"} -> errstr());
+
+    my $importer = $checkh -> fetchrow_arrayref();
+
+    return $importer ? $importer -> [0] : 0;
+}
+
+
+## @method $ all_sources()
+# Fetch a list of all the sources defined in the system.
+#
+# @return A reference to an array of source names known to the system.
+sub all_sources {
+    my $self = shift;
+
+    $self -> clear_error();
+
+    my $sourceh = $self -> {"dbh"} -> prepare("SELECT `shortname`
+                                               FROM `".$self -> {"settings"} -> {"database"} -> {"import_sources"}."`
+                                               ORDER BY `shortname`");
+    $sourceh -> execute()
+        or return $self -> self_error("Unable to obtain list of import sources: ".$self -> {"dbh"} -> errstr());
+
+    my @names = flat(@{ $sourceh -> fetchall_arrayref() || []});
+
+    return \@names;
 }
 
 

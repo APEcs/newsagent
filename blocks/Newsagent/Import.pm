@@ -49,14 +49,17 @@ sub new {
 # ============================================================================
 #  Internal implementation
 
-## @method private @ _run_import($source)
+## @method private $ _run_import($source)
 # Run the import process for the specified import source.
 #
 # @param source The shortname for the import source to run.
-# @return Two strings: the page title, and the contents of the page.
+# @return The contents of the page.
 sub _run_import {
     my $self   = shift;
     my $source = shift;
+
+    return "Error: Invalid or unknown import source specified."
+        unless($self -> {"importer"} -> valid_source($source));
 
     # Run the import?
     if($self -> {"importer"} -> should_run($source)) {
@@ -65,12 +68,12 @@ sub _run_import {
             my $result = $importer -> import_articles();
             $self -> {"importer"} -> touch_importer($source);
 
-            return ("Testing", $result ? "Imported" : $importer -> errstr());
+            return $result ? "Imported" : $importer -> errstr();
         }
     } else {
-        return ("Skipped", "Skipped import as importer does not need to run yet");
+        return "Skipped import as importer does not need to run yet";
     }
-    return ("error", $self -> {"importer"} -> errstr());
+    return "Error: ".$self -> {"importer"} -> errstr();
 }
 
 
@@ -102,7 +105,24 @@ sub page_display {
         my @pathinfo = $self -> {"cgi"} -> param('pathinfo');
 
         if($pathinfo[0]) {
-            ($title, $content) = $self -> _run_import($pathinfo[0]);
+            # 'all' source triggers, well, all sources to import...
+            if($pathinfo[0] eq "all") {
+                $title = "Importing all sources...";
+                my $sources = $self -> {"importer"} -> all_sources();
+
+                foreach my $source (@{$sources}) {
+                    $content .= $self -> _run_import($source);
+                }
+
+            # pure alphanumeric/underscore names are acceptable sources...
+            } elsif($pathinfo[0] =~ /^\w+$/) {
+                $title = "Importing source '$pathinfo[0]'...";
+                $content = $self -> _run_import($pathinfo[0]);
+
+            # ... everything else is bogus and potentially dangerous.
+            } else {
+                ($title, $content) = ("Error", "Illegal source specified.");
+            }
         } else {
             ($title, $content) = ("Error", "No import module selected");
         }
