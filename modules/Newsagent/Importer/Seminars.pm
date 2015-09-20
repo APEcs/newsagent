@@ -19,5 +19,40 @@
 ## @class
 #
 #
+package Newsagent::Importer::Seminars;
+
+use strict;
+use experimental 'smartmatch';
+use base qw(Newsagent::Importer); # This class extends the Newsagent block class
+use v5.12;
+use DateTime;
+use LWP::UserAgent;
+use XML::LibXML;
+
+# ============================================================================
+#  Constructor
+
+# No explicit constructor (uses Importer class constructor) but this must be
+# created with 'importer_id' set appropriately.
+
+# ============================================================================
+#  Interface functions
+
+## @method $ import_articles()
+# Run the import process for this module. This will fetch the articles from the
+# source, determine whether any need to be added to the system, and perform any
+# additions or updates as needed.
+#
+# @return true on success (note that 'nothing imported' is considered success
+#         if there is nothing to import!) or undef on error.
+sub import_articles {
+    my $self = shift;
+
+    $self -> clear_error();
+
+
+
+    return 1;
+}
 
 1;
