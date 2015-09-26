@@ -197,6 +197,7 @@ sub new {
             '*'   => 0,
         },
         div => {
+            id => 1,
             class => 1,
             style => 1,
             title => 1,
