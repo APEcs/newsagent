@@ -259,6 +259,8 @@ var EditTools = new Class({
             // restart the timer
             this.timeout_id = window.setTimeout(function() { this.save_autosave(); }.bind(this), this.options.delay);
 
+            this.check_autosave();
+
             return false;
         }
 
