@@ -50,7 +50,7 @@ sub import_articles {
 
     $self -> clear_error();
 
-    my $updates = $self -> _fetch_updated_xml($self -> {"args"} -> {"url"}, DateTime -> from_epoch(epoch => $self -> {"importer_lastrun"} || 0))
+    my $future = $self -> _fetch_future_seminars($self -> {"args"} -> {"list"})
         or return undef;
 
 
@@ -90,16 +90,15 @@ sub _sortfn_by_date {
 }
 
 
-## @method private $ _fetch_updated_xml($url, $lastupdate)
+## @method private $ _fetch_future_seminars($url)
 # This will fetch the latest XML file and check whether it needs to be processed.
 #
 # @param url        The location of the XML file to fetch and process.
 # @param lastupdate A DateTime object describing the time the xml was last checked.
-# @return A reference to a an array of new or updated seminars.
-sub _fetch_updated_xml {
+# @return A reference to a an array of seminars that have not happened yet.
+sub _fetch_future_seminars {
     my $self       = shift;
     my $url        = shift;
-    my $lastupdate = shift;
 
     $self -> clear_error();
 
@@ -180,7 +179,8 @@ sub _build_pending {
         # happened, so there's no point in maintaining anything for it)
         last if($stamp -> textContent < $now);
 
-        # Add the XML::LibXML::Element to the pending list.
+        # Get here and the seminar is in the future, add the XML::LibXML::Element to
+        # the pending list.
         push(@pending, $item);
     }
 
