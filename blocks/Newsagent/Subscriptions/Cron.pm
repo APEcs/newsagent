@@ -47,7 +47,7 @@ sub new {
     my $self     = $class -> SUPER::new(@_)
         or return undef;
 
-    $self -> {"digest_schedule"} = $self -> {"settings"} -> {"config"} -> {"Subscription:digest_schedule"} || 86400;
+    $self -> {"digest_schedule"} = $self -> {"settings"} -> {"config"} -> {"Subscription:digest_schedule"} || 85799;
 
     $self -> {"schedule"} = Newsagent::System::Schedule -> new(dbh      => $self -> {"dbh"},
                                                                settings => $self -> {"settings"},

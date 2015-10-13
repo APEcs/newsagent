@@ -366,7 +366,7 @@ sub get_pending_subscriptions {
                                              FROM `".$self -> {"settings"} -> {"database"} -> {"subscriptions"}."`
                                              WHERE `active` = 1
                                              AND (`lastrun` IS NULL
-                                                   OR `lastrun` < ?)");
+                                                   OR `lastrun` <= ?)");
     $pendh -> execute($threshold)
         or return $self -> self_error("Unable to search for subscriptions that need checking for digests after '$threshold': ".$self -> {"dbh"} -> errstr());
 
