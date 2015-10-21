@@ -222,7 +222,7 @@ sub touch_importer {
 # ============================================================================
 #  Class support functions
 
-## @method private $ _get_import_source($source)
+## @method protected $ _get_import_source($source)
 # Fetch the information for the specified import source from the database.
 #
 # @param source The shortname of the importer to fetch the data for.
@@ -246,31 +246,73 @@ sub _get_import_source {
 }
 
 
-## @method private $ _add_import_meta($articleid, $sourceid)
-# Add an entry to the import metainfo table for the specified article
+## @method protected $ _get_import_meta($articleid, $sourceid)
+# Fetch the metainfo data for the specified article and source, if possible.
 #
 # @param articleid The ID of the article associated with this import.
 # @param sourceid  The ID of the article in the source data
-# @return true on success, undef on error.
-sub _add_import_meta {
+# @return A reference to a hash containing the metainfo on success, undef
+#         on error.
+sub _get_import_meta {
     my $self      = shift;
     my $articleid = shift;
     my $sourceid  = shift;
 
     $self -> clear_error();
 
-    my $addh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"import_meta"}."`
-                                            (importer_id, article_id, source_id, imported, updated)
-                                            VALUES(?, ?, ?, UNIX_TIMESTAMP(), UNIX_TIMESTAMP())");
-    my $rows = $addh -> execute($self -> {"importer_id"}, $articleid, $sourceid);
-    return $self -> self_error("Unable to perform article metainfo insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
-    return $self -> self_error("Article metainfo insert failed, no rows inserted") if($rows eq "0E0");
+    my $geth = $self -> {"dbh"} -> prepare("SELECT *
+                                            FROM `".$self -> {"settings"} -> {"database"} -> {"import_meta"}."`
+                                            WHERE importer_id = ?
+                                            AND article_id = ?
+                                            AND source_id = ?");
+    my $rows = $geth -> execute($self -> {"importer_id"}, $articleid, $sourceid)
+        or return $self -> self_error("Unable to perform article metainfo lookup: ". $self -> {"dbh"} -> errstr);
+
+    return $rows -> fetchrow_hashref() || $self -> self_error("No article metainfo found for $articleid, sourceid $sourceid");
+}
+
+
+## @method protected $ _set_import_meta($articleid, $sourceid, $data)
+# Set or add an entry in the import metainfo table for the specified article. If
+# the entry already exists, this will set the update timestamp at the same time
+# as setting the data. If you do not need to change the data, use _touch_import_meta()
+# instead of this function!
+#
+# @param articleid The ID of the article associated with this import.
+# @param sourceid  The ID of the article in the source data
+# @param data      An optional data string to associate with the metainfo row.
+# @return true on success, undef on error.
+sub _set_import_meta {
+    my $self      = shift;
+    my $articleid = shift;
+    my $sourceid  = shift;
+    my $data      = shift;
+
+    $self -> clear_error();
+
+    my $metainfo = $self -> _get_import_meta($articleid, $sourceid);
+
+    if($metainfo) {
+        my $seth = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"import_meta"}."`
+                                                SET `data` = ?, `updated` = UNIX_TIMESTAMP()
+                                                WHERE `id` = ?");
+        my $rows = $seth -> execute($data, $metainfo -> {"id"});
+        return $self -> self_error("Unable to perform article metainfo update: ". $self -> {"dbh"} -> errstr) if(!$rows);
+        return $self -> self_error("Article metainfo update failed, no rows updated") if($rows eq "0E0");
+    } else {
+        my $addh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"import_meta"}."`
+                                                (`importer_id`, `article_id`, `source_id`, `imported`, `updated`, `data`)
+                                                VALUES(?, ?, ?, UNIX_TIMESTAMP(), UNIX_TIMESTAMP(), ?)");
+        my $rows = $addh -> execute($self -> {"importer_id"}, $articleid, $sourceid, $data);
+        return $self -> self_error("Unable to perform article metainfo insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
+        return $self -> self_error("Article metainfo insert failed, no rows inserted") if($rows eq "0E0");
+    }
 
     return 1;
 }
 
 
-## @method private $ _touch_import_meta($metaid)
+## @method protected $ _touch_import_meta($metaid)
 # Update the timestamp associated with the specified import metadata
 #
 # @param metaid The ID of the import metadata to update.

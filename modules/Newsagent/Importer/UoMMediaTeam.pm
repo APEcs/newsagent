@@ -128,7 +128,7 @@ sub _create_import {
     my $aid = $self -> {"article"} -> add_article($attrs, $self -> {"args"} -> {"userid"})
         or return $self -> self_error("Article addition failed: ".$self -> {"article"} -> errstr());
 
-    return $self -> _add_import_meta($aid, $article -> {"a"} -> {"name"});
+    return $self -> _set_import_meta($aid, $article -> {"a"} -> {"name"});
 }
 
 
