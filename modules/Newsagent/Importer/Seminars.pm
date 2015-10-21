@@ -25,9 +25,12 @@ use strict;
 use experimental 'smartmatch';
 use base qw(Newsagent::Importer); # This class extends the Newsagent block class
 use v5.12;
+use Digest;
 use DateTime;
 use DateTime::Format::Strptime;
 use XML::LibXML;
+use Webperl::Utils qw(path_join);
+use Data::Dumper;
 
 # ============================================================================
 #  Constructor
@@ -50,17 +53,56 @@ sub import_articles {
 
     $self -> clear_error();
 
-    my $future = $self -> _fetch_future_seminars($self -> {"args"} -> {"list"})
+    my $seminars = $self -> _fetch_seminars($self -> {"args"} -> {"list"})
         or return undef;
 
+    my $data = "";
+    foreach my $seminar (@{$seminars}) {
+        my ($semelem) = $seminar -> findnodes("seminar");
 
+        # check for deletions
+        my $cancelled = $semelem -> getAttribute("cancelled");
+        if($cancelled) {
+            $data .= "Got cancelled seminar\n";
+#            $self -> _cancel_seminar($seminar);
+
+        # Not deleted; must be a new or updated
+        } else {
+            my ($id) = $semelem -> findnodes("id");
+
+            my $oldmeta = $self -> find_by_sourceid($id -> textContent);
+            return undef if(!defined($oldmeta));
+
+            # Old metadata is available, so this is an update
+            if($oldmeta) {
+                $data .= "Got updated seminar\n";
+                #
+
+            # No metadata set; must be a new seminar
+            } else {
+                $data .= "Got new seminar\n";
+
+            }
+        }
+
+        $data .= $seminar."\n";
+    }
+
+    $data =~ s/</&lt;/g;
+    $data =~ s/>/&gt;/g;
+
+    return $self -> self_error("<pre>Data: $data</pre>");
     return 1;
 }
 
 
 
 # ============================================================================
-#  Internal implementation-specifics
+#  Internal implementation - article interaction
+
+
+# ============================================================================
+#  Internal implementation - seminar fetch/parse/process
 
 ## @fn private $ _sortfn_by_date(void)
 # A function used by sort() to order seminar elements based on the date and
@@ -90,15 +132,16 @@ sub _sortfn_by_date {
 }
 
 
-## @method private $ _fetch_future_seminars($url)
-# This will fetch the latest XML file and check whether it needs to be processed.
+## @method private $ _fetch_seminars($url)
+# This will fetch the latest XML file and check whether any seminars need to be
+# processed.
 #
-# @param url        The location of the XML file to fetch and process.
-# @param lastupdate A DateTime object describing the time the xml was last checked.
-# @return A reference to a an array of seminars that have not happened yet.
-sub _fetch_future_seminars {
-    my $self       = shift;
-    my $url        = shift;
+# @param url The location of the XML file to fetch and process.
+# @return A reference to a an array of seminars that either don't exist in the
+#         database, or have been updated since the article was created.
+sub _fetch_seminars {
+    my $self = shift;
+    my $url  = shift;
 
     $self -> clear_error();
 
@@ -106,12 +149,64 @@ sub _fetch_future_seminars {
     return $self -> self_error("Unable to process seminar master XML: $@")
         if($@);
 
-    # Process the seminars so that we only have the ones that haven't happened yet
+    # Go through the seminars throwing away ones that have already happened.
     $self -> _build_datestamps($dom) or return undef;
     my $pending = $self -> _build_pending($dom) or return undef;
 
-    # Now check whether the ones that haven't happened yet need to be added or updated
+    # Now go through the pending ones, looking to see which ones need processing
+    my @toprocess = ();
+    foreach my $seminar (@{$pending}) {
+        my ($id) = $seminar -> findnodes("id");
+        return $self -> self_error("Unable to find ID for seminar: ".$seminar)
+            unless($id);
 
+        # Pull in the full content for the seminar
+        my $fulldata = $self -> _fetch_seminar($id -> textContent)
+            or return undef;
+
+        # Get the hash
+        my ($semelem) = $fulldata -> findnodes("seminar");
+        my $hash = $semelem -> getAttribute("hash");
+
+        # Does this seminar have an entry in the meta table..?
+        my $metainfo = $self -> find_by_sourceid($id);
+
+        # If it doesn't or it doesn't match, it needs processing.
+        push(@toprocess, $fulldata)
+            if(!$metainfo || $metainfo -> {"data"} ne $hash);
+    }
+
+    return \@toprocess;
+}
+
+
+## @method private $ _fetch_seminar($sid)
+# Given a seminar ID, attempt to fetch the seminar with that ID. This will fetch
+# the seminar data, and store the MD5 hash of the seminar data in the parsed DOM.
+#
+# @param sid The seminar ID.
+# @return A reference to a XML::LibXML::Document containing the parsed
+#         seminar DOM.
+sub _fetch_seminar {
+    my $self = shift;
+    my $sid  = shift;
+
+    $self -> clear_error();
+
+    my $url = path_join($self -> {"args"} -> {"base"}, "$sid.xml");
+    my $dom = eval { XML::LibXML -> load_xml(location => $url); };
+    return $self -> self_error("Unable to process seminar XML, id '$sid': $@")
+        if($@);
+
+    # Calculate the hash of the seminar data
+    my $digest = Digest -> new("MD5");
+    $digest -> add($dom -> toString());
+
+    # Store the hash in the seminar element, to make lookup easier
+    my ($seminar) = $dom -> findnodes("seminar");
+    $seminar -> setAttribute("hash", $digest -> hexdigest());
+
+    return $dom;
 }
 
 
@@ -168,8 +263,9 @@ sub _build_datestamps {
 # @return A reference to an array of XML::LibXML::Elements, one per seminar. This
 #         list may be empty if there are no pending seminars.
 sub _build_pending {
-    my $dom = shift;
-    my $now = time();
+    my $self = shift;
+    my $dom  = shift;
+    my $now  = time();
 
     my @pending = ();
     foreach my $item (sort _sortfn_by_date $dom -> findnodes("seminars/seminar")) {
@@ -177,7 +273,7 @@ sub _build_pending {
 
         # Stop if the item's timestamp is before the current time (seminar has already
         # happened, so there's no point in maintaining anything for it)
-        last if($stamp -> textContent < $now);
+        last if($stamp -> textContent <= $now);
 
         # Get here and the seminar is in the future, add the XML::LibXML::Element to
         # the pending list.
@@ -186,6 +282,5 @@ sub _build_pending {
 
     return \@pending;
 }
-
 
 1;
