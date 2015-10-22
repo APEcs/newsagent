@@ -62,6 +62,13 @@ sub new {
                                                              metadata => $self -> {"system"} -> {"metadata"})
         or return Webperl::SystemModule::set_error("Article initialisation failed: ".$Webperl::SystemModule::errstr);
 
+    $self -> {"queue"} = Newsagent::System::NotificationQueue -> new(dbh      => $self -> {"dbh"},
+                                                                     settings => $self -> {"settings"},
+                                                                     logger   => $self -> {"logger"},
+                                                                     article  => $self -> {"article"},
+                                                                     module   => $self -> {"module"})
+        or return Webperl::SystemModule::set_error("Article initialisation failed: ".$Webperl::SystemModule::errstr);
+
     # If importer args have been provided, split them
     if($self -> {"importer_args"}) {
         my %args = $self -> {"importer_args"} =~ /(\w+)=([^;]+)/g;
