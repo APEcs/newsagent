@@ -210,6 +210,48 @@ sub _fetch_seminar {
 }
 
 
+## @method private $ _build_timestamp($seminar, $parser)
+# Given a seminar, attempt to build a unix timestamp for the specified seminar
+# date and time. This uses the specified parser to build a timestamp, relying
+# on the TZ and pattern settings in the parser to do the job. On success,
+# this will set the timestamp attribute of the supplied seminar to the
+# UNIX timestamp for its date.
+#
+# @param seminar A reference to an XML::LibXML::Element containing the seminar
+#                element (and its children) to build the datestamp for.
+# @param parser  A refrence to a DateTime::Format::Strptime parser to use
+#                when parsing the seminar date and time.
+# @return The timestamp on success, undef on error.
+sub _build_timestamp {
+    my $self    = shift;
+    my $seminar = shift;
+    my $parser  = shift;
+
+    $self -> clear_error();
+
+    my ($date) = $seminar -> findnodes("date");
+    my ($time) = $seminar -> findnodes("time");
+    my ($id)   = $seminar -> findnodes("id");
+
+    # The time field is not entirely consistent, this should help to get it
+    # into a HH:MM format we can work with.
+    $time = $time -> textContent;
+    $time =~ s/^(\d\d)pm$/$1:00/;
+    $time =~ s/^(\d\d)(\d\d)$/$1:$2/;
+    $time =~ s/^(\d\d)\.(\d\d)$/$1:$2/;
+
+    # Try the parse; it may not work if the date or time are incorrect formats
+    my $datetime = eval { $parser -> parse_datetime($date -> textContent." ".$time); };
+    return $self -> self_error("Unable to create timestamp for seminar ".$id -> textContent.": $@")
+        if($@);
+
+    # Store the timestamp as seconds since the epoch it UTC.
+    $seminar -> setAttribute('timestamp', $datetime -> epoch());
+
+    return $datetime -> epoch();
+}
+
+
 ## @method private $ _build_datestamps($dom)
 # Ensure that all the seminars in the specified DOM have a unix timestamp
 # set for them in addition to the date and time provided by default.
@@ -230,24 +272,8 @@ sub _build_datestamps {
 
     # Go through each seminar adding a unix timestamp
     foreach my $seminar ($dom -> findnodes("seminars/seminar")) {
-        my ($date) = $seminar -> findnodes("date");
-        my ($time) = $seminar -> findnodes("time");
-        my ($id)   = $seminar -> findnodes("id");
-
-        # The time field is not entirely consistent, this should help to get it
-        # into a HH:MM format we can work with.
-        $time = $time -> textContent;
-        $time =~ s/^(\d\d)pm$/$1:00/;
-        $time =~ s/^(\d\d)(\d\d)$/$1:$2/;
-        $time =~ s/^(\d\d)\.(\d\d)$/$1:$2/;
-
-        # Try the parse; it may not work if the date or time are incorrect formats
-        my $datetime = eval { $parser -> parse_datetime($date -> textContent." ".$time); };
-        return $self -> self_error("Unable to create timestamp for seminar ".$id -> textContent.": $@")
-            if($@);
-
-        # Store the timestamp as seconds since the epoch it UTC.
-        $seminar -> setAttribute('timestamp', $datetime -> epoch());
+        $self -> _build_timestamp($seminar, $parser)
+            or return undef;
     }
 
     return 1;
@@ -269,11 +295,11 @@ sub _build_pending {
 
     my @pending = ();
     foreach my $item (sort _sortfn_by_date $dom -> findnodes("seminars/seminar")) {
-        my ($stamp) = $item -> findnodes("timestamp");
+        my $stamp = $item -> getAttribute("timestamp");
 
         # Stop if the item's timestamp is before the current time (seminar has already
         # happened, so there's no point in maintaining anything for it)
-        last if($stamp -> textContent <= $now);
+        last if($stamp <= $now);
 
         # Get here and the seminar is in the future, add the XML::LibXML::Element to
         # the pending list.
