@@ -118,16 +118,16 @@ sub import_articles {
 # @param b (implicit scalar) A reference to an XML::LibXML::Element for a seminar.
 # @return An integer indicating the relation between a and b.
 sub _sortfn_by_date {
-    my ($adate) = $a -> findnodes("timestamp");
-    my ($bdate) = $b -> findnodes("timestamp");
-    my ($aid)   = $a -> findnodes("id");
-    my ($bid)   = $b -> findnodes("id");
+    my $adate = $a -> getAttribute("timestamp");
+    my $bdate = $b -> getAttribute("timestamp");
+    my ($aid) = $a -> findnodes("id");
+    my ($bid) = $b -> findnodes("id");
 
     # If the dates match, use IDs to distinguish
-    if($adate -> textContent == $bdate -> textContent) {
+    if($adate == $bdate) {
         return $bid -> textContent <=> $aid -> textContent;
     } else {
-        return $bdate -> textContent <=> $adate -> textContent;
+        return $bdate <=> $adate;
     }
 }
 
@@ -247,7 +247,7 @@ sub _build_datestamps {
             if($@);
 
         # Store the timestamp as seconds since the epoch it UTC.
-        $seminar -> appendTextChild('timestamp', $datetime -> epoch());
+        $seminar -> setAttribute('timestamp', $datetime -> epoch());
     }
 
     return 1;
