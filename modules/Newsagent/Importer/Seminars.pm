@@ -35,8 +35,26 @@ use Data::Dumper;
 # ============================================================================
 #  Constructor
 
-# No explicit constructor (uses Importer class constructor) but this must be
-# created with 'importer_id' set appropriately.
+## @cmethod $ new(%args)
+# Overloaded constructor for the seminar importer facility/
+#
+# @param args A hash of values to initialise the object with. See the Block docs
+#             for more information.
+# @return A reference to a new Newsagent::Importer::Seminars object on success, undef on error.
+sub new {
+    my $invocant = shift;
+    my $class    = ref($invocant) || $invocant;
+    my $self     = $class -> SUPER::new(@_)
+        or return undef;
+
+    $self -> {"parser"} = DateTime::Format::Strptime -> new(pattern   => '%d-%B-%y %H:%M',
+                                                            locale    => "en_GB",
+                                                            time_zone => 'Europe/London',
+                                                            on_error  => 'croak');
+
+    return $self;
+}
+
 
 # ============================================================================
 #  Interface functions
@@ -206,26 +224,27 @@ sub _fetch_seminar {
     my ($seminar) = $dom -> findnodes("seminar");
     $seminar -> setAttribute("hash", $digest -> hexdigest());
 
+    # and give it a useful seminar datestamp
+    $self -> _build_timestamp($seminar)
+        or return undef;
+
     return $dom;
 }
 
 
-## @method private $ _build_timestamp($seminar, $parser)
+## @method private $ _build_timestamp($seminar)
 # Given a seminar, attempt to build a unix timestamp for the specified seminar
-# date and time. This uses the specified parser to build a timestamp, relying
+# date and time. This parses the seminar time and day into a timestamp, relying
 # on the TZ and pattern settings in the parser to do the job. On success,
 # this will set the timestamp attribute of the supplied seminar to the
 # UNIX timestamp for its date.
 #
 # @param seminar A reference to an XML::LibXML::Element containing the seminar
 #                element (and its children) to build the datestamp for.
-# @param parser  A refrence to a DateTime::Format::Strptime parser to use
-#                when parsing the seminar date and time.
 # @return The timestamp on success, undef on error.
 sub _build_timestamp {
     my $self    = shift;
     my $seminar = shift;
-    my $parser  = shift;
 
     $self -> clear_error();
 
@@ -241,7 +260,7 @@ sub _build_timestamp {
     $time =~ s/^(\d\d)\.(\d\d)$/$1:$2/;
 
     # Try the parse; it may not work if the date or time are incorrect formats
-    my $datetime = eval { $parser -> parse_datetime($date -> textContent." ".$time); };
+    my $datetime = eval { $self -> {"parser"} -> parse_datetime($date -> textContent." ".$time); };
     return $self -> self_error("Unable to create timestamp for seminar ".$id -> textContent.": $@")
         if($@);
 
@@ -264,15 +283,9 @@ sub _build_datestamps {
 
     $self -> clear_error();
 
-    # In theory, this should make it easier to fix parsing if the seminar xml changes...
-    my $parser = DateTime::Format::Strptime -> new(pattern   => '%d-%B-%y %H:%M',
-                                                   locale    => "en_GB",
-                                                   time_zone => 'Europe/London',
-                                                   on_error  => 'croak');
-
     # Go through each seminar adding a unix timestamp
     foreach my $seminar ($dom -> findnodes("seminars/seminar")) {
-        $self -> _build_timestamp($seminar, $parser)
+        $self -> _build_timestamp($seminar)
             or return undef;
     }
 
