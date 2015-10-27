@@ -136,6 +136,7 @@ sub _generate_compose {
 
     # Default the summary inclusion
     $args -> {"full_summary"} = 1 if(!defined($args -> {"full_summary"}));
+    my $fullops = $self -> {"template"} -> build_optionlist($self -> {"fullops"}, $args -> {"full_summary"});
 
     # load a tellus message as the default text if appropriate
     my $msgid = is_defined_numeric($self -> {"cgi"}, "tellusid");
@@ -191,7 +192,7 @@ sub _generate_compose {
                                                                                    "***notifysettings***"   => $notify_settings,
                                                                                    "***disable_confirm***"  => $noconfirm,
                                                                                    "***preset***"           => $args -> {"preset"},
-                                                                                   "***fullsummary***"      => $args -> {"full_summary"} ? 'checked="checked"' : '',
+                                                                                   "***fullsummary***"      => $fullops,
                                                                                    "***ckeconfig***"        => $ckeconfig,
                                                                                    "***loadcount***"        => $self -> {"settings"} -> {"config"} -> {"Media:fetch_count"},
                                                                                    "***initialcount***"     => $self -> {"settings"} -> {"config"} -> {"Media:initial_count"},

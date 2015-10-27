@@ -328,6 +328,7 @@ sub _generate_edit {
 
     # Default the summary inclusion
     $args -> {"full_summary"} = 1 if(!defined($args -> {"full_summary"}));
+    my $fullops = $self -> {"template"} -> build_optionlist($self -> {"fullops"}, $args -> {"full_summary"});
 
     # permission-based access to image button
     my $ckeconfig = $self -> check_permission('freeimg') ? "image_open.js" : "basic_open.js";
@@ -370,7 +371,7 @@ sub _generate_edit {
                                                                              "***submitmsg***"        => $submitmsg,
                                                                              "***titlemsg***"         => "{L_".$titlemsg."}",
                                                                              "***minoredit***"        => $minoredit,
-                                                                             "***fullsummary***"      => $args -> {"full_summary"} ? 'checked="checked"' : '',
+                                                                             "***fullsummary***"      => $fullops,
                                                                              "***ckeconfig***"        => $ckeconfig,
                                                                              "***loadcount***"        => $self -> {"settings"} -> {"config"} -> {"Media:fetch_count"},
                                                                              "***initialcount***"     => $self -> {"settings"} -> {"config"} -> {"Media:initial_count"},

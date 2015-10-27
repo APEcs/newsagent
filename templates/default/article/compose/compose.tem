@@ -212,7 +212,10 @@ window.addEvent('domready', function() {
                     </dl>
                     <dl class="input">
                         <dt><strong>{L_COMPOSE_FULLSUMMARY}</strong></dt>
-                        <dd><label for="comp-sumfull" class="check"><input type="checkbox" name="full_summary" id="comp-sumfull" ***fullsummary*** />{L_COMPOSE_FULLSUMOPT}</label></dd>
+                        <dd><select class="fillwide" name="full_summary" id="comp-sumfull">
+                                   ***fullsummary***
+                            </select>
+                        </dd>
                     </dl>
 ***notifystuff***
                 </div>

@@ -152,7 +152,7 @@ sub generate_feed {
         }
 
         # Handle fulltext transform
-        my $showsum = $result -> {"full_summary"} ? "summary.tem" : "nosummary.tem";
+        my $showsum = ($result -> {"full_summary"} & 0b01) ? "summary.tem" : "nosummary.tem";
         $result -> {"fulltext"} = $self -> {"template"} -> load_template("feeds/rss/fulltext-$showsum", {"***summary***" => $result -> {"summary"},
                                                                                                          "***text***"    => $self -> cleanup_entities($result -> {"fulltext"})})
             if($result -> {"fulltext"});

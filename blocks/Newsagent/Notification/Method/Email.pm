@@ -289,10 +289,12 @@ sub send {
     # And the list of feeds
     my @feeds = map { $_ -> {"description"} } @{$article -> {"feeds"}};
 
+    my $summary = $self -> {"template"} -> load_template("Notification/Method/Email/summary.tem", {"***summary***" => $article -> {"summary"}});
+
     my $htmlbody = $self -> {"template"} -> load_template("Notification/Method/Email/email.tem", {"***body***"     => $article -> {"article"},
                                                                                                   "***title***"    => $article -> {"title"} || $pubdate,
                                                                                                   "***date***"     => $pubdate,
-                                                                                                  "***summary***"  => $article -> {"summary"},
+                                                                                                  "***summary***"  => ($article -> {"full_summary"} & 0b10) ? $summary : "",
                                                                                                   "***img1***"     => $images[0],
                                                                                                   "***img2***"     => $images[1],
                                                                                                   "***logo_url***" => $self -> {"settings"} -> {"config"} -> {"Article:logo_img_url"},
@@ -301,6 +303,7 @@ sub send {
                                                                                                   "***files***"    => $files,
                                                                                                   "***feeds***"    => join(", ", @feeds),
                                                                                                   "***gravhash***" => md5_hex(lc(trimspace($article -> {"email"} || ""))) });
+
     my $articlebody = $self -> {"template"} -> load_template("Notification/Method/Email/body.tem", {"***body***"   => $article -> {"article"},
                                                                                                     "***files***"  => $files,
                                                                                                     "***feeds***"  => join(", ", @feeds),

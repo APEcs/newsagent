@@ -154,6 +154,17 @@ sub new {
                              "name"  => "{L_COMPOSE_IMG}" },
                           ];
 
+    $self -> {"fullops"} = [ {"value" => "0",
+                              "name"  => "{L_COMPOSE_FULLSUM_NONE}" },
+                             {"value" => "1",
+                              "name"  => "{L_COMPOSE_FULLSUM_FULL}" },
+                             {"value" => "2",
+                              "name"  => "{L_COMPOSE_FULLSUM_NOTE}" },
+                             {"value" => "3",
+                              "name"  => "{L_COMPOSE_FULLSUM_BOTH}" },
+        ];
+
+
     # Which states allow editing?
     $self -> {"cloneonly"} = { "hidden" => 1,
                                "used"   => 1 };
@@ -479,7 +490,10 @@ sub _validate_standard_release {
                                                                          "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_STICKY")});
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
-    $args -> {"full_summary"} = (defined($self -> {"cgi"} -> param("full_summary")) && $self -> {"cgi"} -> param("full_summary")) ? 1 : 0;
+    ($args -> {"full_summary"}, $error) = $self -> validate_options("full_summary", {"required" => 0,
+                                                                                     "source"   => $self -> {"fullops"},
+                                                                                     "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_FULLSUMMARY")});
+    $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
     return $errors;
 }
@@ -541,7 +555,6 @@ sub _validate_schedule_release {
                                                                                  "default"  => 0,
                                                                                  "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_SORTORDER")});
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
-
 
     return $errors;
 }

@@ -746,7 +746,7 @@ sub add_article {
         $sticky_until = $article -> {"release_time"} + ($article -> {"sticky"} * 86400)
     }
 
-    my $full_summary = $article -> {"full_summary"} ? 1 : 0;
+    my $full_summary = $article -> {"full_summary"};
 
     # Add the article itself
     my $addh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"articles"}."`

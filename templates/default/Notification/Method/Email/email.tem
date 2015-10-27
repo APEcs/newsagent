@@ -5,7 +5,7 @@
     <h1 style="font-size: 20px; margin: 0px; padding: 5px 0px;">***title***</h1>
     <div style="color: #7496AF; font-size: 11px; margin-bottom: 5px; padding: 0px">Published: ***date***</div>
     ***img2***
-    <div style="border-bottom: 1px solid #aaa; padding: 0px 4px 5px 4px" >***body***</div>
+    ***summary***<div style="border-bottom: 1px solid #aaa; padding: 0px 4px 5px 4px" >***body***</div>
 ***files***<div style="font-size: 14px; line-height: 32px; vertical-align: center;"><img src="https://gravatar.com/avatar/***gravhash***?s=32&amp;d=mm&amp;r=g" alt="gravatar" class="newsagent-avatar" width="32" height="32" /> ***name***</div>
     <div style="font-size: 12px;">{L_EMAIL_SENTBY} ***recips***</div>
     <div style="font-size: 12px;">{L_EMAIL_FEEDS} ***feeds***</div>
