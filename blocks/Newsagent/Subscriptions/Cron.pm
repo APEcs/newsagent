@@ -121,7 +121,7 @@ sub _build_update {
                                                                                      "***feeds***"    => join("; ", @feeds),
                                                                                      "***title***"    => $article -> {"title"} || $pubdate,
                                                                                      "***date***"     => $pubdate,
-                                                                                     "***summary***"  => $article -> {"summary"},
+                                                                                     "***summary***"  => $self -> markdown_to_html($article -> {"summary"}),
                                                                                      "***img2***"     => $image,
                                                                                      "***logo_url***" => $self -> {"settings"} -> {"config"} -> {"Article:logo_img_url"},
                                                                                      "***name***"     => $article -> {"realname"} || $article -> {"username"},
