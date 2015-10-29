@@ -289,7 +289,7 @@ sub send {
     # And the list of feeds
     my @feeds = map { $_ -> {"description"} } @{$article -> {"feeds"}};
 
-    my $summary = $self -> {"template"} -> load_template("Notification/Method/Email/summary.tem", {"***summary***" => $article -> {"summary"}});
+    my $summary = $self -> {"template"} -> load_template("Notification/Method/Email/summary.tem", {"***summary***" => $self -> markdown_to_html($article -> {"summary"})});
 
     my $htmlbody = $self -> {"template"} -> load_template("Notification/Method/Email/email.tem", {"***body***"     => $article -> {"article"},
                                                                                                   "***title***"    => $article -> {"title"} || $pubdate,
@@ -304,17 +304,18 @@ sub send {
                                                                                                   "***feeds***"    => join(", ", @feeds),
                                                                                                   "***gravhash***" => md5_hex(lc(trimspace($article -> {"email"} || ""))) });
 
-    my $articlebody = $self -> {"template"} -> load_template("Notification/Method/Email/body.tem", {"***body***"   => $article -> {"article"},
-                                                                                                    "***files***"  => $files,
-                                                                                                    "***feeds***"  => join(", ", @feeds),
-                                                                                                    "***name***"   => $article -> {"realname"} || $article -> {"username"},
-                                                                                                    "***recips***" => $self -> _build_recipients($allrecips),
+    my $articlebody = $self -> {"template"} -> load_template("Notification/Method/Email/body.tem", {"***body***"    => $article -> {"article"},
+                                                                                                    "***summary***" => ($article -> {"full_summary"} & 0b10) ? $summary : "",
+                                                                                                    "***files***"   => $files,
+                                                                                                    "***feeds***"   => join(", ", @feeds),
+                                                                                                    "***name***"    => $article -> {"realname"} || $article -> {"username"},
+                                                                                                    "***recips***"  => $self -> _build_recipients($allrecips),
                                                              });
     my $email_data = { "addresses" => $addresses,
                        "debug"     => $addresses -> {"use_debugmode"},
                        "subject"   => Encode::encode("iso-8859-1", decode_entities($subject)),
                        "html_body" => Encode::encode("iso-8859-1", $htmlbody),
-                       "text_body" => $self -> make_markdown_body(Encode::encode("iso-8859-1", $articlebody), $article -> {"images"}),
+                       "text_body" => $self -> html_to_markdown(Encode::encode("iso-8859-1", $articlebody), $article -> {"images"}),
                        "reply_to"  => $article -> {"methods"} -> {"Email"} -> {"reply_to"} || $author -> {"email"},
                        "from"      => $author -> {"email"},
                        "id"        => $article -> {"id"},

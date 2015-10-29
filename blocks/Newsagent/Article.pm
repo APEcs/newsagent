@@ -427,7 +427,7 @@ sub _validate_summary_text {
 
     # If there's a summary, and no article text, copy the summary over
     } elsif($args -> {"summary"} && !$nohtml) {
-        $args -> {"article"} = "<p>".$args -> {"summary"}."</p>";
+        $args -> {"article"} = $self -> markdown_to_html($args -> {"summary"});
         return undef;
 
     # If there's an article text, but no summary, what happens depends on the mode

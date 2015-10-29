@@ -115,7 +115,7 @@ sub generate_feed {
 
         # work out the summary
         my $showsum = ($result -> {"full_summary"} & 0b01) ? "summary.tem" : "nosummary.tem";
-        my $summary = $self -> {"template"} -> load_template("feeds/html/item-$mode-$showsum", {"***summary***" => $result -> {"summary"},
+        my $summary = $self -> {"template"} -> load_template("feeds/html/item-$mode-$showsum", {"***summary***" => $self -> markdown_to_html($result -> {"summary"}),
                                                                                                 "***link***"    => $feedurl,
                                                              });
 

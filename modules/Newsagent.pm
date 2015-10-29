@@ -31,6 +31,7 @@ use Time::Local;
 use Lingua::EN::Sentence qw(get_sentences);
 use XML::Simple;
 use Data::Dumper;
+use Text::Markdown qw(markdown);
 
 # ============================================================================
 #  Constructor
@@ -459,13 +460,13 @@ sub cleanup_entities {
 }
 
 
-## @method $ make_markdown_body($html, $images)
+## @method $ html_to_markdown($html, $images)
 # Convert the specified html into markdown text.
 #
 # @param html   The HTML to convert to markdown.
 # @param images An optional reference to an array of images.
 # @return The markdown version of the text.
-sub make_markdown_body {
+sub html_to_markdown {
     my $self   = shift;
     my $html   = shift;
     my $images = shift || [];
@@ -473,6 +474,24 @@ sub make_markdown_body {
     return $self -> {"template"} -> html_to_markdown($html, $images, {"image"    => "Notification/Method/Email/md_image.tem",
                                                                       "images"   => "Notification/Method/Email/md_images.tem",
                                                                       "markdown" => "Notification/Method/Email/markdown.tem" });
+}
+
+
+## @method markdown_to_html($markdown)
+# Convert the specified markdown text into HTML.
+#
+# @param markdown The Markdown text to convert.
+# @return The HTML version of the markdown text.
+sub markdown_to_html {
+    my $self     = shift;
+    my $markdown = shift;
+
+    my $html = markdown($markdown);
+    $html =~ s/\n$//; # always adds a trailing newline for some reasons
+    $html =~ s|</p>\n\n|</p>|g; # Paragraphs retain their dual \n\n, which is inconvenient.
+    $html =~ s|\n|<br />\n|g;   # And we want HTML newlines, plz.
+
+    return $html;
 }
 
 
@@ -506,6 +525,7 @@ sub truncate_text {
 
     return $trunc;
 }
+
 
 # ============================================================================
 #  URL building

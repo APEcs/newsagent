@@ -153,12 +153,12 @@ sub generate_feed {
 
         # Handle fulltext transform
         my $showsum = ($result -> {"full_summary"} & 0b01) ? "summary.tem" : "nosummary.tem";
-        $result -> {"fulltext"} = $self -> {"template"} -> load_template("feeds/rss/fulltext-$showsum", {"***summary***" => $result -> {"summary"},
+        $result -> {"fulltext"} = $self -> {"template"} -> load_template("feeds/rss/fulltext-$showsum", {"***summary***" => $self -> markdown_to_html($result -> {"summary"}),
                                                                                                          "***text***"    => $self -> cleanup_entities($result -> {"fulltext"})})
             if($result -> {"fulltext"});
 
         given($result -> {"fulltext_mode"}) {
-            when("markdown") { $result -> {"fulltext"} = $self -> make_markdown_body($result -> {"fulltext"}); }
+            when("markdown") { $result -> {"fulltext"} = $self -> html_to_markdown($result -> {"fulltext"}); }
             when("plain")    { $result -> {"fulltext"} = $self -> html_strip($result -> {"fulltext"}); }
             when("embedimg") { $result -> {"fulltext"} = $self -> embed_fulltext_image($result); }
         }
@@ -173,7 +173,7 @@ sub generate_feed {
         # fulltext is not enabled, create a separate summary element
         $extra .= $self -> {"template"} -> load_template("feeds/rss/newsagent.tem", {"***elem***"    => "summary",
                                                                                      "***attrs***"   => "",
-                                                                                     "***content***" => "<![CDATA[".$result -> {"summary"}."]]>" })
+                                                                                     "***content***" => "<![CDATA[".$self -> markdown_to_html($result -> {"summary"})."]]>" })
             if($result -> {"fulltext_mode"} && $result -> {"use_fulltext_desc"} && !$result -> {"full_summary"});
 
 
@@ -201,7 +201,7 @@ sub generate_feed {
 
         # Put the item together!
         $items .= $self -> {"template"} -> load_template("feeds/rss/item.tem", {"***title***"       => $result -> {"title"} || $pubdate,
-                                                                                "***description***" => $result -> {"use_fulltext_desc"} ? $result -> {"fulltext"} : $result -> {"summary"},
+                                                                                "***description***" => $result -> {"use_fulltext_desc"} ? $result -> {"fulltext"} : $self -> markdown_to_html($result -> {"summary"}),
                                                                                 "***images***"      => $images,
                                                                                 "***files***"       => $files,
                                                                                 "***feeds***"       => $feeds,
