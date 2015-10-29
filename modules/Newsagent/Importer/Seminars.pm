@@ -74,42 +74,38 @@ sub import_articles {
     my $seminars = $self -> _fetch_seminars($self -> {"args"} -> {"list"})
         or return undef;
 
-    my $data = "";
     foreach my $seminar (@{$seminars}) {
         my ($semelem) = $seminar -> findnodes("seminar");
+        my ($id)      = $semelem -> findnodes("id");
 
         # check for deletions
         my $cancelled = $semelem -> getAttribute("cancelled");
         if($cancelled) {
-            $data .= "Got cancelled seminar\n";
-#            $self -> _cancel_seminar($seminar);
+            $self -> log("importer:seminars:debug", "Got cancelled seminar with ID ".$id -> textContent);
+            $self -> _cancel_seminar($semelem)
+                or return undef;
 
         # Not deleted; must be a new or updated
         } else {
-            my ($id) = $semelem -> findnodes("id");
 
             my $oldmeta = $self -> find_by_sourceid($id -> textContent);
             return undef if(!defined($oldmeta));
 
             # Old metadata is available, so this is an update
             if($oldmeta) {
-                $data .= "Got updated seminar\n";
-                #
+                $self -> log("importer:seminars:debug", "Got updated seminar with ID ".$id -> textContent);
+                $self -> update_seminar($seminar, $oldmeta)
+                    or return undef;
 
             # No metadata set; must be a new seminar
             } else {
-                $data .= "Got new seminar\n";
-
+                $self -> log("importer:seminars:debug", "Got new seminar with ID ".$id -> textContent);
+                $self -> create_seminar($seminar)
+                    or return undef;
             }
         }
-
-        $data .= $seminar."\n";
     }
 
-    $data =~ s/</&lt;/g;
-    $data =~ s/>/&gt;/g;
-
-    return $self -> self_error("<pre>Data: $data</pre>");
     return 1;
 }
 
@@ -117,6 +113,61 @@ sub import_articles {
 
 # ============================================================================
 #  Internal implementation - article interaction
+
+
+## @method private $ _seminar_to_article($seminar)
+# Given a seminar element, generate the data to go into a Newsagent article
+# for the seminar.
+#
+# @param seminar A reference to an XML::LibXML::Element containing the seminar
+#                element (and its children) of the seminar to build an article
+#                for.
+# @return A reference to a hash containing the article data.
+sub _seminar_to_article {
+    my $self    = shift;
+    my $article = shift;
+
+}
+
+
+## @method private $ _cancel_seminar($seminar)
+# Mark the Newsagent article associated with the specified seminar as deleted, and
+# cancel any notifications associated with it.
+#
+# @param seminar A reference to an XML::LibXML::Element containing the seminar
+#                element (and its children) of the seminar to cancel.
+# @return true on success, undef on error. Note that cancelling a seminar that
+#         does not exist as Newsagent article is not considered an error.
+sub _cancel_seminar {
+    my $self    = shift;
+    my $seminar = shift;
+    my ($id)    = $seminar -> findnodes("id");
+    my $hash    = $seminar -> getAttribute("hash");
+
+    # Given the seminar ID, fetch the metainfo....
+    my $metainfo = $self -> find_by_sourceid($id -> textContent);
+
+    # We have metainfo, so now we know what the article ID is. It can now be cancelled.
+    # Just to be on the safe-side, make sure the article ID is non-zero, as it's possible
+    # this function may have been called as a result of a hash change on a seminar that
+    # never made it into the system to begin with, or one we've already cancelled.
+    if($metainfo && $metainfo -> {"article_id"}) {
+        $self -> {"article"} -> set_article_status($metainfo -> {"article_id"}, "deleted")
+            or return $self -> self_error("Unable to cancel seminar: ".$self -> {"article"} -> errstr());
+
+        $self -> {"queue"} -> cancel_notifications($metainfo -> {"article_id"})
+            or return $self -> self_error("Unable to cancel seminar notifications: ".$self -> {"queue"} -> errstr());
+    }
+
+    # Always zero the article ID - helps to prevent repeat cancellations of seminar
+    # articles, and ensures the ID is defined for the import metainfo.
+    $metainfo -> {"article_id"} = 0;
+
+    $self -> _set_import_meta($metainfo -> {"article_id"}, $id -> textContent, $hash)
+        or return undef;
+
+    return 1;
+}
 
 
 # ============================================================================
