@@ -17,8 +17,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ## @class
+# Import seminar information from Iain's seminar system. This reads the XML
+# files written to teh school website by Iain, and processes them into
+# newsagent articles with multiple notifications.
 #
+# This requires the following variables be set in the args field in the
+# class' entry in the import_sources table:
 #
+# list=Full URL of the seminars_all.xml file;
+# base=URL of the directory containing the XML files;
+# feed=Comma separated list of feed IDs to publish in;
+# prefix_id=The Id of the email prefix to use in notification emails;
+# recipient_id=The ID of the recipient entry in the recipient_methods table;
+# user_id=The ID of the user creating the articles;
+
 package Newsagent::Importer::Seminars;
 
 use strict;
@@ -36,7 +48,7 @@ use Data::Dumper;
 #  Constructor
 
 ## @cmethod $ new(%args)
-# Overloaded constructor for the seminar importer facility/
+# Overloaded constructor for the seminar importer facility.
 #
 # @param args A hash of values to initialise the object with. See the Block docs
 #             for more information.
@@ -87,20 +99,19 @@ sub import_articles {
 
         # Not deleted; must be a new or updated
         } else {
-
             my $oldmeta = $self -> find_by_sourceid($id -> textContent);
             return undef if(!defined($oldmeta));
 
             # Old metadata is available, so this is an update
             if($oldmeta) {
                 $self -> log("importer:seminars:debug", "Got updated seminar with ID ".$id -> textContent);
-                $self -> update_seminar($seminar, $oldmeta)
+                $self -> _update_seminar($semelem, $oldmeta)
                     or return undef;
 
             # No metadata set; must be a new seminar
             } else {
                 $self -> log("importer:seminars:debug", "Got new seminar with ID ".$id -> textContent);
-                $self -> create_seminar($seminar)
+                $self -> _create_seminar($semelem)
                     or return undef;
             }
         }
@@ -108,7 +119,6 @@ sub import_articles {
 
     return 1;
 }
-
 
 
 # ============================================================================
@@ -119,14 +129,65 @@ sub import_articles {
 # Given a seminar element, generate the data to go into a Newsagent article
 # for the seminar.
 #
-# @param seminar A reference to an XML::LibXML::Element containing the seminar
+# @param semelem A reference to an XML::LibXML::Element containing the seminar
 #                element (and its children) of the seminar to build an article
 #                for.
 # @return A reference to a hash containing the article data.
 sub _seminar_to_article {
     my $self    = shift;
-    my $article = shift;
+    my $semelem = shift;
 
+    # Pull the data for the parts of the seminar we are interested in
+    my $datestamp   = $semelem -> getAttribute('timestamp');
+    my ($title)     = $semelem -> findnodes('seminarTitle');
+    my ($location)  = $semelem -> findnodes('room');
+    my ($speaker)   = $semelem -> findnodes('seminarSpeaker/speakerName');
+    my ($honorific) = $semelem -> findnodes('seminarSpeaker/speakerTitle');
+    my ($institute) = $semelem -> findnodes('seminarSpeaker/speakerInstitute');
+    my ($abstract)  = $semelem -> findnodes('seminarAbstract');
+
+    # Build the text components we need to put into the article
+    my $summary = $self -> {"template"} -> load_template("importer/seminars/summary.tem", { "***title***"     => $title ? $title -> textContent() : "{L_IMPORT_SEMINAR_UNKNOWN}",
+                                                                                            "***date***"      => $self -> {"template"} -> format_time($datestamp),
+                                                                                            "***location***"  => $location ? $location -> textContent() : "{L_IMPORT_SEMINAR_UNKNOWN}",
+                                                                                            "***honorific***" => $honorific ? $honorific -> textContent() : "",
+                                                                                            "***speaker***"   => $speaker ? $speaker -> textContent() : "{L_IMPORT_SEMINAR_UNKNOWN}",
+                                                                                            "***intitute***"  => $institute ? $institute -> textContent() : "{L_IMPORT_SEMINAR_UNKNOWN}",
+                                                                                            "***host***"      => $host ? $host -> textContent(): "{L_IMPORT_SEMINAR_UNKNOWN}" });
+    my $article = $self -> {"template"} -> load_template("importer/seminars/article.tem", { "***article***"   => $abstract ? $abstract -> textContent() : "{L_IMPORT_SEMINAR_UNKNOWN}" });
+
+    # And do some date wrangling
+    my $event_time   = DateTime -> from_epoch(epoch => $datestamp);
+    my $release_time = $event_time -> clone() -> subtract(days => 7);
+    my @reminder     = ( $release_time -> epoch(),
+                         $event_time -> clone() -> subtract(days  => 2) -> epoch(),
+                         $event_time -> clone() -> subtract(hours => 6) -> epoch()
+                       );
+
+    my @feeds = split(/,/, $self -> {"args"} -> {"feed"});
+
+    # Build the article hash ready to pass to the add_article
+    return { "levels"       => { 'home' => 0, 'leader' => 1, 'group' => 1 },
+             "feeds"        => \@feeds,
+             "release_mode" => 'timed',
+             "release_time" => $release_time -> epoch(),
+             "relmode"      => 0,
+             "full_summary" => 3,
+             "minor_edit"   => 0,
+             "sticky"       => 0,
+             "title"        => $title ? $title -> textContent() : "{L_IMPORT_SEMINAR_UNKNOWN}",
+             "summary"      => $summary,
+             "article"      => $article,
+             "reminders"    => \@reminder,
+             "methods"      => { "Email" => { "prefix_id"  => $self -> {"args"} -> {"prefix_id"},
+                                              "cc"         => '', # No additional CC recipients
+                                              "bcc"        => '', # No additional BCC recipients
+                                              "bcc_sender" => 1,  # Include the sender in the BCC list
+                                              "reply_to"   => '',  # this should default to the author ID
+                                 },
+                               },
+             "used_methods" => { 'Email' => [ $self -> {"args"} -> {"recipient_id"} ] }
+    };
 }
 
 
@@ -165,6 +226,45 @@ sub _cancel_seminar {
 
     $self -> _set_import_meta($metainfo -> {"article_id"}, $id -> textContent, $hash)
         or return undef;
+
+    return 1;
+}
+
+
+## @method private $ _create_seminar($seminar)
+# Given a seminar element, create a newsagent article for it and queue up
+# notifications to send as needed.
+#
+# @param seminar A reference to an XML::LibXML::Element containing the seminar
+#                element (and its children) of the seminar to cancel.
+# @return true on success, undef on error.
+sub _create_seminar {
+    my $self    = shift;
+    my $seminar = shift;
+    my ($id)    = $seminar -> findnodes("id");
+    my $hash    = $seminar -> getAttribute("hash");
+
+    $self -> clear_error();
+
+    my $article = $self -> _seminar_to_article($seminar);
+    my $aid = $self -> {"article"} -> add_article($article, $userid, undef, 0)
+        or return $self -> self_error("Unable to add seminar article: ".$sefl -> {"article"} -> errstr());
+
+    $self -> log("import:seminar:article", "Added article new $aid with has $hash");
+
+    $self -> _set_import_meta($aid, $id, $hash)
+        or return undef;
+
+    # Now queue notifications
+    my $now = time();
+    foreach my $send_after (@{$article -> {"reminders"}}) {
+        next if($send_after < $now); # skip notifications that should have been sent in the past.
+
+        $self -> {"queue"} -> queue_notifications($aid, $article, $self -> {"args"} -> {"user_id"}, 0, $article -> {"used_methods"}, "timed", $send_after)
+            or return $self -> self_error("Reminder queueing failed: ".$self -> {"queue"} -> errstr());
+
+        $self -> log("import:seminar:article", "Queued reminder for seminar $id (article $aid) at $send_after");
+    }
 
     return 1;
 }
