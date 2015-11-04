@@ -13,7 +13,7 @@ RewriteEngine On
 # RewriteBase /subdir/
 RewriteBase /newsagent/
 
-RewriteCond %{REQUEST_URI} !^/newsagent/(templates|media|docs|ckeditor|images|testing|index.cgi|uploads|autodocs)
+RewriteCond %{REQUEST_URI} !^/newsagent/(templates|media|docs|ckeditor|images|testing|index.cgi|uploads|autodocs|favicon.ico|apple-touch-icon-precomposed.png)
 RewriteRule (.*) index.cgi/$1 [PT,L]
 
 # Compress text, html, javascript, css, xml:

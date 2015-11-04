@@ -23,6 +23,7 @@
 
     <!-- favicon -->
     <link rel="icon" type="image/png" href="{V_[templatepath]}images/favicon.png" />
+    <link rel="apple-touch-icon-precomposed" type="image/png" href="{V_[templatepath]}images/apple-touch-icon-precomposed.png" />
 
     <!--[if IE]>
     <style type="text/css">
