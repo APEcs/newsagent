@@ -129,7 +129,7 @@ sub find_by_sourceid {
     $datah -> execute($self -> {"importer_id"}, $sourceid)
         or return $self -> self_error("Unable to look up import metadata: ".$self -> {"dbh"} -> errstr());
 
-    return $datah -> fetchrow_hashref() || 0;
+    return ($datah -> fetchrow_hashref() || 0);
 }
 
 
@@ -272,10 +272,10 @@ sub _get_import_meta {
                                             WHERE importer_id = ?
                                             AND article_id = ?
                                             AND source_id = ?");
-    my $rows = $geth -> execute($self -> {"importer_id"}, $articleid, $sourceid)
+    $geth -> execute($self -> {"importer_id"}, $articleid, $sourceid)
         or return $self -> self_error("Unable to perform article metainfo lookup: ". $self -> {"dbh"} -> errstr);
 
-    return $rows -> fetchrow_hashref() || $self -> self_error("No article metainfo found for $articleid, sourceid $sourceid");
+    return $geth -> fetchrow_hashref() || $self -> self_error("No article metainfo found for $articleid, sourceid $sourceid");
 }
 
 
