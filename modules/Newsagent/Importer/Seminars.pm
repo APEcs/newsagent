@@ -24,13 +24,15 @@
 # This requires the following variables be set in the args field in the
 # class' entry in the import_sources table:
 #
-# list=Full URL of the seminars_all.xml file;
+# list=Full URL of the seminars_all.xml file, or the name relative to base;
 # base=URL of the directory containing the XML files;
 # feed=Comma separated list of feed IDs to publish in;
 # prefix_id=The Id of the email prefix to use in notification emails;
 # recipient_id=The ID of the recipient entry in the recipient_methods table;
 # user_id=The ID of the user creating the articles;
-
+#
+# Example:
+# list=seminars_all.xml;base=http://azad.cs.man.ac.uk/~chris/;feed=1;prefix_id=3;recipient_id=1;user_id=2
 package Newsagent::Importer::Seminars;
 
 use strict;
@@ -83,7 +85,12 @@ sub import_articles {
 
     $self -> clear_error();
 
-    my $seminars = $self -> _fetch_seminars($self -> {"args"} -> {"list"})
+    # Allow the list to be relative
+    my $list = $self -> {"args"} -> {"list"};
+    $list = path_join($self -> {"args"} -> {"base"}, $list)
+        unless($list =~ /^https?:/);
+
+    my $seminars = $self -> _fetch_seminars($list)
         or return undef;
 
     foreach my $seminar (@{$seminars}) {
@@ -141,6 +148,7 @@ sub _seminar_to_article {
     my $datestamp   = $semelem -> getAttribute('timestamp');
     my ($title)     = $semelem -> findnodes('seminarTitle');
     my ($location)  = $semelem -> findnodes('room');
+    my ($host)      = $semelem -> findnodes('seminarHost/hostName');
     my ($speaker)   = $semelem -> findnodes('seminarSpeaker/speakerName');
     my ($honorific) = $semelem -> findnodes('seminarSpeaker/speakerTitle');
     my ($institute) = $semelem -> findnodes('seminarSpeaker/speakerInstitute');
@@ -159,6 +167,12 @@ sub _seminar_to_article {
     # And do some date wrangling
     my $event_time   = DateTime -> from_epoch(epoch => $datestamp);
     my $release_time = $event_time -> clone() -> subtract(days => 7);
+
+    # Calculate the reminder times. Note that, if the article is being added or updated
+    # closer to the seminar date than would be ideal, this can calculate reminder times
+    # IN THE PAST - reminders that should have already been sent. We don't care about
+    # that here, but the caller needs to make sure that past reminders don't get added,
+    # or Newsagent will send it as soon as megaphone.pl does a pending check.
     my @reminder     = ( $release_time -> epoch(),
                          $event_time -> clone() -> subtract(days  => 2) -> epoch(),
                          $event_time -> clone() -> subtract(hours => 6) -> epoch()
@@ -166,7 +180,7 @@ sub _seminar_to_article {
 
     my @feeds = split(/,/, $self -> {"args"} -> {"feed"});
 
-    # Build the article hash ready to pass to the add_article
+    # Build the article hash ready to pass to add_article and friends.
     return { "levels"       => { 'home' => 0, 'leader' => 1, 'group' => 1 },
              "feeds"        => \@feeds,
              "release_mode" => 'timed',
@@ -186,7 +200,11 @@ sub _seminar_to_article {
                                               "reply_to"   => '',  # this should default to the author ID
                                  },
                                },
-             "used_methods" => { 'Email' => [ $self -> {"args"} -> {"recipient_id"} ] }
+             "used_methods" => { 'Email' => [ $self -> {"args"} -> {"recipient_id"} ] },
+
+             # We need a year, otherwise queueing will fail, but can't ask for one - assume
+             # that the current year is correct in this situation
+             "notify_matrix" => { "year" => $self -> {"system"} -> {"userdata"} -> get_current_year() }
     };
 }
 
@@ -247,23 +265,28 @@ sub _create_seminar {
     $self -> clear_error();
 
     my $article = $self -> _seminar_to_article($seminar);
-    my $aid = $self -> {"article"} -> add_article($article, $userid, undef, 0)
-        or return $self -> self_error("Unable to add seminar article: ".$sefl -> {"article"} -> errstr());
+    my $aid = $self -> {"article"} -> add_article($article, $self -> {"args"} -> {"user_id"}, undef, 0)
+        or return $self -> self_error("Unable to add seminar article: ".$self -> {"article"} -> errstr());
 
-    $self -> log("import:seminar:article", "Added article new $aid with has $hash");
+    $self -> log("import:seminar:article", "Added article new $aid with hash $hash");
 
-    $self -> _set_import_meta($aid, $id, $hash)
+    $self -> _set_import_meta($aid, $id -> textContent, $hash)
         or return undef;
 
     # Now queue notifications
     my $now = time();
     foreach my $send_after (@{$article -> {"reminders"}}) {
-        next if($send_after < $now); # skip notifications that should have been sent in the past.
+        # skip notifications that should have been sent in the past, because we don't want them
+        # to go out now.
+        if($send_after < $now) {
+            $self -> log("import:seminar:article", "skipping outdated reminder for seminar ".$id->textContent." (article $aid): $send_after before $now");
+            next;
+        }
 
         $self -> {"queue"} -> queue_notifications($aid, $article, $self -> {"args"} -> {"user_id"}, 0, $article -> {"used_methods"}, "timed", $send_after)
             or return $self -> self_error("Reminder queueing failed: ".$self -> {"queue"} -> errstr());
 
-        $self -> log("import:seminar:article", "Queued reminder for seminar $id (article $aid) at $send_after");
+        $self -> log("import:seminar:article", "Queued reminder for seminar ".$id->textContent." (article $aid) at $send_after");
     }
 
     return 1;
@@ -338,7 +361,7 @@ sub _fetch_seminars {
         my $hash = $semelem -> getAttribute("hash");
 
         # Does this seminar have an entry in the meta table..?
-        my $metainfo = $self -> find_by_sourceid($id);
+        my $metainfo = $self -> find_by_sourceid($id -> textContent);
 
         # If it doesn't or it doesn't match, it needs processing.
         push(@toprocess, $fulldata)
