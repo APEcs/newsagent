@@ -27,6 +27,8 @@ use Newsagent::BlockSelector;
 use Newsagent::Feed;
 use Newsagent::Import;
 use Newsagent::Importer;
+use Newsagent::Importer::UoMMediaTeam;
+use Newsagent::Importer::Seminars;
 use Newsagent::Newsletter;
 use Newsagent::Notification::Method;
 use Newsagent::System;
