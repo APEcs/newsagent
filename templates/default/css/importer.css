@@ -1,0 +1,15 @@
+#import-status {
+    margin: 0px auto;
+    width: 95%;
+}
+
+ul.status {
+    margin: 0px;
+    padding: 0px;
+}
+
+li.status {
+    list-style-type: none;
+    margin: 0px 0px 10px 0px;
+    overflow: hidden;
+}

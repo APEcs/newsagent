@@ -58,7 +58,7 @@ sub _run_import {
     my $self   = shift;
     my $source = shift;
 
-    return "Error: Invalid or unknown import source specified."
+    return $self -> _build_result($source, "Error", "Invalid or unknown import source specified.")
         unless($self -> {"importer"} -> valid_source($source));
 
     # Run the import?
@@ -68,12 +68,38 @@ sub _run_import {
             my $result = $importer -> import_articles();
             $self -> {"importer"} -> touch_importer($source);
 
-            return $result ? "Imported" : $importer -> errstr();
+            my $logmessage = "";
+            my $log = $importer -> import_log();
+            foreach my $msg (@{$log}) {
+                $logmessage .= $self -> {"template"} -> load_template("importer/logmessage.tem", {"***message***" => $msg});
+            }
+
+            return $self -> _build_result($source, "Import of $source complete",
+                                          $self -> {"template"} -> load_template("importer/log.tem", {"***messages***" => $logmessage}));
+
+        } else {
+            return $self -> _build_result($source, "Error", $self -> {"importer"} -> errstr());
         }
+
+    # Doesn't need to run, do nothing.
     } else {
-        return "Skipped import as importer does not need to run yet";
+        return $self -> _build_result($source, "Skipped $source import", "Skipped import as importer does not need to run yet");
     }
-    return "Error: ".$self -> {"importer"} -> errstr();
+
+    return $self -> _build_result($source, "Error", $self -> {"importer"} -> errstr());
+}
+
+
+## @method private $ _build_result
+sub _build_result {
+    my $self    = shift;
+    my $source  = shift;
+    my $title   = shift;
+    my $content = shift;
+
+    return $self -> {"template"} -> load_template("importer/result.tem", {"***title***"   => $title,
+                                                                          "***source***"  => $source,
+                                                                          "***content***" => $content});
 }
 
 
@@ -121,12 +147,16 @@ sub page_display {
 
             # ... everything else is bogus and potentially dangerous.
             } else {
-                ($title, $content) = ("Error", "Illegal source specified.");
+                ($title, $content) = ("Error", $self -> _build_result("error", "Error", "Illegal source specified."));
             }
         } else {
-            ($title, $content) = ("Error", "No import module selected");
+            ($title, $content) = ("Error", $self -> _build_result("error", "Error", "No import source selected"));
         }
 
+        # Wrap the content
+        $content = $self -> {"template"} -> load_template("importer/content.tem", { "***import***" => $content });
+
+        $extrahead .= $self -> {"template"} -> load_template("importer/extrahead.tem");
         return $self -> generate_newsagent_page($title, $content, $extrahead);
     }
 }

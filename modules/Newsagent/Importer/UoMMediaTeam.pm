@@ -53,6 +53,8 @@ sub import_articles {
     my $self = shift;
 
     $self -> clear_error();
+    $self -> clear_import_log();
+    $self -> import_log("importer:uommedia:status", "Starting UoM Media Team import");
 
     my $updates = $self -> _fetch_updated_xml($self -> {"args"} -> {"url"}, DateTime -> from_epoch(epoch => $self -> {"importer_lastrun"} || 0))
         or return undef;
@@ -61,6 +63,8 @@ sub import_articles {
         $self -> _import_article($article)
             or return undef;
     }
+
+    $self -> import_log("importer:uommedia:status", "Completed UoM Media Team import");
 
     return 1;
 }
@@ -89,8 +93,10 @@ sub _import_article {
     # If an old ID has been found, update the article associated with it, otherwise
     # create a new article instead.
     if($oldmeta) {
+        $self -> import_log("importer:uommedia:debug", "Got updated article with ID ".$article -> {"a"} -> {"name"});
         return $self -> _update_import($oldmeta, $article);
     } else {
+        $self -> import_log("importer:uommedia:debug", "Got new article with ID ".$article -> {"a"} -> {"name"});
         return $self -> _create_import($article);
     }
 }
@@ -126,7 +132,9 @@ sub _create_import {
         if($article -> {"images"} && $article -> {"images"} -> {"large"});
 
     my $aid = $self -> {"article"} -> add_article($attrs, $self -> {"args"} -> {"userid"})
-        or return $self -> self_error("Article addition failed: ".$self -> {"article"} -> errstr());
+        or return $self -> import_error("Article addition failed: ".$self -> {"article"} -> errstr());
+
+    $self -> import_log("import:uommedia:article", "Added article new $aid");
 
     return $self -> _set_import_meta($aid, $article -> {"a"} -> {"name"});
 }
@@ -167,7 +175,9 @@ sub _update_import {
                                                                                         "summary" => $article -> {"strapline"},
                                                                                         "article" => $article -> {"mainbody"},
                                                                                       })
-        or $self -> self_error($self -> {"article"} -> errstr());
+        or $self -> import_error($self -> {"article"} -> errstr());
+
+    $self -> import_log("import:uommedia:article", "Updated article ".$oldmeta -> {"article_id"});
 
     return $self -> _touch_import_meta($oldmeta -> {"id"});
 }
@@ -189,12 +199,12 @@ sub _parse_rfc822_datestring {
 
     # This should never actually happen - _parse_datestring() should never be able to call
     # this function if any of these values are bad - but check in case they are zeros.
-    return $self -> self_error("Illegal date format '$datestr'")
+    return $self -> import_error("Illegal date format '$datestr'")
         if(!$day || !$month || !$year);
 
     # Convert the month
     $month = $monmap -> {$month};
-    return $self -> self_error("Illegal date format '$datestr': unknown month specified")
+    return $self -> import_error("Illegal date format '$datestr': unknown month specified")
         if(!$month);
 
     return DateTime -> new(year      => $year,
@@ -222,7 +232,7 @@ sub _parse_datestring {
             return $self -> _parse_rfc822_datestring($datestr);
         }
         default {
-            return $self -> self_error("Unknown datetime format '$datestr'");
+            return $self -> import_error("Unknown datetime format '$datestr'");
         }
     }
 }
@@ -245,7 +255,7 @@ sub _fetch_updated_xml {
     my $result = $ua -> get($url);
 
     # Bail if the xml file can not be read
-    return $self -> self_error("Unable to fetch XML file at $url: ".$result -> status_line)
+    return $self -> import_error("Unable to fetch XML file at $url: ".$result -> status_line)
         unless($result -> is_success);
 
     # Fix up the hilariously broken content of the XML file. Seriously, why does it

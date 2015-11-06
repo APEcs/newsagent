@@ -340,4 +340,50 @@ sub _touch_import_meta {
     return 1;
 }
 
+
+# ============================================================================
+#  Logging support functions
+
+## @method void clear_import_log()
+# Clear the import log for this importer.
+#
+sub clear_import_log {
+    my $self = shift;
+
+    $self -> {"log"} = [];
+}
+
+
+## @method $ import_log($type, $message)
+# Log a message both into the system-wide log table, and the import log for later output.
+# If this is called without type and message set, it will not log anything, but
+# it will return the current import log array.
+#
+# @param type     The type of log entry to make, may be up to 64 characters long.
+# @param message  The message to attach to the log entry, avoid messages over 128 characters.
+# @return A reference to an array containing the import log messages.
+sub import_log {
+    my $self    = shift;
+    my $type    = shift;
+    my $message = shift;
+
+    if($type && $message) {
+        push(@{$self -> {"log"}}, $message);
+        $self -> log($type, $message);
+    }
+
+    return $self -> {"log"};
+}
+
+## @method $ import_error($message)
+# Log an import error to the import and system logs.
+#
+sub import_error {
+    my $self    = shift;
+    my $message = shift;
+
+    push(@{$self -> {"log"}}, $message);
+    return $self -> self_error($message);
+}
+
 1;
