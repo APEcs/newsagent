@@ -164,9 +164,9 @@ sub _seminar_to_article {
                                                                                             "***location***"  => $location ? $location -> textContent() : "{L_IMPORT_SEMINAR_UNKNOWN}",
                                                                                             "***honorific***" => $honorific ? $honorific -> textContent() : "",
                                                                                             "***speaker***"   => $speaker ? $speaker -> textContent() : "{L_IMPORT_SEMINAR_UNKNOWN}",
-                                                                                            "***intitute***"  => $institute ? $institute -> textContent() : "{L_IMPORT_SEMINAR_UNKNOWN}",
+                                                                                            "***institute***" => $institute ? $institute -> textContent() : "{L_IMPORT_SEMINAR_UNKNOWN}",
                                                                                             "***host***"      => $host ? $host -> textContent(): "{L_IMPORT_SEMINAR_UNKNOWN}" });
-    my $article = $self -> {"template"} -> load_template("importer/seminars/article.tem", { "***article***"   => $abstract ? $abstract -> textContent() : "{L_IMPORT_SEMINAR_UNKNOWN}" });
+    my $article = $self -> {"template"} -> load_template("importer/seminars/article.tem", { "***abstract***"   => $abstract ? $abstract -> textContent() : "{L_IMPORT_SEMINAR_UNKNOWN}" });
 
     # And do some date wrangling
     my $event_time   = DateTime -> from_epoch(epoch => $datestamp);
