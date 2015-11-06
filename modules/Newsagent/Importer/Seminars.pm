@@ -278,7 +278,7 @@ sub _create_seminar {
     my $aid = $self -> {"article"} -> add_article($article, $self -> {"args"} -> {"user_id"}, $old_aid, 0, $use_aid)
         or return $self -> import_error("Unable to add seminar article: ".$self -> {"article"} -> errstr());
 
-    $self -> import_log("import:seminar:article", "Added article new $aid with hash $hash");
+    $self -> import_log("import:seminar:article", "Added article $aid with hash $hash");
 
     $self -> _set_import_meta($aid, $id -> textContent, $hash)
         or return undef;
