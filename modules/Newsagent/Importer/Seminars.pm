@@ -84,6 +84,8 @@ sub import_articles {
     my $self = shift;
 
     $self -> clear_error();
+    $self -> clear_import_log();
+    $self -> import_log("importer:seminars:status", "Starting seminars import");
 
     # Allow the list to be relative
     my $list = $self -> {"args"} -> {"list"};
@@ -100,7 +102,7 @@ sub import_articles {
         # check for deletions
         my $cancelled = $semelem -> getAttribute("cancelled");
         if($cancelled) {
-            $self -> log("importer:seminars:debug", "Got cancelled seminar with ID ".$id -> textContent);
+            $self -> import_log("importer:seminars:debug", "Got cancelled seminar with ID ".$id -> textContent);
             $self -> _cancel_seminar($semelem)
                 or return undef;
 
@@ -111,18 +113,20 @@ sub import_articles {
 
             # Old metadata is available, so this is an update
             if($oldmeta) {
-                $self -> log("importer:seminars:debug", "Got updated seminar with ID ".$id -> textContent);
+                $self -> import_log("importer:seminars:debug", "Got updated seminar with ID ".$id -> textContent);
                 $self -> _update_seminar($semelem, $oldmeta)
                     or return undef;
 
             # No metadata set; must be a new seminar
             } else {
-                $self -> log("importer:seminars:debug", "Got new seminar with ID ".$id -> textContent);
+                $self -> import_log("importer:seminars:debug", "Got new seminar with ID ".$id -> textContent);
                 $self -> _create_seminar($semelem)
                     or return undef;
             }
         }
     }
+
+    $self -> import_log("importer:seminars:status", "Completed seminars import");
 
     return 1;
 }
@@ -232,10 +236,10 @@ sub _cancel_seminar {
     # never made it into the system to begin with, or one we've already cancelled.
     if($metainfo && $metainfo -> {"article_id"}) {
         $self -> {"article"} -> set_article_status($metainfo -> {"article_id"}, "deleted")
-            or return $self -> self_error("Unable to cancel seminar: ".$self -> {"article"} -> errstr());
+            or return $self -> import_error("Unable to cancel seminar: ".$self -> {"article"} -> errstr());
 
         $self -> {"queue"} -> cancel_notifications($metainfo -> {"article_id"})
-            or return $self -> self_error("Unable to cancel seminar notifications: ".$self -> {"queue"} -> errstr());
+            or return $self -> import_error("Unable to cancel seminar notifications: ".$self -> {"queue"} -> errstr());
     }
 
     # Always zero the article ID - helps to prevent repeat cancellations of seminar
@@ -249,26 +253,32 @@ sub _cancel_seminar {
 }
 
 
-## @method private $ _create_seminar($seminar)
+## @method private $ _create_seminar($seminar, $set_aid, $old_aid)
 # Given a seminar element, create a newsagent article for it and queue up
 # notifications to send as needed.
 #
 # @param seminar A reference to an XML::LibXML::Element containing the seminar
-#                element (and its children) of the seminar to cancel.
+#                element (and its children) of the seminar to create.
+# @param set_aid An optional article Id to use when creating the article,
+#                used when updating an existing article.
+# @param old_aid An optional previous article ID, used when updating an
+#                article.
 # @return true on success, undef on error.
 sub _create_seminar {
     my $self    = shift;
     my $seminar = shift;
+    my $use_aid = shift;
+    my $old_aid = shift;
     my ($id)    = $seminar -> findnodes("id");
     my $hash    = $seminar -> getAttribute("hash");
 
     $self -> clear_error();
 
     my $article = $self -> _seminar_to_article($seminar);
-    my $aid = $self -> {"article"} -> add_article($article, $self -> {"args"} -> {"user_id"}, undef, 0)
-        or return $self -> self_error("Unable to add seminar article: ".$self -> {"article"} -> errstr());
+    my $aid = $self -> {"article"} -> add_article($article, $self -> {"args"} -> {"user_id"}, $old_aid, 0, $use_aid)
+        or return $self -> import_error("Unable to add seminar article: ".$self -> {"article"} -> errstr());
 
-    $self -> log("import:seminar:article", "Added article new $aid with hash $hash");
+    $self -> import_log("import:seminar:article", "Added article new $aid with hash $hash");
 
     $self -> _set_import_meta($aid, $id -> textContent, $hash)
         or return undef;
@@ -279,17 +289,49 @@ sub _create_seminar {
         # skip notifications that should have been sent in the past, because we don't want them
         # to go out now.
         if($send_after < $now) {
-            $self -> log("import:seminar:article", "skipping outdated reminder for seminar ".$id->textContent." (article $aid): $send_after before $now");
+            $self -> import_log("import:seminar:article", "skipping outdated reminder for seminar ".$id->textContent." (article $aid): $send_after before $now");
             next;
         }
 
         $self -> {"queue"} -> queue_notifications($aid, $article, $self -> {"args"} -> {"user_id"}, 0, $article -> {"used_methods"}, "timed", $send_after)
-            or return $self -> self_error("Reminder queueing failed: ".$self -> {"queue"} -> errstr());
+            or return $self -> import_error("Reminder queueing failed: ".$self -> {"queue"} -> errstr());
 
-        $self -> log("import:seminar:article", "Queued reminder for seminar ".$id->textContent." (article $aid) at $send_after");
+        $self -> import_log("import:seminar:article", "Queued reminder for seminar ".$id->textContent." (article $aid) at $send_after");
     }
 
     return 1;
+}
+
+
+## @method private _update_seminar($self, $seminar, $metainfo)
+# Update the settings for the specified seminar. This essentially performs an edit
+# of the article, as if the user had done so through the Newsagent::Article::Edit
+# class.
+#
+# @param seminar  A reference to an XML::LibXML::Element containing the seminar
+#                 element (and its children) of the seminar to update.
+# @param metainfo A reference to a hash containing the importer metainfo for
+#                 this seminar.
+# @return true on success, undef on error.
+sub _update_seminar {
+    my $self     = shift;
+    my $seminar  = shift;
+    my $metainfo = shift;
+
+    $self -> clear_error();
+
+    # Now cancel and move the old article
+    $self -> {"article"} -> set_article_status($metainfo -> {"article_id"}, "edited", $self -> {"args"} -> {"user_id"}, 1)
+        or return $self -> import_error("Article status change failed: ".$self -> {"article"} -> errstr());
+
+    $self -> {"queue"} -> cancel_notifications($metainfo -> {"article_id"})
+        or return $self -> import_error("Article notification cancellation failed: ".$self -> {"queue"} -> errstr());
+
+    my $updateid = $self -> {"article"} -> renumber_article($metainfo -> {"article_id"})
+        or return $self -> import_error("Article renumber failed: ".$self -> {"article"} -> errstr());
+
+    # now make a new article using the old ID...
+    return $self -> _create_seminar($seminar, $metainfo -> {"article_id"}, $updateid);
 }
 
 
@@ -338,7 +380,7 @@ sub _fetch_seminars {
     $self -> clear_error();
 
     my $dom = eval { XML::LibXML -> load_xml(location => $url); };
-    return $self -> self_error("Unable to process seminar master XML: $@")
+    return $self -> import_error("Unable to process seminar master XML: $@")
         if($@);
 
     # Go through the seminars throwing away ones that have already happened.
@@ -349,7 +391,7 @@ sub _fetch_seminars {
     my @toprocess = ();
     foreach my $seminar (@{$pending}) {
         my ($id) = $seminar -> findnodes("id");
-        return $self -> self_error("Unable to find ID for seminar: ".$seminar)
+        return $self -> import_error("Unable to find ID for seminar: ".$seminar)
             unless($id);
 
         # Pull in the full content for the seminar
@@ -387,7 +429,7 @@ sub _fetch_seminar {
 
     my $url = path_join($self -> {"args"} -> {"base"}, "$sid.xml");
     my $dom = eval { XML::LibXML -> load_xml(location => $url); };
-    return $self -> self_error("Unable to process seminar XML, id '$sid': $@")
+    return $self -> import_error("Unable to process seminar XML, id '$sid': $@")
         if($@);
 
     # Calculate the hash of the seminar data
@@ -435,7 +477,7 @@ sub _build_timestamp {
 
     # Try the parse; it may not work if the date or time are incorrect formats
     my $datetime = eval { $self -> {"parser"} -> parse_datetime($date -> textContent." ".$time); };
-    return $self -> self_error("Unable to create timestamp for seminar ".$id -> textContent.": $@")
+    return $self -> import_error("Unable to create timestamp for seminar ".$id -> textContent.": $@")
         if($@);
 
     # Store the timestamp as seconds since the epoch it UTC.
