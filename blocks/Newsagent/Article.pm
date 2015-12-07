@@ -167,7 +167,7 @@ sub new {
 
     $self -> {"tag_rules"} = [
         a => {
-            href   => qr{^(?:http|https)://}i,
+            href   => qr{^(?:http|https|mailto)://}i,
             name   => 1,
             '*'    => 0,
         },
