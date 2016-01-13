@@ -52,9 +52,9 @@ set_message(\&handle_errors);
 
 do {
     my $app = Webperl::Application -> new(appuser        => Newsagent::AppUser -> new(),
-                                      system         => Newsagent::System -> new(),
-                                      block_selector => Newsagent::BlockSelector -> new(),
-                                      config         => "$scriptpath/config/site.cfg")
+                                          system         => Newsagent::System -> new(),
+                                          block_selector => Newsagent::BlockSelector -> new(),
+                                          config         => "$scriptpath/config/site.cfg")
         or die "Unable to create application";
     $app -> run();
 };
