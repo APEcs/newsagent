@@ -7,6 +7,7 @@
 use utf8;
 use v5.12;
 use lib qw(/var/www/webperl);
+no lib qw(/var/lib/otrs/otrs-3.3.9/Custom /var/lib/otrs/otrs-3.3.9/Kernel/cpan-lib /var/lib/otrs/otrs-3.3.9);
 use FindBin;
 
 our ($scriptpath, $fallbackpath, $contact);
