@@ -723,7 +723,6 @@ sub generate_login_form {
                                                                       "***url-actform***" => $self -> build_url("block" => "login", "pathinfo" => [ "activate" ]),
                                                                       "***url-recform***" => $self -> build_url("block" => "login", "pathinfo" => [ "recover" ]),
                                                                       "***target***"      => $self -> build_url("block" => "login"),
-                                                                      "***course***"      => $self -> {"cgi"} -> param("course") || "",
                                                                       "***question***"    => $self -> {"settings"} -> {"config"} -> {"Login:self_register_question"},
                                                                       "***username***"    => $args -> {"username"},
                                                                       "***regname***"     => $args -> {"regname"},
