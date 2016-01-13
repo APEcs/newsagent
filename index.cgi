@@ -50,9 +50,11 @@ sub handle_errors {
 }
 set_message(\&handle_errors);
 
-my $app = Webperl::Application -> new(appuser        => Newsagent::AppUser -> new(),
+do {
+    my $app = Webperl::Application -> new(appuser        => Newsagent::AppUser -> new(),
                                       system         => Newsagent::System -> new(),
                                       block_selector => Newsagent::BlockSelector -> new(),
                                       config         => "$scriptpath/config/site.cfg")
-    or die "Unable to create application";
-$app -> run();
+        or die "Unable to create application";
+    $app -> run();
+};
