@@ -98,7 +98,7 @@ sub generate_feed {
     my $settings = $self -> _validate_settings();
 
     # Potentially tweak the levels based on pathinfo
-    my @pathinfo = $self -> {"cgi"} -> param("pathinfo");
+    my @pathinfo = $self -> {"cgi"} -> multi_param("pathinfo");
 
     # Only update the level settings if no parameters have been set, and the
     # pathinfo contains a valid level

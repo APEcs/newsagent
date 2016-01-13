@@ -1115,7 +1115,7 @@ sub page_display {
     } else {
         # We need to determine what the page title should be, and the content to shove in it...
         my ($title, $body, $extrahead) = ("", "", "");
-        my @pathinfo = $self -> {"cgi"} -> param("pathinfo");
+        my @pathinfo = $self -> {"cgi"} -> multi_param("pathinfo");
 
         # User is attempting to do a password change
         if(defined($self -> {"cgi"} -> param("changepass"))) {

@@ -99,7 +99,7 @@ sub page_display {
             }
         }
     } else {
-        my @pathinfo = $self -> {"cgi"} -> param('pathinfo');
+        my @pathinfo = $self -> {"cgi"} -> multi_param('pathinfo');
 
         if($pathinfo[0]) {
             ($title, $content) = $self -> _run_import($pathinfo[0]);

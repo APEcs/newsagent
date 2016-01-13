@@ -63,7 +63,7 @@ sub generate_feed {
     my $self     = shift;
     my $settings = $self -> _validate_settings();
 
-    my @pathinfo = $self -> {"cgi"} -> param("pathinfo");
+    my @pathinfo = $self -> {"cgi"} -> multi_param("pathinfo");
 
     # obtain the feed mode, and force it to a known value
     my $mode = $pathinfo[0] || "feed";

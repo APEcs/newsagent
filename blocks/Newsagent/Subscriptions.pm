@@ -883,7 +883,7 @@ sub page_display {
             }
         }
     } else {
-        my @pathinfo = $self -> {"cgi"} -> param('pathinfo');
+        my @pathinfo = $self -> {"cgi"} -> multi_param('pathinfo');
 
         given($pathinfo[0]) {
             when("activate")  { ($title, $content) = $self -> _generate_activate_form(); }

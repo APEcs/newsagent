@@ -429,7 +429,7 @@ sub _build_api_setmode_response {
     my $userid  = $self -> {"session"} -> get_session_userid();
 
     # Pull the article ID from the api data
-    my @api  = $self -> {"cgi"} -> param('api');
+    my @api  = $self -> {"cgi"} -> multi_param('api');
     my $articleid = $api[2]
         or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => "{L_API_ERROR_NOAID}"}));
 
@@ -528,7 +528,7 @@ sub page_display {
             }
         }
     } else {
-        my @pathinfo = $self -> {"cgi"} -> param('pathinfo');
+        my @pathinfo = $self -> {"cgi"} -> multi_param('pathinfo');
 
         given($pathinfo[2]) {
             when("page") { ($title, $content) = $self -> _generate_articlelist($pathinfo[0], $pathinfo[1], $pathinfo[3]); }

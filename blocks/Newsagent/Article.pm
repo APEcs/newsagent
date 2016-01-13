@@ -332,8 +332,8 @@ sub _validate_feeds_levels {
     my $user_levels = $self -> {"article"} -> get_user_levels($user_feeds, $sys_levels, $userid);
 
     # Fetch the list of selected feeds and levels
-    my @set_feeds  = $self -> {"cgi"} -> param("feed");  # A list of selected feed IDs
-    my @set_levels = $self -> {"cgi"} -> param("level"); # A list of selected level names ("home", "leader", etc)
+    my @set_feeds  = $self -> {"cgi"} -> multi_param("feed");  # A list of selected feed IDs
+    my @set_levels = $self -> {"cgi"} -> multi_param("level"); # A list of selected level names ("home", "leader", etc)
 
     # Convert the arrays to a hash for faster/easier lookup
     my %feed_hash  = map { $_ => $_ } @set_feeds;

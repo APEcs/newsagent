@@ -196,7 +196,7 @@ sub page_display {
             }
         }
     } else {
-        my @pathinfo = $self -> {"cgi"} -> param('pathinfo');
+        my @pathinfo = $self -> {"cgi"} -> multi_param('pathinfo');
 
         given($pathinfo[2]) {
             default {
