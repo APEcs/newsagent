@@ -1,12 +1,15 @@
-<div style="border-bottom: 1px solid #aaa; padding: 5px 10px 3px 0px">
-    <div style="font-weight: bold; font-size: 30px; line-height: 63px; vertical-align: center">***img1***{L_EMAIL_SOCSTITLE}</div>
-</div>
-<div class="newsagent-full">
-    <h1 style="font-size: 20px; margin: 0px; padding: 5px 0px;">***title***</h1>
+<table style="width: 100%; margin: 0px; padding: 0px;">
+<tr>
+    <td width="100%"><h2 style="padding: 0px; margin: 0px;">{L_EMAIL_SOCSTITLE}</h2></td>
+    <td>***img1***</td>
+</tr>
+</table>
+<div class="newsagent-full" style="clear: both">
+    <h3 style="margin: 0px; padding: 5px 0px;">***title***</h3>
     <div style="color: #7496AF; font-size: 11px; margin-bottom: 5px; padding: 0px">Published: ***date***</div>
     ***img2***
     <div style="border-bottom: 1px solid #aaa; padding: 0px 4px 5px 4px" >***body***</div>
-***files***<div style="font-size: 14px; line-height: 32px; vertical-align: center;"><img src="https://gravatar.com/avatar/***gravhash***?s=32&amp;d=mm&amp;r=g" alt="gravatar" class="newsagent-avatar" width="32" height="32" /> ***name***</div>
-    <div style="font-size: 12px;">{L_EMAIL_SENTBY} ***recips***</div>
-    <div style="font-size: 12px;">{L_EMAIL_FEEDS} ***feeds***</div>
+***files***<div style="line-height: 16px; vertical-align: center; font-size: 80%"><img src="https://gravatar.com/avatar/***gravhash***?s=16&amp;d=mm&amp;r=g" alt="gravatar" class="newsagent-avatar" width="16" height="16" /> ***name***</div>
+    <div style="font-size: 75%">{L_EMAIL_SENTBY} ***recips***</div>
+    <div style="font-size: 75%">{L_EMAIL_FEEDS} ***feeds***</div>
 </div>
