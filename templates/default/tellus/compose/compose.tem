@@ -1,5 +1,6 @@
 <script type="text/javascript">
 window.addEvent('domready', function() {
+    CKEDITOR.plugins.addExternal( 'newline', '{V_[commonpath]}cke_plugins/newline/plugin.js' );
     CKEDITOR.replace('tell-desc', { customConfig: '{V_[commonpath]}cke_configs/***ckeconfig***' });
 });
 </script>

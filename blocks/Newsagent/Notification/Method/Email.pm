@@ -848,6 +848,7 @@ sub _send_emails {
             push(@{$header}, "Errors-To", $self -> {"env_sender"});
             push(@{$header}, "Precedence", "bulk");
             push(@{$header}, "X-Mailer", "Newsagent");
+            push(@{$header}, "X-Newsagent-ID", $email -> {"id"});
             push(@{$header}, "X-Newsagent-Recipients", $email -> {"recips"});
 
             $self -> _send_email_message({"header"    => $header,
