@@ -217,9 +217,6 @@ sub post_authenticate {
 # going to return the user record). This ensures that the user has the appropriate
 # roles and settings.
 #
-# @todo This needs to invoke the enrolment engine to make sure the user has the
-#       appropriate per-course roles assigned.
-#
 # @param user A reference to a hash containing the user's data.
 # @param auth A reference to the auth object calling this.
 # @return A reference to a hash containing the user's data on success,
