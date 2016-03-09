@@ -288,6 +288,8 @@ sub send {
 
     # And the list of feeds
     my @feeds = map { $_ -> {"description"} } @{$article -> {"feeds"}};
+    my $tellus = $self -> build_url(fullurl => 1,
+                                    block   => "tellus");
 
     my $htmlbody = $self -> {"template"} -> load_template("Notification/Method/Email/email.tem", {"***body***"     => $article -> {"article"},
                                                                                                   "***title***"    => $article -> {"title"} || $pubdate,
@@ -300,12 +302,14 @@ sub send {
                                                                                                   "***recips***"   => $self -> _build_recipients($allrecips),
                                                                                                   "***files***"    => $files,
                                                                                                   "***feeds***"    => join(", ", @feeds),
+                                                                                                  "***tellus***"   => $tellus,
                                                                                                   "***gravhash***" => md5_hex(lc(trimspace($article -> {"email"} || ""))) });
     my $articlebody = $self -> {"template"} -> load_template("Notification/Method/Email/body.tem", {"***body***"   => $article -> {"article"},
                                                                                                     "***files***"  => $files,
                                                                                                     "***feeds***"  => join(", ", @feeds),
                                                                                                     "***name***"   => $article -> {"realname"} || $article -> {"username"},
                                                                                                     "***recips***" => $self -> _build_recipients($allrecips),
+                                                                                                    "***tellus***" => $tellus,
                                                              });
     my $email_data = { "addresses" => $addresses,
                        "debug"     => $addresses -> {"use_debugmode"},

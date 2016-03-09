@@ -12,4 +12,5 @@
 ***files***<div style="line-height: 16px; vertical-align: center; font-size: 80%"><img src="https://gravatar.com/avatar/***gravhash***?s=16&amp;d=mm&amp;r=g" alt="gravatar" class="newsagent-avatar" width="16" height="16" /> ***name***</div>
     <div style="font-size: 75%">{L_EMAIL_SENTBY} ***recips***</div>
     <div style="font-size: 75%">{L_EMAIL_FEEDS} ***feeds***</div>
+    <div style="font-size: 75%"><a href="***tellus***">{L_EMAIL_TELLUS}</a></div>
 </div>

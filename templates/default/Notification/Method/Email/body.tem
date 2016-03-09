@@ -1,4 +1,2 @@
 ***body***
---<br />***name***<br />
-***files***
-{L_EMAIL_SENTBY} ***recips***<br/>{L_EMAIL_FEEDS} ***feeds***
+--<br />***name***<br />***files***<br />{L_EMAIL_SENTBY} ***recips***<br />{L_EMAIL_FEEDS} ***feeds***<br />{L_EMAIL_TELLUS}: ***tellus***
