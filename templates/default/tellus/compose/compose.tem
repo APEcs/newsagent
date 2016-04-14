@@ -2,6 +2,12 @@
 window.addEvent('domready', function() {
     CKEDITOR.plugins.addExternal( 'newline', '{V_[commonpath]}cke_plugins/newline/plugin.js' );
     CKEDITOR.replace('tell-desc', { customConfig: '{V_[commonpath]}cke_configs/***ckeconfig***' });
+
+    var multiselfeed = new MultiSelect('#tell-feed', { maxMonitorText: 0,
+                                                            emptyText: '{L_TELLUS_NOFEED}',
+                                                            maxHeight: '250px',
+                                                            form: 'tellusform'
+                                                     });
 });
 </script>
 <div id="tellusform">
@@ -30,6 +36,13 @@ window.addEvent('domready', function() {
                     <dd><select name="queue" id="tell-queue" class="tellus-dropdown">
                         ***queueopts***
                         </select>
+                    </dd>
+                </dl>
+                <dl class="input iblock">
+                    <dt><label for="tell-feed">{L_TELLUS_FEED}</label></dt>
+                    <dd><div id="tell-feed" class="chromelike">
+                        ***feedopts***
+                        </div>
                     </dd>
                 </dl>
             </div>

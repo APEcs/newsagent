@@ -47,6 +47,13 @@ sub new {
                                                            metadata => $self -> {"system"} -> {"metadata"})
         or return Webperl::SystemModule::set_error("TellUs initialisation failed: ".$Webperl::SystemModule::errstr);
 
+    $self -> {"feed"} = Newsagent::System::Feed -> new(dbh      => $self -> {"dbh"},
+                                                       settings => $self -> {"settings"},
+                                                       logger   => $self -> {"logger"},
+                                                       roles    => $self -> {"system"} -> {"roles"},
+                                                       metadata => $self -> {"system"} -> {"metadata"})
+        or return Webperl::SystemModule::set_error("Feed initialisation failed: ".$Webperl::SystemModule::errstr);
+
     $self -> {"state"} = [ {"value" => "new",
                             "name"  => "{L_TELLUS_NEW}" },
                            {"value" => "viewed",
@@ -111,6 +118,27 @@ sub new {
         ];
 
     return $self;
+}
+
+# ============================================================================
+#  Feed access
+
+## @method private $ _get_feeds()
+# Generate the options to show in the suggested feed dropdown.
+#
+# @return A reference to an array of hashes containing the feed list.
+sub _get_feeds {
+    my $self = shift;
+
+    my $feeds = $self -> {"feed"} -> get_feeds();
+    my @values = ();
+    foreach my $feed (@{$feeds}) {
+        push(@values, { "id"   => $feed -> {"id"},
+                        "name" => $feed -> {"name"},
+                        "desc" => $feed -> {"description"}});
+    }
+
+    return \@values;
 }
 
 

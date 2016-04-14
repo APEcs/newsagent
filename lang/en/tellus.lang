@@ -11,6 +11,8 @@ TELLUS_REJECTED = Rejected
 TELLUS_MESSAGE  = Tell Us!
 TELLUS_TYPE     = Message type:
 TELLUS_QUEUE    = Initial queue:
+TELLUS_FEED     = Suggested feeds:
+TELLUS_NOFEED   = - No suggestion set -
 TELLUS_DESC     = Message:
 TELLUS_SUBMIT   = Tell Us
 

@@ -25,6 +25,36 @@ use base qw(Newsagent::TellUs); # This class extends the TellUs block class
 use v5.12;
 
 # ============================================================================
+#  Data mangling
+
+## @method protected $ _build_feedlist($feeds, $selected)
+# Generate a series of checkboxes for each feed specified in the provided array
+#
+# @param feeds    A reference to an array of feed data hashrefs
+# @param selected A reference to a hash of selected feeds
+# @return A string containing the checkboxes for the available feeds.
+sub _build_feedlist {
+    my $self     = shift;
+    my $feeds    = shift;
+    my $selected = shift;
+    my $realselect = [];
+
+    # During the edit process the selected list may be a list of feed data hashes, this
+    # can't be used directly and must be converted to a list of IDs
+    if(ref($selected -> [0]) eq "HASH") {
+        foreach my $sel (@{$selected}) {
+            push(@{$realselect}, $sel -> {"id"});
+        }
+
+    # during compose, and edit validation, selected will be a list of feed ids.
+    } else {
+        $realselect = $selected;
+    }
+
+    return $self -> generate_multiselect("feed", "feed", "feed", $feeds, $realselect);
+}
+
+# ============================================================================
 #  Content generators
 
 ## @method private @ _generate_compose($args, $error)
@@ -46,6 +76,7 @@ sub _generate_compose {
     my $userid = $self -> {"session"} -> get_session_userid();
     my $queues = $self -> {"tellus"} -> get_queues($userid, "additem");
     my $types  = $self -> {"tellus"} -> get_types();
+    my $feeds  = $self -> _get_feeds();
 
     # permission-based access to image button
     my $ckeconfig = $self -> check_permission('freeimg') ? "image_open.js" : "basic_open.js";
@@ -61,6 +92,7 @@ sub _generate_compose {
                                                                                   "***message***"   => $args -> {"message"},
                                                                                   "***queueopts***" => $self -> {"template"} -> build_optionlist($queues, $args -> {"queue"}),
                                                                                   "***typeopts***"  => $self -> {"template"} -> build_optionlist($types , $args -> {"type"}),
+                                                                                  "***feedopts***"  => $self -> _build_feedlist($feeds , $args -> {"feed"}),
                                                                                   "***ckeconfig***" => $ckeconfig,
                                                    }));
 }
