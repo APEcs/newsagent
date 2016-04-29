@@ -623,7 +623,7 @@ sub page_display {
         }
 
         $extrahead .= $self -> {"template"} -> load_template("tellus/queues/extrahead.tem");
-        return $self -> generate_newsagent_page($title, $content, $extrahead, "list");
+        return $self -> generate_newsagent_page($title, $content, $extrahead, "queues");
     }
 }
 
