@@ -22,6 +22,7 @@ package Newsagent::TellUs;
 use strict;
 use base qw(Newsagent); # This class extends the Newsagent block class
 use Newsagent::System::TellUs;
+use Newsagent::System::Feed;
 use v5.12;
 
 # ============================================================================
@@ -161,6 +162,9 @@ sub _validate_message_fields {
 
     my $queues = $self -> {"tellus"} -> get_queues($userid, "additem");
     my $types  = $self -> {"tellus"} -> get_types();
+    my $feeds  = $self -> {"feed"}   -> get_feeds();
+
+    #
 
     ($args -> {"message"}, $error) = $self -> validate_htmlarea("message", {"required"   => 1,
                                                                             "minlen"     => 8,
