@@ -12,7 +12,7 @@ each of which serves a specific purpose:
   application; they contain the logic that creates the pages and handles
   user input. Modules in this tree that can be invoked via the web interface
   must be registered in the 'modules' table in the database, and have their
-  block name the `blocks` table in the database. Note that not all modules
+  block name in the `blocks` table in the database. Note that not all modules
   in this tree have corresponding web access points: they may be the view
   modules for internal operations (for example, the modules under the
   `blocks/Newsagent/Notification` directory are there to handle notification
@@ -56,13 +56,15 @@ omitted for clarity; please consult the module documentation for details):
 
 - The request is sent from the web browser to the Apache service on the server.
 
-- Before anything is invoked, Apache processes the directives inthe .htaccess
-  file in the Newsagent directory. Given the above URL this step rewrites it
-  to https://newsagent.cs.manchester.ac.uk/index.cgi/compose
+- Before anything is invoked, Apache processes the directives in the .htaccess
+  file in the Newsagent directory. Given the above URL, this step rewrites the
+  URL to https://newsagent.cs.manchester.ac.uk/index.cgi/compose Note that the
+  .cgi extension is a fallback - the recommended setup for Newsagent is to
+  run it via mod_perl to reduce overheads.
 
 - index.cgi is executed. This perfoms low-level setup, loads the Newsagent
   specific AppUser, BlockSelector, and System modules (under mod_perl,
-  they are already in memory). It then invokes the Application constructor
+  everything is already in memory). It then invokes the Application constructor
   passing it the Newsagent specific modules and then runs it.
 
 - the run() does the rest of the system setup:
@@ -74,8 +76,8 @@ omitted for clarity; please consult the module documentation for details):
     determine which block the user is attempting to access; in this case,
     the `compose` block.
   - The module loader is used to load the block module (the `blocks` table
-    shows that `compose` is registered with the module ID 1, module ID 1 in
-    the `modules` table gives the name as `Newsagent::Article::Compose`).
+    shows that `compose` is registered with the module ID 1, and module ID 1
+    in the `modules` table gives the name as `Newsagent::Article::Compose`).
   - The `page_display()` function of the loaded block module is executed
     to generate the page.
 

@@ -10,7 +10,7 @@
 # the designated author could not normally create articles at.
 #
 # The XML file must be of the form:
-#
+# @verbatim
 # <?xml version="1.0" encoding="UTF-8"?>
 # <channel>
 #   <item>
@@ -29,6 +29,7 @@
 #   </item>
 #   ... more items ...
 # </channel>
+# @endverbatim
 #
 # @warning
 # This code does not do all its database operations through the model code.

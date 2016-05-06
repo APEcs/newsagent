@@ -287,7 +287,7 @@ sub _validate_authcode {
 }
 
 
-## @method $ _validate_resend()
+## @method private $ _validate_resend()
 # Determine whether the user has specified an email address, and if it is valid
 # send a new code to the address if appropriate.
 #

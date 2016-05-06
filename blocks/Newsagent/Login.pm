@@ -141,7 +141,7 @@ sub resend_act_email {
 }
 
 
-## @method $ recover_email$user, $actcode)
+## @method $ recover_email($user, $actcode)
 # Send a copy of the user's username and new actcode to their email address.
 #
 # @param user     A reference to a user record hash.

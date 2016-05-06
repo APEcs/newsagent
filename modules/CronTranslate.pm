@@ -146,7 +146,8 @@ sub humanise_cron {
 # either a number or a hyphen-separated range of numbers) into an array of
 # numbers.
 #
-# @param
+# @param num The item, or comma-separated list of items, to convert to an array.
+# @return An array of numbers.
 sub _str2list {
     my $self = shift;
     my ($nums) = @_;

@@ -352,7 +352,7 @@ sub _delete_user_setting {
 #
 # @param user      A reference to a hash containing the user's data.
 # @param extradata A reference to a hash containing the name and email to set.
-
+# @return The user data hashref passed as the first argument.
 sub _set_user_extradata {
     my $self      = shift;
     my $user      = shift;

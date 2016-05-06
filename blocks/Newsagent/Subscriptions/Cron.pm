@@ -180,7 +180,7 @@ sub _send_subscription_digest {
 }
 
 
-## @method $ _run_cronjob()
+## @method private $ _run_cronjob()
 # Perform the cron job process - this checks for subscriptions that need to be
 # processed, and processes them, sending out digest messages to subscribers/
 #
@@ -230,7 +230,7 @@ sub _run_cronjob {
 }
 
 
-## @method $ _build_cronjob()
+## @method private $ _build_cronjob()
 # A wrapper function around _run_cronjob() to enclose its output in appropriate markup.
 #
 # @return An array of two values: the page title string, and the cron status page body.

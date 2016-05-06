@@ -1,5 +1,5 @@
-# @file
-# This file contains the implementation of the Seminar importer class
+## @file
+# This file is a placeholder for potential Notification refactoring.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
 #
@@ -17,11 +17,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ## @class
-package Newsagent::Importer::Seminars;
+package Newsagent::Notification;
 
 use strict;
-use experimental 'smartmatch';
-use base qw(Newsagent::Importer); # This class extends the Newsagent block class
+use base qw(Newsagent); # This class extends the Newsagent block class
 use v5.12;
 
 # This currently does nothing.
