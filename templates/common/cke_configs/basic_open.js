@@ -20,5 +20,6 @@ CKEDITOR.editorConfig = function( config )
 
     config.keystrokes = [
         [ CKEDITOR.CTRL + 13, 'shiftEnter' ],    // Ctrl+Enter
+        [ CKEDITOR.CTRL + 75, 'link' ],
     ];
 };

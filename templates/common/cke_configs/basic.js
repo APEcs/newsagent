@@ -1,5 +1,7 @@
 CKEDITOR.editorConfig = function( config )
 {
+    config.extraPlugins = 'pastetext,newline';
+
     config.height  = '7em';
     config.toolbarStartupExpanded = false;
     config.toolbar = 'NewsagentBasic';
@@ -15,5 +17,10 @@ CKEDITOR.editorConfig = function( config )
 	    { name: 'insert', items : [ 'HorizontalRule', 'SpecialChar' ] },
 	    { name: 'styles', items : [ 'Styles','Format','Font','FontSize' ] },
 	    { name: 'colors', items : [ 'TextColor','BGColor' ] }
+    ];
+
+    config.keystrokes = [
+        [ CKEDITOR.CTRL + 13, 'shiftEnter' ],    // Ctrl+Enter
+        [ CKEDITOR.CTRL + 75, 'link' ],
     ];
 };
