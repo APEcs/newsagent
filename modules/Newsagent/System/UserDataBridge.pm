@@ -127,8 +127,8 @@ sub get_valid_years {
     my $lookuph = $self -> {"udata_dbh"} -> prepare("SELECT DISTINCT y.*
                                                      FROM `".$self -> {"settings"} -> {"userdata"} -> {"user_years"}."` AS l,
                                                           `".$self -> {"settings"} -> {"userdata"} -> {"acyears"}."` AS y
-                                                     WHERE y.id = l.year_id
-                                                     ORDER BY y.start_year DESC");
+                                                     WHERE `y`.`id` = `l`.`year_id`
+                                                     ORDER BY `y`.`start_year` DESC");
     $lookuph -> execute()
         or return $self -> self_error("Unable to execute academic year lookup: ".$self -> {"udata_dbh"} -> errstr);
 
@@ -187,8 +187,8 @@ sub get_year_data {
     $self -> clear_error();
 
     my $query = $self -> {"udata_dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"userdata"} -> {"acyears"}."`
-                                                   WHERE start_semester1 < ?
-                                                   ORDER BY start_semester1 DESC
+                                                   WHERE `start_semester1` < ?
+                                                   ORDER BY `start_semester1` DESC
                                                    LIMIT 1");
     $query -> execute($date)
         or return $self -> self_error("Unable to execute academic year lookup: ".$self -> {"udata_dbh"} -> errstr);
@@ -252,7 +252,7 @@ sub _process_progplan {
         $$tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"ac".$progplan."s"}."` AS `a$progplan`";
         $$tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"user_".$progplan."s"}."` AS `u$progplan`";
         $$where  .= "AND" if($where);
-        $$where  .= " `u$progplan`.`student_id` = `u`.`id` AND `a$progplan`.`id` = `u$progplan`.`".$progplan."_id` ";
+        $$where  .= " `u$progplan`.`student_id` = `u`.`user_id` AND `a$progplan`.`id` = `u$progplan`.`".$progplan."_id` ";
         $$where  .= "AND `u$progplan`.`active` = 1 "; # only include active records.
         if(defined($yearid)) {
             $$where .= "AND `u$progplan`.`year_id` = ? ";
@@ -291,7 +291,7 @@ sub _process_progact {
             if($dotables) {
                 $$tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"progact"}."` AS `pa`";
                 $$where  .= "AND" if($where);
-                $$where  .= " `pa`.`student_id` = `u`.`id` AND `pa`.`year_id` = ? ";
+                $$where  .= " `pa`.`student_id` = `u`.`user_id` AND `pa`.`year_id` = ? ";
                 push(@{$params}, $yearid);
 
                 $dotables = 0;
@@ -356,7 +356,7 @@ sub get_user_addresses {
     # All students at a given level in a given year
     if(defined($settings -> {"level"}) && defined($settings -> {"yearid"})) {
         $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"user_years"}."` AS l";
-        $where  .= "`u`.`id` = `l`.`student_id` AND `l`.`active` = 1 AND `l`.`year_id` = ? ";
+        $where  .= "`u`.`user_id` = `l`.`student_id` AND `l`.`active` = 1 AND `l`.`year_id` = ? ";
         push(@params, $settings -> {"yearid"});
 
         $where .= $self -> _add_multiparam($settings -> {"level"}, \@params, "l", "level", '=', "OR")
@@ -364,7 +364,7 @@ sub get_user_addresses {
     # All students in a given year
     } elsif(defined($settings -> {"yearid"})) {
         $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"user_years"}."` AS l";
-        $where  .= "`u`.`id` = `l`.`student_id` AND `l`.`year_id` = ? ";
+        $where  .= "`u`.`user_id` = `l`.`student_id` AND `l`.`year_id` = ? ";
         push(@params, $settings -> {"yearid"});
     }
 
@@ -418,10 +418,17 @@ sub get_user_addresses {
     if(defined($settings -> {"course"}) && defined($settings -> {"yearid"})) {
         $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"courses"}."` AS `c`";
         $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"user_course"}."` AS `uc`";
-        $where  .= "AND `uc`.`student_id` = `u`.`id` AND `c`.`id` = `uc`.`course_id` AND `uc`.`active` = 1 AND `uc`.`year_id` = ? ";
+        $where  .= "AND `uc`.`user_id` = `u`.`user_id` AND `c`.`id` = `uc`.`course_id` AND `uc`.`active` = 1 AND `uc`.`year_id` = ? ";
         push(@params, $settings -> {"yearid"});
 
         $where .= $self -> _add_multiparam($settings -> {"course"}, \@params, "c", "course_id", "LIKE", "OR");
+    }
+
+    # filter by user to 'remove' people from the list
+    if(defined($settings -> {"exluomid"}) && scalar(@{$settings -> {"exluomid"}})) {
+        $where .= "AND `u`.`uom_id` NOT IN (?".(",?" x (scalar(@{$settings -> {"exluomid"}}) - 1)).") ";
+
+        push(@params, @{$settings -> {"exluomid"}});
     }
 
     $self -> connect()
