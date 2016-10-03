@@ -3,6 +3,7 @@ Required modules, usually provided within distro repositories:
 Class::Accessor
 Class::Mix
 Compress::Bzip2
+Crypt::Eksblowfish::Bcrypt
 Date-Calc
 DBI
 Email::MIME
@@ -11,6 +12,8 @@ Email::Sender::Transport::SMTP (in Email-Sender)
 Email::Sender::Transport::SMTP::Persistent (in Email-Sender)
 Email::Valid
 Expect
+File::LibMagic
+File::Slurp
 File::Type
 HTML::Entities (in HTML::Parser)
 HTML::Scrubber
@@ -34,7 +37,6 @@ HTML::Tidy (Requires tidyp from http://tidyp.com/ )
 Net::Twitter::Lite *NOTE BELOW*
 HTML::WikiConverter::Markdown
 WebService::Validator::HTML::W3C
-Crypt::Eksblowfish::Bcrypt
 Net::SSH::Expect
 CGI::Compress::Gzip
 Lingua::EN::Sentence
