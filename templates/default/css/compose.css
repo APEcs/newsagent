@@ -96,6 +96,8 @@ div.content > ul.reciplist > li {
 
 ul.reciplist li > div.recipient {
     padding-left: 11px;
+    line-height: 20px;
+    vertical-align: center;
 }
 
 ul.reciplist li.haschild > div.recipient {
@@ -124,6 +126,11 @@ ul.reciplist li div.MultiSelect {
 }
 div.recip-meths {
     text-align: right;
+    height: 20px; /* This may be dangerous, but without it the div defaults to 23px!?!? */
+    margin-bottom: 2px;
+    margin-left: 11px;
+    border-bottom: 1px dotted #888;
+    padding-bottom: 1px;
 }
 div.recipient {
     float: left;

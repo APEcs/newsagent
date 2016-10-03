@@ -8,8 +8,7 @@
                     </dl>
                     <dl class="input">
                         <dt><strong>{L_COMPOSE_RECIPIENTS}</strong></dt>
-                        <dd>***matrix***
-                        </dd>
+                        <dd>***matrix***</dd>
                     </dl>
 ***releases***
 <script type="text/javascript">
