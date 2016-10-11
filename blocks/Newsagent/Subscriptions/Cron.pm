@@ -213,6 +213,9 @@ sub _run_cronjob {
                                                                      'count' => 999)
                 or return $status.$self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $self -> {"article"} -> errstr()});
 
+            # Don't bother sending meessages if there are no new articles
+            next unless(scalar(@{$articles}));
+
             my $update = $self -> _send_subscription_digest($subscription, $articles)
                 or return $status.$self -> {"template"} -> load_template("error/error_box.tem", {"***message***" => $self -> errstr()});
 
