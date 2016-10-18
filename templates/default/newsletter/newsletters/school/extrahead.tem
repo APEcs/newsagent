@@ -48,7 +48,6 @@ h2.na-testnews-section {
 table.na-testnews-articles {
     margin: 0px;
     padding: 0px;
-    width: 100%;
 }
 
 hr.na-testnews-section {
