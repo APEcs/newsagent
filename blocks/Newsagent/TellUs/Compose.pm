@@ -199,7 +199,7 @@ sub page_display {
                 when("add")      { ($title, $content, $extrahead) = $self -> _add_message(); }
                 when("success")  { ($title, $content, $extrahead) = $self -> _generate_success(); }
                 default {
-                    ($title, $content, $extrahead) = $self -> _generate_compose();
+                    ($title, $content, $extrahead) = $self -> _generate_compose({ "queue" => $pathinfo[0] });
                 }
             }
         }
