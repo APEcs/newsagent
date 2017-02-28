@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<newsletter name="pgrsuper" base="newsletter/newsletters/pgrsuper/" body="body.tem" head="extrahead.tem">
+  <section name="PGR Newsletter" template="section.tem" menu="section-menu-item.tem">
+    <article>article.tem</article>
+    <image>image.tem</image>
+    <files>files.tem</files>
+    <file>file.tem</file>
+    <empty />
+    <required>required-section.tem</required>
+  </section>
+  <section name="Dummy" template="section.tem" menu="section-menu-item.tem">
+    <article>article.tem</article>
+    <image>image.tem</image>
+    <files>files.tem</files>
+    <file>file.tem</file>
+    <empty />
+    <required>required-section.tem</required>
+  </section>
+</newsletter>
