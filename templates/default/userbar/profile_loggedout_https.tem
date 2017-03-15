@@ -4,7 +4,7 @@
                     <form action="***url-login***" method="post">
                     <ul class="menu-submenu-nohl">
                         <li id="login-fields"><div>
-                                <label for="login-username">{L_USERBAR_LOGIN_USER}: <input id="login-username" name="username" type="text" size="12" maxlength="255" title="Username" /></label>
+                                <label for="login-username">{L_USERBAR_LOGIN_USER}: <input placeholder="mbass..." id="login-username" name="username" type="text" size="12" maxlength="255" title="Username" /></label>
                                 <label for="login-password">{L_USERBAR_LOGIN_PASS}: <input id="login-password" name="password" type="password" size="12" maxlength="255" title="Password" /></label>
                                 <label class="persist" for="persist"><input type="checkbox" id="persist" name="persist" class="highlight" />&nbsp;{L_LOGIN_PERSIST}</label>
                                 <button type="submit" id="login-dologin" name="login" class="button blue">{L_USERBAR_LOGIN}</button>
