@@ -1,9 +1,3 @@
-<style>
-p {
-   -ms-word-break: break-all;
-   word-break: break-all;
-   word-break: break-word;
-}</style>
 <table style="width: 100%; margin: 0px; padding: 0px;">
 <tr>
     <td width="100%"><h2 style="padding: 0px; margin: 0px;">{L_EMAIL_SOCSTITLE}</h2></td>

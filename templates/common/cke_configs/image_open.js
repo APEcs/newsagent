@@ -22,4 +22,6 @@ CKEDITOR.editorConfig = function( config )
         [ CKEDITOR.CTRL + 13, 'shiftEnter' ],    // Ctrl+Enter
         [ CKEDITOR.CTRL + 75, 'link' ],
     ];
+
+    config.allowedContent = true
 };
