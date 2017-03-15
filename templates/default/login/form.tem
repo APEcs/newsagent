@@ -7,7 +7,7 @@
             <form id="loginform" method="post" action="***target***">
                 <div class="entry">
                     <label for="username">{L_LOGIN_USERNAME}:<br />
-                    <input type="text" id="username" name="username" class="highlight" size="24" maxlength="32" value="***username***"/></label>
+                    <input type="text" placeholder="mbass..." id="username" name="username" class="highlight" size="24" maxlength="32" value="***username***"/></label>
                 </div>
                 <div class="entry">
                     <label for="password">{L_LOGIN_PASSWORD}:<br />
