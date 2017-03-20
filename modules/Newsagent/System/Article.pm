@@ -1023,18 +1023,15 @@ sub set_autosave {
 
     $self -> clear_error();
 
-    # Note that this behaviour might be implemented using INSERT...ON DUPLICATE KEY UPDATE
-    # but doing so has potential problems should replication be used. This may be more
-    # long-winded, but it does the job.
-    my $oldsave = $self -> get_autosave($userid)
+    # Remove old autosaves
+    $self -> _cleanup_autosave($userid)
         or return undef;
 
-    # the oldsave hash will contain a non-zero id field if the user has a previous autosave
-    if($oldsave -> {"id"}) {
-        return $self -> _update_autosave($oldsave -> {"id"}, $subject, $summary, $article);
-    } else {
-        return $self -> _add_autosave($userid, $subject, $summary, $article);
-    }
+    # Deactivate previous autosaves
+    $self -> clear_autosave($userid)
+        or return undef;
+
+    return $self -> _add_autosave($userid, $subject, $summary, $article);
 }
 
 
@@ -1050,8 +1047,11 @@ sub get_autosave {
 
     $self -> clear_error();
 
-    my $geth = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"autosave"}."`
-                                            WHERE `user_id` = ?");
+    my $geth = $self -> {"dbh"} -> prepare("SELECT *
+                                            FROM `".$self -> {"settings"} -> {"database"} -> {"autosave"}."`
+                                            WHERE `user_id` = ?
+                                            AND `active` = 1
+                                            LIMIT 1");
     $geth -> execute($userid)
         or return $self -> self_error("Unable to execute autosave lookup: ".$self -> {"dbh"} -> errstr);
 
@@ -1070,10 +1070,12 @@ sub clear_autosave {
 
     $self -> clear_error();
 
-    my $nukeh = $self -> {"dbh"} -> prepare("DELETE FROM `".$self -> {"settings"} -> {"database"} -> {"autosave"}."`
-                                             WHERE `user_id` = ?");
+    my $nukeh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"autosave"}."`
+                                             SET `active` = 0
+                                             WHERE `user_id` = ?
+                                             AND `active` = 1");
     $nukeh -> execute($userid)
-        or return $self -> self_error("Unable to execute autosave delete: ".$self -> {"dbh"} -> errstr);
+        or return $self -> self_error("Unable to execute autosave archive: ".$self -> {"dbh"} -> errstr);
 
     return 1;
 }
@@ -1100,6 +1102,7 @@ sub _add_autosave {
 
     $self -> clear_error();
 
+    # Add the new autosave
     my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"autosave"}."`
                                             (`user_id`, `subject`, `summary`, `article`, `saved`)
                                             VALUES(?, ?, ?, ?, UNIX_TIMESTAMP())");
@@ -1111,30 +1114,25 @@ sub _add_autosave {
 }
 
 
-## @method private $ _update_autosave($id, $subject, $summary, $article)
-# Set the autosave data in the specified autosave row, overwriting any previously stored
-# autosave.
+## @method private $ _cleanup_autosave($userid)
+# Delete autosaves for the specified user that are older than the
+# configured autosave age (or 2 weeks, if not set)
 #
-# @param id      The ID of the autosave row to update
-# @param subject The subject to store.
-# @param summary The summary to store.
-# @param article The full article text to store.
-# @return true on success, undef on error
-sub _update_autosave {
-    my $self    = shift;
-    my $id      = shift;
-    my $subject = shift;
-    my $summary = shift;
-    my $article = shift;
+# @param userid The ID of the user to clean up autosaves for
+# @return true on success, undef on error.
+sub _cleanup_autosave {
+    my $self   = shift;
+    my $userid = shift;
 
     $self -> clear_error();
 
-    my $seth = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"autosave"}."`
-                                            SET `subject` = ?, `summary` = ?, `article` = ?, `saved` = UNIX_TIMESTAMP()
-                                            WHERE `id` = ?");
-    my $rows = $seth -> execute($subject, $summary, $article, $id);
-    return $self -> self_error("Unable to perform autosave update: ". $self -> {"dbh"} -> errstr) if(!$rows);
-    return $self -> self_error("Autosave update failed, no rows inserted") if($rows eq "0E0");
+    my $threshold = time() - ($self -> {"settings"} -> {"config"} -> {"Article:autosave_age"} // 1209600);
+
+    my $nukeh = $self -> {"dbh"} -> prepare("DELETE FROM `".$self -> {"settings"} -> {"database"} -> {"autosave"}."`
+                                             WHERE `user_id` = ?
+                                             AND `saved` < ?");
+    $nukeh -> execute($userid, $threshold)
+        or return $self -> self_error("Unable to perform autosave cleanup: ".$self -> {"dbh"} -> errstr);
 
     return 1;
 }
