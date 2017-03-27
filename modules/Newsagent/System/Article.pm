@@ -283,7 +283,9 @@ sub get_feed_articles {
         }
 
         if($settings -> {"maxage"}) {
-            $where .= " AND `article`.`release_time` > ?";
+            $where .= " AND (`article`.`release_time` > ?
+                             OR
+                             (`article`.`is_sticky` AND `article`.`sticky_until` > UNIX_TIMESTAMP()))";
             push(@params, $settings -> {"maxage"});
         }
     }
