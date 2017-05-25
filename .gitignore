@@ -17,8 +17,8 @@ templates/default/js/twitter-text.js
 templates/default/js/ZeroClipboard
 templates/default/js_*
 templates/default/css_*
+templates/default/3rdparty/
 modules/Net
 uploads
 robots.txt
 run
-
