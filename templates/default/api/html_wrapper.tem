@@ -3,5 +3,5 @@
 <head profile="http://www.w3.org/2005/10/profile">
 <title>API Response</title>
 </head>
-<body>***data***</body>
+<body>%(data)s</body>
 </html>

@@ -1,1 +1,1 @@
-<div id="apierror" class="error ***code***">***info***</div>
+<div id="apierror" class="error %(code)s">%(info)s</div>
