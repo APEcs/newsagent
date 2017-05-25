@@ -21,6 +21,9 @@
 package Newsagent;
 
 use strict;
+use experimental qw(smartmatch);
+use v5.14;
+
 use base qw(Webperl::Block); # Features are just a specific form of Block
 use Webperl::Utils qw(join_complex path_join);
 use CGI::Util qw(escape);
@@ -31,6 +34,15 @@ use Time::Local;
 use Lingua::EN::Sentence qw(get_sentences);
 use XML::Simple;
 use Data::Dumper;
+use JSON;
+
+# Hack the DateTime object to include the TO_JSON function needed to support
+# JSON output of datetime objects. Outputs as ISO8601
+sub DateTime::TO_JSON {
+    my $dt = shift;
+
+    return $dt -> format_cldr('yyyy-MM-ddTHH:mm:ssZZZZZ');
+}
 
 # ============================================================================
 #  Constructor
@@ -45,7 +57,9 @@ use Data::Dumper;
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    my $self     = $class -> SUPER::new(@_)
+    my $self     = $class -> SUPER::new( api_auth_header => 'Private-Token',
+                                         api_auth_keylen => 24,
+                                         @_)
         or return undef;
 
     return $self;
@@ -259,7 +273,48 @@ sub is_api_operation {
 
     # API mode is set by placing 'api' in the first api entry. The second api
     # entry is the operation.
-    return ($api[1] || "") if($api[0] eq 'api');
+    return $api[1] || "" if($api[0] eq 'api');
+
+    return undef;
+}
+
+
+## @method $ api_param($param, $hasval, $params)
+# Determine whether an API parameter has been set, and optionally return
+# its value. This checks through the list of API parameters specified and,
+# if the named parameter is present, this will either return the value
+# that follows it in the parameter list if $hasval is true, or it will
+# simply return true to indicate the parameter is present.
+#
+# @param param  The name of the API parameter to search for.
+# @param hasval If true, expect the value following the parameter in the
+#               list of parameters to be the value thereof, and return it.
+#               If false, this will return true if the parameter is present.
+# @param params An optional reference to a list of parameters. If making
+#               multiple calls to api_param, grabbing the api parameter
+#               list beforehand and passing a reference to that into each
+#               api_param call will help speed the process up a bit.
+# @return The value for the parameter if it is set and hasval is true,
+#         otherwise true if the paramter is present. If the parameter is
+#         not present, this will return undef.
+sub api_param {
+    my $self   = shift;
+    my $param  = shift;
+    my $hasval = shift;
+    my $params = shift;
+
+    if(!$params) {
+        my @api = $self -> {"cgi"} -> multi_param('api');
+        return undef unless(scalar(@api));
+
+        $params = \@api;
+    }
+
+    for(my $pos = 2; $pos < scalar(@{$params}); ++$pos) {
+        if($params -> [$pos] eq $param) {
+            return $hasval ? $params -> [$pos + 1] : 1;
+        }
+    }
 
     return undef;
 }
@@ -298,27 +353,45 @@ sub api_html_response {
     my $data = shift;
 
     # Fix up error hash returns
-    $data = $self -> {"template"} -> load_template("api/html_error.tem", {"***code***" => $data -> {"error"} -> {"code"},
-                                                                          "***info***" => $data -> {"error"} -> {"info"}})
+    $data = $self -> {"template"} -> load_template("api/html_error.tem", {"%(code)s" => $data -> {"error"} -> {"code"},
+                                                                          "%(info)s" => $data -> {"error"} -> {"info"}})
         if(ref($data) eq "HASH" && $data -> {"error"});
 
-    return $self -> {"template"} -> load_template("api/html_wrapper.tem", {"***data***" => $data});
+    return $self -> {"template"} -> load_template("api/html_wrapper.tem", {"%(data)s" => $data});
 }
 
 
-## @method $ api_response($data, %xmlopts)
-# Generate an XML response containing the specified data. This function will not return
-# if it is successful - it will return an XML response and exit.
+## @method private $ _api_status($data)
+# Based on the specified data hash, determine which HTTP status code
+# to use in the response.
 #
-# @param data    A reference to a hash containing the data to send back to the client as an
-#                XML response.
-# @param xmlopts Options passed to XML::Simple::XMLout. Note that the following defaults are
-#                set for you:
-#                - XMLDecl is set to '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>'
-#                - KeepRoot is set to 0
-#                - RootName is set to 'api'
-# @return Does not return if successful, otherwise returns undef.
-sub api_response {
+# @param data A reference to a hash containing the data that will be sent to
+#             the client.
+# @return A HTTP status string, including code and message.
+sub _api_status {
+    my $self = shift;
+    my $data = shift;
+
+    return "200 OK"
+        unless(ref($data) eq "HASH" && $data -> {"error"} && $data -> {"error"} -> {"code"});
+
+    given($data -> {"error"} -> {"code"}) {
+        when("bad_request")      { return "400 Bad Request"; }
+        when("not_found")        { return "404 Not Found"; }
+        when("permission_error") { return "403 Forbidden"; }
+        when("general_error")    { return "532 Lilliputian snotweasel foxtrot omegaforce"; }
+        default { return "500 Internal Server Error"; }
+    }
+}
+
+
+## @method private void _xml_api_response($data, %xmlopts)
+# Print out the specified data as a XML response.
+#
+# @param data    The data to send back to the client as XML.
+# @param xmlopts Additional options passed to XML::Simple::XMLout. See the
+#                documentation for api_response() regarding this argument.
+sub _xml_api_response {
     my $self    = shift;
     my $data    = shift;
     my %xmlopts = @_;
@@ -333,19 +406,73 @@ sub api_response {
     $xmlopts{"RootName"} = 'api'
         unless(defined($xmlopts{"RootName"}));
 
-    $xmlopts{"NoEscape"} = 1
-        unless(defined($xmlopts{"NoEscape"}));
-
     eval { $xmldata = XMLout($data, %xmlopts); };
-    if($@) {
-        $xmldata = $self -> {"template"} -> load_template("api/html_error.tem", { "***code***"  => "encoding_failed",
-                                                                                  "***info***" => "Error encoding XML response: $@"});
-        $self -> log("API encoding error", "Error encoding XML response: '$@' XML Options: ".Dumper(\%xmlopts)." Data: ".Dumper($data));
-    }
+    $xmldata = $self -> {"template"} -> load_template("xml/error_response.tem", { "%(code)s"  => "encoding_failed",
+                                                                                  "%(error)s" => "Error encoding XML response: $@"})
+        if($@);
 
+    my $status = $self -> _api_status($data);
     print $self -> {"cgi"} -> header(-type => 'text/xml',
+                                     -status  => $status,
                                      -charset => 'utf-8');
+    if($ENV{MOD_PERL} && $status ne "200 OK") {
+        $self -> {"cgi"} -> r -> rflush();
+        $self -> {"cgi"} -> r -> status(200);
+    }
     print Encode::encode_utf8($xmldata);
+}
+
+
+## @method private void _json_api_response($data)
+# Print out the specified data as a JSON response.
+#
+# @param data The data to send back to the client as JSON.
+sub _json_api_response {
+    my $self = shift;
+    my $data = shift;
+
+    my $json = JSON -> new();
+    my $status = $self -> _api_status($data);
+    print $self -> {"cgi"} -> header(-type => 'application/json',
+                                     -status  => $status,
+                                     -charset => 'utf-8');
+    if($ENV{MOD_PERL} && $status ne "200 OK") {
+        $self -> {"cgi"} -> r -> rflush();
+        $self -> {"cgi"} -> r -> status(200);
+    }
+    print Encode::encode_utf8($json -> pretty -> convert_blessed(1) -> encode($data));
+}
+
+
+## @method $ api_response($data, %xmlopts)
+# Generate an API response containing the specified data. This function will not return
+# if it is successful - it will return an response and exit. The content generated by
+# this function will be either JSON or XML depending on whether the user has specified
+# an appropriate 'format=' argument, whether a system default default is set, falling back
+# on JSON otherwise.
+#
+# @param data    A reference to a hash containing the data to send back to the client as an
+#                API response.
+# @param xmlopts Options passed to XML::Simple::XMLout if the respons is in XML. Note that
+#                the following defaults are set for you:
+#                - XMLDecl is set to '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>'
+#                - KeepRoot is set to 0
+#                - RootName is set to 'api'
+# @return Does not return if successful, otherwise returns undef.
+sub api_response {
+    my $self    = shift;
+    my $data    = shift;
+    my @xmlopts = @_;
+
+    # What manner of result should be resulting?
+    my $format = $self -> {"settings"} -> {"config"} -> {"API:format"} || "json";
+    $format = "json" if($self -> {"cgi"} -> param("format") && $self -> {"cgi"} -> param("format") =~ /^json$/i);
+    $format = "xml"  if($self -> {"cgi"} -> param("format") && $self -> {"cgi"} -> param("format") =~ /^xml$/i);
+
+    given($format) {
+        when("xml") { $self -> _xml_api_response($data, @xmlopts); }
+        default { $self -> _json_api_response($data); }
+    }
 
     $self -> {"template"} -> set_module_obj(undef);
     $self -> {"messages"} -> set_module_obj(undef);
@@ -356,6 +483,106 @@ sub api_response {
     $self -> {"logger"} -> end_log();
 
     exit;
+}
+
+
+## @method $ api_token_login()
+# Determine whether the client has sent an API token as part of the http request, and
+# if so establish whether the key is valid and corresponds to a user in the system.
+# This will set up the global session object to be 'logged in' as the key owner,
+# if they key is valid. Note that methods that rely on or generate session cookies
+# are not going to operate correctly when this is used: use only for API code!
+#
+# @note If using token auth, https *must* be used, or you may as well remove the
+# auth code entirely.
+#
+# @return The ID of the user the token corresponds to on success, undef if the user
+#         has not provided a token header, or the token is not valid.
+sub api_token_login {
+    my $self = shift;
+
+    $self -> clear_error();
+
+    my $key = $self -> {"cgi"} -> http($self -> {"api_auth_header"});
+    return undef unless($key);
+
+    my ($checkkey) = $key =~ /^(\w+)$/;
+    return undef unless($checkkey);
+
+    my $sha256 = Digest -> new('SHA-256');
+    $sha256 -> add($checkkey);
+    my $crypt = $sha256 -> hexdigest();
+
+    $self -> log("api:login", "Checking key $checkkey");
+
+    my $keyrec = $self -> {"dbh"} -> prepare("SELECT `user_id`
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {"apikeys"}."`
+                                              WHERE `token` = ?
+                                              AND `active` = 1
+                                              ORDER BY `created` DESC
+                                              LIMIT 1");
+    $keyrec -> execute($crypt)
+        or return $self -> self_error("Unable to look up api key: ".$self -> {"dbh"} -> errstr());
+
+    my $keydata = $keyrec -> fetchrow_hashref()
+        or return $self -> self_error("No matching api key record when looking for key '$checkkey'");
+
+    # This is a bit of a hack, but as long as it is called before any other session
+    # code in the API module, it'll fake a logged-in session.
+    $self -> {"session"} -> {"sessuser"} = $keydata -> {"user_id"};
+
+    return $keydata -> {"user_id"};
+}
+
+
+## @method $ api_token_generate($userid)
+# Generate a guaranteed-unique API token/key for the specified user. This will record the
+# new token in the database for later use, deactivating any previously-issued tokens for
+# the user, and return a copy of the new token.
+#
+# @param userid The ID of the user to generate a token for
+# @return The new token string on success, undef on error.
+sub api_token_generate {
+    my $self   = shift;
+    my $userid = shift;
+    my ($token, $crypt) = ('', '');
+
+    $self -> clear_error();
+
+    my $checkh = $self -> {"dbh"} -> prepare("SELECT `user_id`
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {"apikeys"}."`
+                                              WHERE `token` = ?");
+
+    # Generate tokens until we hit one that isn't already defined.
+    do {
+        $token = join("", map { ("a".."z", "A".."Z", 0..9)[rand 62] } 1..$self -> {"api_auth_keylen"});
+
+        my $sha256 = Digest -> new('SHA-256');
+        $sha256 -> add($token);
+        $crypt = $sha256 -> hexdigest();
+
+        $checkh -> execute($crypt)
+            or return $self -> self_error("Unable to look up api token: ".$self -> {"dbh"} -> errstr());
+
+    } while($checkh -> fetchrow_hashref());
+
+    # Deactivate the user's old tokens
+    my $blockh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"apikeys"}."`
+                                              SET `active` = 0
+                                              WHERE `active` = 1 AND `user_id` = ?");
+    $blockh -> execute($userid)
+        or return $self -> self_error("Unable to deactivate old api tokens: ".$self -> {"dbh"} -> errstr());
+
+    # And add the new token
+    my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"apikeys"}."`
+                                            (`user_id`, `token`, `created`)
+                                            VALUES(?, ?, UNIX_TIMESTAMP())");
+
+    my $row = $newh -> execute($userid, $crypt);
+    return $self -> self_error("Unable to store token for user '$userid': ".$self -> {"dbh"} -> errstr) if(!$row);
+    return $self -> self_error("Insert failed for token for user '$userid': no rows inserted") if($row eq "0E0");
+
+    return $token;
 }
 
 
