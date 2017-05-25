@@ -1,0 +1,180 @@
+swagger: '2.0'
+info:
+  title: Newsagent API
+  description: REST Interface to Newsagent functions
+  version: 1.0.0
+host: azad.cs.man.ac.uk
+schemes:
+  - https
+basePath: /newsagent/rest/api
+produces:
+  - application/json
+paths:
+  /token:
+    get:
+      tags:
+        - auth
+      summary: Request API Token
+      description: |
+        Request an API token to use when issuing queries to the REST API. When
+        calling the API programmatically, include this token in the
+        'Private-Token' request header field with each request made. Note that
+        each call to this endpoint will generate a new API token, invalidating
+        any token previously associated with your account.
+
+
+        **Required capabilities**: api.use
+      responses:
+        '200':
+          description: An API Token
+          schema:
+            $ref: '#/definitions/Token'
+        '403':
+          description: Permission error
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /image:
+    post:
+      tags:
+        - images
+      summary: Upload an image to the Newsagent server
+      description: >
+        Upload an image to the server, and get the information for the
+        newly-uploaded image on success.
+
+
+        Note that, if the md5 of the uploaded image matches the md5 of an
+        already stored image, the stored image will be used.
+
+
+        **Required capabilities**: api.use, author
+      consumes:
+        - multipart/form-data
+      parameters:
+        - in: formData
+          name: image
+          description: The image to upload to the server
+          required: true
+          type: file
+      responses:
+        '200':
+          description: An image upload response
+          schema:
+            $ref: '#/definitions/Image'
+        '403':
+          description: Permission error
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/image/{identifier}':
+    get:
+      tags:
+        - images
+      summary: Get the information for an image
+      description: |
+        Request the information for an image from the system. This will attempt
+        to locate the image based on the specified identifier.
+
+        **Required capabilities**: api.use, author
+      parameters:
+        - in: path
+          name: identifier
+          description: >-
+            An identifier for the image, should be either an image name, md5
+            hash, or id.
+          required: true
+          type: string
+        - in: query
+          name: userid
+          description: Only consider images uploaded by the specified userid.
+          required: false
+          type: integer
+      responses:
+        '200':
+          description: An image list response
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Image'
+        '403':
+          description: Permission error
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+definitions:
+  Token:
+    type: object
+    properties:
+      token:
+        type: string
+        description: Unique identifier to pass in the Private-Token header.
+  Image:
+    type: object
+    properties:
+      id:
+        type: integer
+        description: The internal ID for the image
+      md5sum:
+        type: string
+        description: hex-encoded MD5sum of the image
+      name:
+        type: string
+        description: 'the name of the image, without any path'
+      urls:
+        type: object
+        description: the URLs for the images stored on the server
+        properties:
+          lead:
+            type: string
+            description: 'The URL of the lead-size (130x63) image'
+          thumb:
+            type: string
+            description: 'The URL of the thumb size (350x167) image'
+          large:
+            type: string
+            description: 'The URL of the article size (450x450) image'
+          bigscreen:
+            type: string
+            description: 'The URL of the big-screen sized (2560x1440) image'
+      uploader:
+          $ref: '#/definitions/User'
+      uploaded:
+        type: string
+        description: The time and date at which the image was uploaded
+  User:
+    type: object
+    properties:
+      user_id:
+        type: integer
+        description: The users internal ID
+      username:
+        type: string
+        description: The users username
+      realname:
+        type: string
+        description: The users real name
+      email:
+        type: string
+        description: the users email address
+      gravatar:
+        type: string
+        description: The URL of the users gravatar
+  Error:
+    type: object
+    properties:
+      code:
+        type: string
+        description: A short identifying code for the error type
+      message:
+        type: string
+        description: A longer message explaining the cause of the error
