@@ -208,7 +208,10 @@ sub _build_media_selector {
     my $offset    = shift;
     my $count     = shift;
 
-    my $images = $self -> {"article"} -> {"images"} -> get_file_images($userid, $sortfield, $offset, $count);
+    my $images = $self -> {"article"} -> {"images"} -> get_file_images(userid => $userid,
+                                                                       sort   => $sortfield,
+                                                                       offset => $offset,
+                                                                       count  => $count);
     my $selector = "";
 
     foreach my $image (@{$images}) {

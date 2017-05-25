@@ -28,7 +28,7 @@ use Digest;
 use File::Path qw(make_path);
 use File::Copy;
 use File::Slurp;
-use Webperl::Utils qw(path_join trimspace);
+use Webperl::Utils qw(path_join trimspace hash_or_hashref);
 use Data::Dumper;
 
 # ============================================================================
@@ -80,22 +80,19 @@ sub new {
 # ============================================================================
 #  Interface
 
-## @method $ get_file_images($userid, $sortfield, $offset, $count)
+## @method $ get_file_images(%args)
 # Obtain a list of all images currently stored in the system. This generates
 # a list of images, including all the image data needed for the media library.
 #
-# @param userid The ID of the user to filter the images by. If zero or undef,
-#               images by all users are included.
-# @param sortfield The field to sort the images on. Valid values are 'uploaded' and 'name'
-# @param offset    The offset to start fetching images from.
-# @param count     The number of images to fetch.
+# - `userid`: The ID of the user to filter the images by. If zero or undef,
+#             images by all users are included.
+# - `sort`:   The field to sort the images on. Valid values are 'uploaded' and 'name'
+# - `offset`: The offset to start fetching images from.
+# - `count`:  The number of images to fetch.
 # @return A reference to an array of hashrefs to image data.
 sub get_file_images {
-    my $self      = shift;
-    my $userid    = shift;
-    my $sortfield = shift;
-    my $offset    = shift;
-    my $count     = shift;
+    my $self = shift;
+    my $args = hash_or_hashref(@_);
 
     $self -> clear_error();
 
@@ -106,22 +103,44 @@ sub get_file_images {
                  AND `u`.`user_id` = `i`.`uploader`";
 
     my @params = ();
-    if($userid) {
+    if($args -> {"userid"}) {
         $query .= " AND `uploader` = ? ";
-        push(@params, $userid);
+        push(@params, $args -> {"userid"});
+    }
+
+     if($args -> {"id"}) {
+        $query .= " AND `id` = ? ";
+        push(@params, $args -> {"id"});
+    }
+
+    if($args -> {"md5"}) {
+        $query .= " AND `md5` = ? ";
+        push(@params, $args -> {"md5"});
+    }
+
+    if($args -> {"name"}) {
+        $query .= " AND `name` LIKE ? ";
+        push(@params, $args -> {"name"});
     }
 
     my $way;
-    given($sortfield) {
+    given($args -> {"sort"}) {
         when("uploaded") { $way = "DESC"; }
         when("name")     { $way = "ASC"; }
         default {
-            $sortfield = "uploaded";
-            $way       = "DESC";
+            $args -> {"sort"} = "uploaded";
+            $way              = "DESC";
         }
     }
+    $query .= " ORDER BY `".$args -> {"sort"}."` $way";
 
-    $query .= " ORDER BY `$sortfield` $way LIMIT $offset,$count";
+    $args -> {"offset"} = 0
+        if(!defined($args -> {"offset"}) && $args -> {"limit"});
+
+    if(defined($args -> {"offset"})) {
+        $query .= "LIMIT ".$args -> {"offset"};
+        $query .= ",".$args -> {"limit"} if($args -> {"limit"});
+    }
 
     my $imgh = $self -> {"dbh"} -> prepare($query);
     $imgh -> execute(@params)
