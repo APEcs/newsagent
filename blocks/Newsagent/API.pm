@@ -29,15 +29,52 @@ package Newsagent::API;
 use strict;
 use experimental 'smartmatch';
 use base qw(Newsagent::Article);
-use Webperl::Utils qw(path_join);
+use Webperl::Utils qw(path_join array_or_arrayref);
 use File::Basename;
+use Text::Sprintf::Named qw(named_sprintf);
 use JSON;
 use DateTime;
 use v5.12;
 
 
 # ============================================================================
+#  Constructor
+
+## @cmethod $ new(%args)
+# Overloaded constructor for the API,.
+#
+# @param args A hash of values to initialise the object with.
+# @return A reference to a new Newsagent::API object on success, undef on error.
+sub new {
+    my $invocant = shift;
+    my $class    = ref($invocant) || $invocant;
+    my $self     = $class -> SUPER::new( timefmt      => '%a, %d %b %Y %H:%M:%S %Z',
+                                         gravatar_url => 'https://gravatar.com/avatar/%(hash)s?s=64&d=mm&r=g',
+                                         @_)
+        or return undef;
+
+    return $self;
+}
+
+
+# ============================================================================
 #  Support functions
+
+## @method private $ _epoch_to_string($epoch)
+# Convert a unix timestamp to a formatted string.
+#
+# @param epoch The unix timestamp to convert.
+# @return A string containing the converted timestamp.
+sub _epoch_to_string {
+    my $self  = shift;
+    my $epoch = shift;
+
+    my $dt = DateTime -> from_epoch(epoch => $epoch,
+                                    time_zone => $self -> {"settings"} -> {"config"} -> {"time_zone"} // "Europe/London");
+
+    return $dt -> strftime($self -> {"timefmt"});
+}
+
 
 ## @method private $ _show_api_docs()
 # Redirect the user to a Swagger-generated API documentation page.
@@ -55,10 +92,85 @@ sub _show_api_docs {
 # ============================================================================
 #  Image handling functions
 
-## @method @ _validate_image_file()
-# Determine whether the image uploaded is valid.
+## @method private $ _make_image_args($identifier)
+# Given an image identifier, construct the arguments to pass to the
+# Newsagent::System::Image::get_file_images() function. Supported idenfiers
+# are:
 #
+# - a number, will be treated as the image ID.
+# - a hex string, will be treated as the image MD5 sum
+# - a string of other characters, will be treated as the image name. Note
+#   that '*' may be used for wildcard searches.
+#
+# @param identifier The identifier to search for images with.
+# @return A reference to a hash containing the arguments on success,
+#         an error message on error.
+sub _make_image_args {
+    my $self       = shift;
+    my $identifier = shift;
 
+    my $args = {};
+    given($identifier) {
+        when(/^\d+$/)        { $args -> {"id"}   = $identifier; }
+        when(/^[a-f0-9]+$/i) { $args -> {"md5"}  = $identifier; }
+        when(/^.+/)          { $identifier =~ s/\*/%/g;
+                               $args -> {"name"} = $identifier;
+        }
+        default {
+            return "Image identifier not specified or supported";
+            $self -> log("error:api:parameter", "Request for image, identifier is: ".(defined($identifier) ? $identifier : "not set"));
+        }
+    }
+
+    return $args;
+}
+
+
+## @method private $ _make_image_response($data)
+# Given an image data hash, or reference to an array of image data hashes,
+# produce an array of image data hashes that matches the API specification.
+#
+# @param data An image data hash, or a reference to an array of hashes.
+# @return An array of image data response hashes.
+sub _make_image_response {
+    my $self = shift;
+    my $data = array_or_arrayref(@_);
+
+    my @result;
+    foreach my $image (@{$data}) {
+        my $gravatar = named_sprintf($self -> {"gravatar_url"}, { "hash" => $image -> {"gravatar_hash"} });
+
+        push(@result, { "id"     => $image -> {"id"},
+                        "md5sum" => $image -> {"md5"},
+                        "name"   => $image -> {"name"},
+                        "urls"   => {
+                            "lead"      => $image -> {"path"} -> {"icon"},
+                            "thumb"     => $image -> {"path"} -> {"thumb"},
+                            "large"     => $image -> {"path"} -> {"large"},
+                            "media"     => $image -> {"path"} -> {"media"},
+                            "bigscreen" => $image -> {"path"} -> {"tactus"},
+                        },
+                        "uploader" => {
+                            "user_id"  => $image -> {"uploader"},
+                            "username" => $image -> {"username"},
+                            "realname" => $image -> {"fullname"},
+                            "email"    => $image -> {"email"},
+                            "gravatar" => $gravatar,
+                        },
+                        "uploaded" => $self -> _epoch_to_string($image -> {"uploaded"})
+             });
+    }
+
+    return \@result;
+}
+
+
+## @method @ _validate_image_file()
+# Determine whether the image uploaded is valid. This will check the file
+# upload, and store the image in the system's image library.
+#
+# @return A reference to an image data hash on sucess, otherwise an array
+#         of two values: undef and an error message.
 sub _validate_image_file {
     my $self = shift;
 
@@ -84,29 +196,36 @@ sub _validate_image_file {
 }
 
 
+## @method $ _build_image_get_response($identifier)
+# Generate the response for the /image/{identifier} REST endpoint.
+#
+# @param identifier The identifier to search for the image using.
+# @return An array of image data response hashes.
 sub _build_image_get_response {
-    my $self = shift;
+    my $self       = shift;
+    my $identifier = shift;
 
-    my @apipath = $self -> {"cgi"} -> multi_param("api");
+    $self -> log("api:image", "Lookup operation requested by user");
 
-    my $identifier = $apipath[2];
-    my $args = {};
-    given($identifier) {
-        when(/^\d+$/)        { $args -> {"id"}   = $identifier; }
-        when(/^[a-f0-9]+$/i) { $args -> {"md5"}  = $identifier; }
-        when(/^.+/)          { $args -> {"name"} = $identifier; }
-        default {
-            return $self -> api_errorhash("bad_request", "Image identifier not specified or supported");
-        }
-    }
+    my $args = $self -> _make_image_args($identifier);
+    return $self -> api_errorhash("bad_request", $args)
+        unless(ref($args) eq "HASH");
 
     my $imgdata = $self -> {"article"} -> {"images"} -> get_file_images($args);
-    return $imgdata;
+    return $self -> _make_image_response($imgdata);
 }
 
 
+## @method $ _build_image_post_response()
+# Generate the response for the /image post REST endpoint. This receives
+# image data from the client, checks it, adds the image to the library
+# if valid, and then returns an arrayref containing the response hash.
+#
+# @return An array of image data response hashes.
 sub _build_image_post_response {
     my $self = shift;
+
+    $self -> log("api:image", "Upload operation requested by user");
 
     if(!$self -> check_permission("upload")) {
         $self -> log("error:api:permission", "User does not have permission to upload");
@@ -122,7 +241,7 @@ sub _build_image_post_response {
         if($error);
 
     $self -> log("debug:api:upload", "Store complete, image saved with id ".$data -> {"id"});
-    return $data;
+    return $self -> _build_image_get_response($data -> {"id"});
 }
 
 
@@ -166,7 +285,9 @@ sub _build_image_response {
 
     # /image/{identifier}
     if($self -> {"cgi"} -> request_method() eq "GET") {
-        return $self -> _build_image_get_response();
+        my @pathinfo = $self -> {"cgi"} -> multi_param('api');
+
+        return $self -> _build_image_get_response($pathinfo[2]);
 
     # /image
     } elsif($self -> {"cgi"} -> request_method() eq "POST") {
