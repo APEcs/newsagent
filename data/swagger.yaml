@@ -62,9 +62,15 @@ paths:
           type: file
       responses:
         '200':
-          description: An image upload response
+          description: >-
+            An image list response. Note that this will contain exactly one
+            element on successful upload (or if the image already existed), but
+            it is still returned as an array to be consistent with the
+            /image/{identifier} endpoint.
           schema:
-            $ref: '#/definitions/Image'
+            type: array
+            items:
+              $ref: '#/definitions/Image'
         '403':
           description: Permission error
           schema:
@@ -82,13 +88,14 @@ paths:
         Request the information for an image from the system. This will attempt
         to locate the image based on the specified identifier.
 
-        **Required capabilities**: api.use, author
+        **Required capabilities**: api.use
       parameters:
         - in: path
           name: identifier
-          description: >-
+          description: >
             An identifier for the image, should be either an image name, md5
-            hash, or id.
+            hash, or id. Note that, when specify a name, * may be used to do
+            wildcard searches
           required: true
           type: string
         - in: query
@@ -136,18 +143,21 @@ definitions:
         properties:
           lead:
             type: string
-            description: 'The URL of the lead-size (130x63) image'
+            description: The URL of the lead-size (130x63) image
           thumb:
             type: string
-            description: 'The URL of the thumb size (350x167) image'
+            description: The URL of the thumb size (350xN) image
+          media:
+            type: string
+            description: The URL of the media library size (128x128) image
           large:
             type: string
-            description: 'The URL of the article size (450x450) image'
+            description: The URL of the article size (450x450) image
           bigscreen:
             type: string
-            description: 'The URL of the big-screen sized (2560x1440) image'
+            description: The URL of the big-screen sized (2560x1440) image
       uploader:
-          $ref: '#/definitions/User'
+        $ref: '#/definitions/User'
       uploaded:
         type: string
         description: The time and date at which the image was uploaded
