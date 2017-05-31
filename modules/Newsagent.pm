@@ -406,6 +406,9 @@ sub _xml_api_response {
     $xmlopts{"RootName"} = 'api'
         unless(defined($xmlopts{"RootName"}));
 
+    $xmlopts{"NoEscape"} = 1
+        unless(defined($xmlopts{"NoEscape"}));
+
     eval { $xmldata = XMLout($data, %xmlopts); };
     $xmldata = $self -> {"template"} -> load_template("xml/error_response.tem", { "%(code)s"  => "encoding_failed",
                                                                                   "%(error)s" => "Error encoding XML response: $@"})
