@@ -137,8 +137,8 @@ sub get_file_images {
     $args -> {"offset"} = 0
         if(!defined($args -> {"offset"}) && $args -> {"limit"});
 
-    if(defined($args -> {"offset"})) {
-        $query .= "LIMIT ".$args -> {"offset"};
+    if(defined($args -> {"offset"}) && $args -> {"limit"}) {
+        $query .= " LIMIT ".$args -> {"offset"};
         $query .= ",".$args -> {"limit"} if($args -> {"limit"});
     }
 
