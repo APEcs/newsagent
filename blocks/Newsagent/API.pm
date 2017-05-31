@@ -211,6 +211,18 @@ sub _build_image_get_response {
     return $self -> api_errorhash("bad_request", $args)
         unless(ref($args) eq "HASH");
 
+    # The client may have forced filtering by userid
+    my ($userid, $error) = $self -> validate_numeric('userid', { required => 0,
+                                                                 nicename => 'userid',
+                                                                 min      => 1,
+                                                                 intonly  => 1});
+    return $self -> api_errorhash("bad_request", $error)
+        if($error);
+
+    $args -> {"userid"} = $userid
+        if($userid);
+
+    # Now do the search and response massaging
     my $imgdata = $self -> {"article"} -> {"images"} -> get_file_images($args);
     return $self -> _make_image_response($imgdata);
 }
