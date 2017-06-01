@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <newsletter name="school" base="newsletter/newsletters/school/" body="body.tem" head="extrahead.tem">
-  <section name="News from Head of School" template="section.tem" menu="section-menu-item.tem">
+  <section name="News from Head of School" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
     <article>article.tem</article>
     <image>image.tem</image>
     <files>files.tem</files>
@@ -8,7 +8,7 @@
     <empty />
     <required>required-section.tem</required>
   </section>
-  <section name="News and announcements" template="section.tem" menu="section-menu-item.tem">
+  <section name="News and announcements" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
     <article>article.tem</article>
     <image>image.tem</image>
     <files>files.tem</files>
@@ -16,7 +16,7 @@
     <empty />
     <required>required-section.tem</required>
   </section>
-  <section name="Events" template="section.tem" menu="section-menu-item.tem">
+  <section name="Events" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
     <article>article.tem</article>
     <image>image.tem</image>
     <files>files.tem</files>
@@ -24,7 +24,7 @@
     <empty />
     <required>required-section.tem</required>
   </section>
-  <section name="PGR News" template="section.tem" menu="section-menu-item.tem">
+  <section name="PGR News" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
     <article>article.tem</article>
     <image>image.tem</image>
     <files>files.tem</files>
@@ -32,7 +32,7 @@
     <empty />
     <required>required-section.tem</required>
   </section>
-  <section name="Funding Opportunities" template="section.tem" menu="section-menu-item.tem">
+  <section name="Funding Opportunities" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
     <article>article.tem</article>
     <image>image.tem</image>
     <files>files.tem</files>
@@ -40,7 +40,7 @@
     <empty />
     <required>required-section.tem</required>
   </section>
-  <section name="Featured Research Outcomes" template="section.tem" menu="section-menu-item.tem">
+  <section name="Featured Research Outcomes" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
     <article>article.tem</article>
     <image>image.tem</image>
     <files>files.tem</files>
@@ -48,7 +48,7 @@
     <empty />
     <required>required-section.tem</required>
   </section>
-  <section name="Prize and award Opportunities" template="section.tem" menu="section-menu-item.tem">
+  <section name="Prize and award Opportunities" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
     <article>article.tem</article>
     <image>image.tem</image>
     <files>files.tem</files>
@@ -56,7 +56,7 @@
     <empty />
     <required>required-section.tem</required>
   </section>
-  <section name="Tech Support News" template="section.tem" menu="section-menu-item.tem">
+  <section name="Tech Support News" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
     <article>article.tem</article>
     <image>image.tem</image>
     <files>files.tem</files>
@@ -64,7 +64,7 @@
     <empty />
     <required>required-section.tem</required>
   </section>
-  <section name="Sustainability and Green Impact News" template="section.tem" menu="section-menu-item.tem">
+  <section name="Sustainability and Green Impact News" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
     <article>article.tem</article>
     <image>image.tem</image>
     <files>files.tem</files>
