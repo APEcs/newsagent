@@ -49,7 +49,7 @@
           "images"
         ],
         "summary": "Upload an image to the Newsagent server",
-        "description": "Upload an image to the server, and get the information for the newly-uploaded image on success.\n\nNote that, if the md5 of the uploaded image matches the md5 of an already stored image, the stored image will be used.\n\n**Required capabilities**: api.use, author\n",
+        "description": "Upload an image to the server, and get the information for the newly-uploaded image on success.\n\nNote that, if the md5 of the uploaded image matches the md5 of an already stored image, the stored image will be used.\n\n**Required capabilities**: api.use, upload\n",
         "consumes": [
           "multipart/form-data"
         ],
@@ -119,6 +119,48 @@
                 "$ref": "#/definitions/Image"
               }
             }
+          },
+          "403": {
+            "description": "Permission error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/article/{identifier}": {
+      "get": {
+        "tags": [
+          "articles"
+        ],
+        "summary": "Look up an article or articles",
+        "description": "Search for one or more articles in the sytem and retrieve the data for any matches.\n\n**Required capabilities***: api.use\n",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identifier",
+            "description": "An identifier to use when searching for articles. This can be either an article ID, subject (with * to indicate wildcard), or start with 'Feed:' to indicate that articles in the specified feed should be retrieved.\n",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "count",
+            "description": "The maximum number of articles to retrieve, if not specified defaults to 10",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An image list response"
           },
           "403": {
             "description": "Permission error",
