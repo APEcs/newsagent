@@ -119,7 +119,7 @@ sub build_newsletter {
 
     # If a newsletter is selected, build the page
     if($newsletter) {
-        my ($body, $menu)  = ("", "");
+        my ($body, $menu, $toc, $num)  = ("", "", "", 1);
         foreach my $section (@{$newsletter -> {"messages"}}) {
             next unless(scalar(@{$section -> {"messages"}}) ||
                         $section -> {"required"} ||
@@ -131,6 +131,11 @@ sub build_newsletter {
                 my $article = $self -> {"article"} -> get_article($message -> {"id"});
 
                 $articles .= $self -> _build_newsletter_article($article, $newsletter -> {"template"} -> {"section"} -> {$section -> {"name"}}, ++$row % 2);
+
+                # Record an entry in the overall table of contents
+                $toc  .= $self -> {"template"} -> load_template($newsletter -> {"template"} -> {"section"} -> {$section -> {"name"}} -> {"toc"}, {"***title***" => $article -> {"title"},
+                                                                                                                                                  "***num***"   => $num++,
+                                                                                                                                                  "***id***"    => $article -> {"id"}});
             }
 
             # If the section contains no articles, use the empty template.
@@ -146,14 +151,18 @@ sub build_newsletter {
             $body .= $self -> {"template"} -> load_template($newsletter -> {"template"} -> {"section"} -> {$section -> {"name"}} -> {"template"}, {"***articles***" => $articles,
                                                                                                                                                    "***title***"    => $section -> {"name"},
                                                                                                                                                    "***id***"       => $section -> {"id"}});
-            $menu .= $self -> {"template"} -> load_template($newsletter -> {"template"} -> {"section"} -> {$section -> {"name"}} -> {"menu"}, {"***title***"    => $section -> {"name"},
-                                                                                                                                               "***id***"       => $section -> {"id"}});
+
+            # Add an entry for the section to the section menu
+            $menu .= $self -> {"template"} -> load_template($newsletter -> {"template"} -> {"section"} -> {$section -> {"name"}} -> {"menu"}, {"***title***" => $section -> {"name"},
+                                                                                                                                               "***id***"    => $section -> {"id"}});
+
         }
 
         $content .= $self -> {"template"} -> load_template($newsletter -> {"template"} -> {"body"}, {"***name***"        => $newsletter -> {"name"},
                                                                                                      "***description***" => $newsletter -> {"description"},
                                                                                                      "***id***"          => $newsletter -> {"id"},
                                                                                                      "***body***"        => $body,
+                                                                                                     "***toc***"         => $toc,
                                                                                                      "***menu***"        => $menu});
     }
 
