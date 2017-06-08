@@ -886,6 +886,7 @@ sub page_display {
         my @pathinfo = $self -> {"cgi"} -> multi_param('pathinfo');
 
         given($pathinfo[0]) {
+            when("authreq")   { ($title, $content) = $self -> _generate_manage_authreq_form(); }
             when("activate")  { ($title, $content) = $self -> _generate_activate_form(); }
             when("resend")    { ($title, $content) = $self -> _generate_resend_form(); }
             when("delete")    { ($title, $content) = $self -> _generate_delete_form(); }
