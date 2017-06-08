@@ -480,7 +480,7 @@ sub _generate_manage_authreq_form {
         return ($self -> {"template"} -> replace_langvar("SUBS_AUTHCODE_TITLE"),
                 $self -> {"template"} -> load_template("subscriptions/authcode_form.tem", {"***error***"      => $error,
                                                                                            "***target***"     => $self -> build_url("block" => "subscribe"),
-                                                                                           "***url-resend***" => $self -> build_url("block" => "subscribe", "pathinfo" => [ "authreq" ]),}));
+                                                                                           "***url-resend***" => $self -> build_url("block" => "subscribe", "pathinfo" => [ "resend" ]),}));
     } else {
         $self -> {"session"} -> set_variable('authcode', $authcode);
 
