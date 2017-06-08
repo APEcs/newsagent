@@ -893,7 +893,7 @@ sub page_display {
             when("managedel") { ($title, $content) = $self -> _generate_manage_delete(); }
 
             default {
-                ($title, $content) = $self -> _generate_manage();
+                ($title, $content) = $self -> _generate_manage_form();
             }
         }
 
