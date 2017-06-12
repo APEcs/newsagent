@@ -628,18 +628,22 @@ sub _validate_article_fields {
 }
 
 
-## @method protected $ _validate_article($articleid)
+## @method protected $ _validate_article($articleid, $noredirect)
 # Validate the article data submitted by the user, and potentially add
 # a new article to the system. Note that this will not return if the article
 # fields validate; it will redirect the user to the new article and exit.
 #
-# @param articleid Optional article ID used when doing edits. Note that the
-#                  caller must ensure this ID is valid and the user can edit it.
+# @param articleid  Optional article ID used when doing edits. Note that the
+#                   caller must ensure this ID is valid and the user can edit it.
+# @param noredirect If true, on success this returns and empty string, and the
+#                   result hash including the article ID. Otherwise, success
+#                   redirects the user.
 # @return An error message, and a reference to a hash containing
 #         the fields that passed validation.
 sub _validate_article {
-    my $self      = shift;
-    my $articleid = shift;
+    my $self       = shift;
+    my $articleid  = shift;
+    my $noredirect = shift;
     my ($args, $errors, $error) = ({}, "", "", undef);
     my $userid = $self -> {"session"} -> get_session_userid();
 
@@ -728,6 +732,11 @@ sub _validate_article {
     # If the user has stopped confirmations, set the flag here
     $self -> {"session"} -> {"auth"} -> {"app"} -> set_user_setting($userid, "disable_confirm", 1)
         if($args -> {"noconfirm"});
+
+    if($noredirect) {
+        $args -> {"id"} = $aid;
+        return (undef, $args);
+    }
 
     # redirect to a success page
     # Doing this prevents page reloads adding multiple article copies!
