@@ -155,6 +155,15 @@ sub get_user_levels {
 }
 
 
+## @method $ find_articles($settings)
+#
+sub find_articles {
+    my $self     = shift;
+    my $settings = shift;
+
+}
+
+
 ## @method $ get_feed_articles($settings)
 # Obtain the details of articles from the database. This will search the database
 # using the specified parameters, and return a reference to an array of records
@@ -185,11 +194,7 @@ sub get_user_levels {
 #   otherwise only the title and summary will be included.
 # - `use_fulltext_desc`: if specfied, a flag with the same name will be set in each
 #   article indicating that the fulltext should be used as the description.
-#
-# @note This function will never return articles stored as `draft`, articles set
-#       for timed release before the release time, or old revisions of articles.
-#       It is purely intended to support feed generation - where none of the
-#       aforementioned articles should ever be visible.
+# - `allow_invisible`: if true, allow
 #
 # @param settings A reference to a hash containing settings for the query.
 # @return A reference to an array of record hashes on success, undef on error.
@@ -214,20 +219,36 @@ sub get_feed_articles {
     # Now start constructing the query. These are the tables and where clauses that are
     # needed regardless of the settings provided by the caller.
     # All the fields the query is interested in, normally fulltext is omitted unless explicitly requested
-    my $fields = "`article`.`id`, `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `user`.`email`, `article`.`created`, `article`.`title`, `article`.`summary`, `article`.`release_time`, `article`.`is_sticky`, `article`.`sticky_until`, `article`.`full_summary`";
+    my $fields = "`article`.`id`,
+                  `user`.`user_id` AS `userid`, `user`.`username` AS `username`, `user`.`realname` AS `realname`, `user`.`email`,
+                  `article`.`created`,
+                  `article`.`title`,
+                  `article`.`summary`,
+                  `article`.`release_mode`,
+                  `article`.`release_time`,
+                  `article`.`is_sticky`,
+                  `article`.`sticky_until`,
+                  `article`.`full_summary`";
     $fields   .= ", `article`.`article` AS `fulltext`" if($settings -> {"fulltext_mode"});
 
     my $from  = "`".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `article`
                  LEFT JOIN `".$self -> {"settings"} -> {"database"} -> {"users"}."` AS `user`
                      ON `user`.`user_id` = `article`.`creator_id`";
 
-    # Initial where clause ensures that only articles that are explicitly visible, or have passed their
-    # timed release threshold, are included in the results - this will block deleted/edited/etc
-    my $where = "(`article`.`release_mode` = 'visible'
-                   OR (`article`.`release_mode` = 'timed'
-                        AND `article`.`release_time` <= UNIX_TIMESTAMP()
-                      )
-                 )";
+    my $where;
+    if($settings -> {"allow_invisible"}) {
+        # Initial where clause that includes all articles except deleted ones
+        $where = "`article`.`release_mode` != 'deleted'"
+
+    } else {
+        # Initial where clause that only includes articles that are explicitly visible, or have passed
+        # their timed release threshold - this will block deleted/edited/etc
+        $where = "(`article`.`release_mode` = 'visible'
+                    OR (`article`.`release_mode` = 'timed'
+                         AND `article`.`release_time` <= UNIX_TIMESTAMP()
+                       )
+                  )";
+    }
 
     # If an article ID is specified, no further filtering should be done - if the ID corresponds
     # to a visible article, the feed, level, or anything else doesn't matter.

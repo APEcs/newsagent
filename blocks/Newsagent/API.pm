@@ -258,6 +258,80 @@ sub _build_image_post_response {
 
 
 # ============================================================================
+#  Article handling functions
+
+## @method private $ _make_article_timestamps($articles)
+# Given a reference to an array of article hashrefs, convert all the unix
+# timestamps in the articles into DateTime objects. Note that this modifies
+# the article data in place, it does not copy anything!
+#
+# @param articles A reference to an array of article hashes
+# @return A reference to an array of article hashes
+sub _make_article_timestamps {
+    my $self     = shift;
+    my $articles = shift;
+
+    foreach my $article (@{$articles}) {
+        foreach my $field ("created", "updated", "release_time", "sticky_until") {
+            $article -> {$field} = DateTime -> from_epoch(epoch     => $article -> {$field},
+                                                          time_zone => $self -> {"settings"} -> {"config"} -> {"time_zone"} // "Europe/London")
+                if(defined($article -> {$field}));
+        }
+
+        if($article -> {"images"} && scalar(@{$article -> {"images"}})) {
+            foreach my $image (@{$article -> {"images"}}) {
+                $image -> {"uploaded"} = DateTime -> from_epoch(epoch     => $image -> {"uploaded"},
+                                                                time_zone => $self -> {"settings"} -> {"config"} -> {"time_zone"} // "Europe/London")
+                    if(defined($image) && defined($image -> {"uploaded"}));
+            }
+        }
+    }
+
+    return $articles;
+}
+
+
+## @method private $ _build_article_get_response($identifier)
+# Fetch the information for an article or article(s).
+#
+# @param identifier The identifier to search for articles with.
+# @return A reference to an array of arti
+sub _build_article_get_response {
+    my $self       = shift;
+    my $identifier = shift;
+
+    my $results = [];
+    given($identifier) {
+        # Identifier can be either an ID or a comma separated list of IDs
+        when(/^\d+(,\d+)*$/) {
+            my @ids = split(/,/, $identifier);
+
+            foreach my $id (@ids) {
+                my $article = $self -> {"article"} -> get_article($id)
+                    or return $self -> api_errorhash("not_found", "No article with ID $identifier found");
+
+                push(@{$results}, $article);
+            }
+        }
+
+        default {
+            return $self -> api_errorhash("bad_request", "Unsupported argument to /article");
+        }
+    }
+
+    return $self -> _make_article_timestamps($results);
+}
+
+
+sub _build_article_post_response {
+    my $self = shift;
+
+
+
+}
+
+
+# ============================================================================
 #  API functions
 
 ## @method private $ _build_token_response()
@@ -284,7 +358,6 @@ sub _build_token_response {
 }
 
 
-
 ## @method private $ _build_image_response()
 # Perform operations related to images through the API
 #
@@ -304,6 +377,34 @@ sub _build_image_response {
     # /image
     } elsif($self -> {"cgi"} -> request_method() eq "POST") {
         return $self -> _build_image_post_response();
+
+    }
+
+    return $self -> api_errorhash("bad_request", $self -> {"template"} -> replace_langvar("API_BAD_REQUEST"));
+}
+
+
+## @method private $ _build_article_response()
+# Perform operations related to articles through the API
+#
+# @api POST   /article
+# @api GET    /article/{identifier}
+# @api PUT    /article/{identifier}
+# @api DELETE /article/{identifier}
+#
+# @return A reference to a hash containing the API response data.
+sub _build_article_response {
+    my $self = shift;
+
+    # /article/{identifier}
+    if($self -> {"cgi"} -> request_method() eq "GET") {
+        my @pathinfo = $self -> {"cgi"} -> multi_param('api');
+
+        return $self -> _build_article_get_response($pathinfo[2]);
+
+    # POST /article
+    } elsif($self -> {"cgi"} -> request_method() eq "POST") {
+        return $self -> _build_article_post_response();
 
     }
 
@@ -341,8 +442,9 @@ sub page_display {
 
         # API call - dispatch to appropriate handler.
         given($apiop) {
-            when("token") { $self -> api_response($self -> _build_token_response()); }
-            when("image") { $self -> api_response($self -> _build_image_response()); }
+            when("token")   { $self -> api_response($self -> _build_token_response()); }
+            when("image")   { $self -> api_response($self -> _build_image_response()); }
+            when("article") { $self -> api_response($self -> _build_article_response()); }
 
             when("") { return $self -> _show_api_docs(); }
 
