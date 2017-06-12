@@ -295,7 +295,7 @@ sub _make_article_timestamps {
 # Fetch the information for an article or article(s).
 #
 # @param identifier The identifier to search for articles with.
-# @return A reference to an array of arti
+# @return A reference to an array of articles.
 sub _build_article_get_response {
     my $self       = shift;
     my $identifier = shift;
@@ -323,11 +323,23 @@ sub _build_article_get_response {
 }
 
 
+## @method private $ _build_article_post_response()
+# Create an article in the system. Note that user permission checks are applied
+# within the validation process.
+#
+# @return A reference to an array containing the article data on success.
 sub _build_article_post_response {
     my $self = shift;
 
+    return $self -> api_errorhash('permission_error',
+                                  "You do not have permission to create articles")
+        unless($self -> check_permission('compose'));
 
+    my ($error, $args) = $self -> _validate_article(undef, 1);
+    return $self -> api_errorhash('internal_error', "Creation failed: $error")
+        if($error);
 
+    return $self -> _build_article_get_response($args -> {"id"});
 }
 
 
