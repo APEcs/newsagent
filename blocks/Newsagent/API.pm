@@ -310,6 +310,28 @@ sub _build_article_get_response {
                 my $article = $self -> {"article"} -> get_article($id)
                     or return $self -> api_errorhash("not_found", "No article with ID $identifier found");
 
+                # Pull in the notifications for the article, includes ones that may have been sent
+                my ($year, $used, $enabled, $notify, $methods) = $self -> {"queue"} -> get_notifications($article -> {"id"});
+                if($year) {
+
+                    # Convert the list of enabled notifications into a more usable format
+                    my $notifications = {};
+                    foreach my $recip (keys(%{$enabled})) {
+                        foreach my $method (keys(%{$enabled -> {$recip}})) {
+                            push(@{$notifications -> {$recip}}, $method);
+                        }
+                    }
+
+                    # And build a more useful notifications structure
+                    $article -> {"notifications"} = { "acyear" => $year,
+                                                      "notify" => $notifications,
+                                                      "send_mode1" => $notify -> [0] -> {"send_mode"},
+                                                      "send_at1"   => $notify -> [0] -> {"send_at"},
+                    };
+                } else {
+                    $article -> {"notifications"} = {};
+                }
+
                 push(@{$results}, $article);
             }
         }
@@ -334,6 +356,9 @@ sub _build_article_post_response {
     return $self -> api_errorhash('permission_error',
                                   "You do not have permission to create articles")
         unless($self -> check_permission('compose'));
+
+    # Check whether json data has been specified
+
 
     my ($error, $args) = $self -> _validate_article(undef, 1);
     return $self -> api_errorhash('internal_error', "Creation failed: $error")
