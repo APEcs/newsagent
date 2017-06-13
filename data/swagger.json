@@ -148,6 +148,13 @@
                 "parameters": [
                     {
                         "in": "formData",
+                        "name": "json",
+                        "type": "string",
+                        "description": "Optional JSON representation of the article data, as returned by /article/{identifier} that can be used to create a new article. If specified, this will overwrite the values specified in other fields.",
+                        "required": false
+                    },
+                    {
+                        "in": "formData",
                         "name": "relmode",
                         "type": "string",
                         "description": "0 for normal article, 1 for newsletter",
@@ -338,7 +345,7 @@
                         "name": "imagea_mode",
                         "description": "Lead Image control, should be 'none', 'url', or 'img'",
                         "type": "string",
-                        "required": true,
+                        "required": false,
                         "default": "none"
                     },
                     {
@@ -346,7 +353,7 @@
                         "name": "imagea_url",
                         "description": "If imgmode is 'url', the URL of the lead imge to use",
                         "type": "string",
-                        "required": true,
+                        "required": false,
                         "default": "https://"
                     },
                     {
@@ -354,7 +361,7 @@
                         "name": "imagea_imgid",
                         "description": "If imgmode is 'img', the ID of the lead image to use",
                         "type": "string",
-                        "required": true,
+                        "required": false,
                         "default": "0"
                     },
                     {
@@ -362,7 +369,7 @@
                         "name": "imageb_mode",
                         "description": "Article Image control, should be 'none', 'url', or 'img'",
                         "type": "string",
-                        "required": true,
+                        "required": false,
                         "default": "none"
                     },
                     {
@@ -370,7 +377,7 @@
                         "name": "imageb_url",
                         "description": "If imgmode is 'url', the URL of the article image to use",
                         "type": "string",
-                        "required": true,
+                        "required": false,
                         "default": "https://"
                     },
                     {
@@ -378,7 +385,7 @@
                         "name": "imageb_imgid",
                         "description": "If imgmode is 'img', the ID of the article image to use",
                         "type": "string",
-                        "required": true,
+                        "required": false,
                         "default": "0"
                     },
                     {
