@@ -272,35 +272,41 @@ paths:
           
 # ==== Media fields ====
         - in: formData
-          name: imagea_imgmode
-          description: Image control, should be 'none', 'url', or 'img'
+          name: imagea_mode
+          description: Lead Image control, should be 'none', 'url', or 'img'
           type: string
           required: true
+          default: none
         - in: formData
           name: imagea_url
-          description: If imgmode is 'url', the URL of the iamge to use
+          description: If imgmode is 'url', the URL of the lead imge to use
           type: string
           required: true
+          default: https://
         - in: formData
           name: imagea_imgid
-          description: If imgmode is 'img', the ID of the image to use
+          description: If imgmode is 'img', the ID of the lead image to use
           type: string
           required: true
+          default: '0'
         - in: formData
-          name: imageb_imgmode
-          description: Image control, should be 'none', 'url', or 'img'
+          name: imageb_mode
+          description: Article Image control, should be 'none', 'url', or 'img'
           type: string
           required: true
+          default: none
         - in: formData
           name: imageb_url
-          description: If imgmode is 'url', the URL of the iamge to use
+          description: If imgmode is 'url', the URL of the article image to use
           type: string
           required: true
+          default: https://
         - in: formData
           name: imageb_imgid
-          description: If imgmode is 'img', the ID of the image to use
+          description: If imgmode is 'img', the ID of the article image to use
           type: string
           required: true
+          default: '0'
         - in: formData
           name: files
           description: A comma-separated list of file IDs for files to attach to this article

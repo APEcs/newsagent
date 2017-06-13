@@ -215,6 +215,42 @@
                     },
                     {
                         "in": "formData",
+                        "name": "schedule",
+                        "description": "The name of the newsletter to add the article to",
+                        "type": "string",
+                        "required": false
+                    },
+                    {
+                        "in": "formData",
+                        "name": "section",
+                        "description": "The ID of the section to add the article to",
+                        "type": "integer",
+                        "required": false
+                    },
+                    {
+                        "in": "formData",
+                        "name": "sort_order",
+                        "description": "The position in the section. Currently ignored.",
+                        "type": "integer",
+                        "default": 0,
+                        "required": false
+                    },
+                    {
+                        "in": "formData",
+                        "name": "schedule_mode",
+                        "description": "Release mode for the newsletter article, should be 'next' to include in the next newsletter, 'after' to publish in a future newsletter, or 'nldraft' to make into a draft newsletter article.",
+                        "type": "string",
+                        "required": false
+                    },
+                    {
+                        "in": "formData",
+                        "name": "stimestamp",
+                        "description": "The unix timestamp after which the article can be released. Only used if schedule_mode is 'after'.",
+                        "type": "integer",
+                        "required": false
+                    },
+                    {
+                        "in": "formData",
                         "name": "acyear",
                         "description": "The Academic Year id used when generating recipient lists. Note that this **is not** the year, it's the internal ID for the year! For example, AY16/17 is 19, 17/18 is 20",
                         "type": "integer",
@@ -299,45 +335,51 @@
                     },
                     {
                         "in": "formData",
-                        "name": "imagea_imgmode",
-                        "description": "Image control, should be 'none', 'url', or 'img'",
+                        "name": "imagea_mode",
+                        "description": "Lead Image control, should be 'none', 'url', or 'img'",
                         "type": "string",
-                        "required": true
+                        "required": true,
+                        "default": "none"
                     },
                     {
                         "in": "formData",
                         "name": "imagea_url",
-                        "description": "If imgmode is 'url', the URL of the iamge to use",
+                        "description": "If imgmode is 'url', the URL of the lead imge to use",
                         "type": "string",
-                        "required": true
+                        "required": true,
+                        "default": "https://"
                     },
                     {
                         "in": "formData",
                         "name": "imagea_imgid",
-                        "description": "If imgmode is 'img', the ID of the image to use",
+                        "description": "If imgmode is 'img', the ID of the lead image to use",
                         "type": "string",
-                        "required": true
+                        "required": true,
+                        "default": "0"
                     },
                     {
                         "in": "formData",
-                        "name": "imageb_imgmode",
-                        "description": "Image control, should be 'none', 'url', or 'img'",
+                        "name": "imageb_mode",
+                        "description": "Article Image control, should be 'none', 'url', or 'img'",
                         "type": "string",
-                        "required": true
+                        "required": true,
+                        "default": "none"
                     },
                     {
                         "in": "formData",
                         "name": "imageb_url",
-                        "description": "If imgmode is 'url', the URL of the iamge to use",
+                        "description": "If imgmode is 'url', the URL of the article image to use",
                         "type": "string",
-                        "required": true
+                        "required": true,
+                        "default": "https://"
                     },
                     {
                         "in": "formData",
                         "name": "imageb_imgid",
-                        "description": "If imgmode is 'img', the ID of the image to use",
+                        "description": "If imgmode is 'img', the ID of the article image to use",
                         "type": "string",
-                        "required": true
+                        "required": true,
+                        "default": "0"
                     },
                     {
                         "in": "formData",
