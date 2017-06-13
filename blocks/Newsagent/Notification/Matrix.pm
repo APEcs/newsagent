@@ -84,7 +84,7 @@ sub get_used_methods {
 
     # convert the set options to a usable format. Note that, at this point, there's no validation done
     # on whether the user can actually set the recipient/method - that is done in '_check_used_methods()'
-    my @set_methods = $self -> {"cgi"} -> param("matrix");
+    my @set_methods = $self -> {"cgi"} -> multi_param("matrix");
     my $methods = {};
     foreach my $set_meth (@set_methods) {
         my ($recip, $meth) = $set_meth =~ /^(\d+)-(\d+)$/;
