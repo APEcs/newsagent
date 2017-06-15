@@ -332,6 +332,8 @@ sub api_errorhash {
     my $code    = shift;
     my $message = shift;
 
+    $self -> log("api:error:$code", $message);
+
     return { 'error' => {
                           'info' => $message,
                           'code' => $code
