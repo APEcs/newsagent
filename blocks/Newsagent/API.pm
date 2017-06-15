@@ -76,6 +76,69 @@ sub _epoch_to_string {
 }
 
 
+## @method private $ _iso8601_to_epoch($iso8601, $deftime)
+# Convert a string in IS8601 format into a unix timestamp.
+#
+# @param iso8601 The iso8601 string to convert to a timestamp.
+# @param deftime The default timestamp to use if the iso8601
+#                string is empty or malformed.
+# @return The unix timestamp.
+sub _iso8601_to_epoch {
+    my $self = shift;
+    my $iso8601 = shift;
+    my $deftime = shift;
+
+    return $deftime unless($iso8601);
+
+    my ($year, $month, $day, $hour, $minute, $second, $tz) = $iso8601 =~ /^(\d{4})-?(\d{2})-?(\d{2})(?:T| )(\d{2}):?(\d{2}):?(\d{2})([-+]\d\d:\d\d)?/;
+
+    # If the timezone has been captured, remove the colon as DateTime::TimeZone assumes +hhmm
+    $tz =~ s/://
+        if($tz);
+
+    # Use DateTime to convert to an epoch as it handles TZ spiders nicely
+    my $date = eval { DateTime -> new(year      => $year,
+                                      month     => $month,
+                                      day       => $day,
+                                      hour      => $hour,
+                                      minute    => $minute,
+                                      second    => $second,
+                                      time_zone => $tz // $self -> {"settings"} -> {"config"} -> {"timezone"} // "Europe/London");
+    };
+    if($@) {
+        $self -> log("iso8601 error: $@ from $iso8601");
+        return $deftime;
+    }
+
+    return $date -> epoch();
+}
+
+
+## @method private $ _list_extract($list, $field)
+# Given a reference to and array of hashrefs, extract the
+# values stored in one of the fields of each hash.
+#
+# @param list  A reference to an array of hashrefs
+# @param field The name of the field in each hash to extract
+# @return A reference to an array of values extracted from
+#         the hash. Note that the order of this is not
+#         defined, and the array may contain undef elements
+#         if the field has not been set in one or more hashes
+#         in the source array.
+sub _list_extract {
+    my $self  = shift;
+    my $list  = shift;
+    my $field = shift;
+
+    my @values;
+    foreach my $hash (@{$list}) {
+        push(@values, $hash -> {$field});
+    }
+
+    return \@values;
+}
+
+
 ## @method private $ _show_api_docs()
 # Redirect the user to a Swagger-generated API documentation page.
 # Note that this function will never return.
@@ -327,6 +390,7 @@ sub _build_article_get_response {
                                                       "notify" => $notifications,
                                                       "send_mode1" => $notify -> [0] -> {"send_mode"},
                                                       "send_at1"   => $notify -> [0] -> {"send_at"},
+                                                      "methods" => $methods,
                     };
                 } else {
                     $article -> {"notifications"} = {};
@@ -345,6 +409,157 @@ sub _build_article_get_response {
 }
 
 
+## @method private void _import_json_image_data($image, $type)
+# Given an image hash, extract the important information for the validator
+# functions from the hash. If the hash is undef, safe defaults are used.
+#
+# @param image A reference to an image hash.
+# @param type  The image type, should be "a" or "b" for Lead or Article
+# @note This is making me really regret the mess that is image idenfication.
+sub _import_json_image_data {
+    my $self  = shift;
+    my $image = shift // { "type"     => "none",
+                           "location" => "https://",
+                           "id"       => 0 };
+    my $type  = shift;
+
+    # Why did I have to go and give these different values in the database and UI?
+    $image -> {"type"} = "img"
+        if($image -> {"type"} eq "file");
+
+    $self -> {"cgi"} -> param("image${type}_mode" , $image -> {"type"});
+    $self -> {"cgi"} -> param("image${type}_url"  , $image -> {"location"});
+    $self -> {"cgi"} -> param("image${type}_imgid", $image -> {"id"});
+}
+
+
+## @method private void _import_json_file_data($files)
+# Given an array of file hashes, extract the list of file IDs needed
+# for the validator code.
+#
+# @param files A reference to an array of file hashrefs.
+sub _import_json_file_data {
+    my $self  = shift;
+    my $files = shift;
+    my @filelist;
+
+    # Nothing to do if the files reference is empty
+    return unless($files && scalar(@{$files}));
+
+    # slurp the file IDs into an array. Could probably map this, but speed
+    # isn't critical here
+    foreach my $file (@{$files}) {
+        push(@filelist, $file -> {"id"});
+    }
+
+    $self -> {"cgi"} -> param("files", join(",", @filelist));
+}
+
+
+## @method private void _import_json_notifications($notify)
+# Extract the information about notifications from the specified hash. This
+# processes the notification selections specified in the provided hash
+# into a form the validator can work with.
+#
+# @param notify A reference to a hash containing the notification settings.
+sub _import_json_notifications {
+    my $self   = shift;
+    my $notify = shift;
+
+    # Can't do anything if no notification values are provided
+    return
+        unless($notify && $notify -> {"notify"});
+
+    # Build the notification matric out of the defined notifications
+    my $matrix = [];
+    foreach my $recip (keys %{$notify -> {"notify"}}) {
+        foreach my $method (@{$notify -> {"notify"} -> {$recip}}) {
+            push(@{$matrix}, "$recip-$method");
+        }
+    }
+
+    # ==== Notifications, ignored if relmode = 1 ====
+    $self -> {"cgi"} -> param("acyear"    , $notify -> {"acyear"});
+    $self -> {"cgi"} -> param("send_mode1", $notify -> {"send_mode1"});
+    $self -> {"cgi"} -> param("send_at1"  , $notify -> {"send_at1"});
+    $self -> {"cgi"} -> param(-name   => "matrix",
+                              -values => $matrix);
+
+    # ==== Email extension, ignored if relmode = 1 ====
+    $self -> {"cgi"} -> param("email-cc"      , $notify -> {"methods"} -> {"Email"} -> {"cc"});
+    $self -> {"cgi"} -> param("email-bcc"     , $notify -> {"methods"} -> {"Email"} -> {"bcc"});
+    $self -> {"cgi"} -> param("email-reply_to", $notify -> {"methods"} -> {"Email"} -> {"reply_to"});
+    $self -> {"cgi"} -> param("email-prefix"  , $notify -> {"methods"} -> {"Email"} -> {"prefix_id"});
+    $self -> {"cgi"} -> param("email-bccme"   , $notify -> {"methods"} -> {"Email"} -> {"bcc_sender"} ? "on" : "");
+
+    # ==== Twitter extension, ignored if relmode = 1 ====
+    $self -> {"cgi"} -> param("twitter-mode", $notify -> {"methods"} -> {"Twitter"} -> {"mode"});
+    $self -> {"cgi"} -> param("twitter-text", $notify -> {"methods"} -> {"Twitter"} -> {"tweet"});
+    $self -> {"cgi"} -> param("twitter-auto", $notify -> {"methods"} -> {"Twitter"} -> {"auto"});
+}
+
+
+## @method private $ _import_json_data($json)
+# Given a string containing JSON data, import the data into the script
+# parameter storage so that the article validator can check it and
+# create/edit articles.
+#
+# @param json A string containing the article data in JSON format
+# @return undef on success, an error message on error.
+sub _import_json_data {
+    my $self = shift;
+    my $json = shift;
+
+    my $data = eval { decode_json($json); };
+    return "JSON decode failed: $@"
+        if($@);
+
+    # Push JSON data into parameters so that the same validation code can be used
+    $self -> {"cgi"} -> param("relmode", $data -> {"relmode"});
+
+    # ==== Common article fields
+    $self -> {"cgi"} -> param("title"  , $data -> {"title"} // "");
+    $self -> {"cgi"} -> param("summary", $data -> {"summary"} // "");
+    $self -> {"cgi"} -> param("article", $data -> {"article"} // "");
+
+    # ==== Normal article fields, ignored if relmode = 1
+    $self -> {"cgi"} -> param("mode", $data -> {"release_mode"} // "visible");
+    $self -> {"cgi"} -> param("rtimestamp", $self -> _iso8601_to_epoch($data -> {"release_time"},
+                                                                       $data -> {"rtimestamp"} // 0));
+
+    $self -> {"cgi"} -> param(-name => "level", -values => $self -> _list_extract($data -> {"levels"}, "level"));
+    $self -> {"cgi"} -> param(-name => "feed" , -values => $self -> _list_extract($data -> {"feeds"} , "id"));
+
+    my $sticky_time = $data -> {"sticky_until"} ? _iso8601_to_epoch($data -> {"sticky_until"}) : 0;
+    if($sticky_time) {
+        # sticky parameter is # of sticky days, so we need to convert the sticky until timestamp
+        # into a number of days from now.
+        $sticky_time = max(0, int(($sticky_time - time()) / 86400) + 1);
+    }
+    $self -> {"cgi"} -> param("sticky", $sticky_time);
+    $self -> {"cgi"} -> param("full_summary", $data -> {"full_summary"} // "0");
+
+    #  ==== Newsletter fields, ignored if relmode = 0
+    $self -> {"cgi"} -> param("schedule"    , $data -> {"schedule"} // "");
+    $self -> {"cgi"} -> param("section"     , $data -> {"section"}  // "0");
+    $self -> {"cgi"} -> param("sort_order"  , "0");
+    $self -> {"cgi"} -> param("schedule_mode", $data -> {"release_mode"} // "next");
+    $self -> {"cgi"} -> param("stimestamp"  , $self -> _iso8601_to_epoch($data -> {"release_time"}, 0));
+
+    # ==== Notifications, ignored if relmode = 1 ====
+    # ==== Email extension, ignored if relmode = 1 ====
+    # ==== Twitter extension, ignored if relmode = 1 ====
+    $self -> _import_json_notifications($data -> {"notifications"});
+
+    # ==== Media fields ====
+    $self -> _import_json_image_data($data -> {"images"} -> [0], "a");
+    $self -> _import_json_image_data($data -> {"images"} -> [1], "b");
+    $self -> _import_json_file_data($data -> {"files"});
+
+    return undef;
+}
+
+
 ## @method private $ _build_article_post_response()
 # Create an article in the system. Note that user permission checks are applied
 # within the validation process.
@@ -357,9 +572,16 @@ sub _build_article_post_response {
                                   "You do not have permission to create articles")
         unless($self -> check_permission('compose'));
 
-    # Check whether json data has been specified
+    # Check whether json data has been specified, and import it if needed
+    if($self -> {"cgi"} -> param("json")) {
+        my $json = $self -> {"cgi"} -> param("json");
 
+        my $error = $self -> _import_json_data($json);
+        return $self -> api_errorhash('internal_error', $error)
+            if($error);
+    }
 
+    # Let the standard article validator handle creation
     my ($error, $args) = $self -> _validate_article(undef, 1);
     return $self -> api_errorhash('internal_error', "Creation failed: $error")
         if($error);
