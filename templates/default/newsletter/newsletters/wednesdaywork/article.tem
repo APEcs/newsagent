@@ -1,0 +1,12 @@
+<tr>
+<td class="na-testnews-articleitem ***row***">
+    <h3 id="article-***id***"><a name="article-***id***"></a>***title***</h3>
+    <div>
+        ***articleimg***
+        <div class="na-testnews-article">***fulltext***</div>
+    </div>
+    ***files***
+    <div class="na-testnews-clear"></div>
+    <div class="na-testnews-author"><img src="https://gravatar.com/avatar/***gravhash***?s=16&amp;d=mm&amp;r=g" alt="gravatar" class="na-testnews-avatar" width="16" height="16" /> ***name***</div>
+</td>
+</tr>

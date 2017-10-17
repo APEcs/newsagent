@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<newsletter name="Research School Irregular" base="newsletter/newsletters/rsi/" body="body.tem" head="extrahead.tem">
+  <section name="Owning Your Research Project" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
+    <article>article.tem</article>
+    <image>image.tem</image>
+    <files>files.tem</files>
+    <file>file.tem</file>
+    <empty />
+    <required>required-section.tem</required>
+  </section>
+  <section name="Yearly Progression" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
+    <article>article.tem</article>
+    <image>image.tem</image>
+    <files>files.tem</files>
+    <file>file.tem</file>
+    <empty />
+    <required>required-section.tem</required>
+  </section>
+  <section name="Professional Development (and Networks)" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
+    <article>article.tem</article>
+    <image>image.tem</image>
+    <files>files.tem</files>
+    <file>file.tem</file>
+    <empty />
+    <required>required-section.tem</required>
+  </section>
+  <section name="Wider Research Community" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
+    <article>article.tem</article>
+    <image>image.tem</image>
+    <files>files.tem</files>
+    <file>file.tem</file>
+    <empty />
+    <required>required-section.tem</required>
+  </section>
+  <section name="Industrial Placements and Interships" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
+    <article>article.tem</article>
+    <image>image.tem</image>
+    <files>files.tem</files>
+    <file>file.tem</file>
+    <empty />
+    <required>required-section.tem</required>
+  </section>
+  <section name="Someone to Talk With" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
+    <article>article.tem</article>
+    <image>image.tem</image>
+    <files>files.tem</files>
+    <file>file.tem</file>
+    <empty />
+    <required>required-section.tem</required>
+  </section>
+</newsletter>
