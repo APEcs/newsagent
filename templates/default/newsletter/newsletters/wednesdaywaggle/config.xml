@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<newsletter name="wednesdaywork" base="newsletter/newsletters/wednesdaywork/" body="body.tem" head="extrahead.tem">
-  <section name="Wednesday Work" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
+<newsletter name="wednesdaywaggle" base="newsletter/newsletters/wednesdaywaggle/" body="body.tem" head="extrahead.tem">
+  <section name="Wednesday Waggle" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
     <article>article.tem</article>
     <image>image.tem</image>
     <files>files.tem</files>
