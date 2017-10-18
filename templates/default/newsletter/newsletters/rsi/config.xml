@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <newsletter name="Research School Irregular" base="newsletter/newsletters/rsi/" body="body.tem" head="extrahead.tem">
+  <section name="Research School Irregular" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
+    <article>article.tem</article>
+    <image>image.tem</image>
+    <files>files.tem</files>
+    <file>file.tem</file>
+    <empty />
+    <required>required-section.tem</required>
+  </section>
   <section name="Owning Your Research Project" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
     <article>article.tem</article>
     <image>image.tem</image>
