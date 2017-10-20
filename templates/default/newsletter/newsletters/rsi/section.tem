@@ -1,1 +1,3 @@
+<h2 class="na-testnews-section" id="sect-***id***"><span style="float: right; margin-left: 5px; font-size: 0.7em">[ <a href="#na-news-top" style="text-decoration: none;">top</a> ]</span><a name="sect-***id***"></a>***title***</h2>
 <table class="na-testnews-articles">***articles***</table>
+<hr class="na-testnews-section">
