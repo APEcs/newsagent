@@ -81,6 +81,15 @@ sub generate_feed {
     my $items   = "";
     my $maxdate = 0;
     foreach my $result (@{$results}) {
+        # Do any of the feeds require the article be hidden from bots?
+        my $hide = 0;
+        foreach my $feed (@{$result -> {"feeds"}}) {
+            $hide += $feed -> {"hide_from_bots"};
+        }
+
+        # If hiding should happen, check whether the user is a bot.
+        next if($hide && $self -> user_is_bot());
+
         # Keep track of the latest date (should be the first result, really)
         $maxdate = $result -> {"release_time"}
             if($result -> {"release_time"} > $maxdate);
