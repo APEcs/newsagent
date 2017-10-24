@@ -44,6 +44,14 @@ sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
     my $self     = $class -> SUPER::new("timefmt" => '%a, %d %b %Y %H:%M:%S %z',
+                                        "botlist" => [ "googlebot",
+                                                       "adsbot",
+                                                       "google",
+                                                       "bingbot",
+                                                       "slurp",
+                                                       "duckduck",
+                                                       "baiduspider",
+                                                       "yandex"],
                                         @_)
         or return undef;
 
@@ -249,6 +257,24 @@ sub feed_url {
     # No valid viewer or feed specified, fall back on the first configured
     # feed for the article
     return $artfeeds -> [0] -> {"default_url"}.$viewerparam;
+}
+
+
+## @method $ user_is_bot()
+# Determine whether the user is a bot based on its useragent.
+#
+# @return True if the user appears to be a bot, false otherwise.
+sub user_is_bot {
+    my $self = shift;
+
+    my $useragent = $self -> {"cgi"} -> user_agent();
+
+    foreach my $bot (@{$self -> {"botlist"}}) {
+        return 1
+            if($useragent =~ /$bot/i);
+    }
+
+    return 0;
 }
 
 
