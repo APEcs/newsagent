@@ -197,6 +197,52 @@ sub get_year_data {
 }
 
 
+## @method $ get_year_range($year)
+# Given a academic year start year, obtain the start and end datestamps
+# for that year. Note that this includes the summer break in its range.
+#
+# @param year The academic year to fetch the start and end dates for.
+# @return A reference to a hash containing the start and end dates for
+#         the academic year.
+sub get_year_range {
+    my $self = shift;
+    my $year = shift;
+
+    $self -> clear_error();
+
+    my $query = $self -> {"udata_dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"userdata"} -> {"acyears"}."`
+                                                   WHERE `start_year` >= ?
+                                                   ORDER BY `start_year` ASC
+                                                   LIMIT 2");
+    $query -> execute($year)
+        or return $self -> self_error("Unable to execute academic year lookup: ".$self -> {"udata_dbh"} -> errstr);
+
+    my $yeardata = $query -> fetchall_arrayref({});
+
+    # No results, or the first one isn't the year requested? Give up.
+    if(!scalar(@{$yeardata}) || $yeardata -> [0] -> {"start_year"} != $year) {
+        return $self -> self_error("Unable to fetch year range data for year $year");
+
+    # If we have data for the specified year and next, we can fix start and end points
+    } elsif(scalar(@{$yeardata}) == 2) {
+        return { start => $yeardata -> [0] -> {"start_semester1"},
+                 end   => $yeardata -> [1] -> {"start_semester1"} - 1
+        };
+
+    # Only one result means we only have the current year, hopefully
+    } elsif(scalar(@{$yeardata}) == 1) {
+
+        # If the year is correct, use its start and end for now
+        return { start => $yeardata -> [0] -> {"start_semester1"},
+                 end   => $yeardata -> [0] -> {"end_semester2"}
+        };
+
+    } else {
+        return $self -> self_error("This should not happen: get_year_range($year) broken");
+    }
+}
+
+
 ## @method private $ _add_multiparam($settings, $params, $table, $field, $type, $mode)
 # Construct a potentially multi-parameter where clause based on the spcified settings.
 # This creates a where clause that compares the specified table and field to each

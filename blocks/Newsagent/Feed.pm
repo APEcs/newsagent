@@ -29,7 +29,6 @@ use Webperl::Utils qw(trimspace path_join);
 use Date::Calc qw(Add_Delta_YMD Localtime Date_to_Time);
 use v5.12;
 
-
 # ============================================================================
 #  Constructor
 
@@ -104,7 +103,8 @@ sub _validate_settings {
         when ("fulltext") { $settings -> {"use_fulltext_desc"} = 1;
 
                             # Default the fulltext mode if it has not already been set.
-                            $settings -> {"fulltext_mode"} = "embedimg" if(!$settings -> {"fulltext_mode"});
+                            $settings -> {"fulltext_mode"} = "embedimg"
+                                unless($settings -> {"fulltext_mode"});
         }
         default {
             $settings -> {"use_fulltext_desc"} = 0;
@@ -121,21 +121,26 @@ sub _validate_settings {
                                                                             "formatdesc" => "",
                                                                             "nicename"   => ""});
 
-    # count and offset are easy
+    # Has a specific article ID been specified? We support both id and articleid as
+    # names for the ID...
     ($settings -> {"id"}, $error)  = $self -> validate_numeric("id", {"required" => 0,
                                                                       "intonly"  => 1,
                                                                });
     ($settings -> {"articleid"}, $error)  = $self -> validate_numeric("articleid", {"required" => 0,
                                                                                     "intonly"  => 1,
                                                                       });
+
+    # ... but internally we only care about the 'id' name, and it gets precedence.
     $settings -> {"id"} = $settings -> {"articleid"}
         if(!$settings -> {"id"} && $settings -> {"articleid"});
+
 
     # If an ID has been specified, the remaining settings are essentially irrelivant: the user has
     # specified an ID they are interested in, regardless of the feed, age, or anything else.
     return $settings
         if($settings -> {"id"});
 
+    # count and offset are easy
     ($settings -> {"count"}, $error)  = $self -> validate_numeric("count", {"required" => 0,
                                                                             "intonly"  => 1,
                                                                             "default"  => $self -> {"settings"} -> {"config"} -> {"Feed:count"},
@@ -152,6 +157,7 @@ sub _validate_settings {
                                                                    });
 
     # Feed and level are up next
+    # For historical reasons, we need to support 'site' as an alias for 'feed'...
     ($settings -> {"feed"}, $error) = $self -> validate_string("feed", {"required"   => 0,
                                                                         "default"    => "",
                                                                         "formattest" => '^\w+(?:,\w+)*$',
@@ -161,7 +167,9 @@ sub _validate_settings {
                                                                         "default"    => "",
                                                                         "formattest" => '^\w+(?:,\w+)*$',
                                                                         "formatdesc" => "",
-                                                                        "nicename"   => ""});
+                                                                            "nicename"   => ""});
+
+    # ... but again, 'feed' has priority over 'site'
     $settings -> {"feed"} = $settings -> {"site"}
         if(!$settings -> {"feed"} && $settings -> {"site"});
 
@@ -196,6 +204,25 @@ sub _validate_settings {
         }
 
         $settings -> {"maxage"} = Date_to_Time($dyear, $dmonth, $dday, 0, 0, 0);
+    }
+
+    # Allow specification of an academic year
+    ($settings -> {"acyear"}, $error) = $self -> validate_numeric("acyear", {required => 0,
+                                                                             intonly  => 1,
+                                                                             default  => 0,
+                                                                             nicename => ''});
+    if($settings -> {"acyear"}) {
+        # Convert the academic year to a pair of timestamps
+        my $rangedata = $self -> {"system"} -> {"userdata"} -> get_year_range($settings -> {"acyear"});
+
+        # If a range is available, use it
+        if($rangedata) {
+            # Disable age control if ranges are set
+            delete($settings -> {"maxage"});
+
+            $settings -> {"mindate"} = $rangedata -> {"start"};
+            $settings -> {"maxdate"} = $rangedata -> {"end"};
+        }
     }
 
     return $settings;
