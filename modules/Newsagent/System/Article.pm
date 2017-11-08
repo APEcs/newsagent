@@ -309,6 +309,12 @@ sub get_feed_articles {
                              (`article`.`is_sticky` AND `article`.`sticky_until` > UNIX_TIMESTAMP()))";
             push(@params, $settings -> {"maxage"});
         }
+
+        if($settings -> {"mindate"} && $settings -> {"maxdate"}) {
+            $where .= " AND `article`.`release_time` >= ?
+                        AND `article`.`release_time` <= ?";
+            push(@params, $settings -> {"mindate"}, $settings -> {"maxdate"});
+        }
     }
 
     my $ordering = "";
