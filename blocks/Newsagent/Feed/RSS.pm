@@ -30,7 +30,7 @@ use Webperl::Utils qw(trimspace path_join);
 use HTML::FormatText;
 use HTML::Entities;
 use v5.12;
-use Data::Dumper;
+
 # ============================================================================
 #  Content generators
 
