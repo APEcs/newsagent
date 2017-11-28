@@ -29,6 +29,8 @@ td.na-testnews-articleitem {
 td.na-testnews-articleitem img.newsagent-article-image {
     float: right;
     padding: 0px 0px 5px 5px;
+    max-width: 30%;
+    height: auto;
 }
 
 /* li.na-testnews-articleitem.odd img.newsagent-article-image {

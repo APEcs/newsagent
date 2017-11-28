@@ -40,7 +40,7 @@
     <empty />
     <required>required-section.tem</required>
   </section>
-  <section name="Featured Research Outcomes" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
+  <section name="Featured Research" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
     <article>article.tem</article>
     <image>image.tem</image>
     <files>files.tem</files>
