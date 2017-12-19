@@ -210,6 +210,7 @@ sub generate_feed {
 
         # Put the item together!
         $items .= $self -> {"template"} -> load_template("feeds/rss/item.tem", {"***title***"       => $result -> {"title"} || $pubdate,
+                                                                                "***id***"          => $result -> {"id"},
                                                                                 "***description***" => $result -> {"use_fulltext_desc"} ? $result -> {"fulltext"} : $result -> {"summary"},
                                                                                 "***images***"      => $images,
                                                                                 "***files***"       => $files,
