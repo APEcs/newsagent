@@ -24,6 +24,14 @@
     <empty />
     <required>required-section.tem</required>
   </section>
+  <section name="PSS News" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
+    <article>article.tem</article>
+    <image>image.tem</image>
+    <files>files.tem</files>
+    <file>file.tem</file>
+    <empty />
+    <required>required-section.tem</required>
+  </section>
   <section name="PGR News" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
     <article>article.tem</article>
     <image>image.tem</image>
@@ -57,6 +65,14 @@
     <required>required-section.tem</required>
   </section>
   <section name="Tech Support News" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
+    <article>article.tem</article>
+    <image>image.tem</image>
+    <files>files.tem</files>
+    <file>file.tem</file>
+    <empty />
+    <required>required-section.tem</required>
+  </section>
+  <section name="Social Responsibility" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
     <article>article.tem</article>
     <image>image.tem</image>
     <files>files.tem</files>
