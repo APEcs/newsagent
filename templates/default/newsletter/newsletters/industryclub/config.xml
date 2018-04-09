@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <newsletter name="industryclub" base="newsletter/newsletters/industryclub/" body="body.tem" head="extrahead.tem">
-  <section name="Industry Club" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
+  <section name="Industry Club Newsletter" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
     <article>article.tem</article>
     <image>image.tem</image>
     <files>files.tem</files>
