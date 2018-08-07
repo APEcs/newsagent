@@ -139,6 +139,7 @@ sub generate_feed {
             $images .= $self -> _build_rss_image($result -> {"images"} -> [1], 'thumb');
             $images .= $self -> _build_rss_image($result -> {"images"} -> [1], 'article');
             $images .= $self -> _build_rss_image($result -> {"images"} -> [1], 'tactus');
+            $images .= $self -> _build_rss_image($result -> {"images"} -> [1], 'ppcompat');
         }
 
         $images = $self -> {"template"} -> load_template("feeds/rss/images.tem", {"***images***" => $images})
