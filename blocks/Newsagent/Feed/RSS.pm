@@ -69,10 +69,11 @@ sub _build_rss_image {
     my $type  = shift;
 
     # Convenience hash to map image modes to internal sizes.
-    my $modes = { "lead"    => "icon",
-                  "thumb"   => "thumb",
-                  "article" => "large",
-                  "tactus"  => "tactus" };
+    my $modes = { "lead"     => "icon",
+                  "thumb"    => "thumb",
+                  "article"  => "large",
+                  "ppcompat" => "ppcompat",
+                  "tactus"   => "tactus" };
 
     # Do nothing if there is no image data available.
     return "" if(!$image);

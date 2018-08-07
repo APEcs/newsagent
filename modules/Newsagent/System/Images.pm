@@ -62,6 +62,9 @@ sub new {
                                  # fill the 128x128 area (extending outside as needed), crop the image to 128x129 from the centre, repage to discard out-of-bounds canvas
                                  "media" => '-resize 128x128^ -gravity Center -crop 128x128+0+0 +repage' ,
 
+                                 # fill the 500x298 area (extending outside as needed), crop the image to 500x298 from the centre, repage to discard out-of-bounds canvas
+                                 "ppcompat" => '-resize 500x298^ -gravity Center -crop 500x298+0+0 +repage' ,
+
                                  # Fill the 350x167 area (extending outside as needed to preserve aspect)
                                  "thumb" => '-resize 350x167^',
 
@@ -213,7 +216,7 @@ sub get_image_info {
 # based on the image type and mode.
 #
 # @param image  A reference to an image hash, or the Id of the image.
-# @param mode   The image mode, must be one of 'icon', 'thumb', 'media', or 'large'
+# @param mode   The image mode, must be one of 'icon', 'thumb', 'media', 'ppcompat', or 'large'
 # @param defurl The URL to return if the image is not available.
 sub get_image_url {
     my $self   = shift;
