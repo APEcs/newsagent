@@ -411,13 +411,20 @@ sub _build_article_get_response {
         when(/^[fF]eed:/) {
             my ($feeds) = $identifier =~ /^feed:(.*)$/i;
             my @feedlist = split(/,/, $feeds);
+            my $settings = {
+                "feed" => \@feedlist
+            };
+            my $error = "";
 
-            $results  = $self -> {"article"} -> get_feed_articles(
-                {
-                    "feed" => \@feedlist
-                });
+            ($settings -> {"count"}, $error)  = $self -> validate_numeric("count", {"required" => 0,
+                                                                                    "intonly"  => 1,
+                                                                                    "default"  => $self -> {"settings"} -> {"config"} -> {"Feed:count"},
+                                                                                    "min"      => 1,
+                                                                                    "max"      => $self -> {"settings"} -> {"config"} -> {"Feed:count_limit"},
+                                                                                    "nicename" => ""
+                                                                  });
 
-
+            $results  = $self -> {"article"} -> get_feed_articles($settings);
         }
 
         default {
