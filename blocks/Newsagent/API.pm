@@ -211,6 +211,7 @@ sub _make_image_response {
                             "thumb"     => $image -> {"path"} -> {"thumb"},
                             "large"     => $image -> {"path"} -> {"large"},
                             "media"     => $image -> {"path"} -> {"media"},
+                            "ppcompt"   => $image -> {"path"} -> {"ppcompat"},
                             "bigscreen" => $image -> {"path"} -> {"tactus"},
                         },
                         "uploader" => {
@@ -300,6 +301,11 @@ sub _build_image_get_response {
 sub _build_image_post_response {
     my $self = shift;
 
+    # General API permission check - will block anonymous users at a minimum
+    return $self -> api_response($self -> api_errorhash('permission_error',
+                                                        "You do not have permission to use the API"))
+        unless($self -> check_permission('api.use'));
+
     $self -> log("api:image", "Upload operation requested by user");
 
     if(!$self -> check_permission("upload")) {
@@ -363,6 +369,8 @@ sub _build_article_get_response {
     my $self       = shift;
     my $identifier = shift;
 
+    print STDERR "Identifier: $identifier\n";
+
     my $results = [];
     given($identifier) {
         # Identifier can be either an ID or a comma separated list of IDs
@@ -398,6 +406,18 @@ sub _build_article_get_response {
 
                 push(@{$results}, $article);
             }
+        }
+
+        when(/^[fF]eed:/) {
+            my ($feeds) = $identifier =~ /^feed:(.*)$/i;
+            my @feedlist = split(/,/, $feeds);
+
+            $results  = $self -> {"article"} -> get_feed_articles(
+                {
+                    "feed" => \@feedlist
+                });
+
+
         }
 
         default {
@@ -568,6 +588,11 @@ sub _import_json_data {
 sub _build_article_post_response {
     my $self = shift;
 
+    # General API permission check - will block anonymous users at a minimum
+    return $self -> api_response($self -> api_errorhash('permission_error',
+                                                        "You do not have permission to use the API"))
+        unless($self -> check_permission('api.use'));
+
     return $self -> api_errorhash('permission_error',
                                   "You do not have permission to create articles")
         unless($self -> check_permission('compose'));
@@ -601,6 +626,11 @@ sub _build_article_post_response {
 # @return A reference to a hash containing the API response data.
 sub _build_token_response {
     my $self = shift;
+
+    # General API permission check - will block anonymous users at a minimum
+    return $self -> api_response($self -> api_errorhash('permission_error',
+                                                        "You do not have permission to use the API"))
+        unless($self -> check_permission('api.use'));
 
     $self -> log("api:token", "Generating new API token for user");
 
@@ -691,11 +721,6 @@ sub page_display {
     if(defined($apiop)) {
         # Force JSON output unless overridden in query string
         $self -> {"settings"} -> {"config"} -> {"API:format"} = "json";
-
-        # General API permission check - will block anonymous users at a minimum
-        return $self -> api_response($self -> api_errorhash('permission_error',
-                                                            "You do not have permission to use the API"))
-            unless($self -> check_permission('api.use'));
 
         my @pathinfo = $self -> {"cgi"} -> multi_param('api');
 
