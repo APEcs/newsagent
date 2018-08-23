@@ -439,6 +439,8 @@ sub _json_api_response {
     my $json = JSON -> new();
     my $status = $self -> _api_status($data);
     print $self -> {"cgi"} -> header(-type => 'application/json',
+                                     -access_control_allow_origin => '*',
+                                     -vary    => 'Origin',
                                      -status  => $status,
                                      -charset => 'utf-8');
     if($ENV{MOD_PERL} && $status ne "200 OK") {
