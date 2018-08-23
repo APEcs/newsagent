@@ -412,7 +412,7 @@ sub _build_article_get_response {
             my ($feeds) = $identifier =~ /^feed:(.*)$/i;
             my @feedlist = split(/,/, $feeds);
             my $settings = {
-                "feed" => \@feedlist
+                "feeds" => \@feedlist
             };
             my $error = "";
 
