@@ -131,6 +131,14 @@ var EditTools = new Class({
             check_login(this.save_autosave.bind(this, true));
         }.bind(this));
 
+
+        $('autoview').addEvent('click', function() {
+            $('autostatus').set('html', confirm_messages['logcheck']);
+            this.clear_timeout();
+
+            check_login(this.view_autosave.bind(this, true));
+        }.bind(this));
+
         // and start the initial save timer
         this.timeout_id = window.setTimeout(function() {
             $('autostatus').set('html', confirm_messages['logcheck']);
@@ -231,8 +239,11 @@ var EditTools = new Class({
         req.post();
     },
 
+    view_autosave: function() {
+        this.save_autosave(true, true);
+    },
 
-    save_autosave: function(force) {
+    save_autosave: function(force, view) {
         // nuke any running timeout if there is one
         this.clear_timeout();
 
@@ -292,6 +303,10 @@ var EditTools = new Class({
 
                                     // restart the timer
                                     this.timeout_id = window.setTimeout(function() { this.save_autosave(); }.bind(this), this.options.delay);
+
+                                    if(view) {
+                                        window.open('/newsagent/preview/', 'preview');
+                                    }
                                 }.bind(this),
                                 onFailure: function(xhr) {
                                     $('autostate').fade('out');

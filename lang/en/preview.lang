@@ -1,0 +1,5 @@
+PREVIEW_FAILED_TITLE = Preview failed
+PREVIEW_FAILED_SUMMARY = Unable to show article preview
+PREVIEW_FAILED_DESC    = Your article preview could not be shown. This may indicate tha tyou do not have any autosaved content to preview.
+
+PREVIEW_TITLE = Article preview

@@ -103,6 +103,7 @@ window.addEvent('domready', function() {
             </div>
             <div class="autosavebox">
                 <ul id="autotools">
+                    <li id="autoviewopt"><span id="autoview">{L_COMPOSE_AUTOSAVE_PREVIEW}</span></li>
                     <li id="autoloadopt"><span id="autoload">{L_COMPOSE_AUTOSAVE_LOAD}</span></li>
                     <li id="autosaveopt"><span id="autosave">{L_COMPOSE_AUTOSAVE_SAVE}</span></li>
                 </ul>
