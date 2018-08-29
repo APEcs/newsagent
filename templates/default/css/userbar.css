@@ -15,7 +15,7 @@
     width: 100%;
     min-width: 640px; /* must match min-width in site.css */
     z-index: 2317;    /* /o\ */
-
+    overflow-x: hidden;
     background-color: #464646; /* Fallback */
     background-image: -ms-linear-gradient(bottom, #373737, #464646 5px); /* IE10 */
     background-image: -moz-linear-gradient(bottom, #373737, #464646 5px); /* Firefox */

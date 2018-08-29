@@ -4,3 +4,7 @@
     background-color: #fff;
     border: 1px dashed #f80;
 }
+
+body {
+    min-width: min-content;
+}
