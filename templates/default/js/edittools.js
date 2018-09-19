@@ -140,7 +140,7 @@ var EditTools = new Class({
         }.bind(this));
 
         $(document).addEvent('keydown', function(event) {
-            if(event.key == 'e' && event.shift && (event.control || macKeys.cmdKey)) {
+            if(event.key == 'e' && event.alt && (event.control || macKeys.cmdKey)) {
                 event.stop();
 
                 $('autostatus').set('html', confirm_messages['logcheck']);
