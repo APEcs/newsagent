@@ -139,6 +139,17 @@ var EditTools = new Class({
             check_login(this.view_autosave.bind(this, true));
         }.bind(this));
 
+        $(document).addEvent('keydown', function(event) {
+            if(event.key == 'e' && event.shift && (event.control || macKeys.cmdKey)) {
+                event.stop();
+
+                $('autostatus').set('html', confirm_messages['logcheck']);
+                this.clear_timeout();
+
+                check_login(this.view_autosave.bind(this, true));
+            }
+        }.bind(this));
+
         // and start the initial save timer
         this.timeout_id = window.setTimeout(function() {
             $('autostatus').set('html', confirm_messages['logcheck']);

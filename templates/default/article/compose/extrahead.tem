@@ -33,6 +33,7 @@
     <script type="text/javascript" src="{V_[jspath]}matrix.js"></script>
 
     <!-- edit warning and autosave -->
+    <script type="text/javascript" src="{V_[jspath]}macKeys.js"></script>
     <script type="text/javascript" src="{V_[jspath]}edittools.js"></script>
 
     <!-- media library support -->
