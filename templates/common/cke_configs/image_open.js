@@ -1,6 +1,6 @@
 CKEDITOR.editorConfig = function( config )
 {
-    config.extraPlugins = 'pastetext,newline';
+    config.extraPlugins = 'pastetext,newline,pasteFromGoogleDoc';
 
     config.height  = '12em';
     config.toolbarStartupExpanded = true;
@@ -23,5 +23,5 @@ CKEDITOR.editorConfig = function( config )
         [ CKEDITOR.CTRL + 75, 'link' ],
     ];
 
-    config.allowedContent = true
+    config.extraAllowedContent = 'dl dt dd img table td tr div p';
 };
