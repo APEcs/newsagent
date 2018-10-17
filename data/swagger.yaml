@@ -62,7 +62,11 @@ paths:
           type: file
       responses:
         '200':
-          description: An image list response. Note that this will contain exactly one element on successful upload (or if the image already existed), but it is still returned as an array to be consistent with the /image/{identifier} endpoint.
+          description: >-
+            An image list response. Note that this will contain exactly one
+            element on successful upload (or if the image already existed), but
+            it is still returned as an array to be consistent with the
+            /image/{identifier} endpoint.
           schema:
             type: array
             items:
@@ -88,8 +92,10 @@ paths:
       parameters:
         - in: path
           name: identifier
-          description: |
-            An identifier for the image, should be either an image name, md5 hash, or id. Note that, when specify a name, * may be used to do wildcard searches
+          description: >
+            An identifier for the image, should be either an image name, md5
+            hash, or id. Note that, when specify a name, * may be used to do
+            wildcard searches
           required: true
           type: string
         - in: query
@@ -119,7 +125,7 @@ paths:
       summary: Create a new article in the system
       description: |
         Add a new article to the newsagnet system
-      
+
         **Required capabilities***: api.use
       consumes:
         - multipart/form-data
@@ -127,16 +133,16 @@ paths:
         - in: formData
           name: json
           type: string
-          description: Optional JSON representation of the article data, as returned by /article/{identifier} that can be used to create a new article. If specified, this will overwrite the values specified in other fields.
+          description: >-
+            Optional JSON representation of the article data, as returned by
+            /article/{identifier} that can be used to create a new article. If
+            specified, this will overwrite the values specified in other fields.
           required: false
-          
         - in: formData
           name: relmode
           type: string
-          description: 0 for normal article, 1 for newsletter
+          description: '0 for normal article, 1 for newsletter'
           required: false
-
-# ==== Common article fields ====
         - in: formData
           name: title
           type: string
@@ -149,21 +155,19 @@ paths:
           name: article
           type: string
           required: false
-
-# ==== Normal article fields, ignored if relmode = 1 ====
         - in: formData
           name: mode
           type: string
-          description: "'visible', 'timed', 'draft', or 'preset'"
+          description: '''visible'', ''timed'', ''draft'', or ''preset'''
           required: false
         - in: formData
           name: rtimestamp
           type: string
-          description: Release time stamp, required for 'timed' mode
+          description: 'Release time stamp, required for ''timed'' mode'
           required: false
         - in: formData
           name: level
-          description: "'group', 'leader', or 'home'. Can be specified multiple times."
+          description: '''group'', ''leader'', or ''home''. Can be specified multiple times.'
           type: string
           required: false
         - in: formData
@@ -178,11 +182,9 @@ paths:
           required: false
         - in: formData
           name: full_summary
-          description: If set, include the summary in the full text 
+          description: 'If set, include the summary in the full text'
           type: string
           required: false
-          
-# ==== Newsletter fields, ignored if relmode = 0 ====
         - in: formData
           name: schedule
           description: The name of the newsletter to add the article to
@@ -201,24 +203,34 @@ paths:
           required: false
         - in: formData
           name: schedule_mode
-          description: Release mode for the newsletter article, should be 'next' to include in the next newsletter, 'after' to publish in a future newsletter, or 'nldraft' to make into a draft newsletter article.
+          description: >-
+            Release mode for the newsletter article, should be 'next' to include
+            in the next newsletter, 'after' to publish in a future newsletter,
+            or 'nldraft' to make into a draft newsletter article.
           type: string
           required: false
         - in: formData
           name: stimestamp
-          description: The unix timestamp after which the article can be released. Only used if schedule_mode is 'after'.
+          description: >-
+            The unix timestamp after which the article can be released. Only
+            used if schedule_mode is 'after'.
           type: integer
           required: false
-          
-# ==== Notifications, ignored if relmode = 1 ====
         - in: formData
           name: acyear
-          description: The Academic Year id used when generating recipient lists. Note that this **is not** the year, it's the internal ID for the year! For example, AY16/17 is 19, 17/18 is 20
+          description: >-
+            The Academic Year id used when generating recipient lists. Note that
+            this **is not** the year, it's the internal ID for the year! For
+            example, AY16/17 is 19, 17/18 is 20
           type: integer
           required: false
         - in: formData
           name: send_mode1
-          description: The send mode to use for notifications, can be 'immediate' to send notifications on publication, 'delay' to send notifications 5 minutes after publication, or 'timed' to manually specify a send time.
+          description: >-
+            The send mode to use for notifications, can be 'immediate' to send
+            notifications on publication, 'delay' to send notifications 5
+            minutes after publication, or 'timed' to manually specify a send
+            time.
           type: string
           required: false
         - in: formData
@@ -228,15 +240,21 @@ paths:
           required: false
         - in: formData
           name: matrix
-          description: "The recipient to send the notifcation to, and the method to use, of the form <recipientid>-<methodid>, eg: 37-1 will send notifications to recipient 27 through method 1. This can be specified multiple times to send notifications to multiple recipients through multiple methods"
+          description: >-
+            The recipient to send the notifcation to, and the method to use, of
+            the form <recipientid>-<methodid>, eg: 37-1 will send notifications
+            to recipient 27 through method 1. This can be specified multiple
+            times to send notifications to multiple recipients through multiple
+            methods
           type: string
           required: false
-          
-# ==== Email extension, ignored if relmode = 1 ====
         - in: formData
           name: email-cc
           type: string
-          description: A comma-separated list of email addresses to CC the article to. Generally this should be left empty, as it may not do what you expect.
+          description: >-
+            A comma-separated list of email addresses to CC the article to.
+            Generally this should be left empty, as it may not do what you
+            expect.
           required: false
         - in: formData
           name: email-bcc
@@ -246,77 +264,85 @@ paths:
         - in: formData
           name: email-reply_to
           type: string
-          description: "The email address to place in the ReplyTo: header field. If not set, defaults to the author's email address"
+          description: >-
+            The email address to place in the ReplyTo: header field. If not set,
+            defaults to the author's email address
           required: false
         - in: formData
           name: email-prefix
           type: integer
-          description: The ID of the subject prefix to use. 1 is standard prefix, 2 is none, others may be supported.
+          description: >-
+            The ID of the subject prefix to use. 1 is standard prefix, 2 is
+            none, others may be supported.
           required: false
         - in: formData
           name: email-bccme
           type: string
-          description: if set to 'on', the author will be emailed a copy of the message.
+          description: 'if set to ''on'', the author will be emailed a copy of the message.'
           required: false
-          
-# ==== Twitter extension, ignored if relmode = 1 ====
         - in: formData
           name: twitter-mode
           type: string
-          description: "'summary' to use the aricle summary as the twitter text, 'custom' to use the contents of the 'twitter-text' parameter"
+          description: >-
+            'summary' to use the aricle summary as the twitter text, 'custom' to
+            use the contents of the 'twitter-text' parameter
           required: false
         - in: formData
           name: twitter-text
           type: string
-          description: The text to post to twitter. This may have a full-article link added to it if 'twitter-auto' is set to 'link' or 'news'
+          description: >-
+            The text to post to twitter. This may have a full-article link added
+            to it if 'twitter-auto' is set to 'link' or 'news'
           required: false
         - in: formData
           name: twitter-auto
           type: string
-          description: "If 'none' the text is used 'as-is', if 'link' a link to the full article is included at the end of the twitter post. A third 'news' option is currently unsupported"
+          description: >-
+            If 'none' the text is used 'as-is', if 'link' a link to the full
+            article is included at the end of the twitter post. A third 'news'
+            option is currently unsupported
           required: false
-          
-# ==== Media fields ====
         - in: formData
           name: imagea_mode
-          description: Lead Image control, should be 'none', 'url', or 'img'
+          description: 'Lead Image control, should be ''none'', ''url'', or ''img'''
           type: string
           required: false
           default: none
         - in: formData
           name: imagea_url
-          description: If imgmode is 'url', the URL of the lead imge to use
+          description: 'If imgmode is ''url'', the URL of the lead imge to use'
           type: string
           required: false
-          default: https://
+          default: 'https://'
         - in: formData
           name: imagea_imgid
-          description: If imgmode is 'img', the ID of the lead image to use
+          description: 'If imgmode is ''img'', the ID of the lead image to use'
           type: string
           required: false
           default: '0'
         - in: formData
           name: imageb_mode
-          description: Article Image control, should be 'none', 'url', or 'img'
+          description: 'Article Image control, should be ''none'', ''url'', or ''img'''
           type: string
           required: false
           default: none
         - in: formData
           name: imageb_url
-          description: If imgmode is 'url', the URL of the article image to use
+          description: 'If imgmode is ''url'', the URL of the article image to use'
           type: string
           required: false
-          default: https://
+          default: 'https://'
         - in: formData
           name: imageb_imgid
-          description: If imgmode is 'img', the ID of the article image to use
+          description: 'If imgmode is ''img'', the ID of the article image to use'
           type: string
           required: false
           default: '0'
-          
         - in: formData
           name: files
-          description: A comma-separated list of file IDs for files to attach to this article
+          description: >-
+            A comma-separated list of file IDs for files to attach to this
+            article
           type: string
           required: false
       responses:
@@ -329,31 +355,122 @@ paths:
         default:
           description: Unexpected error
           schema:
-            $ref: '#/definitions/Error'      
-  /article/{identifier}:
+            $ref: '#/definitions/Error'
+  '/article/{identifier}':
     get:
       tags:
         - articles
       summary: Look up an article or articles
-      description: |
-        Search for one or more articles in the sytem and retrieve the data for any matches.
-        
+      description: >
+        Search for one or more articles in the sytem and retrieve the data for
+        any matches.
+
+
         **Required capabilities***: api.use
       parameters:
         - in: path
           name: identifier
-          description: |
-            An identifier to use when searching for articles. This can be either an article ID, subject (with * to indicate wildcard), or start with 'Feed:' to indicate that articles in the specified feed should be retrieved.
+          description: >
+            An identifier to use when searching for articles. This can be either
+            an article ID, subject (with * to indicate wildcard), or start with
+            'Feed:' to indicate that articles in the specified feed should be
+            retrieved.
           required: true
           type: string
         - in: query
           name: count
-          description: The maximum number of articles to retrieve, if not specified defaults to 10
+          description: >-
+            The maximum number of articles to retrieve, if not specified
+            defaults to 10
           required: false
           type: integer
       responses:
         '200':
           description: An article list response
+        '403':
+          description: Permission error
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/email/{articleid}':
+    get:
+      tags:
+        - email
+      summary: Fetch the email sending status for the specified article
+      description: >
+
+        **Required capabilities***: api.use
+      parameters:
+        - in: path
+          name: articleid
+          description: The ID of the article to fetch the data for.
+          required: true
+          type: integer
+      responses:
+        '200':
+          description: The email status information
+          schema:
+            $ref: '#/definitions/EmailStatus'
+        '403':
+          description: Permission error
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/email/{identifier}/queue/{articleid}':
+    post:
+      tags:
+        - email
+      summary: Record the queueing of an email for the specified article
+      description: >
+        This records that an email with the specified ID has been added to the mailserver queue as part of sending notifications for the article. 
+
+        **Required capabilities***: api.use
+      parameters:
+        - in: path
+          name: identifier
+          description: The postfix email ID (a 12 character hex string).
+          required: true
+          type: string
+        - in: path
+          name: articleid
+          description: The ID of the article the email was queued for.
+          required: true
+          type: integer
+      responses:
+        '200':
+          description: A queue record
+        '403':
+          description: Permission error
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'  
+  '/email/{identifier}/sent':
+    post:
+      tags:
+        - email
+      summary: Record the sending of an email for the specified article
+      description: >
+        This records that an email with the specified ID has been sent by the mailserver queue as part of sending notifications for an article.
+
+        **Required capabilities***: api.use
+      parameters:
+        - in: path
+          name: identifier
+          description: The postfix email ID (a 12 character hex string).
+          required: true
+          type: string
+      responses:
+        '200':
+          description: A queue record
         '403':
           description: Permission error
           schema:
@@ -387,21 +504,21 @@ definitions:
         properties:
           lead:
             type: string
-            description: 'The URL of the lead-size (130x63) image'
+            description: The URL of the lead-size (130x63) image
           thumb:
             type: string
-            description: 'The URL of the thumb size (350xN) image'
+            description: The URL of the thumb size (350xN) image
           media:
             type: string
-            description: 'The URL of the media library size (128x128) image'
+            description: The URL of the media library size (128x128) image
           large:
             type: string
-            description: 'The URL of the article size (450x450) image'
+            description: The URL of the article size (450x450) image
           bigscreen:
             type: string
-            description: 'The URL of the big-screen sized (2560x1440) image'
+            description: The URL of the big-screen sized (2560x1440) image
       uploader:
-          $ref: '#/definitions/User'
+        $ref: '#/definitions/User'
       uploaded:
         type: string
         description: The time and date at which the image was uploaded
@@ -423,6 +540,18 @@ definitions:
       gravatar:
         type: string
         description: The URL of the users gravatar
+  EmailStatus:
+    type: object
+    properties:
+      has_email:
+        type: boolean
+        description: does this article have any email notifications set?
+      queued:
+        type: integer
+        description: the number of emails that have been queued for the article (including ones that have been sent)
+      sent:
+        type: integer
+        description: the number of emails sent for the article
   Error:
     type: object
     properties:

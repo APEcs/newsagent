@@ -1,560 +1,692 @@
 {
-    "swagger": "2.0",
-    "info": {
-        "title": "Newsagent API",
-        "description": "REST Interface to Newsagent functions",
-        "version": "1.0.0"
-    },
-    "host": "azad.cs.man.ac.uk",
-    "schemes": [
-        "https"
-    ],
-    "basePath": "/newsagent/rest/api",
-    "produces": [
-        "application/json"
-    ],
-    "paths": {
-        "/token": {
-            "get": {
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Request API Token",
-                "description": "Request an API token to use when issuing queries to the REST API. When\ncalling the API programmatically, include this token in the\n'Private-Token' request header field with each request made. Note that\neach call to this endpoint will generate a new API token, invalidating\nany token previously associated with your account.\n\n\n**Required capabilities**: api.use\n",
-                "responses": {
-                    "200": {
-                        "description": "An API Token",
-                        "schema": {
-                            "$ref": "#/definitions/Token"
-                        }
-                    },
-                    "403": {
-                        "description": "Permission error",
-                        "schema": {
-                            "$ref": "#/definitions/Error"
-                        }
-                    },
-                    "default": {
-                        "description": "Unexpected error",
-                        "schema": {
-                            "$ref": "#/definitions/Error"
-                        }
-                    }
-                }
+  "swagger": "2.0",
+  "info": {
+    "title": "Newsagent API",
+    "description": "REST Interface to Newsagent functions",
+    "version": "1.0.0"
+  },
+  "host": "azad.cs.man.ac.uk",
+  "schemes": [
+    "https"
+  ],
+  "basePath": "/newsagent/rest/api",
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/token": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Request API Token",
+        "description": "Request an API token to use when issuing queries to the REST API. When\ncalling the API programmatically, include this token in the\n'Private-Token' request header field with each request made. Note that\neach call to this endpoint will generate a new API token, invalidating\nany token previously associated with your account.\n\n\n**Required capabilities**: api.use\n",
+        "responses": {
+          "200": {
+            "description": "An API Token",
+            "schema": {
+              "$ref": "#/definitions/Token"
             }
-        },
-        "/image": {
-            "post": {
-                "tags": [
-                    "images"
-                ],
-                "summary": "Upload an image to the Newsagent server",
-                "description": "Upload an image to the server, and get the information for the newly-uploaded image on success.\n\nNote that, if the md5 of the uploaded image matches the md5 of an already stored image, the stored image will be used.\n\n**Required capabilities**: api.use, upload\n",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "parameters": [
-                    {
-                        "in": "formData",
-                        "name": "image",
-                        "description": "The image to upload to the server",
-                        "required": true,
-                        "type": "file"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "An image list response. Note that this will contain exactly one element on successful upload (or if the image already existed), but it is still returned as an array to be consistent with the /image/{identifier} endpoint.",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/Image"
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Permission error",
-                        "schema": {
-                            "$ref": "#/definitions/Error"
-                        }
-                    },
-                    "default": {
-                        "description": "Unexpected error",
-                        "schema": {
-                            "$ref": "#/definitions/Error"
-                        }
-                    }
-                }
+          },
+          "403": {
+            "description": "Permission error",
+            "schema": {
+              "$ref": "#/definitions/Error"
             }
-        },
-        "/image/{identifier}": {
-            "get": {
-                "tags": [
-                    "images"
-                ],
-                "summary": "Get the information for an image",
-                "description": "Request the information for an image from the system. This will attempt\nto locate the image based on the specified identifier.\n\n**Required capabilities**: api.use\n",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "identifier",
-                        "description": "An identifier for the image, should be either an image name, md5 hash, or id. Note that, when specify a name, * may be used to do wildcard searches\n",
-                        "required": true,
-                        "type": "string"
-                    },
-                    {
-                        "in": "query",
-                        "name": "userid",
-                        "description": "Only consider images uploaded by the specified userid.",
-                        "required": false,
-                        "type": "integer"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "An image list response",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/Image"
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Permission error",
-                        "schema": {
-                            "$ref": "#/definitions/Error"
-                        }
-                    },
-                    "default": {
-                        "description": "Unexpected error",
-                        "schema": {
-                            "$ref": "#/definitions/Error"
-                        }
-                    }
-                }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
             }
-        },
-        "/article": {
-            "post": {
-                "tags": [
-                    "articles"
-                ],
-                "summary": "Create a new article in the system",
-                "description": "Add a new article to the newsagnet system\n\n**Required capabilities***: api.use\n",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "parameters": [
-                    {
-                        "in": "formData",
-                        "name": "json",
-                        "type": "string",
-                        "description": "Optional JSON representation of the article data, as returned by /article/{identifier} that can be used to create a new article. If specified, this will overwrite the values specified in other fields.",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "relmode",
-                        "type": "string",
-                        "description": "0 for normal article, 1 for newsletter",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "title",
-                        "type": "string",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "summary",
-                        "type": "string",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "article",
-                        "type": "string",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "mode",
-                        "type": "string",
-                        "description": "'visible', 'timed', 'draft', or 'preset'",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "rtimestamp",
-                        "type": "string",
-                        "description": "Release time stamp, required for 'timed' mode",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "level",
-                        "description": "'group', 'leader', or 'home'. Can be specified multiple times.",
-                        "type": "string",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "feed",
-                        "description": "The ID of the feed to publish the article in",
-                        "type": "string",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "sticky",
-                        "description": "How many days to make the post sticky for. 0 = not sticky.",
-                        "type": "integer",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "full_summary",
-                        "description": "If set, include the summary in the full text",
-                        "type": "string",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "schedule",
-                        "description": "The name of the newsletter to add the article to",
-                        "type": "string",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "section",
-                        "description": "The ID of the section to add the article to",
-                        "type": "integer",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "sort_order",
-                        "description": "The position in the section. Currently ignored.",
-                        "type": "integer",
-                        "default": 0,
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "schedule_mode",
-                        "description": "Release mode for the newsletter article, should be 'next' to include in the next newsletter, 'after' to publish in a future newsletter, or 'nldraft' to make into a draft newsletter article.",
-                        "type": "string",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "stimestamp",
-                        "description": "The unix timestamp after which the article can be released. Only used if schedule_mode is 'after'.",
-                        "type": "integer",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "acyear",
-                        "description": "The Academic Year id used when generating recipient lists. Note that this **is not** the year, it's the internal ID for the year! For example, AY16/17 is 19, 17/18 is 20",
-                        "type": "integer",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "send_mode1",
-                        "description": "The send mode to use for notifications, can be 'immediate' to send notifications on publication, 'delay' to send notifications 5 minutes after publication, or 'timed' to manually specify a send time.",
-                        "type": "string",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "send_at1",
-                        "description": "unix timestamp of the send time",
-                        "type": "integer",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "matrix",
-                        "description": "The recipient to send the notifcation to, and the method to use, of the form <recipientid>-<methodid>, eg: 37-1 will send notifications to recipient 27 through method 1. This can be specified multiple times to send notifications to multiple recipients through multiple methods",
-                        "type": "string",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "email-cc",
-                        "type": "string",
-                        "description": "A comma-separated list of email addresses to CC the article to. Generally this should be left empty, as it may not do what you expect.",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "email-bcc",
-                        "type": "string",
-                        "description": "A comma-separated list of email addresses to BCC the article to.",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "email-reply_to",
-                        "type": "string",
-                        "description": "The email address to place in the ReplyTo: header field. If not set, defaults to the author's email address",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "email-prefix",
-                        "type": "integer",
-                        "description": "The ID of the subject prefix to use. 1 is standard prefix, 2 is none, others may be supported.",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "email-bccme",
-                        "type": "string",
-                        "description": "if set to 'on', the author will be emailed a copy of the message.",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "twitter-mode",
-                        "type": "string",
-                        "description": "'summary' to use the aricle summary as the twitter text, 'custom' to use the contents of the 'twitter-text' parameter",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "twitter-text",
-                        "type": "string",
-                        "description": "The text to post to twitter. This may have a full-article link added to it if 'twitter-auto' is set to 'link' or 'news'",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "twitter-auto",
-                        "type": "string",
-                        "description": "If 'none' the text is used 'as-is', if 'link' a link to the full article is included at the end of the twitter post. A third 'news' option is currently unsupported",
-                        "required": false
-                    },
-                    {
-                        "in": "formData",
-                        "name": "imagea_mode",
-                        "description": "Lead Image control, should be 'none', 'url', or 'img'",
-                        "type": "string",
-                        "required": false,
-                        "default": "none"
-                    },
-                    {
-                        "in": "formData",
-                        "name": "imagea_url",
-                        "description": "If imgmode is 'url', the URL of the lead imge to use",
-                        "type": "string",
-                        "required": false,
-                        "default": "https://"
-                    },
-                    {
-                        "in": "formData",
-                        "name": "imagea_imgid",
-                        "description": "If imgmode is 'img', the ID of the lead image to use",
-                        "type": "string",
-                        "required": false,
-                        "default": "0"
-                    },
-                    {
-                        "in": "formData",
-                        "name": "imageb_mode",
-                        "description": "Article Image control, should be 'none', 'url', or 'img'",
-                        "type": "string",
-                        "required": false,
-                        "default": "none"
-                    },
-                    {
-                        "in": "formData",
-                        "name": "imageb_url",
-                        "description": "If imgmode is 'url', the URL of the article image to use",
-                        "type": "string",
-                        "required": false,
-                        "default": "https://"
-                    },
-                    {
-                        "in": "formData",
-                        "name": "imageb_imgid",
-                        "description": "If imgmode is 'img', the ID of the article image to use",
-                        "type": "string",
-                        "required": false,
-                        "default": "0"
-                    },
-                    {
-                        "in": "formData",
-                        "name": "files",
-                        "description": "A comma-separated list of file IDs for files to attach to this article",
-                        "type": "string",
-                        "required": false
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "An article list response"
-                    },
-                    "403": {
-                        "description": "Permission error",
-                        "schema": {
-                            "$ref": "#/definitions/Error"
-                        }
-                    },
-                    "default": {
-                        "description": "Unexpected error",
-                        "schema": {
-                            "$ref": "#/definitions/Error"
-                        }
-                    }
-                }
-            }
-        },
-        "/article/{identifier}": {
-            "get": {
-                "tags": [
-                    "articles"
-                ],
-                "summary": "Look up an article or articles",
-                "description": "Search for one or more articles in the sytem and retrieve the data for any matches.\n\n**Required capabilities***: api.use\n",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "identifier",
-                        "description": "An identifier to use when searching for articles. This can be either an article ID, subject (with * to indicate wildcard), or start with 'Feed:' to indicate that articles in the specified feed should be retrieved.\n",
-                        "required": true,
-                        "type": "string"
-                    },
-                    {
-                        "in": "query",
-                        "name": "count",
-                        "description": "The maximum number of articles to retrieve, if not specified defaults to 10",
-                        "required": false,
-                        "type": "integer"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "An article list response"
-                    },
-                    "403": {
-                        "description": "Permission error",
-                        "schema": {
-                            "$ref": "#/definitions/Error"
-                        }
-                    },
-                    "default": {
-                        "description": "Unexpected error",
-                        "schema": {
-                            "$ref": "#/definitions/Error"
-                        }
-                    }
-                }
-            }
+          }
         }
+      }
     },
-    "definitions": {
-        "Token": {
-            "type": "object",
-            "properties": {
-                "token": {
-                    "type": "string",
-                    "description": "Unique identifier to pass in the Private-Token header."
-                }
+    "/image": {
+      "post": {
+        "tags": [
+          "images"
+        ],
+        "summary": "Upload an image to the Newsagent server",
+        "description": "Upload an image to the server, and get the information for the newly-uploaded image on success.\n\nNote that, if the md5 of the uploaded image matches the md5 of an already stored image, the stored image will be used.\n\n**Required capabilities**: api.use, upload\n",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "in": "formData",
+            "name": "image",
+            "description": "The image to upload to the server",
+            "required": true,
+            "type": "file"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An image list response. Note that this will contain exactly one element on successful upload (or if the image already existed), but it is still returned as an array to be consistent with the /image/{identifier} endpoint.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Image"
+              }
             }
-        },
-        "Image": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "integer",
-                    "description": "The internal ID for the image"
-                },
-                "md5sum": {
-                    "type": "string",
-                    "description": "hex-encoded MD5sum of the image"
-                },
-                "name": {
-                    "type": "string",
-                    "description": "the name of the image, without any path"
-                },
-                "urls": {
-                    "type": "object",
-                    "description": "the URLs for the images stored on the server",
-                    "properties": {
-                        "lead": {
-                            "type": "string",
-                            "description": "The URL of the lead-size (130x63) image"
-                        },
-                        "thumb": {
-                            "type": "string",
-                            "description": "The URL of the thumb size (350xN) image"
-                        },
-                        "media": {
-                            "type": "string",
-                            "description": "The URL of the media library size (128x128) image"
-                        },
-                        "large": {
-                            "type": "string",
-                            "description": "The URL of the article size (450x450) image"
-                        },
-                        "bigscreen": {
-                            "type": "string",
-                            "description": "The URL of the big-screen sized (2560x1440) image"
-                        }
-                    }
-                },
-                "uploader": {
-                    "$ref": "#/definitions/User"
-                },
-                "uploaded": {
-                    "type": "string",
-                    "description": "The time and date at which the image was uploaded"
-                }
+          },
+          "403": {
+            "description": "Permission error",
+            "schema": {
+              "$ref": "#/definitions/Error"
             }
-        },
-        "User": {
-            "type": "object",
-            "properties": {
-                "user_id": {
-                    "type": "integer",
-                    "description": "The users internal ID"
-                },
-                "username": {
-                    "type": "string",
-                    "description": "The users username"
-                },
-                "realname": {
-                    "type": "string",
-                    "description": "The users real name"
-                },
-                "email": {
-                    "type": "string",
-                    "description": "the users email address"
-                },
-                "gravatar": {
-                    "type": "string",
-                    "description": "The URL of the users gravatar"
-                }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
             }
-        },
-        "Error": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string",
-                    "description": "A short identifying code for the error type"
-                },
-                "message": {
-                    "type": "string",
-                    "description": "A longer message explaining the cause of the error"
-                }
-            }
+          }
         }
+      }
+    },
+    "/image/{identifier}": {
+      "get": {
+        "tags": [
+          "images"
+        ],
+        "summary": "Get the information for an image",
+        "description": "Request the information for an image from the system. This will attempt\nto locate the image based on the specified identifier.\n\n**Required capabilities**: api.use\n",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identifier",
+            "description": "An identifier for the image, should be either an image name, md5 hash, or id. Note that, when specify a name, * may be used to do wildcard searches\n",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "userid",
+            "description": "Only consider images uploaded by the specified userid.",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An image list response",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Image"
+              }
+            }
+          },
+          "403": {
+            "description": "Permission error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/article": {
+      "post": {
+        "tags": [
+          "articles"
+        ],
+        "summary": "Create a new article in the system",
+        "description": "Add a new article to the newsagnet system\n\n**Required capabilities***: api.use\n",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "in": "formData",
+            "name": "json",
+            "type": "string",
+            "description": "Optional JSON representation of the article data, as returned by /article/{identifier} that can be used to create a new article. If specified, this will overwrite the values specified in other fields.",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "relmode",
+            "type": "string",
+            "description": "0 for normal article, 1 for newsletter",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "title",
+            "type": "string",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "summary",
+            "type": "string",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "article",
+            "type": "string",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "mode",
+            "type": "string",
+            "description": "'visible', 'timed', 'draft', or 'preset'",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "rtimestamp",
+            "type": "string",
+            "description": "Release time stamp, required for 'timed' mode",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "level",
+            "description": "'group', 'leader', or 'home'. Can be specified multiple times.",
+            "type": "string",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "feed",
+            "description": "The ID of the feed to publish the article in",
+            "type": "string",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "sticky",
+            "description": "How many days to make the post sticky for. 0 = not sticky.",
+            "type": "integer",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "full_summary",
+            "description": "If set, include the summary in the full text",
+            "type": "string",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "schedule",
+            "description": "The name of the newsletter to add the article to",
+            "type": "string",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "section",
+            "description": "The ID of the section to add the article to",
+            "type": "integer",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "sort_order",
+            "description": "The position in the section. Currently ignored.",
+            "type": "integer",
+            "default": 0,
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "schedule_mode",
+            "description": "Release mode for the newsletter article, should be 'next' to include in the next newsletter, 'after' to publish in a future newsletter, or 'nldraft' to make into a draft newsletter article.",
+            "type": "string",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "stimestamp",
+            "description": "The unix timestamp after which the article can be released. Only used if schedule_mode is 'after'.",
+            "type": "integer",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "acyear",
+            "description": "The Academic Year id used when generating recipient lists. Note that this **is not** the year, it's the internal ID for the year! For example, AY16/17 is 19, 17/18 is 20",
+            "type": "integer",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "send_mode1",
+            "description": "The send mode to use for notifications, can be 'immediate' to send notifications on publication, 'delay' to send notifications 5 minutes after publication, or 'timed' to manually specify a send time.",
+            "type": "string",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "send_at1",
+            "description": "unix timestamp of the send time",
+            "type": "integer",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "matrix",
+            "description": "The recipient to send the notifcation to, and the method to use, of the form <recipientid>-<methodid>, eg: 37-1 will send notifications to recipient 27 through method 1. This can be specified multiple times to send notifications to multiple recipients through multiple methods",
+            "type": "string",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "email-cc",
+            "type": "string",
+            "description": "A comma-separated list of email addresses to CC the article to. Generally this should be left empty, as it may not do what you expect.",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "email-bcc",
+            "type": "string",
+            "description": "A comma-separated list of email addresses to BCC the article to.",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "email-reply_to",
+            "type": "string",
+            "description": "The email address to place in the ReplyTo: header field. If not set, defaults to the author's email address",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "email-prefix",
+            "type": "integer",
+            "description": "The ID of the subject prefix to use. 1 is standard prefix, 2 is none, others may be supported.",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "email-bccme",
+            "type": "string",
+            "description": "if set to 'on', the author will be emailed a copy of the message.",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "twitter-mode",
+            "type": "string",
+            "description": "'summary' to use the aricle summary as the twitter text, 'custom' to use the contents of the 'twitter-text' parameter",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "twitter-text",
+            "type": "string",
+            "description": "The text to post to twitter. This may have a full-article link added to it if 'twitter-auto' is set to 'link' or 'news'",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "twitter-auto",
+            "type": "string",
+            "description": "If 'none' the text is used 'as-is', if 'link' a link to the full article is included at the end of the twitter post. A third 'news' option is currently unsupported",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "imagea_mode",
+            "description": "Lead Image control, should be 'none', 'url', or 'img'",
+            "type": "string",
+            "required": false,
+            "default": "none"
+          },
+          {
+            "in": "formData",
+            "name": "imagea_url",
+            "description": "If imgmode is 'url', the URL of the lead imge to use",
+            "type": "string",
+            "required": false,
+            "default": "https://"
+          },
+          {
+            "in": "formData",
+            "name": "imagea_imgid",
+            "description": "If imgmode is 'img', the ID of the lead image to use",
+            "type": "string",
+            "required": false,
+            "default": "0"
+          },
+          {
+            "in": "formData",
+            "name": "imageb_mode",
+            "description": "Article Image control, should be 'none', 'url', or 'img'",
+            "type": "string",
+            "required": false,
+            "default": "none"
+          },
+          {
+            "in": "formData",
+            "name": "imageb_url",
+            "description": "If imgmode is 'url', the URL of the article image to use",
+            "type": "string",
+            "required": false,
+            "default": "https://"
+          },
+          {
+            "in": "formData",
+            "name": "imageb_imgid",
+            "description": "If imgmode is 'img', the ID of the article image to use",
+            "type": "string",
+            "required": false,
+            "default": "0"
+          },
+          {
+            "in": "formData",
+            "name": "files",
+            "description": "A comma-separated list of file IDs for files to attach to this article",
+            "type": "string",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An article list response"
+          },
+          "403": {
+            "description": "Permission error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/article/{identifier}": {
+      "get": {
+        "tags": [
+          "articles"
+        ],
+        "summary": "Look up an article or articles",
+        "description": "Search for one or more articles in the sytem and retrieve the data for any matches.\n\n**Required capabilities***: api.use\n",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identifier",
+            "description": "An identifier to use when searching for articles. This can be either an article ID, subject (with * to indicate wildcard), or start with 'Feed:' to indicate that articles in the specified feed should be retrieved.\n",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "count",
+            "description": "The maximum number of articles to retrieve, if not specified defaults to 10",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An article list response"
+          },
+          "403": {
+            "description": "Permission error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/email/{articleid}": {
+      "get": {
+        "tags": [
+          "email"
+        ],
+        "summary": "Fetch the email sending status for the specified article",
+        "description": "\n**Required capabilities***: api.use\n",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "articleid",
+            "description": "The ID of the article to fetch the data for.",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The email status information",
+            "schema": {
+              "$ref": "#/definitions/EmailStatus"
+            }
+          },
+          "403": {
+            "description": "Permission error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/email/{identifier}/queue/{articleid}": {
+      "post": {
+        "tags": [
+          "email"
+        ],
+        "summary": "Record the queueing of an email for the specified article",
+        "description": "This records that an email with the specified ID has been added to the mailserver queue as part of sending notifications for the article. \n**Required capabilities***: api.use\n",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identifier",
+            "description": "The postfix email ID (a 12 character hex string).",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "path",
+            "name": "articleid",
+            "description": "The ID of the article the email was queued for.",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A queue record"
+          },
+          "403": {
+            "description": "Permission error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/email/{identifier}/sent": {
+      "post": {
+        "tags": [
+          "email"
+        ],
+        "summary": "Record the sending of an email for the specified article",
+        "description": "This records that an email with the specified ID has been sent by the mailserver queue as part of sending notifications for an article.\n**Required capabilities***: api.use\n",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identifier",
+            "description": "The postfix email ID (a 12 character hex string).",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A queue record"
+          },
+          "403": {
+            "description": "Permission error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
     }
+  },
+  "definitions": {
+    "Token": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string",
+          "description": "Unique identifier to pass in the Private-Token header."
+        }
+      }
+    },
+    "Image": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "The internal ID for the image"
+        },
+        "md5sum": {
+          "type": "string",
+          "description": "hex-encoded MD5sum of the image"
+        },
+        "name": {
+          "type": "string",
+          "description": "the name of the image, without any path"
+        },
+        "urls": {
+          "type": "object",
+          "description": "the URLs for the images stored on the server",
+          "properties": {
+            "lead": {
+              "type": "string",
+              "description": "The URL of the lead-size (130x63) image"
+            },
+            "thumb": {
+              "type": "string",
+              "description": "The URL of the thumb size (350xN) image"
+            },
+            "media": {
+              "type": "string",
+              "description": "The URL of the media library size (128x128) image"
+            },
+            "large": {
+              "type": "string",
+              "description": "The URL of the article size (450x450) image"
+            },
+            "bigscreen": {
+              "type": "string",
+              "description": "The URL of the big-screen sized (2560x1440) image"
+            }
+          }
+        },
+        "uploader": {
+          "$ref": "#/definitions/User"
+        },
+        "uploaded": {
+          "type": "string",
+          "description": "The time and date at which the image was uploaded"
+        }
+      }
+    },
+    "User": {
+      "type": "object",
+      "properties": {
+        "user_id": {
+          "type": "integer",
+          "description": "The users internal ID"
+        },
+        "username": {
+          "type": "string",
+          "description": "The users username"
+        },
+        "realname": {
+          "type": "string",
+          "description": "The users real name"
+        },
+        "email": {
+          "type": "string",
+          "description": "the users email address"
+        },
+        "gravatar": {
+          "type": "string",
+          "description": "The URL of the users gravatar"
+        }
+      }
+    },
+    "EmailStatus": {
+      "type": "object",
+      "properties": {
+        "has_email": {
+          "type": "boolean",
+          "description": "does this article have any email notifications set?"
+        },
+        "queued": {
+          "type": "integer",
+          "description": "the number of emails that have been queued for the article (including ones that have been sent)"
+        },
+        "sent": {
+          "type": "integer",
+          "description": "the number of emails sent for the article"
+        }
+      }
+    },
+    "Error": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "A short identifying code for the error type"
+        },
+        "message": {
+          "type": "string",
+          "description": "A longer message explaining the cause of the error"
+        }
+      }
+    }
+  }
 }
