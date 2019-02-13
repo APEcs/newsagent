@@ -1,0 +1,7 @@
+    <h1>***title***</h1>
+    <div>{L_FEED_PUBLISHED}: ***date***</div>
+    ***articleimg***
+    ***summary***
+    <div>***fulltext***</div>
+    ***files***
+    <div><img src="https://gravatar.com/avatar/***gravhash***?s=16&amp;d=mm&amp;r=g" alt="gravatar" width="16" height="16" /> ***name***</div>

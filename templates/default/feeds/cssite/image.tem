@@ -1,0 +1,7 @@
+<div class="sixcol imageFloat floatRight">
+    <figure class="noIndent">
+        <img class="lazy" src="data:image/gif;base64,R0lGODlhAQABAIAAAPT09AAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==" data-original="***url***" width="500" height="298" alt="***title***" />
+        <noscript><img src="***url***" width="500" height="298" alt="" /></noscript>
+        <figcaption>***title***</figcaption>
+    </figure>
+</div>

@@ -1,0 +1,9 @@
+<li class="newsagent-feed">
+    ***leaderimg***
+    <div>
+        <h3><a href="***link***">***title***</a></h3>
+        <div class="newsagent-datestrap">{L_FEED_PUBLISHED}: ***date***</div>
+        ***summary***
+        <div class="newsagent-author"><img src="https://gravatar.com/avatar/***gravhash***?s=16&amp;d=mm&amp;r=g" alt="gravatar" class="newsagent-avatar" width="16" height="16" /> ***name***</div>
+    </div>
+</li>
