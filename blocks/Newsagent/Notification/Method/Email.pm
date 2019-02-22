@@ -206,11 +206,11 @@ sub send {
     };
 
     # Pull the addresses out of address lists, if specified.
-    $self -> _parse_recipients_addrlist($addresses -> {"outgoing"} -> {"cc"} , $article -> {"methods"} -> {"Email"} -> {"cc"});
-    $self -> _parse_recipients_addrlist($addresses -> {"outgoing"} -> {"bcc"}, $article -> {"methods"} -> {"Email"} -> {"bcc"});
+    $self -> _parse_recipients_addrlist($addresses -> {"outgoing"} -> {"cc"} , $article -> {"methods"} -> {"Email"} -> {"cc"}, $article -> {"override_optout"});
+    $self -> _parse_recipients_addrlist($addresses -> {"outgoing"} -> {"bcc"}, $article -> {"methods"} -> {"Email"} -> {"bcc"}, $article -> {"override_optout"});
 
     # Add the author if bcc-me is enabled
-    $self -> _parse_recipients_addrlist($addresses -> {"outgoing"} -> {"bcc"}, $author -> {"email"})
+    $self -> _parse_recipients_addrlist($addresses -> {"outgoing"} -> {"bcc"}, $author -> {"email"}, $article -> {"override_optout"})
         if($article -> {"methods"} -> {"Email"} -> {"bcc_sender"});
 
     # Process each of the recipients, parsing the configuration and then merging recipient addresses
@@ -223,16 +223,16 @@ sub send {
                 my $addrmode = $arghash -> {"debug"} ? "debug" : "outgoing";
 
                 if($arghash -> {"cc"}) {
-                    $self -> _parse_recipients_addrlist($addresses -> {$addrmode} -> {"cc"} , $arghash -> {"cc"});
+                    $self -> _parse_recipients_addrlist($addresses -> {$addrmode} -> {"cc"} , $arghash -> {"cc"}, $article -> {"override_optout"});
 
                 } elsif($arghash -> {"bcc"}) {
-                    $self -> _parse_recipients_addrlist($addresses -> {$addrmode} -> {"bcc"} , $arghash -> {"bcc"});
+                    $self -> _parse_recipients_addrlist($addresses -> {$addrmode} -> {"bcc"} , $arghash -> {"bcc"}, $article -> {"override_optout"});
 
                 } elsif($arghash -> {"destlist"} && $arghash -> {"destlist"} =~ /^b?cc$/)  {
-                    $self -> _parse_recipients_database($addresses -> {$addrmode} -> {$arghash -> {"destlist"}}, $arghash);
+                    $self -> _parse_recipients_database($addresses -> {$addrmode} -> {$arghash -> {"destlist"}}, $arghash, $article -> {"override_optout"});
 
                 } else {
-                    $self -> _parse_recipients_database($addresses -> {$addrmode} -> {"bcc"}, $arghash);
+                    $self -> _parse_recipients_database($addresses -> {$addrmode} -> {"bcc"}, $arghash, $article -> {"override_optout"});
                 }
             }
 
@@ -498,17 +498,42 @@ sub _get_prefix {
 }
 
 
-## @method private $ _parse_recipients_addrlist($reciphash, $addresses)
+## @method private $ _opt_out($address)
+# Determine whether the specified email address belongs to a user who has opted out
+# of newsagent emails.
+#
+# @param address The email address to check.
+# @return true if the user has opted out, false if not, undef on error.
+sub _opt_out {
+    my $self    = shift;
+    my $address = shift;
+
+    $self -> clear_error();
+
+    my $checkh = $self -> {"dbh"} -> prepare("SELECT `optout`
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {"users"}."`
+                                              WHERE `email` LIKE ?");
+    $checkh -> execute($address)
+        or return $self -> self_error("Unable to execute opt-out lookup: ".$self -> {"dbh"} -> errstr);
+
+    my $check = $checkh -> fetchrow_arrayref();
+    return $check ? $check -> [0] : 0;
+}
+
+
+## @method private $ _parse_recipients_addrlist($reciphash, $addresses, $override)
 # Parse the comma separated list of recipients in the specified addresses into
 # the provided recipient hash.
 #
 # @param reciphash A reference to a hash of recipient addresses
 # @param addresses A string containing the comma separated addresses to parse
+# @param override  Override optouts
 # @return true on success, undef on error.
 sub _parse_recipients_addrlist {
     my $self      = shift;
     my $reciphash = shift;
     my $addresses = shift;
+    my $override  = shift;
 
     # Nothing to do if there are no addresses
     return 1 if(!$addresses);
@@ -516,6 +541,9 @@ sub _parse_recipients_addrlist {
     # Simple split & merge
     my @addrlist = split(/,/, $addresses);
     foreach my $address (@addrlist) {
+        # Skip this user if they have opted out of newsagent emails for some reason.
+        next if(!$override && $self -> _opt_out($address));
+
         # This will ensure that the recipient appears only once in the hash
         $reciphash -> {$address} = 1;
     }
@@ -524,18 +552,20 @@ sub _parse_recipients_addrlist {
 }
 
 
-## @method private $ _parse_recipients_addrlist($reciphash, $settings)
+## @method private $ _parse_recipients_addrlist($reciphash, $settings, $override)
 # Fetch user email addresses, using the specified settings to control the query,
 # and store the list of recipients in the provided recipient hash.
 #
 # @param reciphash A reference to a hash of recipient addresses
 # @param settings  A reference to a hash of query settings supported by
 #                  Newsagent::System::UserDataBridge::fetch_user_addresses()
+# @param override  Override optouts
 # @return true on success, undef on error.
 sub _parse_recipients_database {
     my $self      = shift;
     my $reciphash = shift;
     my $settings  = shift;
+    my $override  = shift;
 
     $self -> clear_error();
 
@@ -543,6 +573,9 @@ sub _parse_recipients_database {
         or return $self -> self_error($self -> {"system"} -> {"userdata"} -> errstr());
 
     foreach my $address (@{$addresses}) {
+        # Skip this user if they have opted out of newsagent emails for some reason.
+        next if(!$override && $self -> _opt_out($address));
+
         # This will ensure that the recipient appears only once in the hash
         $reciphash -> {$address} = 1;
     }
