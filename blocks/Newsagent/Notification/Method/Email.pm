@@ -510,7 +510,7 @@ sub _opt_out {
 
     $self -> clear_error();
 
-    my $checkh = $self -> {"dbh"} -> prepare("SELECT `optout`
+    my $checkh = $self -> {"dbh"} -> prepare("SELECT `opt_out`
                                               FROM `".$self -> {"settings"} -> {"database"} -> {"users"}."`
                                               WHERE `email` LIKE ?");
     $checkh -> execute($address)
