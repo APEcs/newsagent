@@ -1,0 +1,24 @@
+<div id="optoutform">
+    <form action="" method="post" enctype="multipart/form-data">
+    <div id="optout-info" class="shadowbox">
+        <h2>{L_OPTOUT_TITLE}</h2>
+        <div class="sbcontent">
+            <table class="notebox notebox-error">
+                <tr>
+                    <td class="nbox-image"><img src="{V_[scriptpath]}templates/default/images/error.png" width="48" height="48" alt="error" /></td>
+                    <td class="nbox-text">{L_OPTOUT_WARNING}</td>
+                </tr>
+            </table>
+            <p>Information about School and University communication channels here.</p>
+            <div class="textwrapper">
+                 <dl class="input">
+                     <dd><label for="opt-opt" class="check"><input type="checkbox" name="optout" id="opt-opt" ***optout*** />{L_OPTOUT_OPTOUT}</label></dd>
+                 </dl>
+            </div>
+            <div class="submitbox">
+                <input type="submit" class="button blue" name="setoptout" id="setoptout" value="{L_OPTOUT_SUBMIT}" />
+            </div>
+        </div>
+    </div>
+    </form>
+</div>

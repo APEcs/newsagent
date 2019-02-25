@@ -1,0 +1,9 @@
+OPTOUT_TITLE   = Opt out of emails
+OPTOUT_WARNING = Opting out of emails will mean that you may miss important news, or information about university or student community events. If you opt out of emails, you can still subscribe to Newsagent feed notifications to receive daily digests of articles.
+OPTOUT_OPTOUT  = I want to opt out of emails from Newsagent, other than feeds I explicitly subscribe to.
+OPTOUT_SUBMIT  = Save my opt-out preference
+
+OPTOUT_SUMMARY = Your opt-out preferences have been saved
+OPTOUT_DESC    = Newsagent will now use your updated opt-out preferences. If you change your mind about your opt-out preferences at some point in the future, visit the opt-out form again to change your preferences.
+
+PERMISSION_OPTOUT_DESC = You do not have permission to opt out of emails sent from Newsagent. If you feel this is in error, please contact support@cs.manchester.ac.uk

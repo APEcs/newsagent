@@ -10,6 +10,7 @@
                                 <span class="username">***username***</span>
                             </a>
                         </li>
+                        <li><a class="item" href="***url-optout***">{L_USERBAR_OPTOUT}</a></li>
                         <!-- li><a class="item" onclick="edit_profile();">{L_USERBAR_PROFILE_EDIT}</a></li -->
                         <li><a class="item" href="***url-logout***">{L_USERBAR_PROFILE_LOGOUT}</a></li>
                     </ul>

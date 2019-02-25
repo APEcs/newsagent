@@ -156,6 +156,30 @@ sub get_user_setting {
 }
 
 
+## @method $ set_user_optout($uid, $optout)
+# Set the user's optout parameter.
+#
+# @param uid    The ID of the user to set the optout for
+# @param optout True to optout of emails, false if not.
+# @return true on successful update, false otherwise.
+sub set_user_optout {
+    my $self   = shift;
+    my $uid    = shift;
+    my $optout = shift;
+
+    $self -> clear_error();
+
+    my $seth = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"users"}."`
+                                            SET `opt_out` = ?
+                                            WHERE `user_id` = ?");
+    my $result = $seth -> execute($optout, $uid);
+    return $self -> self_error("Unable to update optout state: ".$self -> {"dbh"} -> errstr) if(!$result);
+    return $self -> self_error("Optout state update failed: no rows updated.") if($result eq "0E0");
+
+    return 1;
+}
+
+
 # @method $ post_authenticate($username, $password, $auth, $authmethod, $extradata)
 # Perform any system-specific post-authentication tasks on the specified
 # user's data. This function allows each system to tailor post-auth tasks

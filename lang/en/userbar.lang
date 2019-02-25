@@ -22,3 +22,5 @@ USERBAR_FRONT           = Newsagent front page (Feed list)
 USERBAR_FEEDS           = RSS Feeds
 USERBAR_TELLUS          = Tell Us!
 USERBAR_TELLUS_QUEUES   = Tell Us Messages
+
+USERBAR_OPTOUT          = Set Opt-Out Prefs

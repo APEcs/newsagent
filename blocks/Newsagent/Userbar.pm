@@ -109,6 +109,12 @@ sub block_display {
                                       params   => {},
                                       forcessl => 1);
 
+    my $optouturl = $self -> build_url(block => "optout",
+                                       fullurl  => 1,
+                                       pathinfo => [],
+                                       params   => {},
+                                       forcessl => 1);
+
     my $fronturl = $self -> build_url(block    => $self -> {"settings"} -> {"config"} -> {"default_block"},
                                       fullurl  => 1,
                                       pathinfo => [],
@@ -180,6 +186,7 @@ sub block_display {
         $userprofile = $self -> {"template"} -> load_template("userbar/profile_loggedin.tem", {"***realname***"    => $user -> {"fullname"},
                                                                                                "***username***"    => $user -> {"username"},
                                                                                                "***gravhash***"    => $user -> {"gravatar_hash"},
+                                                                                               "***url-optout***"  => $optouturl,
                                                                                                "***url-logout***"  => $self -> build_url(block => "login"  , pathinfo => ["logout"])});
     } # if(!$self -> {"session"} -> anonymous_session())
 
