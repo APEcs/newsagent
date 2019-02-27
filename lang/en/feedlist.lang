@@ -40,3 +40,7 @@ FLIST_SUB_ERR_NOFEEDS = No feeds selected. You must select one or more feeds to 
 FLIST_SUB_ERR_NOEMAIL = No email address provided. Users who have not logged in must provide an email address to send digest emails to.
 
 FLIST_CLIPBOARD = Copy to clipboard
+
+FLIST_OPTOUT      = Email Opt-Out preferences
+FLIST_OPTOUT_DESC = You can control your preferences for emails sent to you from Newsagent using the Opt-Out Preferences page.
+FLIST_OPTOUT_BTN  = Opt-Out Preferences

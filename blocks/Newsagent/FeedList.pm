@@ -152,6 +152,12 @@ sub _generate_feedlist {
                                                                                                                 params   => { },
                                                                                                                 pathinfo => [ "manage" ])
                                                                        });
+        my $optmode = $self -> check_permission("optout") ? "feedlist/optout-enabled.tem" : "feedlist/optout-disabled.tem";
+        my $optopts = $self -> {"template"} -> load_template($optmode, {"***optouturl***" => $self -> build_url(fullurl  => 1,
+                                                                                                                block    => "optout",
+                                                                                                                params   => { },
+                                                                                                                pathinfo => [ ])
+                                                                       });
 
         return ($self -> {"template"} -> replace_langvar("FLIST_PTITLE"),
                 $self -> {"template"} -> load_template("feedlist/content.tem", {"***feeds***"     => $list,
@@ -163,6 +169,7 @@ sub _generate_feedlist {
                                                                                                                         params   => { },
                                                                                                                         pathinfo => [ ]),
                                                                                 "***subscribe***" => $subopts,
+                                                                                "***optout***"    => $optopts,
                                                                                })
                );
     } else {

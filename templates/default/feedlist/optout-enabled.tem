@@ -1,0 +1,7 @@
+        <div id="optout" class="shadowbox">
+            <h2>{L_FLIST_OPTOUT}</h2>
+            <div class="sbcontent">
+                <div>{L_FLIST_OPTOUT_DESC}</div>
+                <div class="alignright" style="padding: 3px 0px"><a href='***optouturl***' class="button blue">{L_FLIST_OPTOUT_BTN}</a></div>
+            </div>
+        </div>
