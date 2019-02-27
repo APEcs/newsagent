@@ -22,6 +22,7 @@ package Newsagent::System::Feed;
 use strict;
 use base qw(Webperl::SystemModule); # This class extends the Newsagent block class
 use v5.12;
+use Webperl::Utils qw(hash_or_hashref);
 use Data::Dumper;
 
 ## @cmethod $ new(%args)
@@ -90,30 +91,42 @@ sub create_feed {
 }
 
 
-## @method $ get_feeds($filter)
+## @method $ get_feeds(%filter)
 # Fetch a list of all feeds defined in the system. This will generate an array
 # containing the data for all the feeds, whether the user has any author
 # access or not. This is intended to support listing pages like FeedList.
+# Filter args are optional, and the following args are supported:
 #
-# @param filter An optional reference to an array of feed IDs to filter on.
+# - `feeds`: A reference to an array of feed IDs to filter on.
+# - `override`: if true, only include feeds that override optouts
+#
+# @param filter A hash or reference to a hash of filter arguments.
 # @return A reference to an array of hashrefs, each hashref contains feed
 #         information, or undef on error.
 sub get_feeds {
     my $self   = shift;
-    my $filter = shift;
+    my $filter = hash_or_hashref(@_);
 
     $self -> clear_error();
 
     # If filters have been specified, build the filtering parameter
     my @params = ();
-    my $query = "";
-    if($filter) {
-        push(@params, @{$filter});
-        $query = "WHERE `id` IN (?".(",?" x (scalar(@{$filter}) - 1)).")";
+    my @query;
+    my $querystr;
+    if($filter -> {"feeds"}) {
+        push(@params, @{$filter -> {"feeds"}});
+        push(@query, "`id` IN (?".(",?" x (scalar(@{$filter -> {"feeds"}}) - 1)).")");
     }
 
+    if($filter -> {"override"}) {
+        push(@query, "`override_optout` = 1");
+    }
+
+    $querystr = "WHERE ".join(" AND ", @query)
+        if(scalar(@query));
+
     my $feedsh = $self -> {"dbh"} -> prepare("SELECT * FROM `".$self -> {"settings"} -> {"database"} -> {"feeds"}."`
-                                              $query
+                                              $querystr
                                               ORDER BY `description`");
     $feedsh -> execute(@params)
         or return $self -> self_error("Unable to execute user feeds query: ".$self -> {"dbh"} -> errstr);
@@ -191,6 +204,7 @@ sub get_user_feeds {
                 push(@feedlist, {"desc"       => $feed -> {"description"},
                                  "name"       => $feed -> {"name"},
                                  "id"         => $feed -> {"id"},
+                                 "highlight"  => $feed -> {"override_optout"},
                                  "metadataid" => $feed -> {"metadata_id"}});
                 last;
             }

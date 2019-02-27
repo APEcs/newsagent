@@ -528,7 +528,7 @@ sub _generate_manage_form {
         # First fetch the list of all available feeds, and a filtered list only
         # including the feeds subscribed to by the user.
         my $allfeeds = $self -> {"feed"} -> get_feeds();
-        my $subfeeds = $self -> {"feed"} -> get_feeds($subscription -> {"feeds"});
+        my $subfeeds = $self -> {"feed"} -> get_feeds(feeds => $subscription -> {"feeds"});
 
         my $feedtable = $self -> _build_feedstable($subscription -> {"feeds"});
         my $feedopts  = $self -> _build_feedopts($allfeeds, $subfeeds);
