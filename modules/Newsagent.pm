@@ -167,13 +167,14 @@ sub generate_multiselect {
 
     my $result = "";
     foreach my $option (@{$options}) {
-        $result .= $self -> {"template"} -> load_template("multisel-item.tem", {"***class***"   => $class,
-                                                                                "***idbase***"  => $idbase,
-                                                                                "***selname***" => $name,
-                                                                                "***name***"    => $option -> {"name"},
-                                                                                "***id***"      => $option -> {"id"},
-                                                                                "***desc***"    => $option -> {"desc"},
-                                                                                "***checked***" => $active{$option -> {"id"}} ? 'checked="checked"' : ''});
+        $result .= $self -> {"template"} -> load_template("multisel-item.tem", {"***class***"     => $class,
+                                                                                "***idbase***"    => $idbase,
+                                                                                "***selname***"   => $name,
+                                                                                "***highlight***" => $option -> {"highlight"} ? "highlight" : "",
+                                                                                "***name***"      => $option -> {"name"},
+                                                                                "***id***"        => $option -> {"id"},
+                                                                                "***desc***"      => $option -> {"desc"},
+                                                                                "***checked***"   => $active{$option -> {"id"}} ? 'checked="checked"' : ''});
     }
 
     return $result;
