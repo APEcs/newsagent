@@ -10,6 +10,12 @@
                 </tr>
             </table>
             <p>Information about School and University communication channels here.</p>
+            <p>Even if you opt out of emails from Newsagent, you may still receive email notifications for
+               articles published in the following feeds. These are important feeds that communicate information
+               releavant to your education, safety, or mental health.</p>
+            <ul>
+            ***overrides***
+            </ul>
             <div class="textwrapper">
                  <dl class="input">
                      <dd><label for="opt-opt" class="check"><input type="checkbox" name="optout" id="opt-opt" ***optout*** />{L_OPTOUT_OPTOUT}</label></dd>

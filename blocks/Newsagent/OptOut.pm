@@ -28,6 +28,35 @@ use v5.12;
 use Data::Dumper;
 
 
+# ============================================================================
+#  Constructor
+
+## @cmethod $ new(%args)
+# Overloaded constructor for the OptOut facility, loads the System::Feed model
+# and other classes required to generate the subscriptions pages.
+#
+# @param args A hash of values to initialise the object with. See the Block docs
+#             for more information.
+# @return A reference to a new Newsagent::OptOut object on success, undef on error.
+sub new {
+    my $invocant = shift;
+    my $class    = ref($invocant) || $invocant;
+    my $self     = $class -> SUPER::new(@_)
+        or return undef;
+
+    $self -> {"feed"} = Newsagent::System::Feed -> new(dbh      => $self -> {"dbh"},
+                                                       settings => $self -> {"settings"},
+                                                       logger   => $self -> {"logger"},
+                                                       session  => $self -> {"session"},
+                                                       roles    => $self -> {"system"} -> {"roles"},
+                                                       metadata => $self -> {"system"} -> {"metadata"})
+        or return Webperl::SystemModule::set_error("Feed initialisation failed: ".$SystemModule::errstr);
+
+    return $self;
+}
+
+
+
 sub _generate_optout_form {
     my $self = shift;
     my $user = $self -> {"session"} -> get_user_byid();
@@ -55,11 +84,22 @@ sub _generate_optout_form {
             );
     }
 
+    $self -> log("optout.set", "User viewing optout form");
+
+    my $feeds = $self -> {"feed"} -> get_feeds(override => 1);
+    my $overrides = "";
+    foreach my $feed (@{$feeds}) {
+        $overrides .= $self -> {"template"} -> load_template("optout/feed.tem",
+                                                             {
+                                                                 "***feed***" => $feed -> {"description"},
+                                                             });
+    }
 
     return ($self -> {"template"} -> replace_langvar("OPTOUT_TITLE"),
             $self -> {"template"} -> load_template("optout/content.tem",
                                                    {
-                                                       "***optout***" => $checked,
+                                                       "***optout***"    => $checked,
+                                                       "***overrides***" => $overrides,
                                                    })
         );
 
