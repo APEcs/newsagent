@@ -242,3 +242,7 @@ ul#filelist li div {
     -webkit-box-shadow: 0 0 8px rgba(255, 189, 112, 1);
     -moz-box-shadow: 0 0 8px rgba(255, 189, 112, 1);
 }
+
+.big {
+    font-size: 2em;
+}

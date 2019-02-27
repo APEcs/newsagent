@@ -510,16 +510,17 @@ function confirm_submit()
         $('fullform').submit();
     } else {
         // If no schedule dropdown is available, the user has no schedule access, so force normal mode.
-        var relmode  = $('comp-schedule') ? $('relmode').get('value') : 0;
-        var summary  = $('comp-summ').get('value');
-        var fulltext = CKEDITOR.instances['comp-desc'].getData();
-        var feeds    = $$('input[name=feed]:checked').length;
-        var levels   = $$('input[name=level]:checked').length;
-        var publish  = $('comp-release').getSelected()[0].get("value");
-        var pubtime  = $('release_date').get('value');
-        var newspub  = $('comp-srelease') ? $('comp-srelease').getSelected()[0].get("value") : '';
-        var newstime = $('schedule_date') ? $('schedule_date').get('value') : '';
-        var pubname  = $('preset').get('value');
+        var relmode   = $('comp-schedule') ? $('relmode').get('value') : 0;
+        var summary   = $('comp-summ').get('value');
+        var fulltext  = CKEDITOR.instances['comp-desc'].getData();
+        var feeds     = $$('input[name=feed]:checked').length;
+        var overrides = $$('input[name=feed].highlight:checked').length;
+        var levels    = $$('input[name=level]:checked').length;
+        var publish   = $('comp-release').getSelected()[0].get("value");
+        var pubtime   = $('release_date').get('value');
+        var newspub   = $('comp-srelease') ? $('comp-srelease').getSelected()[0].get("value") : '';
+        var newstime  = $('schedule_date') ? $('schedule_date').get('value') : '';
+        var pubname   = $('preset').get('value');
 
         var buttons  = [ { title: confirm_messages['cancel'] , color: 'blue', event: function() { popbox.close(); popbox.footer.empty(); }} ];
 
@@ -568,6 +569,21 @@ function confirm_submit()
             }
 
             bodyelems.push(new Element('hr'));
+
+            if(overrides) {
+                var notify = enabled_notify();
+
+                if(notify['Email']) {
+                    bodyelems.push(new Element('p',
+                                               {
+                                                   html: '<b>WARNING</b>: This message will override email opt-outs set by students. Only confirm creation of this article if it can be considered appropriate or important enough to do this.',
+                                                   'class': 'error big'
+                                               }),
+                                   new Element('hr')
+                                  );
+                }
+            }
+
             bodytext.adopt(bodyelems);
 
             // Inject a confirmation disable checkbox into the footer, it looks better there than in the body

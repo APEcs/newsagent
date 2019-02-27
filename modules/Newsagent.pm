@@ -167,7 +167,8 @@ sub generate_multiselect {
 
     my $result = "";
     foreach my $option (@{$options}) {
-        $result .= $self -> {"template"} -> load_template("multisel-item.tem", {"***class***"     => $class,
+        my $itemclass = "$class ".($option -> {"highlight"} ? "highlight" : "");
+        $result .= $self -> {"template"} -> load_template("multisel-item.tem", {"***class***"     => $itemclass,
                                                                                 "***idbase***"    => $idbase,
                                                                                 "***selname***"   => $name,
                                                                                 "***highlight***" => $option -> {"highlight"} ? "highlight" : "",

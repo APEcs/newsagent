@@ -148,7 +148,7 @@
     clear: both;
     padding-top: 5px;
     text-align: center;
-    font-size: 9px;
+    font-size: 0.7em;
     color: #666;
 }
 
@@ -169,12 +169,12 @@
 
 label {
     font-weight: bold;
-    font-size: 13px;
+    font-size: 1em;
 }
 
 label.check {
     font-weight: normal;
-    font-size: 13px;
+    font-size: 1em;
     padding-left: 0.75em;
 }
 
