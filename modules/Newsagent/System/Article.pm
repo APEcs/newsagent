@@ -821,6 +821,11 @@ sub add_article {
         $self -> _add_level_relations($newid, $article -> {"levels"})
             or return undef;
 
+        # Get the override flag
+        my $override = $self -> {"feed"} -> get_feed_override($article -> {"feeds"});
+        $self -> _set_overide_flag($newid, 1)
+            if($override);
+
     # While newsletter articles need schedule/section
     } else {
         $self -> {"schedule"} -> add_section_relation($newid, $article -> {"schedule_id"}, $article -> {"section"}, $article -> {"sort_order"})
@@ -1567,6 +1572,23 @@ sub _change_article_relation {
                                              WHERE `article_id` = ?");
     $moveh -> execute($newid, $oldid)
         or return $self -> self_error("Unable to perform '$table' relation update: ".$self -> {"dbh"} -> errstr);
+
+    return 1;
+}
+
+
+sub _set_overide_flag {
+    my $self     = shift;
+    my $aid      = shift;
+    my $override = shift;
+
+    $self -> clear_error();
+
+    my $overh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"articles"}."`
+                                             SET `override_optout` = ?
+                                             WHERE `id` = ?");
+    $overh -> execute($override, $aid)
+        or return $self -> self_error("Unable to set article override flag: ".$self -> {"dbh"} -> errstr);
 
     return 1;
 }

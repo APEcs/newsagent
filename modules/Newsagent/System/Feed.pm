@@ -329,4 +329,33 @@ sub get_metadata_id {
     return $feeddata -> {"metadata_id"};
 }
 
+
+## @method $ get_feed_override($feeds)
+# Determine whether any of the feeds in the specified feed ID list has
+# the override flag set.
+#
+# @param feeds A reference to an array of feed IDs to add relations to.
+# @return True if any of the selected feeds override optouts, false if
+#         none of them do, undef on error.
+sub get_feed_override {
+    my $self  = shift;
+    my $feeds = shift;
+
+    $self -> clear_error();
+
+    my $markers = join(",", (("?") x scalar(@{$feeds})));
+
+    my $overh = $self -> {"dbh"} -> prepare("SELECT `id`
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"feeds"}."`
+                                             WHERE `id` IN (".$markers.")
+                                             AND `override_optout`");
+    $overh -> execute(@{$feeds})
+        or return $self -> self_error("Unable to look up feed overrides: ".$self -> {"dbh"} -> errstr());
+
+    my $results = $overh -> fetchall_arrayref({});
+
+    # Force 0 for no matches, 1 for one or more.
+    return scalar(@{$results}) > 0;
+}
+
 1;
