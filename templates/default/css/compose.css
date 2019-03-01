@@ -246,3 +246,10 @@ ul#filelist li div {
 .big {
     font-size: 2em;
 }
+
+.MultiSelectList li label.highlight {
+    background-image: url('../images/messages/error22.png');
+    background-repeat: no-repeat;
+    padding-left: 18px;
+    background-size: contain;
+}
