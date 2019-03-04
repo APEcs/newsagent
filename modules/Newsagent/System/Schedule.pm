@@ -921,10 +921,15 @@ sub add_section_relation {
     # to the insert. However, in this case, that's not a significant problem
     # as articles sharing sort_order values is safe (or at least non-calamitous)
     if(!$sort_order) {
-        my $posh = $self -> {"dbh"} -> prepare("SELECT MAX(`sort_order`)
-                                                FROM `".$self -> {"settings"} -> {"database"} -> {"articlesection"}."`
-                                                WHERE `schedule_id` = ?
-                                                AND `section_id` = ?");
+        my $posh = $self -> {"dbh"} -> prepare("SELECT MAX(`ss`.`sort_order`)
+                                                FROM `".$self -> {"settings"} -> {"database"} -> {"articlesection"}."` AS `ss`,
+                                                     `".$self -> {"settings"} -> {"database"} -> {"articles"}."` AS `a`
+                                                WHERE `a`.`id` = `ss`.`article_id`
+                                                AND `ss`.`schedule_id` = ?
+                                                AND `ss`.`section_id` = ?
+                                                AND (`a`.`release_mode`= 'next'
+                                                     OR `a`.`release_mode` = 'after'
+                                                     OR `a`.`release_mode` = 'nldraft')");
         $posh -> execute($scheduleid, $sectionid)
             or return $self -> self_error("Unable to perform article section sort_order lookup: ". $self -> {"dbh"} -> errstr);
 
