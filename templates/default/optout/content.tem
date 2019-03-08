@@ -9,10 +9,17 @@
                     <td class="nbox-text">{L_OPTOUT_WARNING}</td>
                 </tr>
             </table>
-            <p>Information about School and University communication channels here.</p>
+            <p>We only use newsagent to send emails that we feel will be useful to students; we do not use it to
+               send out unsolicited emails from outside parties.</p>
+            <p>Notifications for individual course units will generally be sent out by academic members staff
+               teaching those units via Campus Solutions. As these emails contain important information related
+               to course units then you cannot opt out of receiving them.</p>
+            <p>We may use newsagent to distribute information that we feel you may be interested in receiving. In
+               this case, due to GDPR requirements, we offer you the opportunity to unsubscribe to all non-essential
+               news feeds. </p>
             <p>Even if you opt out of emails from Newsagent, you may still receive email notifications for
                articles published in the following feeds. These are important feeds that communicate information
-               releavant to your education, safety, or mental health.</p>
+               relevant to your education, safety, or mental health.</p>
             <ul>
             ***overrides***
             </ul>
