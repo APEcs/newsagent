@@ -23,7 +23,7 @@
             <ul>
             ***overrides***
             </ul>
-            <div class="textwrapper">
+            <div class="textwrapper optoutline">
                  <dl class="input">
                      <dd><label for="opt-opt" class="check"><input type="checkbox" name="optout" id="opt-opt" ***optout*** />{L_OPTOUT_OPTOUT}</label></dd>
                  </dl>
