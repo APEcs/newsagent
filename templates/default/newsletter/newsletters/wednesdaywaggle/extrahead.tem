@@ -12,7 +12,7 @@ h2.na-testnews-section {
     padding: 5px 10px 3px 0px
 }
 
-table.na-testnews-articles {
+.na-testnews-articles {
     margin: 0px;
     padding: 0px;
 }
@@ -21,12 +21,12 @@ hr.na-testnews-section {
     border-bottom: 3px solid #56007E;
 }
 
-td.na-testnews-articleitem {
+.na-testnews-articleitem {
     list-style-type: none;
     padding: 2px;
 }
 
-td.na-testnews-articleitem img.newsagent-article-image {
+.na-testnews-articleitem img.newsagent-article-image {
     float: right;
     padding: 0px 0px 5px 5px;
     max-width: 30%;
