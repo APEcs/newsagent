@@ -2,9 +2,9 @@
     <div class="na-testnews-content">
         <div id="toc" class="toc">
             <div id="toctitle"><h2>***description*** - Contents</h2></div>
-            <ol>
-***toc***
-            </ol>
+            <ul>
+***menu***
+            </ul>
         </div>
         <div class="na-testnews-body" id="na-news-top"><a name="na-news-top"></a>***body***</div>
     </div>
