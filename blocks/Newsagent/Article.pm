@@ -569,7 +569,7 @@ sub _validate_article_fields {
                                                                            "max"      => 1});
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
 
-    ($args -> {"title"}, $error) = $self -> validate_string("title", {"required" => 0,
+    ($args -> {"title"}, $error) = $self -> validate_string("title", {"required" => 1,
                                                                       "nicename" => $self -> {"template"} -> replace_langvar("COMPOSE_TITLE"),
                                                                       "maxlen"   => 100});
     $errors .= $self -> {"template"} -> load_template("error/error_item.tem", {"***error***" => $error}) if($error);
