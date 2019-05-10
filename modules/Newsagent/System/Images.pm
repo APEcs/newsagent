@@ -68,9 +68,9 @@ sub new {
                                  # Fill the 350x167 area (extending outside as needed to preserve aspect)
                                  "thumb" => '-resize 350x167^',
 
-                                 # Resize images down that are larger than 450x450, preserving aspect.
-                                 # Images that fit completely within 450x450 are not scaled
-                                 "large" => '-resize 450x450\>',
+                                 # Resize images down that are larger than 500x298, preserving aspect,
+                                 # with fit to 500 width
+                                 "large" => '-resize 500x298^',
 
                                  # Resize images to fit into the 2560x1440 tactus size, preserving aspect
                                  "tactus" => '-resize 2560x1440',
