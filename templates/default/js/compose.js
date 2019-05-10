@@ -179,6 +179,7 @@ function set_visible_levels()
 {
     var avail_levels = { };
     var feeds = 0;
+    var allow_sticky = true;
 
     level_list.each(function(level) {
         avail_levels[level] = 0;
@@ -194,6 +195,8 @@ function set_visible_levels()
         level_list.each(function(level) {
             avail_levels[level] += feed_levels[id][level];
         });
+
+        if(!feed_sticky[id]) allow_sticky = false;
     });
 
     // now go through the levels, enabling or disabling them. The idea is that, for
@@ -209,6 +212,13 @@ function set_visible_levels()
             $('forlevel-'+level).addClass("disabled");
         }
     });
+
+    if(allow_sticky) {
+        $('comp-sticky').disabled = 0;
+    } else {
+        $('comp-sticky').selectedIndex = 0;
+        $('comp-sticky').disabled = 1;
+    }
 }
 
 

@@ -201,11 +201,12 @@ sub get_user_feeds {
     while(my $feed = $feedsh -> fetchrow_hashref()) {
         foreach my $level (@{$levels}) {
             if($self -> {"roles"} -> user_has_capability($feed -> {"metadata_id"}, $userid, $level -> {"capability"})) {
-                push(@feedlist, {"desc"       => $feed -> {"description"},
-                                 "name"       => $feed -> {"name"},
-                                 "id"         => $feed -> {"id"},
-                                 "highlight"  => $feed -> {"override_optout"},
-                                 "metadataid" => $feed -> {"metadata_id"}});
+                push(@feedlist, {"desc"        => $feed -> {"description"},
+                                 "name"        => $feed -> {"name"},
+                                 "id"          => $feed -> {"id"},
+                                 "highlight"   => $feed -> {"override_optout"},
+                                 "allowsticky" => $feed -> {"allow_sticky"},
+                                 "metadataid"  => $feed -> {"metadata_id"}});
                 last;
             }
         }

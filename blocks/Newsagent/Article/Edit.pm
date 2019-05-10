@@ -345,6 +345,7 @@ sub _generate_edit {
                                                                              "***summary***"          => $args -> {"summary"},
                                                                              "***article***"          => $args -> {"article"},
                                                                              "***allowed_feeds***"    => $feeds,
+                                                                             "***stickymodes***"      => $self -> _build_feed_stickysupport($user_feeds),
                                                                              "***levels***"           => $levels,
                                                                              "***release_mode***"     => $relops,
                                                                              "***release_date_fmt***" => $format_release,

@@ -56,6 +56,8 @@ window.addEvent('domready', function() {
     ***levellist***
     set_visible_levels();
 
+    ***stickymodes***
+
     matrix_handler = new Matrix();
 
     if($('imagea_mediabtn'))
