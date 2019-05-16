@@ -206,10 +206,12 @@ function set_visible_levels()
         if(feeds && avail_levels[level] == feeds) {
             $('level-'+level).disabled = 0;
             $('forlevel-'+level).removeClass("disabled");
+            $('forlevel-'+level).show();
         } else {
             $('level-'+level).disabled = 1;
             $('level-'+level).set('checked', false); /* force no check when disabled */
             $('forlevel-'+level).addClass("disabled");
+            $('forlevel-'+level).hide();
         }
     });
 
