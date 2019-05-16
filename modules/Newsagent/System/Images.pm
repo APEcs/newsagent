@@ -70,7 +70,7 @@ sub new {
 
                                  # Resize images down that are larger than 500x298, preserving aspect,
                                  # with fit to 500 width
-                                 "large" => '-resize 500x298^',
+                                 "large" => '-resize 450x450\>',
 
                                  # Resize images to fit into the 2560x1440 tactus size, preserving aspect
                                  "tactus" => '-resize 2560x1440',
