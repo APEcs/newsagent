@@ -128,8 +128,9 @@ sub get_valid_years {
                                                      FROM `".$self -> {"settings"} -> {"userdata"} -> {"user_years"}."` AS l,
                                                           `".$self -> {"settings"} -> {"userdata"} -> {"acyears"}."` AS y
                                                      WHERE `y`.`id` = `l`.`year_id`
+						     AND `y`.`start_year` <= ?
                                                      ORDER BY `y`.`start_year` DESC");
-    $lookuph -> execute()
+    $lookuph -> execute($self -> {"settings"} -> {"Year"} -> {"current"})
         or return $self -> self_error("Unable to execute academic year lookup: ".$self -> {"udata_dbh"} -> errstr);
 
     my $rows = $lookuph -> fetchall_arrayref({})
@@ -159,19 +160,19 @@ sub get_current_year {
     my $self = shift;
 
     $self -> clear_error();
-
     $self -> connect()
         or return undef;
 
-    my $lookuph = $self -> {"udata_dbh"} -> prepare("SELECT MAX(`year_id`)
-                                                     FROM `".$self -> {"settings"} -> {"userdata"} -> {"user_years"}."`");
-    $lookuph -> execute()
+    my $lookuph = $self -> {"udata_dbh"} -> prepare("SELECT `id`
+                                                     FROM `".$self -> {"settings"} -> {"userdata"} -> {"acyears"}."`
+                                                     WHERE `start_year` = ?");
+    $lookuph -> execute($self -> {"settings"} -> {"Year"} -> {"current"})
         or return $self -> self_error("Unable to execute academic year lookup: ".$self -> {"udata_dbh"} -> errstr);
 
-    my $year = $lookuph -> fetchrow_arrayref()
-        or return $self -> self_error("No academic year data available");
+    my $row = $lookuph -> fetchrow_arrayref()
+        or return $self -> self_error("Error fetching rows from year lookup");
 
-    return $year -> [0];
+    return $row -> [0];
 }
 
 
