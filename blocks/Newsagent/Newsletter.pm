@@ -233,7 +233,7 @@ sub publish_newsletter {
         my $aid = $self -> {"article"} -> add_article($article, $userid, undef, 0)
             or return ($self -> {"article"} -> errstr(), undef, undef);
 
-        $self -> log("newsletter", "Added newsletter issue article $aid");
+        $self -> log("newsletter", "Added newsletter issue article $aid year ".$article -> {"notify_matrix"} -> {"year"});
 
         $self -> {"queue"} -> queue_notifications($aid, $article, $userid, 0, $article -> {"notify_matrix"} -> {"used_methods"})
             or return ("Publication failed: ".$self -> {"queue"} -> errstr(), undef, undef);
