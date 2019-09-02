@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <newsletter name="school" base="newsletter/newsletters/school/" body="body.tem" head="extrahead.tem">
-  <section name="News from Head of School" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
+  <section name="News from Head of Department" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
     <article>article.tem</article>
     <image>image.tem</image>
     <files>files.tem</files>

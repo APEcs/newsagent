@@ -3,41 +3,8 @@ div.na-testnews {
     font-family: Calibri, Arial, sans-serif;
 }
 
-div.na-testnews-menu {
-    float: left;
-    width: 200px;
-    margin: 5px 5px 5px 0px;
-    padding: 0px;
-}
-
-div.na-testnews-menu ul {
-    margin: 0px;
-    padding: 0px 0px 0px 5px;
-}
-
-div.na-testnews-menu ul li {
-    list-style-type: none;
-    font-size: 12px;
-}
-
-div.na-testnews-menu ul li a {
-    text-decoration: none;
-}
-
-/* Not currently used:
- *
-div.na-testnews h1 {
-    font-weight: bold;
-    font-size: 30px;
-    line-height: 63px;
-    vertical-align: center;
-    border-bottom: 1px solid #56007E;
-    padding: 5px 10px 3px 0px
-}
-*/
 
 div.na-testnews-body {
-    margin-left: 210px;
 }
 
 h2.na-testnews-section {
@@ -107,4 +74,45 @@ div.newsagent-files ul {
     padding: 0px 0px 0px 20px;
 }
 
+#toc,
+.toc {
+    border: 1px solid #aaa;
+	background-color: #f9f9f9;
+	font-size: 95%;
+
+	display: inline-block;
+	display: table;
+
+	/* IE7 and earlier */
+	zoom: 1;
+	*display: inline;
+
+	padding: 7px;
+}
+
+#toc h2,
+.toc h2 {
+	display: inline;
+	border: none;
+	padding: 0;
+	font-size: 130%;
+	font-weight: bold;
+    margin-bottom: 5px;
+}
+
+#toc #toctitle,
+.toc #toctitle,
+#toc .toctitle,
+.toc .toctitle {
+	text-align: center;
+}
+
+#toc ul,
+.toc ul {
+	list-style-type: none;
+	list-style-image: none;
+	margin: 5px 0px;
+	padding: 0;
+	text-align: left;
+}
 </style>

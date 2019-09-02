@@ -1,8 +1,7 @@
 <div class="na-testnews">
-    <!-- h1>***description***</h1 -->
     <div class="na-testnews-content">
-        <div class="na-testnews-menu">
-            <h3>Contents</h3>
+        <div id="toc" class="toc">
+            <div id="toctitle"><h2>***description*** - Contents</h2></div>
             <ul>
 ***menu***
             </ul>
