@@ -1,11 +1,12 @@
 <div class="na-testnews">
     <div class="na-testnews-content">
+        <img src="https://newsagent.cs.manchester.ac.uk/images/large/13/28/1328/Kilburn090114.jpg" style="float: right; width: 300px; height: 161px" />
         <div id="toc" class="toc">
             <div id="toctitle"><h2>***description*** - Contents</h2></div>
             <ul>
 ***menu***
             </ul>
         </div>
-        <div class="na-testnews-body" id="na-news-top"><a name="na-news-top"></a>***body***</div>
+        <div class="na-testnews-body" style="clear: both;" id="na-news-top"><a name="na-news-top"></a>***body***</div>
     </div>
 </div>
