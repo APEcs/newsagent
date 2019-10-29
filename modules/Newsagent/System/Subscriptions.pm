@@ -537,7 +537,7 @@ sub _create_subscription_header {
 
     # If the email address is set the subscription can't start active, even if
     # the userid is present.
-    my $active = !$email;
+    my $active = $email ? 1 : 0;
 
     # Need an auth code?
     my $authcode = $self -> _generate_authcode()
