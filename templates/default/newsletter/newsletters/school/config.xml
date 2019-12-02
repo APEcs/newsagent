@@ -80,6 +80,14 @@
     <empty />
     <required>required-section.tem</required>
   </section>
+  <section name="Health and Safety" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
+    <article>article.tem</article>
+    <image>image.tem</image>
+    <files>files.tem</files>
+    <file>file.tem</file>
+    <empty />
+    <required>required-section.tem</required>
+  </section>
   <section name="Social Responsibility" template="section.tem" menu="section-menu-item.tem" toc="toc-item.tem">
     <article>article.tem</article>
     <image>image.tem</image>
