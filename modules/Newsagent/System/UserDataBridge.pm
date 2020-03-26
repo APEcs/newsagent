@@ -485,7 +485,7 @@ sub get_user_addresses {
 
     my $query = "SELECT `u`.`email`, `xd`.`alt_email`
                  FROM $tables
-                 LEFT JOIN `"..$self -> {"settings"} -> {"userdata"} -> {"extradata"}."` AS `xd`
+                 LEFT JOIN `".$self -> {"settings"} -> {"userdata"} -> {"extradata"}."` AS `xd`
                      ON `u`.`user_id` = `xd`.`user_id`
                  WHERE $where";
     print STDERR "Query: $query\n".Dumper(\@params);
