@@ -146,6 +146,8 @@ sub _build_rcount_response {
     my $setmatrix = $self -> {"cgi"} -> param("matrix")
         or return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $self -> {"template"} -> replace_langvar("API_ERROR_NOMATRIX")}));
 
+    my $alt_email = $self -> {"cgi"} -> param("altemail") ? 1 : 0;
+
     # Split the matrix into recipient/method hashes. If nothing comes out of this,
     # the data in $matrix is bad
     my $enabled = $self -> _explode_matrix($setmatrix);
@@ -170,6 +172,8 @@ sub _build_rcount_response {
             if(!$methods -> {$method});
 
         foreach my $recip (@{$recipmeth -> {"methods"} -> {$method}}) {
+            $recip -> {"settings"} -> {"alt_email"} = $alt_email;
+
             $recip -> {"recipient_count"} = $methods -> {$method} -> get_recipient_count($recip -> {"settings"});
             return $self -> api_errorhash("internal_error", $self -> {"template"} -> replace_langvar("API_ERROR", {"***error***" => $methods -> {$method} -> errstr()}))
                 if(!defined($recip -> {"recipient_count"}));
