@@ -502,8 +502,9 @@ sub get_user_addresses {
             if($settings -> {"alt_email"});
     }
 
-    print STDERR "Got ".scalar(keys(%emails))." addresses.";
-    return keys(%emails);
+    my @unique = keys(%emails);
+    print STDERR "Got ".scalar(@unique)." addresses.";
+    return \@unique;
 }
 
 1;
