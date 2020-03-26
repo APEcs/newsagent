@@ -296,8 +296,9 @@ sub _process_progplan {
     my ($names, $yearid, $mode, $combine, $progplan, $dotables, $tables, $where, $params) = @_;
 
     if($dotables) {
-        $$tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"ac".$progplan."s"}."` AS `a$progplan`";
-        $$tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"user_".$progplan."s"}."` AS `u$progplan`";
+        $$tables .= " JOIN `".$self -> {"settings"} -> {"userdata"} -> {"ac".$progplan."s"}."` AS `a$progplan`";
+        $$tables .= " JOIN `".$self -> {"settings"} -> {"userdata"} -> {"user_".$progplan."s"}."` AS `u$progplan`";
+
         $$where  .= "AND" if($where);
         $$where  .= " `u$progplan`.`student_id` = `u`.`user_id` AND `a$progplan`.`id` = `u$progplan`.`".$progplan."_id` ";
         $$where  .= "AND `u$progplan`.`active` = 1 "; # only include active records.
@@ -336,7 +337,8 @@ sub _process_progact {
         if($reason) {
             # Add tables and join to the progact table at most once.
             if($dotables) {
-                $$tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"progact"}."` AS `pa`";
+                $$tables .= " JOIN `".$self -> {"settings"} -> {"userdata"} -> {"progact"}."` AS `pa`";
+
                 $$where  .= "AND" if($where);
                 $$where  .= " `pa`.`student_id` = `u`.`user_id` AND `pa`.`year_id` = ? ";
                 push(@{$params}, $yearid);
@@ -402,7 +404,7 @@ sub get_user_addresses {
 
     # All students at a given level in a given year
     if(defined($settings -> {"level"}) && defined($settings -> {"yearid"})) {
-        $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"user_years"}."` AS l";
+        $tables .= " JOIN `".$self -> {"settings"} -> {"userdata"} -> {"user_years"}."` AS l";
         $where  .= "`u`.`user_id` = `l`.`student_id` AND `l`.`active` = 1 AND `l`.`year_id` = ? ";
         push(@params, $settings -> {"yearid"});
 
@@ -410,7 +412,7 @@ sub get_user_addresses {
 
     # All students in a given year
     } elsif(defined($settings -> {"yearid"})) {
-        $tables .= ", `".$self -> {"settings"} -> {"userdata"} -> {"user_years"}."` AS l";
+        $tables .= " JOIN `".$self -> {"settings"} -> {"userdata"} -> {"user_years"}."` AS l";
         $where  .= "`u`.`user_id` = `l`.`student_id` AND `l`.`year_id` = ? ";
         push(@params, $settings -> {"yearid"});
     }
@@ -481,22 +483,27 @@ sub get_user_addresses {
     $self -> connect()
         or return undef;
 
-    my $query = "SELECT DISTINCT(`u`.`email`)
+    my $query = "SELECT `u`.`email`, `xd`.`alt_email`
                  FROM $tables
+                 LEFT JOIN `"..$self -> {"settings"} -> {"userdata"} -> {"extradata"}."` AS `xd`
+                     ON `u`.`user_id` = `xd`.`user_id`
                  WHERE $where";
-#    print STDERR "Query: $query\n".Dumper(\@params);
+    print STDERR "Query: $query\n".Dumper(\@params);
 
     my $queryh = $self -> {"udata_dbh"} -> prepare($query);
     $queryh -> execute(@params)
         or return $self -> self_error("Unable to execute student lookup: ".$self -> {"udata_dbh"} -> errstr);
 
-    my @emails = ();
+    my %emails = ();
     while(my $row = $queryh -> fetchrow_arrayref()) {
-        push(@emails, $row -> [0]);
+        $emails{$row -> [0]} = 1;
+
+        $emails{$row -> [1]} = 1
+            if($settings -> {"alt_email"});
     }
 
-    print STDERR "Got ".scalar(@emails)." addresses.";
-    return \@emails;
+    print STDERR "Got ".scalar(keys(%emails))." addresses.";
+    return keys(%emails);
 }
 
 1;
