@@ -499,7 +499,7 @@ sub get_user_addresses {
         $emails{$row -> [0]} = 1;
 
         $emails{$row -> [1]} = 1
-            if($settings -> {"alt_email"});
+            if($settings -> {"alt_email"} && $row -> [1]);
     }
 
     my @unique = keys(%emails);
