@@ -496,7 +496,8 @@ sub get_user_addresses {
 
     my %emails = ();
     while(my $row = $queryh -> fetchrow_arrayref()) {
-        $emails{$row -> [0]} = 1;
+        $emails{$row -> [0]} = 1
+            if(!$settings -> {"alt_email"} && $row -> [0]);
 
         $emails{$row -> [1]} = 1
             if($settings -> {"alt_email"} && $row -> [1]);
